@@ -1,26 +1,32 @@
-> If you see this section, you've just created a repository using [PoC Innovation's Open-Source project template](https://github.com/PoCInnovation/open-source-project-template). Check the [getting started guide](./.github/getting-started.md).
+# ML Block
 
-# [PROJECT'S NAME]
-
-[Project's description]
+ML Block is a visual, block-based web application that lets anyone build and experiment machine learning, reinforcement learning and deep learning with a no code solution. Like Scratch, but for AI.
 
 ## How does it work?
 
-[Explain how this project is working]
+Users drag and drop visual blocks representing ML concepts (layers, datasets, training parameters, etc.) to assemble a complete pipeline. Under the hood, the blocks are translated into a PyTorch or other python AI libraries model that gets trained and evaluated in real time. The interface abstracts away all the code while keeping the logic transparent and educational.
 
 ## Getting Started
 
 ### Installation
 
-[Explain how to install all of the project's dependencies]
+```bash
+# Clone the repository
+git clone git@github.com:PoCInnovation/MLBlock.git
+cd ml-block
+```
 
 ### Quickstart
 
-[Explain how to run this project]
+```bash
+# (TBD)
+```
 
 ### Usage
 
-[Explain how to use this project]
+```bash
+# (TBD)
+```
 
 ## Get involved
 
@@ -28,14 +34,14 @@ You're invited to join this project ! Check out the [contributing guide](./CONTR
 
 If you're interested in how the project is organized at a higher level, please contact the current project manager.
 
-## Our PoC team ❤️
+## Our PoC team 💜
 
 Developers
-| [<img src="https://github.com/MrZalTy.png?size=85" width=85><br><sub>[Developer's name]</sub>](https://github.com/MrZalTy) | [<img src="https://github.com/MrZalTy.png?size=85" width=85><br><sub>[Developer's name]</sub>](https://github.com/MrZalTy) | [<img src="https://github.com/MrZalTy.png?size=85" width=85><br><sub>[Developer's name]</sub>](https://github.com/MrZalTy)
+| [<img src="https://github.com/Ilan-LP.png?size=85" width=85 style="border-radius: 50%"><br><sub>Ilan LEROUX PINCHINAT</sub>](https://github.com/Ilan-LP) | [<img src="https://github.com/aliisssss.png?size=85" width=85 style="border-radius: 50%"><br><sub>Ali BASSIM</sub>](https://github.com/aliisssss) | [<img src="https://github.com/Ouaziz-chedli.png?size=85" width=85 style="border-radius: 50%"><br><sub>Chedli OUAZIZ</sub>](https://github.com/Ouaziz-chedli)
 | :---: | :---: | :---: |
 
 Manager
-| [<img src="https://github.com/adrienfort.png?size=85" width=85><br><sub>[Manager's name]</sub>](https://github.com/adrienfort)
+| [<img src="https://github.com/SachaHenneveux.png?size=85" width=85 style="border-radius: 50%"><br><sub>Sacha HENNEVEUX</sub>](https://github.com/SachaHenneveux)
 | :---: |
 
 <h2 align=center>
@@ -58,11 +64,11 @@ Organization
     </a>
 </p>
 <p align=center>
-    <a href="https://www.poc-innovation.fr/">
+    <a href="https://poc-innovation.fr/">
         <img src="https://img.shields.io/badge/WebSite-1a2b6d?style=for-the-badge&logo=GitHub Sponsors&logoColor=white" alt="Website logo">
     </a>
 </p>
 
 > 🚀 Don't hesitate to follow us on our different networks, and put a star 🌟 on `PoC's` repositories
 
-> Made with ❤️ by PoC
+> Made with 💜 by PoC

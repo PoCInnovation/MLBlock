@@ -1,17 +1,17 @@
-# Contributing to [PROJECT'S NAME]
+# Contributing to ML Block
 
 ## Create an issue
 
-- If you've encountered a bug, open a [Bug Report](https://github.com/PoCInnovation/$REPOSITORY/issues/new?assignees=&labels=&template=bug_report.md&title=).
-- If you want [PROJECT'S NAME] to have a new functionality, open a [Feature Request](https://github.com/PoCInnovation/$REPOSITORY/issues/new?assignees=&labels=&template=feature_request.md&title=).
+- If you've encountered a bug, open a [Bug Report](https://github.com/PoCInnovation/MLBlock/issues/new?assignees=&labels=&template=bug_report.md&title=).
+- If you want ML Block to have a new functionality, open a [Feature Request](https://github.com/PoCInnovation/MLBlock/issues/new?assignees=&labels=&template=feature_request.md&title=).
 
 ## Resolve an issue
 
-Select an [issue](https://github.com/PoCInnovation/$REPOSITORY/issues) that you want to resolve.
+Select an [issue](https://github.com/PoCInnovation/MLBlock/issues) that you want to resolve.
 
 The recommended workflow is to fork this repository and open pull requests from your fork.
 
-### 1. Fork, clone & configure [PROJECT'S NAME] upstream
+### 1. Fork, clone & configure ML Block upstream
 
 - Click on the _Fork_ button on GitHub
 - Clone the original repository
@@ -19,10 +19,10 @@ The recommended workflow is to fork this repository and open pull requests from 
 
 ```sh
 # Clone original repository
-git clone git@github.com:PoCInnovation/$REPOSITORY.git
+git clone git@github.com:PoCInnovation/MLBlock.git
 
 # Add your fork as a remote
-git remote add <fork_name> https://github.com/$YOUR_GITHUB_USER/$REPOSITORY.git
+git remote add <fork_name> https://github.com/$YOUR_GITHUB_USER/MLBlock.git
 ```
 
 ### 2. Create a pull request
@@ -40,7 +40,7 @@ git commit -s
 # Push your new branch
 git push <fork name>
 
-# Create a new pull request from https://github.com/PoCInnovation/$REPOSITORY/pulls
+# Create a new pull request from https://github.com/PoCInnovation/MLBlock/pulls
 ```
 
 ### 3. Update your pull request with latest changes
@@ -84,17 +84,20 @@ Please read first this article : [How to Write a Git Commit Message](https://chr
 Then, follow these guidelines:
 
 - **Group Commits:** Each commit should represent a meaningful change. Instead, these commits should be squashed together into a single "Add Feature" commit.
-> For instance, a PR should not look like :
-> 1) Add Feature X
-> 2) Fix Typo
-> 3) Changes to features X
-> 5) Bugfix for feature X
-> 6) Fix Linter 7)
-> 7) ...
+
+    > For instance, a PR should not look like :
+    >
+    > 1. Add Feature X
+    > 2. Fix Typo
+    > 3. Changes to features X
+    > 4. Bugfix for feature X
+    > 5. Fix Linter 7)
+    > 6. ...
 
 - Each commit should **work on its own**: it must compile, pass the linter and so on.
-> This makes life much easier when using `git log`, `git blame`, `git bisect`, etc...\
-> For instance, when doing a `git blame` on a file to figure out why a change was introduced, it's pretty meaningless to see a _Fix linter_ commit message. "Add Feature X" is much more meaningful.
+
+    > This makes life much easier when using `git log`, `git blame`, `git bisect`, etc...\
+    > For instance, when doing a `git blame` on a file to figure out why a change was introduced, it's pretty meaningless to see a _Fix linter_ commit message. "Add Feature X" is much more meaningful.
 
 - Use `git rebase -i main` to group commits together and rewrite their commit message
 
@@ -104,9 +107,9 @@ Then, follow these guidelines:
   will _your subject line here_"
 
 - Add the following prefixes to your commit message to help trigger [automated processes](https://www.conventionalcommits.org):
-  - `docs:` for documentation changes only (e.g., `docs: Fix typo in X`);
-  - `test:` for changes to tests only (e.g., `test: Check if X does Y`);
-  - `chore:` general things that should be excluded (e.g., `chore: Clean up X`);
-  - `ci:` for internal CI specific changes (e.g., `ci: Enable X for tests`);
+    - `docs:` for documentation changes only (e.g., `docs: Fix typo in X`);
+    - `test:` for changes to tests only (e.g., `test: Check if X does Y`);
+    - `chore:` general things that should be excluded (e.g., `chore: Clean up X`);
+    - `ci:` for internal CI specific changes (e.g., `ci: Enable X for tests`);
 
-> Made with ❤️ by PoC
+> Made with 💜 by PoC
