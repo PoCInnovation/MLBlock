@@ -2,7 +2,7 @@
 
 ML Block is a visual, block-based web application that lets anyone build and experiment machine learning, reinforcement learning and deep learning with a no code solution. Like Scratch, but for AI.
 
-## How does it work?
+## How does it work ?
 
 Users drag and drop visual blocks representing ML concepts (layers, datasets, training parameters, etc.) to assemble a complete pipeline. Under the hood, the blocks are translated into a PyTorch or other python AI libraries model that gets trained and evaluated in real time. The interface abstracts away all the code while keeping the logic transparent and educational.
 
