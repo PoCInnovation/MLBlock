@@ -1,0 +1,1 @@
+from mlblock.blocks import *  # noqa: F401, F403 — register all blocks on import
