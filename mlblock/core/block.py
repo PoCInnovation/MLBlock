@@ -1,32 +1,42 @@
 from __future__ import annotations
 
-from typing import Any, Callable
+from typing import Any
 
-import torch.nn as nn
+from mlblock.models.block_spec import BlockSpec, ParamSpec, PortSpec
 
 
 class BlockMeta:
     def __init__(
         self,
         name: str,
-        definition: dict[str, Any],
-        build_fn: Callable[[dict[str, Any]], nn.Module] | None = None,
+        spec: BlockSpec,
     ) -> None:
         self.name = name
-        self.label: str = definition.get("label", name)
-        self.category: str = definition.get("category", "default")
-        self.params: dict[str, Any] = definition.get("params", {})
-        self.inputs: list[dict[str, str]] = definition.get("inputs", [])
-        self.outputs: list[dict[str, str]] = definition.get("outputs", [])
-        self.template: str = definition.get("template", "")
-        self._build_fn = build_fn
+        self.spec = spec
 
-    def build_layer(self, params: dict[str, Any]) -> nn.Module:
-        if self._build_fn is not None:
-            return self._build_fn(params)
-        raise NotImplementedError(
-            f"Block '{self.name}' does not have a builder registered"
-        )
+    @property
+    def label(self) -> str:
+        return self.spec.label
+
+    @property
+    def category(self) -> str:
+        return self.spec.category
+
+    @property
+    def params(self) -> dict[str, ParamSpec]:
+        return self.spec.params
+
+    @property
+    def inputs(self) -> list[PortSpec]:
+        return self.spec.inputs
+
+    @property
+    def outputs(self) -> list[PortSpec]:
+        return self.spec.outputs
+
+    @property
+    def template(self) -> str:
+        return self.spec.template
 
 
 class BlockRegistry:
@@ -36,20 +46,9 @@ class BlockRegistry:
     def register(
         cls,
         name: str,
-        definition: dict[str, Any],
-        build_fn: Callable[[dict[str, Any]], nn.Module] | None = None,
+        spec: BlockSpec,
     ) -> None:
-        cls._blocks[name] = BlockMeta(name, definition, build_fn)
-
-    @classmethod
-    def register_batch(
-        cls,
-        definitions: dict[str, dict[str, Any]],
-        builders: dict[str, Callable[[dict[str, Any]], nn.Module]] | None = None,
-    ) -> None:
-        builders = builders or {}
-        for name, defn in definitions.items():
-            cls.register(name, defn, builders.get(name))
+        cls._blocks[name] = BlockMeta(name, spec)
 
     @classmethod
     def get(cls, name: str) -> BlockMeta | None:
@@ -61,4 +60,4 @@ class BlockRegistry:
 
     @classmethod
     def by_category(cls, category: str) -> list[BlockMeta]:
-        return [b for b in cls._blocks.values() if b.category == category]
+        return [b for b in cls._blocks.values() if b.spec.category == category]

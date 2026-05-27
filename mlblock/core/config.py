@@ -2,10 +2,14 @@ import json
 from pathlib import Path
 from typing import Any
 
+from mlblock.models.pipeline import PipelineDef
+from mlblock.models.registry import BlockRegistry
+
 
 class ConfigLoader:
-    def __init__(self, path: str | Path):
+    def __init__(self, path: str | Path, registry: BlockRegistry | None = None):
         self.path = Path(path)
+        self.registry = registry
         self.data: dict[str, Any] = {}
 
     def load(self) -> dict[str, Any]:
@@ -16,16 +20,7 @@ class ConfigLoader:
             raise ValueError(f"Unsupported config format: {self.path.suffix}")
         return self.data
 
-    @staticmethod
-    def validate(graph_data: dict[str, Any]) -> None:
-        if "nodes" not in graph_data:
-            raise ValueError("Missing 'nodes' in graph definition")
-        if "edges" not in graph_data:
-            raise ValueError("Missing 'edges' in graph definition")
-        for node in graph_data["nodes"]:
-            if "id" not in node or "type" not in node:
-                raise ValueError(f"Each node must have 'id' and 'type': {node}")
-        for edge in graph_data["edges"]:
-            for key in ("source", "source_port", "target", "target_port"):
-                if key not in edge:
-                    raise ValueError(f"Each edge must have '{key}': {edge}")
+    def validate(self, graph_data: dict[str, Any]) -> None:
+        PipelineDef.model_validate(
+            graph_data, context={"registry": self.registry}
+        )

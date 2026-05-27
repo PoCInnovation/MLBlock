@@ -1,0 +1,29 @@
+{
+  "nodes": [
+    {
+      "id": "n1",
+      "type": "gym_env",
+      "params": { "env_id": "CartPole-v1", "n_envs": 4 }
+    },
+    {
+      "id": "n2",
+      "type": "train_rl",
+      "params": {
+        "algorithm": "PPO",
+        "total_timesteps": 1000,
+        "learning_rate": 0.0003,
+        "gamma": 0.99
+      }
+    },
+    {
+      "id": "n3",
+      "type": "evaluate_rl",
+      "params": { "n_episodes": 5, "plot_rewards": true }
+    }
+  ],
+  "edges": [
+    { "source": "n1", "source_port": "env",   "target": "n2", "target_port": "env" },
+    { "source": "n2", "source_port": "model", "target": "n3", "target_port": "model" },
+    { "source": "n1", "source_port": "env",   "target": "n3", "target_port": "env" }
+  ]
+}

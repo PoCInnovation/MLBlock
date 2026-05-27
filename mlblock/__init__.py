@@ -1,1 +1,1 @@
-from mlblock.blocks import *  # noqa: F401, F403 — register all blocks on import
+import mlblock.blocks.registry  # noqa: F401 — triggers auto-discovery

@@ -1,3 +1,3 @@
-from mlblock.blocks.cnn import register_cnn_blocks
+from mlblock.blocks.registry import BLOCK_REGISTRY
 
-register_cnn_blocks()
+__all__ = ["BLOCK_REGISTRY"]

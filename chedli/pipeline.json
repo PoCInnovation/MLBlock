@@ -1,0 +1,30 @@
+{
+  "nodes": [
+    {
+      "id": "node_1",
+      "type": "load_csv",
+      "params": { "path": "data.csv" }
+    },
+    {
+      "id": "node_2",
+      "type": "train_test_split",
+      "params": { "ratio": 0.8, "shuffle": true }
+    },
+    {
+      "id": "node_3",
+      "type": "linear_regression",
+      "params": { "target_column": "target" }
+    },
+    {
+      "id": "node_4",
+      "type": "evaluate",
+      "params": { "target_column": "target", "method": "mse", "plot": true }
+    }
+  ],
+  "edges": [
+    { "source": "node_1", "source_port": "dataset", "target": "node_2", "target_port": "dataset" },
+    { "source": "node_2", "source_port": "train",   "target": "node_3", "target_port": "train_data" },
+    { "source": "node_2", "source_port": "test",    "target": "node_4", "target_port": "test_data" },
+    { "source": "node_3", "source_port": "model",   "target": "node_4", "target_port": "model" }
+  ]
+}
