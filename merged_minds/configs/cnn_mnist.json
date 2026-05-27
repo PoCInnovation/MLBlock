@@ -1,0 +1,126 @@
+{
+  "graph": {
+    "nodes": [
+      {
+        "id": "input_1",
+        "type": "input",
+        "params": { "shape": [1, 28, 28] },
+        "ports": {
+          "out": [{ "name": "out", "dtype": "Tensor" }]
+        }
+      },
+      {
+        "id": "conv1",
+        "type": "conv2d",
+        "params": { "in_channels": 1, "out_channels": 32, "kernel_size": 3 },
+        "ports": {
+          "in":  [{ "name": "in", "dtype": "Tensor" }],
+          "out": [{ "name": "out", "dtype": "Tensor" }]
+        }
+      },
+      {
+        "id": "relu1",
+        "type": "relu",
+        "params": {},
+        "ports": {
+          "in":  [{ "name": "in", "dtype": "Tensor" }],
+          "out": [{ "name": "out", "dtype": "Tensor" }]
+        }
+      },
+      {
+        "id": "pool1",
+        "type": "maxpool2d",
+        "params": { "kernel_size": 2 },
+        "ports": {
+          "in":  [{ "name": "in", "dtype": "Tensor" }],
+          "out": [{ "name": "out", "dtype": "Tensor" }]
+        }
+      },
+      {
+        "id": "conv2",
+        "type": "conv2d",
+        "params": { "in_channels": 32, "out_channels": 64, "kernel_size": 3 },
+        "ports": {
+          "in":  [{ "name": "in", "dtype": "Tensor" }],
+          "out": [{ "name": "out", "dtype": "Tensor" }]
+        }
+      },
+      {
+        "id": "relu2",
+        "type": "relu",
+        "params": {},
+        "ports": {
+          "in":  [{ "name": "in", "dtype": "Tensor" }],
+          "out": [{ "name": "out", "dtype": "Tensor" }]
+        }
+      },
+      {
+        "id": "pool2",
+        "type": "maxpool2d",
+        "params": { "kernel_size": 2 },
+        "ports": {
+          "in":  [{ "name": "in", "dtype": "Tensor" }],
+          "out": [{ "name": "out", "dtype": "Tensor" }]
+        }
+      },
+      {
+        "id": "flat",
+        "type": "flatten",
+        "params": {},
+        "ports": {
+          "in":  [{ "name": "in", "dtype": "Tensor" }],
+          "out": [{ "name": "out", "dtype": "Tensor" }]
+        }
+      },
+      {
+        "id": "fc1",
+        "type": "linear",
+        "params": { "in_features": 1600, "out_features": 128 },
+        "ports": {
+          "in":  [{ "name": "in", "dtype": "Tensor" }],
+          "out": [{ "name": "out", "dtype": "Tensor" }]
+        }
+      },
+      {
+        "id": "relu3",
+        "type": "relu",
+        "params": {},
+        "ports": {
+          "in":  [{ "name": "in", "dtype": "Tensor" }],
+          "out": [{ "name": "out", "dtype": "Tensor" }]
+        }
+      },
+      {
+        "id": "fc2",
+        "type": "linear",
+        "params": { "in_features": 128, "out_features": 10 },
+        "ports": {
+          "in":  [{ "name": "in", "dtype": "Tensor" }],
+          "out": [{ "name": "out", "dtype": "Tensor" }]
+        }
+      },
+      {
+        "id": "output",
+        "type": "softmax",
+        "params": { "dim": 1 },
+        "ports": {
+          "in":  [{ "name": "in", "dtype": "Tensor" }],
+          "out": [{ "name": "out", "dtype": "Tensor" }]
+        }
+      }
+    ],
+    "edges": [
+      { "source": "input_1", "source_port": "out", "target": "conv1", "target_port": "in" },
+      { "source": "conv1",   "source_port": "out", "target": "relu1",  "target_port": "in" },
+      { "source": "relu1",   "source_port": "out", "target": "pool1",  "target_port": "in" },
+      { "source": "pool1",   "source_port": "out", "target": "conv2",  "target_port": "in" },
+      { "source": "conv2",   "source_port": "out", "target": "relu2",  "target_port": "in" },
+      { "source": "relu2",   "source_port": "out", "target": "pool2",  "target_port": "in" },
+      { "source": "pool2",   "source_port": "out", "target": "flat",   "target_port": "in" },
+      { "source": "flat",    "source_port": "out", "target": "fc1",    "target_port": "in" },
+      { "source": "fc1",     "source_port": "out", "target": "relu3",  "target_port": "in" },
+      { "source": "relu3",   "source_port": "out", "target": "fc2",    "target_port": "in" },
+      { "source": "fc2",     "source_port": "out", "target": "output", "target_port": "in" }
+    ]
+  }
+}
