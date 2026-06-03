@@ -6,6 +6,7 @@ class ParamSpec(BaseModel):
     type: str
     required: bool = False
     default: Any = None
+    description: str = ""
 
 
 class PortSpec(BaseModel):
@@ -20,5 +21,6 @@ class BlockSpec(BaseModel):
     inputs: list[PortSpec]
     outputs: list[PortSpec]
     template: str
+    children_allowed: bool = False
     generates_class: str | None = None
     class_base: str | None = None

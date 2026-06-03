@@ -1,6 +1,13 @@
+from typing import Any
+
 from torch import nn
 
 from mlblock.models.block_spec import BlockSpec, ParamSpec, PortSpec
+
+
+def BUILD(params: dict[str, Any]) -> nn.Module:
+    return nn.AvgPool2d(kernel_size=params.get("kernel_size", 2))
+
 
 BLOCK = BlockSpec(
     label="AvgPool2D",

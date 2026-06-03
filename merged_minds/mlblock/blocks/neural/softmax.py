@@ -1,6 +1,13 @@
+from typing import Any
+
 from torch import nn
 
 from mlblock.models.block_spec import BlockSpec, ParamSpec, PortSpec
+
+
+def BUILD(params: dict[str, Any]) -> nn.Module:
+    return nn.Softmax(dim=params.get("dim", 1))
+
 
 BLOCK = BlockSpec(
     label="Softmax",

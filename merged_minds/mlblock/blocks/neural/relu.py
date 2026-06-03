@@ -1,6 +1,13 @@
+from typing import Any
+
 from torch import nn
 
 from mlblock.models.block_spec import BlockSpec, PortSpec
+
+
+def BUILD(params: dict[str, Any]) -> nn.Module:
+    return nn.ReLU()
+
 
 BLOCK = BlockSpec(
     label="ReLU",
