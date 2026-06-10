@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from pydantic import BaseModel, model_validator
 from typing import Any, Self
 
@@ -6,6 +8,7 @@ class PipelineNode(BaseModel):
     id: str
     type: str
     params: dict[str, Any] = {}
+    children: list[PipelineNode] = []
 
 
 class PipelineEdge(BaseModel):
@@ -84,4 +87,13 @@ class PipelineDef(BaseModel):
         return self
 
     def _all_nodes(self):
-        return self.nodes
+        result = list(self.nodes)
+        for node in self.nodes:
+            result.extend(self._collect_children(node))
+        return result
+
+    def _collect_children(self, node: PipelineNode) -> list[PipelineNode]:
+        children = list(node.children)
+        for child in node.children:
+            children.extend(self._collect_children(child))
+        return children

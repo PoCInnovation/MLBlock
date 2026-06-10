@@ -1,5 +1,8 @@
 import importlib
 from pathlib import Path
+from typing import Any, Callable
+
+from torch import nn
 
 from mlblock.models.block_spec import BlockSpec
 from mlblock.core.block import BlockRegistry
@@ -19,7 +22,10 @@ def _discover():
             if hasattr(module, "BLOCK"):
                 key = py_file.stem
                 BLOCK_REGISTRY[key] = module.BLOCK
-                BlockRegistry.register(key, module.BLOCK)
+                build_fn: Callable[[dict[str, Any]], nn.Module] | None = None
+                if hasattr(module, "BUILD"):
+                    build_fn = module.BUILD
+                BlockRegistry.register(key, module.BLOCK, build_fn)
         except ImportError:
             pass
 

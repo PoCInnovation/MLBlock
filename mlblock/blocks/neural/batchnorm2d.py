@@ -1,6 +1,13 @@
+from typing import Any
+
 from torch import nn
 
 from mlblock.models.block_spec import BlockSpec, ParamSpec, PortSpec
+
+
+def BUILD(params: dict[str, Any]) -> nn.Module:
+    return nn.BatchNorm2d(num_features=params["num_features"])
+
 
 BLOCK = BlockSpec(
     label="BatchNorm2D",
