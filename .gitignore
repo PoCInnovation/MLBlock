@@ -5,3 +5,9 @@ __pycache__/
 ali/
 chedli/
 merged_minds/
+*.db
+*.sqlite3
+*.egg-info/
+*.pyo
+.env
+mlblock.db
