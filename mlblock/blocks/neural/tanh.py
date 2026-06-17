@@ -2,6 +2,11 @@ from torch import nn
 
 from mlblock.models.block_spec import BlockSpec, PortSpec
 
+
+def BUILD(params):
+    return nn.Tanh()
+
+
 BLOCK = BlockSpec(
     label="Tanh",
     category="neural",

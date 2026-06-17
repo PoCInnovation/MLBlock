@@ -2,6 +2,11 @@ from torch import nn
 
 from mlblock.models.block_spec import BlockSpec, PortSpec
 
+
+def BUILD(params):
+    return nn.Flatten()
+
+
 BLOCK = BlockSpec(
     label="Flatten",
     category="neural",

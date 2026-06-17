@@ -2,6 +2,14 @@ from torch import nn
 
 from mlblock.models.block_spec import BlockSpec, ParamSpec, PortSpec
 
+
+def BUILD(params):
+    return nn.MaxPool2d(
+        kernel_size=params.get("kernel_size", 2),
+        stride=params.get("stride", None),
+    )
+
+
 BLOCK = BlockSpec(
     label="MaxPool2D",
     category="neural",

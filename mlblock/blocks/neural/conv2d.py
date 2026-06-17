@@ -2,6 +2,17 @@ from torch import nn
 
 from mlblock.models.block_spec import BlockSpec, ParamSpec, PortSpec
 
+
+def BUILD(params):
+    return nn.Conv2d(
+        in_channels=params["in_channels"],
+        out_channels=params["out_channels"],
+        kernel_size=params.get("kernel_size", 3),
+        stride=params.get("stride", 1),
+        padding=params.get("padding", 0),
+    )
+
+
 BLOCK = BlockSpec(
     label="Conv2D",
     category="neural",

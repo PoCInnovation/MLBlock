@@ -2,6 +2,11 @@ from torch import nn
 
 from mlblock.models.block_spec import BlockSpec, ParamSpec, PortSpec
 
+
+def BUILD(params):
+    return nn.AvgPool2d(kernel_size=params.get("kernel_size", 2))
+
+
 BLOCK = BlockSpec(
     label="AvgPool2D",
     category="neural",

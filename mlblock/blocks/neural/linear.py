@@ -2,6 +2,15 @@ from torch import nn
 
 from mlblock.models.block_spec import BlockSpec, ParamSpec, PortSpec
 
+
+def BUILD(params):
+    return nn.Linear(
+        in_features=params["in_features"],
+        out_features=params["out_features"],
+        bias=params.get("bias", True),
+    )
+
+
 BLOCK = BlockSpec(
     label="Linear (FC)",
     category="neural",

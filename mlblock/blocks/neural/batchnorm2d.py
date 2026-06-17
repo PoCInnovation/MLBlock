@@ -2,6 +2,11 @@ from torch import nn
 
 from mlblock.models.block_spec import BlockSpec, ParamSpec, PortSpec
 
+
+def BUILD(params):
+    return nn.BatchNorm2d(num_features=params["num_features"])
+
+
 BLOCK = BlockSpec(
     label="BatchNorm2D",
     category="neural",

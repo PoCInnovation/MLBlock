@@ -2,6 +2,11 @@ from torch import nn
 
 from mlblock.models.block_spec import BlockSpec, ParamSpec, PortSpec
 
+
+def BUILD(params):
+    return nn.Dropout(p=params.get("p", 0.5))
+
+
 BLOCK = BlockSpec(
     label="Dropout",
     category="neural",

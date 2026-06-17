@@ -2,6 +2,11 @@ from torch import nn
 
 from mlblock.models.block_spec import BlockSpec, ParamSpec, PortSpec
 
+
+def BUILD(params):
+    return nn.Softmax(dim=params.get("dim", 1))
+
+
 BLOCK = BlockSpec(
     label="Softmax",
     category="neural",
