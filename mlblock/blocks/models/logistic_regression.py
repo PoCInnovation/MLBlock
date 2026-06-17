@@ -1,4 +1,15 @@
-from mlblock.models.block_spec import BlockSpec, ParamSpec, PortSpec
+from sklearn.linear_model import LogisticRegression
+
+
+def BUILD(params):
+    data = params["_inputs"].get("train_data")
+    target = params["target_column"]
+    X = data.drop(target, axis=1)
+    y = data[target]
+    model = LogisticRegression(max_iter=params.get("max_iter", 1000))
+    model.fit(X, y)
+    return {"model": model}
+
 
 _TEMPLATE = (
     "from sklearn.linear_model import LogisticRegression\n"
@@ -8,18 +19,14 @@ _TEMPLATE = (
     ".fit(X_train_{node_id}, y_train_{node_id})"
 )
 
-BLOCK = BlockSpec(
-    label="Régression logistique",
-    category="models",
-    params={
-        "target_column": ParamSpec(
-            type="str",
-            required=True,
-            description="Nom de la colonne cible",
-        ),
-        "max_iter": ParamSpec(type="int", default=1000),
+BLOCK = {
+    "label": "Régression logistique",
+    "category": "models",
+    "params": {
+        "target_column": {"type": "str", "required": True},
+        "max_iter": {"type": "int", "default": 1000},
     },
-    inputs=[PortSpec(name="train_data", dtype="DataFrame")],
-    outputs=[PortSpec(name="model", dtype="Model")],
-    template=_TEMPLATE,
-)
+    "inputs": [{"name": "train_data", "dtype": "DataFrame"}],
+    "outputs": [{"name": "model", "dtype": "Model"}],
+    "template": _TEMPLATE,
+}

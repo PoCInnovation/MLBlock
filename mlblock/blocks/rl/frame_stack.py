@@ -1,19 +1,21 @@
-from mlblock.models.block_spec import BlockSpec, ParamSpec, PortSpec
+from stable_baselines3.common.vec_env import VecFrameStack
 
-BLOCK = BlockSpec(
-    label="Empiler les frames",
-    category="environment",
-    params={
-        "n_stack": ParamSpec(
-            type="int",
-            default=4,
-            description="Nombre de frames à empiler",
-        ),
+
+def BUILD(params):
+    env = params["_inputs"]["env"]
+    return {"env": VecFrameStack(env, n_stack=params.get("n_stack", 4))}
+
+
+BLOCK = {
+    "label": "Empiler les frames",
+    "category": "environment",
+    "params": {
+        "n_stack": {"type": "int", "default": 4},
     },
-    inputs=[PortSpec(name="env", dtype="Environment")],
-    outputs=[PortSpec(name="env", dtype="Environment")],
-    template=(
+    "inputs": [{"name": "env", "dtype": "Environment"}],
+    "outputs": [{"name": "env", "dtype": "Environment"}],
+    "template": (
         "from stable_baselines3.common.vec_env import VecFrameStack\n"
         "{output.env} = VecFrameStack({input.env}, n_stack={params.n_stack})"
     ),
-)
+}

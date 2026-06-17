@@ -1,4 +1,14 @@
-from mlblock.models.block_spec import BlockSpec, ParamSpec, PortSpec
+from stable_baselines3.common.evaluation import evaluate_policy
+
+
+def BUILD(params):
+    model = params["_inputs"]["model"]
+    env = params["_inputs"]["env"]
+    mean_reward, std_reward = evaluate_policy(
+        model, env, n_eval_episodes=params.get("n_episodes", 10),
+    )
+    return {"mean_reward": mean_reward}
+
 
 _TEMPLATE = (
     "from stable_baselines3.common.evaluation import evaluate_policy\n"
@@ -9,26 +19,18 @@ _TEMPLATE = (
     "{plot_code}"
 )
 
-BLOCK = BlockSpec(
-    label="Évaluer un agent RL",
-    category="rl",
-    params={
-        "n_episodes": ParamSpec(
-            type="int",
-            default=10,
-            description="Nombre d'episodes d'evaluation",
-        ),
-        "render": ParamSpec(type="bool", default=False),
-        "plot_rewards": ParamSpec(
-            type="bool",
-            default=True,
-            description="Graphique des recompenses",
-        ),
+BLOCK = {
+    "label": "Évaluer un agent RL",
+    "category": "rl",
+    "params": {
+        "n_episodes": {"type": "int", "default": 10},
+        "render": {"type": "bool", "default": False},
+        "plot_rewards": {"type": "bool", "default": True},
     },
-    inputs=[
-        PortSpec(name="model", dtype="RLModel"),
-        PortSpec(name="env", dtype="Environment"),
+    "inputs": [
+        {"name": "model", "dtype": "RLModel"},
+        {"name": "env", "dtype": "Environment"},
     ],
-    outputs=[PortSpec(name="mean_reward", dtype="float")],
-    template=_TEMPLATE,
-)
+    "outputs": [{"name": "mean_reward", "dtype": "float"}],
+    "template": _TEMPLATE,
+}

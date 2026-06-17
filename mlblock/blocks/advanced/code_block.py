@@ -1,21 +1,18 @@
-from mlblock.models.block_spec import BlockSpec, ParamSpec, PortSpec
+def BUILD(params):
+    code = params.get("code", "")
+    if code:
+        exec(code)
+    return {}
 
-BLOCK = BlockSpec(
-    label="Code personnalisé",
-    category="advanced",
-    params={
-        "code": ParamSpec(
-            type="str",
-            required=True,
-            description="Code Python à injecter",
-        ),
-        "exec_location": ParamSpec(
-            type="str",
-            default="inline",
-            description="inline, init, reset, step, reward",
-        ),
+
+BLOCK = {
+    "label": "Code personnalisé",
+    "category": "advanced",
+    "params": {
+        "code": {"type": "str", "required": True},
+        "exec_location": {"type": "str", "default": "inline"},
     },
-    inputs=[],
-    outputs=[],
-    template="{params.code}",
-)
+    "inputs": [],
+    "outputs": [],
+    "template": "{params.code}",
+}
