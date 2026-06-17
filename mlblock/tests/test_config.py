@@ -3,7 +3,6 @@ import tempfile
 from pathlib import Path
 
 import pytest
-import pydantic
 
 from mlblock.core.config import ConfigLoader
 
@@ -54,25 +53,26 @@ def test_config_loader_load(valid_json_path):
 
 
 def test_config_loader_validate_valid(valid_json):
-    loader = ConfigLoader("dummy.json")
+    from mlblock.blocks.registry import BLOCK_REGISTRY
+    loader = ConfigLoader("dummy.json", BLOCK_REGISTRY)
     loader.validate(valid_json)
 
 
 def test_config_loader_validate_missing_nodes():
     loader = ConfigLoader("dummy.json")
-    with pytest.raises(pydantic.ValidationError):
+    with pytest.raises(ValueError, match="Missing 'nodes'"):
         loader.validate({"edges": []})
 
 
 def test_config_loader_validate_missing_edges():
     loader = ConfigLoader("dummy.json")
-    with pytest.raises(pydantic.ValidationError):
+    with pytest.raises(ValueError, match="Missing 'edges'"):
         loader.validate({"nodes": []})
 
 
 def test_config_loader_validate_node_without_id():
     loader = ConfigLoader("dummy.json")
-    with pytest.raises(pydantic.ValidationError):
+    with pytest.raises(ValueError, match="Node missing 'id'"):
         loader.validate(
             {
                 "nodes": [{"type": "conv2d"}],
@@ -83,7 +83,7 @@ def test_config_loader_validate_node_without_id():
 
 def test_config_loader_validate_edge_without_key():
     loader = ConfigLoader("dummy.json")
-    with pytest.raises(pydantic.ValidationError):
+    with pytest.raises(ValueError, match="Edge missing 'source'"):
         loader.validate(
             {
                 "nodes": [{"id": "a", "type": "conv2d"}],

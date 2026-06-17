@@ -1,16 +1,15 @@
 from mlblock.core.block import BlockMeta, BlockRegistry
-from mlblock.models.block_spec import BlockSpec, ParamSpec, PortSpec
 
 
 def test_block_registry_register_and_get():
-    spec = BlockSpec(
-        label="Test",
-        category="test",
-        params={"x": ParamSpec(type="int", default=1)},
-        inputs=[PortSpec(name="in", dtype="Tensor")],
-        outputs=[PortSpec(name="out", dtype="Tensor")],
-        template="",
-    )
+    spec = {
+        "label": "Test",
+        "category": "test",
+        "params": {"x": {"type": "int", "default": 1}},
+        "inputs": [{"name": "in", "dtype": "Tensor"}],
+        "outputs": [{"name": "out", "dtype": "Tensor"}],
+        "template": "",
+    }
     BlockRegistry.register("test_block", spec)
     block = BlockRegistry.get("test_block")
     assert block is not None
@@ -42,9 +41,9 @@ def test_block_meta_params_schema():
     block = BlockRegistry.get("linear")
     assert block is not None
     assert "in_features" in block.params
-    assert block.params["in_features"].required is True
+    assert block.params["in_features"]["required"] is True
     assert "bias" in block.params
-    assert block.params["bias"].default is True
+    assert block.params["bias"]["default"] is True
 
 
 def test_block_meta_template():
