@@ -133,6 +133,8 @@ class CodeGenerator:
             "rmse": f"math.sqrt(mean_squared_error(y_test_{nid}, y_pred_{nid}))",
             "r2": f"r2_score(y_test_{nid}, y_pred_{nid})",
             "mae": f"mean_absolute_error(y_test_{nid}, y_pred_{nid})",
+            "accuracy": f"accuracy_score(y_test_{nid}, y_pred_{nid}.round())",
+            "f1": f"f1_score(y_test_{nid}, y_pred_{nid}.round(), average='weighted')",
         }
         return exprs.get(method, exprs["mse"])
 

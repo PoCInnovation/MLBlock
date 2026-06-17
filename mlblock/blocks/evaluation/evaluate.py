@@ -1,4 +1,7 @@
-from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
+from sklearn.metrics import (
+    mean_squared_error, r2_score, mean_absolute_error,
+    accuracy_score, f1_score,
+)
 import numpy as np
 import math
 
@@ -16,12 +19,14 @@ def BUILD(params):
         "rmse": math.sqrt(mean_squared_error(y_test, y_pred)),
         "r2": r2_score(y_test, y_pred),
         "mae": mean_absolute_error(y_test, y_pred),
+        "accuracy": accuracy_score(y_test, y_pred.round() if y_pred.dtype.kind == 'f' else y_pred),
+        "f1": f1_score(y_test, y_pred.round() if y_pred.dtype.kind == 'f' else y_pred, average='weighted'),
     }
     return {"score": metrics.get(method, metrics["mse"])}
 
 
 _TEMPLATE = (
-    "from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error\n"
+    "from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error, accuracy_score, f1_score\n"
     "import numpy as np\n"
     "import math\n"
     "X_test_{node_id} = {input.test_data}.drop({params.target_column}, axis=1)\n"
