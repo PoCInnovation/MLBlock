@@ -1,0 +1,43 @@
+{
+  "graph": {
+    "nodes": [
+      {
+        "id": "input_1",
+        "type": "input",
+        "params": { "shape": [1, 784] }
+      },
+      {
+        "id": "fc1",
+        "type": "linear",
+        "params": { "in_features": 784, "out_features": 128, "bias": true }
+      },
+      {
+        "id": "relu1",
+        "type": "relu",
+        "params": {}
+      },
+      {
+        "id": "drop",
+        "type": "dropout",
+        "params": { "p": 0.2 }
+      },
+      {
+        "id": "fc2",
+        "type": "linear",
+        "params": { "in_features": 128, "out_features": 10, "bias": true }
+      },
+      {
+        "id": "output",
+        "type": "softmax",
+        "params": { "dim": 1 }
+      }
+    ],
+    "edges": [
+      { "source": "input_1", "source_port": "out", "target": "fc1",    "target_port": "in" },
+      { "source": "fc1",     "source_port": "out", "target": "relu1",  "target_port": "in" },
+      { "source": "relu1",   "source_port": "out", "target": "drop",   "target_port": "in" },
+      { "source": "drop",    "source_port": "out", "target": "fc2",    "target_port": "in" },
+      { "source": "fc2",     "source_port": "out", "target": "output", "target_port": "in" }
+    ]
+  }
+}
