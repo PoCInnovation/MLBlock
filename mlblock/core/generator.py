@@ -1,7 +1,6 @@
 import re
 
 from mlblock.core.block import BlockRegistry
-from mlblock.models.block_spec import BlockSpec
 
 
 class CodeGenerator:
@@ -26,7 +25,7 @@ class CodeGenerator:
             if meta is None:
                 continue
             spec = meta.spec
-            code = spec.template
+            code = spec.get("template", "")
             if not code:
                 continue
 
@@ -89,12 +88,12 @@ class CodeGenerator:
         )
         return code
 
-    def _resolve_params(self, code: str, node, spec: BlockSpec) -> str:
-        for param_name, p_spec in spec.params.items():
-            value = node.params.get(param_name, p_spec.default)
-            serialized = self._serialize_param(value, p_spec.type)
+    def _resolve_params(self, code: str, node, spec: dict) -> str:
+        for param_name, p_spec in spec.get("params", {}).items():
+            value = node.params.get(param_name, p_spec.get("default"))
+            serialized = self._serialize_param(value, p_spec.get("type", "str"))
             code = code.replace(f"{{params.{param_name}}}", serialized)
-            raw_serialized = self._serialize_param_raw(value, p_spec.type)
+            raw_serialized = self._serialize_param_raw(value, p_spec.get("type", "str"))
             code = code.replace(f"{{raw_params.{param_name}}}", raw_serialized)
         return code
 
@@ -110,7 +109,7 @@ class CodeGenerator:
     def _resolve_node_id(self, code: str, node) -> str:
         return code.replace("{node_id}", node.id)
 
-    def _resolve_special_placeholders(self, code: str, node, spec: BlockSpec) -> str:
+    def _resolve_special_placeholders(self, code: str, node, spec: dict) -> str:
         if "{metric_expr}" in code:
             method = node.params.get("method", "mse")
             expr = self._metric_expr(method, node)
@@ -137,8 +136,8 @@ class CodeGenerator:
         }
         return exprs.get(method, exprs["mse"])
 
-    def _plot_code(self, node, spec: BlockSpec) -> str:
-        if spec.category == "evaluation":
+    def _plot_code(self, node, spec: dict) -> str:
+        if spec.get("category") == "evaluation":
             nid = node.id
             return (
                 f"import matplotlib.pyplot as plt\n"
