@@ -1,3 +1,39 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: 'Nunito', system-ui, sans-serif;
+  background: #171311;
+  color: #f0e9e3;
+  -webkit-font-smoothing: antialiased;
+}
+input, select, button { font-family: inherit; }
+
+@keyframes mlbGlow {
+  0%, 100% { box-shadow: 0 2px 0 rgba(0,0,0,.18), 0 0 0 0 rgba(255,255,255,0); }
+  50%       { box-shadow: 0 2px 0 rgba(0,0,0,.18), 0 0 0 4px rgba(255,255,255,.7); }
+}
+@keyframes mlbFloat {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-10px); }
+}
+@keyframes mlbBlink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: .35; }
+}
+
+::-webkit-scrollbar { width: 11px; height: 11px; }
+::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,.12);
+  border-radius: 9px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,.2);
+  background-clip: padding-box;
+  border: 3px solid transparent;
+}
