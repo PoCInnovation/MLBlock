@@ -3,8 +3,13 @@ import useAppStore from '../store/useAppStore'
 import { colorFor, titleOf } from '../utils/blockHelpers'
 import { defs } from '../mockdata/blocks'
 
-export function useDragDrop({ blockElsRef, canvasRef }) {
-  const computeInsertIndex = useCallback((clientY) => {
+type Params = {
+  blockElsRef: React.MutableRefObject<Record<string, HTMLElement>>
+  canvasRef: React.RefObject<HTMLElement | null>
+}
+
+export function useDragDrop({ blockElsRef, canvasRef }: Params) {
+  const computeInsertIndex = useCallback((clientY: number): number => {
     const { script } = useAppStore.getState()
     let insertIndex = script.length
     for (let i = 0; i < script.length; i++) {
@@ -16,7 +21,7 @@ export function useDragDrop({ blockElsRef, canvasRef }) {
     return insertIndex
   }, [blockElsRef])
 
-  const startPaletteDrag = useCallback((type, e) => {
+  const startPaletteDrag = useCallback((type: string, e: React.PointerEvent): void => {
     if (e.button != null && e.button !== 0) return
     e.preventDefault()
     const d = defs[type]
@@ -30,8 +35,8 @@ export function useDragDrop({ blockElsRef, canvasRef }) {
     })
   }, [])
 
-  const startBlockDrag = useCallback((id, e) => {
-    const tag = e.target.tagName
+  const startBlockDrag = useCallback((id: string, e: React.PointerEvent): void => {
+    const tag = (e.target as HTMLElement).tagName
     if (['INPUT', 'SELECT', 'OPTION', 'BUTTON', 'TEXTAREA'].includes(tag)) return
     e.preventDefault()
     const { script } = useAppStore.getState()
@@ -49,7 +54,7 @@ export function useDragDrop({ blockElsRef, canvasRef }) {
   }, [])
 
   useEffect(() => {
-    const onMove = (e) => {
+    const onMove = (e: PointerEvent) => {
       const d = useAppStore.getState().drag
       if (!d || !d.active) return
       const moved = d.moved || Math.abs(e.clientX - d.sx) > 4 || Math.abs(e.clientY - d.sy) > 4
@@ -70,8 +75,8 @@ export function useDragDrop({ blockElsRef, canvasRef }) {
         if (d.overCanvas) addBlock(d.type, d.insertIndex)
         else if (!d.moved) addBlock(d.type, null)
       } else if (d.source === 'script') {
-        if (d.overCanvas) moveBlock(d.id, d.insertIndex)
-        else if (d.moved) deleteBlock(d.id)
+        if (d.overCanvas) moveBlock(d.id!, d.insertIndex) // TODO: type this — id is always set when source === 'script'
+        else if (d.moved) deleteBlock(d.id!)              // TODO: type this — id is always set when source === 'script'
       }
       useAppStore.getState().clearDrag()
     }

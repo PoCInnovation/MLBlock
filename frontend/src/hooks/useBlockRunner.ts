@@ -1,7 +1,11 @@
 import { useRef, useCallback } from 'react'
 import useAppStore from '../store/useAppStore'
+import type { Block } from '../utils/blockHelpers'
+import type { ConsoleLine } from '../store/useAppStore'
 
-function logsFor(b) {
+type Step = { id: string; logs: ConsoleLine[] }
+
+function logsFor(b: Block): ConsoleLine[] {
   const f = b.fields
   switch (b.type) {
     case 'load_data':    return [{ k: 'info', t: `Données « ${f.ds} » chargées` }]
@@ -46,10 +50,10 @@ function logsFor(b) {
 }
 
 export function useBlockRunner() {
-  const timerRef = useRef(null)
-  const stepsRef = useRef([])
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const stepsRef = useRef<Step[]>([])
 
-  const playStep = useCallback((i) => {
+  const playStep = useCallback((i: number) => {
     if (!useAppStore.getState().running && i > 0) return
     if (i >= stepsRef.current.length) {
       const acc = (96 + Math.random() * 3).toFixed(1)

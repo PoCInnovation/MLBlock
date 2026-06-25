@@ -2,7 +2,14 @@ import { hatBorderRadius } from '../../utils/snapLogic'
 
 const ACCENT = '#D97757'
 
-export default function HatBlock({ hatRef, hatBand, n, band0 }) {
+type HatBlockProps = {
+  hatRef: React.RefObject<HTMLDivElement | null>
+  hatBand: number | null
+  n: number
+  band0: number | null
+}
+
+export default function HatBlock({ hatRef, hatBand, n, band0 }: HatBlockProps) {
   const radius = hatBorderRadius(n, hatBand, band0)
   const minWidth = hatBand != null ? hatBand + 'px' : undefined
 

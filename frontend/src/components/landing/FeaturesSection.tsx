@@ -1,4 +1,8 @@
-const FEATURES = [
+import React from 'react'
+
+type Feature = { color: string; icon: React.ReactNode; title: string; desc: string }
+
+const FEATURES: Feature[] = [
   {
     color: '#E59060',
     icon: <div style={{ width: 18, height: 18, borderRadius: 6, background: 'rgba(255,255,255,.85)' }} />,

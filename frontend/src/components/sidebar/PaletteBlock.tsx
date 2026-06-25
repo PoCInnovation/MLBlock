@@ -2,7 +2,12 @@ import { defs } from '../../mockdata/blocks'
 import { colorFor } from '../../utils/blockHelpers'
 import BlockSegments from '../blocks/BlockSegments'
 
-export default function PaletteBlock({ type, startPaletteDrag }) {
+type PaletteBlockProps = {
+  type: string
+  startPaletteDrag: (type: string, e: React.PointerEvent) => void
+}
+
+export default function PaletteBlock({ type, startPaletteDrag }: PaletteBlockProps) {
   const d = defs[type]
   const color = colorFor(d.cat)
 

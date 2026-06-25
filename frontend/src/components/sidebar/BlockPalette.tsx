@@ -4,7 +4,11 @@ import { defs } from '../../mockdata/blocks'
 import { colorFor } from '../../utils/blockHelpers'
 import PaletteBlock from './PaletteBlock'
 
-export default function BlockPalette({ startPaletteDrag }) {
+type BlockPaletteProps = {
+  startPaletteDrag: (type: string, e: React.PointerEvent) => void
+}
+
+export default function BlockPalette({ startPaletteDrag }: BlockPaletteProps) {
   const selectedCat = useAppStore(s => s.category)
   const cat = categories.find(c => c.id === selectedCat)
   const types = Object.keys(defs).filter(t => defs[t].cat === selectedCat)

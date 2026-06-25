@@ -1,4 +1,14 @@
-export const defs = {
+type TextSeg = { t: 'text'; v: string }
+type NumSeg  = { t: 'num';  k: string; def: string; w?: number }
+type SelSeg  = { t: 'sel';  k: string; def: string; opts: string[] }
+
+export type Segment = TextSeg | NumSeg | SelSeg
+
+export type BlockDef = { cat: string; segs: Segment[] }
+
+export type BlockDefMap = Record<string, BlockDef>
+
+export const defs: BlockDefMap = {
   load_data:    { cat: 'data',    segs: [{ t: 'text', v: 'Charger les données' }, { t: 'sel', k: 'ds', def: 'Chiffres manuscrits', opts: ['Chiffres manuscrits', 'Photos d’animaux', 'Avis de films', 'Fleurs (Iris)', 'Météo'] }] },
   keep_split:   { cat: 'data',    segs: [{ t: 'text', v: 'Garder' }, { t: 'num', k: 'tr', def: '80', w: 42 }, { t: 'text', v: '% pour l’entraînement' }] },
   shuffle:      { cat: 'data',    segs: [{ t: 'text', v: 'Mélanger les exemples' }] },

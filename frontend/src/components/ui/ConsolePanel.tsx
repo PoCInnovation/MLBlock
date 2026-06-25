@@ -1,13 +1,13 @@
 import { useRef, useEffect } from 'react'
 import useAppStore from '../../store/useAppStore'
 
-const COLORS = { sys: '#f0e9e3', info: '#9aa0c4', ok: '#8fd1a8', epoch: '#E8C77A' }
+const COLORS: Record<string, string> = { sys: '#f0e9e3', info: '#9aa0c4', ok: '#8fd1a8', epoch: '#E8C77A' }
 
 export default function ConsolePanel() {
   const consoleLines = useAppStore(s => s.consoleLines)
   const running      = useAppStore(s => s.running)
   const result       = useAppStore(s => s.result)
-  const scrollRef    = useRef(null)
+  const scrollRef    = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (running && scrollRef.current) {

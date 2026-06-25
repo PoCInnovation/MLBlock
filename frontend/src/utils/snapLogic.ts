@@ -1,9 +1,11 @@
 const BAND_TOL = 30
 const R = 12
 
-export const buildClusters = (widths) => {
+export type Cluster = { min: number; max: number }
+
+export const buildClusters = (widths: number[]): Cluster[] => {
   const uniq = [...new Set(widths)].sort((a, b) => a - b)
-  const clusters = []
+  const clusters: Cluster[] = []
   uniq.forEach(w => {
     const last = clusters[clusters.length - 1]
     if (last && w - last.min <= BAND_TOL) last.max = w
@@ -12,13 +14,13 @@ export const buildClusters = (widths) => {
   return clusters
 }
 
-export const snapW = (w, clusters) => {
+export const snapW = (w: number | null | undefined, clusters: Cluster[]): number | null => {
   if (w == null) return null
   const c = clusters.find(cl => w >= cl.min && w <= cl.max)
   return c ? c.max : w
 }
 
-export const blockBorderRadius = (i, n, bands, hatBand) => {
+export const blockBorderRadius = (i: number, n: number, bands: (number | null)[], hatBand: number | null): string => {
   const bAbove = i === 0 ? hatBand : bands[i - 1]
   const bBelow = i === n - 1 ? null : bands[i + 1]
   const sameAbove = bands[i] != null && bAbove != null && bands[i] === bAbove
@@ -30,7 +32,7 @@ export const blockBorderRadius = (i, n, bands, hatBand) => {
   return `0px ${tr}px ${br}px ${bl}px`
 }
 
-export const hatBorderRadius = (n, hatBand, band0) => {
+export const hatBorderRadius = (n: number, hatBand: number | null, band0: number | null): string => {
   const hatBR = n === 0 ? 0 : (hatBand != null && band0 != null && hatBand === band0 ? 0 : R)
   return `14px 14px ${hatBR}px 0px`
 }

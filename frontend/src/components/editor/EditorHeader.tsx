@@ -2,10 +2,16 @@ import useAppStore from '../../store/useAppStore'
 
 const ACCENT = '#D97757'
 
-const ghostBtn = { background: 'rgba(255,255,255,.06)', color: '#e8e0d8', border: '1px solid rgba(255,255,255,.1)', padding: '8px 14px', borderRadius: 10, fontWeight: 700, fontSize: 13.5, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7 }
-const actionBtn = { ...ghostBtn, color: '#cfc6bd', padding: '9px 14px' }
+const ghostBtn: React.CSSProperties = { background: 'rgba(255,255,255,.06)', color: '#e8e0d8', border: '1px solid rgba(255,255,255,.1)', padding: '8px 14px', borderRadius: 10, fontWeight: 700, fontSize: 13.5, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7 }
+const actionBtn: React.CSSProperties = { ...ghostBtn, color: '#cfc6bd', padding: '9px 14px' }
 
-export default function EditorHeader({ onRun, onStop, onClear }) {
+type EditorHeaderProps = {
+  onRun: () => void
+  onStop: () => void
+  onClear: () => void
+}
+
+export default function EditorHeader({ onRun, onStop, onClear }: EditorHeaderProps) {
   const goHome      = useAppStore(s => s.goHome)
   const projectName = useAppStore(s => 'mon-premier-modèle')
   const running     = useAppStore(s => s.running)

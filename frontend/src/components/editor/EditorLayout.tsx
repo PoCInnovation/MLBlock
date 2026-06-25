@@ -7,10 +7,10 @@ import BlockPalette from '../sidebar/BlockPalette'
 import Canvas from '../canvas/Canvas'
 
 export default function EditorLayout() {
-  const script     = useAppStore(s => s.script)
-  const blockElsRef = useRef({})
-  const canvasRef   = useRef(null)
-  const hatRef      = useRef(null)
+  const script      = useAppStore(s => s.script)
+  const blockElsRef = useRef<Record<string, HTMLElement>>({})
+  const canvasRef   = useRef<HTMLDivElement>(null)
+  const hatRef      = useRef<HTMLDivElement>(null)
 
   const { startPaletteDrag, startBlockDrag } = useDragDrop({ blockElsRef, canvasRef })
   const { bands, hatBand } = useBlockWidths({ script, blockElsRef, hatRef })

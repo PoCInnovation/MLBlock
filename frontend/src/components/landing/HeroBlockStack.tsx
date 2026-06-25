@@ -1,6 +1,15 @@
-import { useLayoutEffect } from 'react'
+import React, { useLayoutEffect } from 'react'
 
-const BLOCKS = [
+type HeroBlock = {
+  key: number
+  bg: string
+  color: string
+  label: React.ReactNode
+  isHat?: boolean
+  isLast?: boolean
+}
+
+const BLOCKS: HeroBlock[] = [
   { key: 0, bg: '#D97757', color: '#fff',     label: <>▶ Démarrer le projet</>, isHat: true },
   { key: 1, bg: '#E59060', color: '#2a211c',  label: <>Charger <span style={{ background: 'rgba(255,255,255,.85)', padding: '2px 7px', borderRadius: 6 }}>Photos</span></> },
   { key: 2, bg: '#66C7B0', color: '#2a211c',  label: <>Mettre à la même échelle</> },
@@ -11,18 +20,18 @@ const BLOCKS = [
 export default function HeroBlockStack() {
   useLayoutEffect(() => {
     const timer = setTimeout(() => {
-      const els = [...document.querySelectorAll('[data-hero-block]')]
+      const els = [...document.querySelectorAll<HTMLElement>('[data-hero-block]')]
       if (!els.length) return
       const TOL = 30, R = 12
       const widths = els.map(el => el.offsetWidth)
       const sorted = [...new Set(widths)].sort((a, b) => a - b)
-      const clusters = []
+      const clusters: { min: number; max: number }[] = []
       sorted.forEach(w => {
         const last = clusters[clusters.length - 1]
         if (last && w - last.min <= TOL) last.max = w
         else clusters.push({ min: w, max: w })
       })
-      const snap = w => { const c = clusters.find(cl => w >= cl.min && w <= cl.max); return c ? c.max : w }
+      const snap = (w: number) => { const c = clusters.find(cl => w >= cl.min && w <= cl.max); return c ? c.max : w }
       const bands = widths.map(snap)
       els.forEach((el, i) => {
         const isHat = i === 0, isLast = i === els.length - 1

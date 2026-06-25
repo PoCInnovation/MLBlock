@@ -1,4 +1,7 @@
-const ICONS = {
+import React from 'react'
+import type { Category } from '../../mockdata/categories'
+
+const ICONS: Record<string, React.ReactNode> = {
   data: (
     <svg width="19" height="19" viewBox="0 0 18 18">
       <rect x="2" y="3"   width="14" height="3" rx="1.5" fill="#fff" />
@@ -45,7 +48,12 @@ const ICONS = {
   ),
 }
 
-export default function CategoryIcon({ cat, selected }) {
+type CategoryIconProps = {
+  cat: Category & { onClick: () => void }
+  selected: boolean
+}
+
+export default function CategoryIcon({ cat, selected }: CategoryIconProps) {
   return (
     <div
       onClick={cat.onClick}

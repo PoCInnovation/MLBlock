@@ -3,16 +3,27 @@ import { defs } from '../../mockdata/blocks'
 import { colorFor } from '../../utils/blockHelpers'
 import { blockBorderRadius } from '../../utils/snapLogic'
 import BlockSegments from './BlockSegments'
+import type { Block } from '../../utils/blockHelpers'
 
-const blockBase = {
+const blockBase: React.CSSProperties = {
   position: 'relative', display: 'flex', alignItems: 'center',
   flexWrap: 'wrap', gap: 6, color: '#2a211c', fontWeight: 800,
   fontSize: 14, boxShadow: '0 2px 0 rgba(0,0,0,.18)', userSelect: 'none',
 }
 
-export default function ScriptBlock({ block, index, n, bands, hatBand, blockElsRef, startBlockDrag }) {
-  const runningId  = useAppStore(s => s.runningId)
-  const drag       = useAppStore(s => s.drag)
+type ScriptBlockProps = {
+  block: Block
+  index: number
+  n: number
+  bands: (number | null)[]
+  hatBand: number | null
+  blockElsRef: React.MutableRefObject<Record<string, HTMLElement>>
+  startBlockDrag: (id: string, e: React.PointerEvent) => void
+}
+
+export default function ScriptBlock({ block, index, n, bands, hatBand, blockElsRef, startBlockDrag }: ScriptBlockProps) {
+  const runningId   = useAppStore(s => s.runningId)
+  const drag        = useAppStore(s => s.drag)
   const updateField = useAppStore(s => s.updateField)
   const deleteBlock = useAppStore(s => s.deleteBlock)
 

@@ -6,12 +6,21 @@ import EmptyCanvas from './EmptyCanvas'
 import ConsolePanel from '../ui/ConsolePanel'
 import DragGhost from '../ui/DragGhost'
 
-const canvasStyle = {
+const canvasStyle: React.CSSProperties = {
   position: 'absolute', inset: 0, overflow: 'auto', padding: 36,
   background: 'radial-gradient(rgba(255,255,255,.05) 1.4px, transparent 1.4px) 0 0 / 22px 22px, #1b1613',
 }
 
-export default function Canvas({ canvasRef, hatRef, blockElsRef, startBlockDrag, bands, hatBand }) {
+type CanvasProps = {
+  canvasRef: React.RefObject<HTMLDivElement | null>
+  hatRef: React.RefObject<HTMLDivElement | null>
+  blockElsRef: React.MutableRefObject<Record<string, HTMLElement>>
+  startBlockDrag: (id: string, e: React.PointerEvent) => void
+  bands: (number | null)[]
+  hatBand: number | null
+}
+
+export default function Canvas({ canvasRef, hatRef, blockElsRef, startBlockDrag, bands, hatBand }: CanvasProps) {
   const script = useAppStore(s => s.script)
   const drag   = useAppStore(s => s.drag)
   const n      = script.length
@@ -21,7 +30,7 @@ export default function Canvas({ canvasRef, hatRef, blockElsRef, startBlockDrag,
     <div style={{ flex: 1, position: 'relative', minWidth: 0 }}>
       <div ref={canvasRef} style={canvasStyle}>
         <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'stretch', minWidth: 280, paddingBottom: 220 }}>
-          <HatBlock hatRef={hatRef} hatBand={hatBand} n={n} band0={bands[0]} />
+          <HatBlock hatRef={hatRef} hatBand={hatBand} n={n} band0={bands[0] ?? null} />
           {script.map((block, i) => (
             <ScriptBlock
               key={block.id}

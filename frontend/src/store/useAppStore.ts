@@ -1,7 +1,51 @@
 import { create } from 'zustand'
 import { instantiate, defaultScript } from '../utils/blockHelpers'
+import type { Block } from '../utils/blockHelpers'
 
-const useAppStore = create((set) => ({
+export type ConsoleLine = { k: string; t: string }
+
+export type DragState = {
+  active: boolean
+  source: 'palette' | 'script'
+  type: string
+  id?: string
+  sx: number; sy: number
+  x: number;  y: number
+  insertIndex: number
+  overCanvas: boolean
+  moved: boolean
+  color: string
+  label: string
+}
+
+type AppState = {
+  screen: 'home' | 'build'
+  category: string
+  script: Block[]
+  running: boolean
+  runningId: string | null
+  consoleLines: ConsoleLine[]
+  result: { acc: string } | null
+  drag: DragState | null
+
+  goBuild: () => void
+  goHome: () => void
+  setCategory: (id: string) => void
+  addBlock: (type: string, index: number | null) => void
+  deleteBlock: (id: string) => void
+  moveBlock: (id: string, index: number) => void
+  updateField: (id: string, k: string, v: string) => void
+  setDrag: (drag: DragState) => void
+  clearDrag: () => void
+  appendConsoleLines: (lines: ConsoleLine[]) => void
+  startRun: () => void
+  setRunningId: (id: string | null) => void
+  finishRun: (acc: string) => void
+  stopRun: () => void
+  clearAll: () => void
+}
+
+const useAppStore = create<AppState>((set) => ({
   screen: 'home',
   category: 'data',
   script: defaultScript(),
@@ -48,7 +92,7 @@ const useAppStore = create((set) => ({
   startRun: () => set({
     running: true,
     runningId: null,
-    consoleLines: [{ k: 'sys', t: '▶ C’est parti !' }],
+    consoleLines: [{ k: 'sys', t: `▶ C'est parti !` }],
     result: null,
   }),
 
