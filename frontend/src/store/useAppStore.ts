@@ -1,14 +1,13 @@
 import { create } from 'zustand'
-import { instantiate, defaultScript } from '../utils/blockHelpers'
+import { instantiate } from '../utils/blockHelpers'
 import type { Block } from '../utils/blockHelpers'
+import type { CatalogManifest } from '../types/catalog'
 
 export type ConsoleLine = { k: string; t: string }
 
-export type DragState = {
+type DragBase = {
   active: boolean
-  source: 'palette' | 'script'
   type: string
-  id?: string
   sx: number; sy: number
   x: number;  y: number
   insertIndex: number
@@ -18,6 +17,10 @@ export type DragState = {
   label: string
 }
 
+export type DragState =
+  | (DragBase & { source: 'palette' })
+  | (DragBase & { source: 'script'; id: string })
+
 type AppState = {
   screen: 'home' | 'build'
   category: string
@@ -25,8 +28,10 @@ type AppState = {
   running: boolean
   runningId: string | null
   consoleLines: ConsoleLine[]
-  result: { acc: string } | null
+  result: unknown
   drag: DragState | null
+  catalog: CatalogManifest | null
+  catalogError: boolean
 
   goBuild: () => void
   goHome: () => void
@@ -40,27 +45,32 @@ type AppState = {
   appendConsoleLines: (lines: ConsoleLine[]) => void
   startRun: () => void
   setRunningId: (id: string | null) => void
-  finishRun: (acc: string) => void
+  finishRun: (result: unknown) => void
   stopRun: () => void
   clearAll: () => void
+  setCatalog: (catalog: CatalogManifest) => void
+  setCatalogError: (error: boolean) => void
 }
 
 const useAppStore = create<AppState>((set) => ({
   screen: 'home',
   category: 'data',
-  script: defaultScript(),
+  script: [],
   running: false,
   runningId: null,
   consoleLines: [],
   result: null,
   drag: null,
+  catalog: null,
+  catalogError: false,
 
   goBuild: () => set({ screen: 'build' }),
-  goHome: () => set({ screen: 'home' }),
+  goHome: () => set({ screen: 'home', catalog: null, catalogError: false }),
   setCategory: (id) => set({ category: id }),
 
   addBlock: (type, index) => set((s) => {
-    const b = instantiate(type)
+    if (!s.catalog) return {}
+    const b = instantiate(type, s.catalog.blocks)
     const sc = s.script.slice()
     if (index == null || index < 0 || index > sc.length) sc.push(b)
     else sc.splice(index, 0, b)
@@ -98,11 +108,11 @@ const useAppStore = create<AppState>((set) => ({
 
   setRunningId: (id) => set({ runningId: id }),
 
-  finishRun: (acc) => set((s) => ({
+  finishRun: (result) => set((s) => ({
     running: false,
     runningId: null,
-    result: { acc },
-    consoleLines: [...s.consoleLines, { k: 'ok', t: `✓ Terminé — ton modèle a une précision de ${acc}%` }],
+    result,
+    consoleLines: [...s.consoleLines, { k: 'ok', t: '✓ Terminé' }],
   })),
 
   stopRun: () => set((s) => ({
@@ -112,6 +122,9 @@ const useAppStore = create<AppState>((set) => ({
   })),
 
   clearAll: () => set({ script: [], consoleLines: [], result: null, running: false, runningId: null }),
+
+  setCatalog: (catalog) => set({ catalog }),
+  setCatalogError: (error) => set({ catalogError: error }),
 }))
 
 export default useAppStore

@@ -1,4 +1,4 @@
-import { defs } from '../../mockdata/blocks'
+import useAppStore from '../../store/useAppStore'
 import { colorFor } from '../../utils/blockHelpers'
 import BlockSegments from '../blocks/BlockSegments'
 
@@ -8,8 +8,13 @@ type PaletteBlockProps = {
 }
 
 export default function PaletteBlock({ type, startPaletteDrag }: PaletteBlockProps) {
-  const d = defs[type]
-  const color = colorFor(d.cat)
+  const catalog = useAppStore(s => s.catalog)
+  if (!catalog) return null
+
+  const d = catalog.blocks[type]
+  if (!d) return null
+
+  const color = colorFor(d.cat, catalog.categories)
 
   return (
     <div

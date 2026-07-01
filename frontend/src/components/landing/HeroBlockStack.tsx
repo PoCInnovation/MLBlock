@@ -1,4 +1,5 @@
 import React, { useLayoutEffect } from 'react'
+import { buildClusters, snapW, blockBorderRadius } from '../../utils/snapLogic'
 
 type HeroBlock = {
   key: number
@@ -22,29 +23,18 @@ export default function HeroBlockStack() {
     const timer = setTimeout(() => {
       const els = [...document.querySelectorAll<HTMLElement>('[data-hero-block]')]
       if (!els.length) return
-      const TOL = 30, R = 12
+      const R = 12
       const widths = els.map(el => el.offsetWidth)
-      const sorted = [...new Set(widths)].sort((a, b) => a - b)
-      const clusters: { min: number; max: number }[] = []
-      sorted.forEach(w => {
-        const last = clusters[clusters.length - 1]
-        if (last && w - last.min <= TOL) last.max = w
-        else clusters.push({ min: w, max: w })
-      })
-      const snap = (w: number) => { const c = clusters.find(cl => w >= cl.min && w <= cl.max); return c ? c.max : w }
-      const bands = widths.map(snap)
+      const clusters = buildClusters(widths)
+      const bands = widths.map(w => snapW(w, clusters) ?? w)
+      const n = els.length
       els.forEach((el, i) => {
-        const isHat = i === 0, isLast = i === els.length - 1
-        const bAbove = i === 0 ? null : bands[i - 1]
-        const bBelow = isLast ? null : bands[i + 1]
-        const sameAbove = bAbove != null && bands[i] === bAbove
-        const sameBelow = bBelow != null && bands[i] === bBelow
         el.style.minWidth = bands[i] + 'px'
-        if (isHat) {
+        if (i === 0) {
           const br = bands[0] === bands[1] ? '0px' : R + 'px'
           el.style.borderRadius = `14px ${br} ${br} 0px`
         } else {
-          el.style.borderRadius = `0px ${sameAbove ? 0 : R}px ${isLast ? R : sameBelow ? 0 : R}px ${isLast ? R : 0}px`
+          el.style.borderRadius = blockBorderRadius(i - 1, n - 1, bands.slice(1), bands[0])
         }
       })
     }, 120)

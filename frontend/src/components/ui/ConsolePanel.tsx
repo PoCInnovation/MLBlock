@@ -29,9 +29,9 @@ export default function ConsolePanel() {
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: running ? '#E8C77A' : '#66C7B0', animation: running ? 'mlbBlink 1s ease-in-out infinite' : 'none', display: 'inline-block' }} />
           <span style={{ fontWeight: 800, fontSize: 13.5, letterSpacing: '.02em' }}>Ce qui se passe</span>
         </div>
-        {result && (
+        {result !== null && (
           <div style={{ background: 'rgba(143,209,168,.16)', border: '1px solid rgba(143,209,168,.4)', color: '#8fd1a8', padding: '5px 12px', borderRadius: 999, fontWeight: 800, fontSize: 13 }}>
-            ✓ précision {result.acc}%
+            ✓ Terminé
           </div>
         )}
       </div>

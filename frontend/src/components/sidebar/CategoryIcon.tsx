@@ -1,5 +1,5 @@
 import React from 'react'
-import type { Category } from '../../mockdata/categories'
+import type { Category } from '../../types/catalog'
 
 const ICONS: Record<string, React.ReactNode> = {
   data: (

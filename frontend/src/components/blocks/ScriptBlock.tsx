@@ -1,5 +1,4 @@
 import useAppStore from '../../store/useAppStore'
-import { defs } from '../../mockdata/blocks'
 import { colorFor } from '../../utils/blockHelpers'
 import { blockBorderRadius } from '../../utils/snapLogic'
 import BlockSegments from './BlockSegments'
@@ -26,12 +25,15 @@ export default function ScriptBlock({ block, index, n, bands, hatBand, blockElsR
   const drag        = useAppStore(s => s.drag)
   const updateField = useAppStore(s => s.updateField)
   const deleteBlock = useAppStore(s => s.deleteBlock)
+  const catalog     = useAppStore(s => s.catalog)
 
-  const d       = defs[block.type]
-  const color   = colorFor(d.cat)
-  const isRunning = runningId === block.id
-  const dragging  = drag?.source === 'script' && drag?.id === block.id
-  const dropHere  = drag?.active && drag?.overCanvas && drag?.moved && drag?.insertIndex === index
+  const d = catalog?.blocks[block.type]
+  if (!d) return null
+
+  const color      = colorFor(d.cat, catalog!.categories)
+  const isRunning  = runningId === block.id
+  const dragging   = drag?.source === 'script' && drag?.id === block.id
+  const dropHere   = drag?.active && drag?.overCanvas && drag?.moved && drag?.insertIndex === index
 
   return (
     <div

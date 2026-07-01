@@ -1,7 +1,6 @@
 import { useEffect, useCallback } from 'react'
 import useAppStore from '../store/useAppStore'
 import { colorFor, titleOf } from '../utils/blockHelpers'
-import { defs } from '../mockdata/blocks'
 
 type Params = {
   blockElsRef: React.MutableRefObject<Record<string, HTMLElement>>
@@ -24,14 +23,16 @@ export function useDragDrop({ blockElsRef, canvasRef }: Params) {
   const startPaletteDrag = useCallback((type: string, e: React.PointerEvent): void => {
     if (e.button != null && e.button !== 0) return
     e.preventDefault()
-    const d = defs[type]
+    const catalog = useAppStore.getState().catalog
+    const d = catalog?.blocks[type]
     useAppStore.getState().setDrag({
       active: true, source: 'palette', type,
       sx: e.clientX, sy: e.clientY,
       x: e.clientX, y: e.clientY,
       insertIndex: useAppStore.getState().script.length,
       overCanvas: false, moved: false,
-      color: colorFor(d.cat), label: titleOf(type),
+      color: d && catalog ? colorFor(d.cat, catalog.categories) : '#888',
+      label: d && catalog ? titleOf(type, catalog.blocks) : type,
     })
   }, [])
 
@@ -42,14 +43,16 @@ export function useDragDrop({ blockElsRef, canvasRef }: Params) {
     const { script } = useAppStore.getState()
     const b = script.find(x => x.id === id)
     if (!b) return
-    const d = defs[b.type]
+    const catalog = useAppStore.getState().catalog
+    const d = catalog?.blocks[b.type]
     useAppStore.getState().setDrag({
       active: true, source: 'script', id, type: b.type,
       sx: e.clientX, sy: e.clientY,
       x: e.clientX, y: e.clientY,
       insertIndex: script.length,
       overCanvas: true, moved: false,
-      color: colorFor(d.cat), label: titleOf(b.type),
+      color: d && catalog ? colorFor(d.cat, catalog.categories) : '#888',
+      label: d && catalog ? titleOf(b.type, catalog.blocks) : b.type,
     })
   }, [])
 
@@ -64,7 +67,11 @@ export function useDragDrop({ blockElsRef, canvasRef }: Params) {
         overCanvas = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom
       }
       const insertIndex = overCanvas ? computeInsertIndex(e.clientY) : useAppStore.getState().script.length
-      useAppStore.getState().setDrag({ ...d, x: e.clientX, y: e.clientY, moved, overCanvas, insertIndex })
+      if (d.source === 'palette') {
+        useAppStore.getState().setDrag({ ...d, x: e.clientX, y: e.clientY, moved, overCanvas, insertIndex })
+      } else {
+        useAppStore.getState().setDrag({ ...d, x: e.clientX, y: e.clientY, moved, overCanvas, insertIndex })
+      }
     }
 
     const onUp = () => {
@@ -75,8 +82,8 @@ export function useDragDrop({ blockElsRef, canvasRef }: Params) {
         if (d.overCanvas) addBlock(d.type, d.insertIndex)
         else if (!d.moved) addBlock(d.type, null)
       } else if (d.source === 'script') {
-        if (d.overCanvas) moveBlock(d.id!, d.insertIndex) // TODO: type this — id is always set when source === 'script'
-        else if (d.moved) deleteBlock(d.id!)              // TODO: type this — id is always set when source === 'script'
+        if (d.overCanvas) moveBlock(d.id, d.insertIndex)
+        else if (d.moved) deleteBlock(d.id)
       }
       useAppStore.getState().clearDrag()
     }

@@ -1,10 +1,12 @@
 import useAppStore from '../../store/useAppStore'
-import { categories } from '../../mockdata/categories'
 import CategoryIcon from './CategoryIcon'
 
 export default function CategoryBar() {
-  const selected = useAppStore(s => s.category)
+  const selected    = useAppStore(s => s.category)
   const setCategory = useAppStore(s => s.setCategory)
+  const catalog     = useAppStore(s => s.catalog)
+
+  if (!catalog) return null
 
   return (
     <div style={{
@@ -13,7 +15,7 @@ export default function CategoryBar() {
       padding: '12px 8px', display: 'flex', flexDirection: 'column',
       gap: 6, overflowY: 'auto',
     }}>
-      {categories.map(cat => (
+      {catalog.categories.map(cat => (
         <CategoryIcon
           key={cat.id}
           cat={{ ...cat, onClick: () => setCategory(cat.id) }}

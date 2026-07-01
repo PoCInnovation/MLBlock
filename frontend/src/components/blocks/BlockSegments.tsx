@@ -1,5 +1,5 @@
 import React from 'react'
-import type { Segment } from '../../mockdata/blocks'
+import type { Segment } from '../../types/catalog'
 
 const inputBase: React.CSSProperties = {
   background: 'rgba(255,255,255,.9)', border: 'none', borderRadius: 7,
