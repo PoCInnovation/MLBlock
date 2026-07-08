@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import torch.nn as nn
+from typing import Any
 
 from mlblock.core.generator import CodeGenerator
 
@@ -13,17 +13,23 @@ class Pipeline:
         generator = CodeGenerator(self.graph)
         return generator.generate()
 
-    def build_model(self) -> nn.Module:
+    def build_model(self):
+        return self.run()
+
+    def run(self):
         order = self.graph.topological_sort()
-        layers: list[nn.Module] = []
+        outputs: dict[str, Any] = {}
         for node_id in order:
             node = self.graph.nodes[node_id]
-            if node.block is None:
-                continue
+            inputs = {}
+            for edge in self.graph.edges:
+                if edge.target == node_id:
+                    inputs[edge.target_port] = outputs.get(edge.source)
+            node.params["_inputs"] = inputs
             try:
-                layer = node.block.build_layer(node.params)
-                if layer is not None:
-                    layers.append(layer)
+                result = node.block.execute(node.params)
+                if result:
+                    outputs[node_id] = result
             except NotImplementedError:
                 pass
-        return nn.Sequential(*layers)
+        return outputs

@@ -1,4 +1,19 @@
-from mlblock.models.block_spec import BlockSpec, ParamSpec, PortSpec
+from sklearn.ensemble import RandomForestClassifier
+
+
+def BUILD(params):
+    data = params["_inputs"].get("train_data")
+    target = params["target_column"]
+    X = data.drop(target, axis=1)
+    y = data[target]
+    max_depth = params.get("max_depth")
+    model = RandomForestClassifier(
+        n_estimators=params.get("n_estimators", 100),
+        max_depth=max_depth,
+    )
+    model.fit(X, y)
+    return {"model": model}
+
 
 _TEMPLATE = (
     "from sklearn.ensemble import RandomForestClassifier\n"
@@ -9,19 +24,15 @@ _TEMPLATE = (
     ".fit(X_train_{node_id}, y_train_{node_id})"
 )
 
-BLOCK = BlockSpec(
-    label="Random Forest",
-    category="models",
-    params={
-        "target_column": ParamSpec(
-            type="str",
-            required=True,
-            description="Nom de la colonne cible",
-        ),
-        "n_estimators": ParamSpec(type="int", default=100),
-        "max_depth": ParamSpec(type="int", default=None),
+BLOCK = {
+    "label": "Random Forest",
+    "category": "models",
+    "params": {
+        "target_column": {"type": "str", "required": True},
+        "n_estimators": {"type": "int", "default": 100},
+        "max_depth": {"type": "int", "default": None},
     },
-    inputs=[PortSpec(name="train_data", dtype="DataFrame")],
-    outputs=[PortSpec(name="model", dtype="Model")],
-    template=_TEMPLATE,
-)
+    "inputs": [{"name": "train_data", "dtype": "DataFrame"}],
+    "outputs": [{"name": "model", "dtype": "Model"}],
+    "template": _TEMPLATE,
+}

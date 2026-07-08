@@ -1,4 +1,19 @@
-from mlblock.models.block_spec import BlockSpec, ParamSpec, PortSpec
+import gymnasium as gym
+
+
+def BUILD(params):
+    model = params["_inputs"]["model"]
+    env = params["_inputs"]["env"]
+    render_env = gym.make(env.spec.id if hasattr(env, 'spec') else "CartPole-v1", render_mode='human')
+    obs, _ = render_env.reset()
+    for _ in range(params.get("max_steps", 500)):
+        action, _ = model.predict(obs)
+        obs, _, terminated, truncated, _ = render_env.step(action)
+        if terminated or truncated:
+            break
+    render_env.close()
+    return {}
+
 
 _TEMPLATE = (
     "import gymnasium as gym\n"
@@ -12,16 +27,16 @@ _TEMPLATE = (
     "render_env_{node_id}.close()"
 )
 
-BLOCK = BlockSpec(
-    label="Jouer un episode",
-    category="visualization",
-    params={
-        "max_steps": ParamSpec(type="int", default=500),
+BLOCK = {
+    "label": "Jouer un episode",
+    "category": "visualization",
+    "params": {
+        "max_steps": {"type": "int", "default": 500},
     },
-    inputs=[
-        PortSpec(name="model", dtype="RLModel"),
-        PortSpec(name="env", dtype="Environment"),
+    "inputs": [
+        {"name": "model", "dtype": "RLModel"},
+        {"name": "env", "dtype": "Environment"},
     ],
-    outputs=[],
-    template=_TEMPLATE,
-)
+    "outputs": [],
+    "template": _TEMPLATE,
+}

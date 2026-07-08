@@ -1,4 +1,22 @@
-from mlblock.models.block_spec import BlockSpec, ParamSpec, PortSpec
+import matplotlib.pyplot as plt
+
+
+def BUILD(params):
+    test_data = params["_inputs"]["test_data"]
+    model = params["_inputs"]["model"]
+    target = params["target_column"]
+    X_test = test_data.drop(target, axis=1)
+    y_test = test_data[target]
+    y_pred = model.predict(X_test)
+    plt.scatter(y_test, y_pred, alpha=0.5)
+    plt.xlabel('Vraies valeurs')
+    plt.ylabel('Prédictions')
+    plt.title('Prédictions vs Réelles')
+    path = params.get("output_path", "predictions.png")
+    plt.savefig(path)
+    plt.close()
+    return {}
+
 
 _TEMPLATE = (
     "import matplotlib.pyplot as plt\n"
@@ -14,25 +32,17 @@ _TEMPLATE = (
     "print('Graphique sauvegardé: ' + str({params.output_path}))"
 )
 
-BLOCK = BlockSpec(
-    label="Graphique prédictions vs réelles",
-    category="visualization",
-    params={
-        "target_column": ParamSpec(
-            type="str",
-            required=True,
-            description="Nom de la colonne cible",
-        ),
-        "output_path": ParamSpec(
-            type="str",
-            default="predictions.png",
-            description="Chemin de sauvegarde du graphique",
-        ),
+BLOCK = {
+    "label": "Graphique prédictions vs réelles",
+    "category": "visualization",
+    "params": {
+        "target_column": {"type": "str", "required": True},
+        "output_path": {"type": "str", "default": "predictions.png"},
     },
-    inputs=[
-        PortSpec(name="model", dtype="Model"),
-        PortSpec(name="test_data", dtype="DataFrame"),
+    "inputs": [
+        {"name": "model", "dtype": "Model"},
+        {"name": "test_data", "dtype": "DataFrame"},
     ],
-    outputs=[],
-    template=_TEMPLATE,
-)
+    "outputs": [],
+    "template": _TEMPLATE,
+}

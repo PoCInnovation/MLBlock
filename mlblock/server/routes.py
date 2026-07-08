@@ -37,7 +37,29 @@ validation_router = APIRouter(prefix="/api/validate")
 
 
 def _build_registry() -> SpecRegistry:
-    return SpecRegistry(BLOCK_REGISTRY)
+    from mlblock.models.block_spec import BlockSpec, ParamSpec, PortSpec
+    spec_registry = SpecRegistry()
+    for name, block_dict in BLOCK_REGISTRY.items():
+        if isinstance(block_dict, dict):
+            params = {}
+            for k, v in block_dict.get("params", {}).items():
+                if isinstance(v, dict):
+                    params[k] = ParamSpec(**v)
+                else:
+                    params[k] = v
+            inputs = [PortSpec(**p) if isinstance(p, dict) else p for p in block_dict.get("inputs", [])]
+            outputs = [PortSpec(**p) if isinstance(p, dict) else p for p in block_dict.get("outputs", [])]
+            spec_registry[name] = BlockSpec(
+                label=block_dict.get("label", name),
+                category=block_dict.get("category", "unknown"),
+                params=params,
+                inputs=inputs,
+                outputs=outputs,
+                template=block_dict.get("template", ""),
+            )
+        else:
+            spec_registry[name] = block_dict
+    return spec_registry
 
 
 # ── Blocks ──────────────────────────────────────────────────────────
@@ -64,7 +86,7 @@ def list_blocks(
     items = list(CoreBlockRegistry._blocks.items())
 
     if category:
-        items = [(n, m) for n, m in items if m.spec.category == category]
+        items = [(n, m) for n, m in items if m.category == category]
 
     if search:
         lower = search.lower()
@@ -81,7 +103,7 @@ def list_blocks(
 @blocks_router.get("/categories")
 def list_categories() -> dict[str, list[str]]:
     categories = sorted(
-        {m.spec.category for m in CoreBlockRegistry._blocks.values()}
+        {m.category for m in CoreBlockRegistry._blocks.values()}
     )
     return {"categories": categories}
 
@@ -96,14 +118,14 @@ def get_block(type_name: str) -> BlockDetail:
         type=type_name,
         label=meta.label,
         category=meta.category,
-        params=s.params,
-        inputs=[p.model_dump() for p in s.inputs],
-        outputs=[p.model_dump() for p in s.outputs],
-        template=s.template,
-        children_allowed=s.children_allowed,
+        params=s["params"],
+        inputs=s.get("inputs", []),
+        outputs=s.get("outputs", []),
+        template=s.get("template", ""),
+        children_allowed=s.get("children_allowed", False),
         can_build=meta.can_build(),
-        generates_class=getattr(s, "generates_class", None),
-        class_base=getattr(s, "class_base", None),
+        generates_class=s.get("generates_class"),
+        class_base=s.get("class_base"),
     )
 
 
@@ -272,7 +294,22 @@ def build_pipeline_model(
     try:
         graph = Graph(graph_data)
         pipeline = Pipeline(graph)
-        model = pipeline.build_model()
+        outputs = pipeline.build_model()
+
+        # Extract nn.Module layers from nested output dicts
+        layers: list[nn.Module] = []
+        for result in outputs.values():
+            if isinstance(result, dict):
+                for v in result.values():
+                    if isinstance(v, nn.Module):
+                        layers.append(v)
+            elif isinstance(result, nn.Module):
+                layers.append(result)
+
+        if not layers:
+            return BuildResponse(success=False, error="No nn.Module layers found in pipeline")
+
+        model = nn.Sequential(*layers) if len(layers) > 1 else layers[0]
 
         input_node = graph.get_input_nodes()
         shape: list[int] = [1, 28, 28]
@@ -286,7 +323,7 @@ def build_pipeline_model(
             success=True,
             output_shape=list(output.shape),
             output_values=output[:1].tolist(),
-            layer_count=len(model),
+            layer_count=len(layers),
         )
     except Exception as e:
         return BuildResponse(success=False, error=str(e))

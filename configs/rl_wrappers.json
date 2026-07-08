@@ -1,0 +1,38 @@
+{
+  "graph": {
+    "nodes": [
+      {
+        "id": "env",
+        "type": "single_env",
+        "params": { "env_id": "CartPole-v1", "seed": 42 }
+      },
+      {
+        "id": "frame_stack",
+        "type": "frame_stack",
+        "params": { "n_stack": 4 }
+      },
+      {
+        "id": "normalize",
+        "type": "normalize_obs",
+        "params": { "norm_obs": true, "norm_reward": false }
+      },
+      {
+        "id": "train",
+        "type": "train_rl",
+        "params": { "algorithm": "DQN", "total_timesteps": 30000, "learning_rate": 0.001, "policy": "MlpPolicy", "seed": 42 }
+      },
+      {
+        "id": "eval",
+        "type": "evaluate_rl",
+        "params": { "n_episodes": 5, "plot_rewards": false }
+      }
+    ],
+    "edges": [
+      { "source": "env",         "source_port": "env",   "target": "frame_stack", "target_port": "env" },
+      { "source": "frame_stack", "source_port": "env",   "target": "normalize",   "target_port": "env" },
+      { "source": "normalize",   "source_port": "env",   "target": "train",       "target_port": "env" },
+      { "source": "normalize",   "source_port": "env",   "target": "eval",        "target_port": "env" },
+      { "source": "train",       "source_port": "model", "target": "eval",        "target_port": "model" }
+    ]
+  }
+}

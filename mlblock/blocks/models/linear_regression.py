@@ -1,4 +1,15 @@
-from mlblock.models.block_spec import BlockSpec, ParamSpec, PortSpec
+from sklearn.linear_model import LinearRegression
+
+
+def BUILD(params):
+    data = params["_inputs"].get("train_data")
+    target = params["target_column"]
+    X = data.drop(target, axis=1)
+    y = data[target]
+    model = LinearRegression(fit_intercept=params.get("fit_intercept", True))
+    model.fit(X, y)
+    return {"model": model}
+
 
 _TEMPLATE = (
     "from sklearn.linear_model import LinearRegression\n"
@@ -8,18 +19,14 @@ _TEMPLATE = (
     ".fit(X_train_{node_id}, y_train_{node_id})"
 )
 
-BLOCK = BlockSpec(
-    label="Régression linéaire",
-    category="models",
-    params={
-        "target_column": ParamSpec(
-            type="str",
-            required=True,
-            description="Nom de la colonne cible",
-        ),
-        "fit_intercept": ParamSpec(type="bool", default=True),
+BLOCK = {
+    "label": "Régression linéaire",
+    "category": "models",
+    "params": {
+        "target_column": {"type": "str", "required": True},
+        "fit_intercept": {"type": "bool", "default": True},
     },
-    inputs=[PortSpec(name="train_data", dtype="DataFrame")],
-    outputs=[PortSpec(name="model", dtype="Model")],
-    template=_TEMPLATE,
-)
+    "inputs": [{"name": "train_data", "dtype": "DataFrame"}],
+    "outputs": [{"name": "model", "dtype": "Model"}],
+    "template": _TEMPLATE,
+}

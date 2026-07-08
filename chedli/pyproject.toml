@@ -1,9 +1,0 @@
-[project]
-name = "mlblock"
-version = "0.1.0"
-description = "MLBlock - Scratch-like visual block environment for AI/ML pipelines"
-readme = "README.md"
-requires-python = ">=3.13"
-dependencies = [
-    "pydantic>=2.0",
-]

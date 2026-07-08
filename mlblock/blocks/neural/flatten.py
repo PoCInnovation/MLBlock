@@ -1,22 +1,18 @@
-from typing import Any
-
 from torch import nn
 
-from mlblock.models.block_spec import BlockSpec, PortSpec
 
-
-def BUILD(params: dict[str, Any]) -> nn.Module:
+def BUILD(params):
     return nn.Flatten()
 
 
-BLOCK = BlockSpec(
-    label="Flatten",
-    category="neural",
-    params={},
-    inputs=[PortSpec(name="in", dtype="Tensor")],
-    outputs=[PortSpec(name="out", dtype="Tensor")],
-    template=(
+BLOCK = {
+    "label": "Flatten",
+    "category": "neural",
+    "params": {},
+    "inputs": [{"name": "in", "dtype": "Tensor"}],
+    "outputs": [{"name": "out", "dtype": "Tensor"}],
+    "template": (
         "import torch.nn as nn\n"
         "{output.out} = nn.Flatten()"
     ),
-)
+}

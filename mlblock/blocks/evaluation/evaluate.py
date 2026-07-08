@@ -1,7 +1,32 @@
-from mlblock.models.block_spec import BlockSpec, ParamSpec, PortSpec
+from sklearn.metrics import (
+    mean_squared_error, r2_score, mean_absolute_error,
+    accuracy_score, f1_score,
+)
+import numpy as np
+import math
+
+
+def BUILD(params):
+    test_data = params["_inputs"].get("test_data")
+    model = params["_inputs"].get("model")
+    target = params["target_column"]
+    method = params.get("method", "mse")
+    X_test = test_data.drop(target, axis=1)
+    y_test = test_data[target]
+    y_pred = model.predict(X_test)
+    metrics = {
+        "mse": mean_squared_error(y_test, y_pred),
+        "rmse": math.sqrt(mean_squared_error(y_test, y_pred)),
+        "r2": r2_score(y_test, y_pred),
+        "mae": mean_absolute_error(y_test, y_pred),
+        "accuracy": accuracy_score(y_test, y_pred.round() if y_pred.dtype.kind == 'f' else y_pred),
+        "f1": f1_score(y_test, y_pred.round() if y_pred.dtype.kind == 'f' else y_pred, average='weighted'),
+    }
+    return {"score": metrics.get(method, metrics["mse"])}
+
 
 _TEMPLATE = (
-    "from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error\n"
+    "from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error, accuracy_score, f1_score\n"
     "import numpy as np\n"
     "import math\n"
     "X_test_{node_id} = {input.test_data}.drop({params.target_column}, axis=1)\n"
@@ -12,30 +37,18 @@ _TEMPLATE = (
     "{plot_code}"
 )
 
-BLOCK = BlockSpec(
-    label="Évaluer le modèle",
-    category="evaluation",
-    params={
-        "target_column": ParamSpec(
-            type="str",
-            required=True,
-            description="Nom de la colonne cible",
-        ),
-        "method": ParamSpec(
-            type="str",
-            default="mse",
-            description="Metrique: mse, rmse, r2, mae",
-        ),
-        "plot": ParamSpec(
-            type="bool",
-            default=False,
-            description="Generer un graphique predictions vs reelles",
-        ),
+BLOCK = {
+    "label": "Évaluer le modèle",
+    "category": "evaluation",
+    "params": {
+        "target_column": {"type": "str", "required": True},
+        "method": {"type": "str", "default": "mse"},
+        "plot": {"type": "bool", "default": False},
     },
-    inputs=[
-        PortSpec(name="model", dtype="Model"),
-        PortSpec(name="test_data", dtype="DataFrame"),
+    "inputs": [
+        {"name": "model", "dtype": "Model"},
+        {"name": "test_data", "dtype": "DataFrame"},
     ],
-    outputs=[PortSpec(name="score", dtype="float")],
-    template=_TEMPLATE,
-)
+    "outputs": [{"name": "score", "dtype": "float"}],
+    "template": _TEMPLATE,
+}

@@ -1,18 +1,15 @@
 from __future__ import annotations
 
-from typing import Any, Callable
-
-import torch.nn as nn
-
-from mlblock.models.block_spec import BlockSpec, ParamSpec, PortSpec
+from collections.abc import Callable
+from typing import Any
 
 
 class BlockMeta:
     def __init__(
         self,
         name: str,
-        spec: BlockSpec,
-        build_fn: Callable[[dict[str, Any]], nn.Module] | None = None,
+        spec: dict[str, Any],
+        build_fn: Callable[[dict[str, Any]], Any] | None = None,
     ) -> None:
         self.name = name
         self.spec = spec
@@ -20,37 +17,46 @@ class BlockMeta:
 
     @property
     def label(self) -> str:
-        return self.spec.label
+        return self.spec["label"]
 
     @property
     def category(self) -> str:
-        return self.spec.category
+        return self.spec["category"]
 
     @property
-    def params(self) -> dict[str, ParamSpec]:
-        return self.spec.params
+    def params(self) -> dict[str, dict[str, Any]]:
+        return self.spec["params"]
 
     @property
-    def inputs(self) -> list[PortSpec]:
-        return self.spec.inputs
+    def inputs(self) -> list[dict[str, str]]:
+        return self.spec.get("inputs", [])
 
     @property
-    def outputs(self) -> list[PortSpec]:
-        return self.spec.outputs
+    def outputs(self) -> list[dict[str, str]]:
+        return self.spec.get("outputs", [])
 
     @property
     def template(self) -> str:
-        return self.spec.template
+        return self.spec.get("template", "")
 
-    def build_layer(self, params: dict[str, Any]) -> nn.Module:
-        if self._build_fn is not None:
-            return self._build_fn(params)
-        raise NotImplementedError(
-            f"Block '{self.name}' n'a pas de builder enregistré"
-        )
+    def build_layer(self, params: dict[str, Any]) -> Any:
+        return self.execute(params)
 
     def can_build(self) -> bool:
         return self._build_fn is not None
+
+    def execute(self, params: dict[str, Any]) -> Any:
+        if self._build_fn is not None:
+            params.pop("_inputs", None)
+            result = self._build_fn(params)
+            if isinstance(result, dict):
+                return result
+            if self.outputs:
+                return {self.outputs[0]["name"]: result}
+            return {}
+        raise NotImplementedError(
+            f"Block '{self.name}' n'a pas de builder enregistré"
+        )
 
 
 class BlockRegistry:
@@ -60,8 +66,8 @@ class BlockRegistry:
     def register(
         cls,
         name: str,
-        spec: BlockSpec,
-        build_fn: Callable[[dict[str, Any]], nn.Module] | None = None,
+        spec: dict[str, Any],
+        build_fn: Callable[[dict[str, Any]], Any] | None = None,
     ) -> None:
         cls._blocks[name] = BlockMeta(name, spec, build_fn)
 
@@ -69,7 +75,7 @@ class BlockRegistry:
     def register_builder(
         cls,
         name: str,
-        build_fn: Callable[[dict[str, Any]], nn.Module],
+        build_fn: Callable[[dict[str, Any]], Any],
     ) -> None:
         if name in cls._blocks:
             cls._blocks[name]._build_fn = build_fn
@@ -84,4 +90,4 @@ class BlockRegistry:
 
     @classmethod
     def by_category(cls, category: str) -> list[BlockMeta]:
-        return [b for b in cls._blocks.values() if b.spec.category == category]
+        return [b for b in cls._blocks.values() if b.spec["category"] == category]

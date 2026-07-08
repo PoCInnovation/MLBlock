@@ -1,12 +1,10 @@
-from mlblock.models.block_spec import BlockSpec, ParamSpec, PortSpec
-
-BLOCK = BlockSpec(
-    label="Input",
-    category="neural",
-    params={
-        "shape": ParamSpec(type="list[int]", required=True),
+BLOCK = {
+    "label": "Input",
+    "category": "neural",
+    "params": {
+        "shape": {"type": "list[int]", "required": True},
     },
-    inputs=[],
-    outputs=[PortSpec(name="out", dtype="Tensor")],
-    template="",
-)
+    "inputs": [],
+    "outputs": [{"name": "out", "dtype": "Tensor"}],
+    "template": "",
+}

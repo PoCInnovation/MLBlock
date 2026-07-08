@@ -337,7 +337,7 @@ def test_build_model(client: TestClient):
 def test_build_pipeline_with_unbuildable_block(client: TestClient):
     """Graph containing a block without BUILD function should 400."""
     nodes = [
-        {"id": "csv1", "type": "load_csv", "params": {}},
+        {"id": "inp1", "type": "input", "params": {"shape": [1, 28, 28]}},
     ]
     create = client.post(
         "/api/pipelines",
