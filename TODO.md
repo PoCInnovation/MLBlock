@@ -1,42 +1,42 @@
-# Backend Integration TODO
+# TODO
 
-## Placeholder API Routes
+## Prochaines tâches frontend
 
-### GET /api/blocks/TODO (block catalog)
+### Édition des nœuds Contrôle (nesting)
 
-Fetches the full catalog manifest when the editor opens.
+Le modèle de graphe actuel est plat (`script: Block[]`, aucun champ `children`).
+L'API accepte déjà `children: PipelineNode[]` sur chaque nœud — on envoie `[]` partout pour l'instant.
 
-Response shape: `{ version: string, categories: Category[], dtypes: unknown, blocks: BlockDefMap }`
+Ce qu'il faut faire :
+- Ajouter `children: Block[]` sur le type `Block` dans `blockHelpers.ts`
+- Gérer l'imbrication dans le store (`addBlock` dans un parent, `deleteBlock` récursif, etc.)
+- Rendre les blocs Contrôle avec une zone enfant dans le canvas
+- Envoyer les vrais enfants dans le payload API
+- Vérifier `BlockDetail.children_allowed` pour conditionner l'UI
 
-- `categories`: list of `{ id, name, color }`
-- `dtypes`: shape TBD with backend
-- `blocks`: map of block type to `{ cat: string, segs: Segment[] }`, each segment being `{ t: 'text', v }`, `{ t: 'num', k, def, w? }`, or `{ t: 'sel', k, def, opts[] }`
+### Adapter params → segments
 
-When the backend is ready: swap the path in `src/api/client.ts`, check the response against `CatalogManifest` in `src/types/catalog.ts`, and fix the `dtypes` typing.
+`BlockDetail.params` est un objet libre (`additionalProperties: true` dans le spec).
+L'adaptateur dans `src/api/client.ts` (`adaptParam`) fait des hypothèses sur la forme de chaque valeur (`{ default, options? }`).
 
-### POST /api/pipeline/TODO (run pipeline)
+À valider dès qu'un vrai catalogue backend est disponible — ajuster si la structure diffère.
 
-Sends the current graph when the user hits "Lancer".
+### Bouton "Générer le code"
 
-Request body: `{ nodes: GraphNode[], edges: GraphEdge[] }`
+`generatePipelineCode(id)` est câblé dans `src/api/client.ts` (`POST /api/pipelines/{id}/generate`).
+Pas encore exposé dans l'UI. Ajouter un bouton dans `EditorHeader` qui affiche le code généré.
 
-- `nodes`: `{ id, type, fields }`, mapped from the current `Block[]` model
-- `edges`: empty for now, no real graph model yet
+### Retry dans la modal "Éditeur non disponible"
 
-Response is untyped (`unknown`) since we don't know its shape. Result gets stored and logged as-is.
+La modal affiche un message d'erreur précis (réseau vs. réponse inattendue) mais propose seulement "Retour".
+Ajouter un bouton "Réessayer" qui relance `fetchCatalog()` sans repasser par la home.
 
-When the backend is ready: swap the path, type the return properly in `src/api/client.ts` and `src/store/useAppStore.ts` (`result` field), and build real result display in `ConsolePanel.tsx`.
+### Nom du pipeline
 
----
+Le nom est fixé à `'mon-premier-modèle'` dans `useBlockRunner.ts`.
+À terme : champ éditable dans `EditorHeader` (lié à `useAppStore`), envoyé dans `PipelineCreate.name`.
 
-## Out of scope for now
+### Auth
 
-Auth and login routes are coming later. `src/api/client.ts` stays a thin module for now, no token handling, no headers, nothing auth-related added yet.
-
----
-
-## Other notes
-
-- No retry on catalog load failure yet. The "Éditeur non disponible" modal only has a back button, add retry once we know what the UX should be.
-- Pipeline failures just log to console and drop a generic message in the console panel, fine until we see the real error shape.
-- Graph model is a flat node list, no edges. Update `GraphPayload` in `src/types/catalog.ts` once the real structure exists.
+Aucune gestion de token pour l'instant. `src/api/client.ts` reste sans headers d'auth.
+À ajouter quand le backend expose des routes protégées.

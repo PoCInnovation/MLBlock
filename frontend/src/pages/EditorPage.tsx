@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useBlockRunner } from '../hooks/useBlockRunner'
 import useAppStore from '../store/useAppStore'
-import { getCatalog } from '../api/client'
+import { fetchCatalog } from '../api/client'
 import EditorHeader from '../components/editor/EditorHeader'
 import EditorLayout from '../components/editor/EditorLayout'
 import EditorUnavailableModal from '../components/ui/EditorUnavailableModal'
@@ -12,9 +12,17 @@ export default function EditorPage() {
   const catalogError = useAppStore(s => s.catalogError)
 
   useEffect(() => {
-    getCatalog()
+    fetchCatalog()
       .then(data => useAppStore.getState().setCatalog(data))
-      .catch(() => useAppStore.getState().setCatalogError(true))
+      .catch((err) => {
+        const isNetworkError = !err?.response
+        useAppStore.getState().setCatalogError(
+          true,
+          isNetworkError
+            ? 'Impossible de joindre le serveur. Vérifie que le backend est lancé et réessaie.'
+            : `Réponse inattendue du serveur (${String(err?.response?.status ?? '?')}). Vérifie la version du backend.`
+        )
+      })
   }, [])
 
   if (catalogError) return <EditorUnavailableModal />

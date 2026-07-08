@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { instantiate } from '../utils/blockHelpers'
 import type { Block } from '../utils/blockHelpers'
-import type { CatalogManifest } from '../types/catalog'
+import type { InternalCatalog } from '../types/catalog'
 
 export type ConsoleLine = { k: string; t: string }
 
@@ -30,8 +30,10 @@ type AppState = {
   consoleLines: ConsoleLine[]
   result: unknown
   drag: DragState | null
-  catalog: CatalogManifest | null
+  catalog: InternalCatalog | null
   catalogError: boolean
+  catalogErrorMessage: string | null
+  pipelineId: number | null
 
   goBuild: () => void
   goHome: () => void
@@ -48,8 +50,9 @@ type AppState = {
   finishRun: (result: unknown) => void
   stopRun: () => void
   clearAll: () => void
-  setCatalog: (catalog: CatalogManifest) => void
-  setCatalogError: (error: boolean) => void
+  setCatalog: (catalog: InternalCatalog) => void
+  setCatalogError: (error: boolean, message?: string) => void
+  setPipelineId: (id: number | null) => void
 }
 
 const useAppStore = create<AppState>((set) => ({
@@ -63,9 +66,11 @@ const useAppStore = create<AppState>((set) => ({
   drag: null,
   catalog: null,
   catalogError: false,
+  catalogErrorMessage: null,
+  pipelineId: null,
 
   goBuild: () => set({ screen: 'build' }),
-  goHome: () => set({ screen: 'home', catalog: null, catalogError: false }),
+  goHome: () => set({ screen: 'home', catalog: null, catalogError: false, catalogErrorMessage: null, pipelineId: null }),
   setCategory: (id) => set({ category: id }),
 
   addBlock: (type, index) => set((s) => {
@@ -123,8 +128,18 @@ const useAppStore = create<AppState>((set) => ({
 
   clearAll: () => set({ script: [], consoleLines: [], result: null, running: false, runningId: null }),
 
-  setCatalog: (catalog) => set({ catalog }),
-  setCatalogError: (error) => set({ catalogError: error }),
+  setCatalog: (catalog) => set((s) => {
+    const firstCat = catalog.categories[0]?.id ?? 'data'
+    const catExists = catalog.categories.some(c => c.id === s.category)
+    return { catalog, category: catExists ? s.category : firstCat }
+  }),
+
+  setCatalogError: (error, message) => set({
+    catalogError: error,
+    catalogErrorMessage: message ?? null,
+  }),
+
+  setPipelineId: (id) => set({ pipelineId: id }),
 }))
 
 export default useAppStore
