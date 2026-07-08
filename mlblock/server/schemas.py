@@ -8,6 +8,12 @@ from pydantic import BaseModel
 
 from mlblock.models.pipeline import PipelineEdge, PipelineNode
 
+
+class CategoryInfo(BaseModel):
+    name: str
+    color: str
+    block_count: int
+
 T = TypeVar("T")
 
 

@@ -9,7 +9,7 @@ from pydantic import ValidationError
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Session, select
 
-from mlblock.blocks.registry import BLOCK_REGISTRY
+from mlblock.blocks.registry import BLOCK_REGISTRY, CATEGORY_COLORS
 from mlblock.core.block import BlockMeta, BlockRegistry as CoreBlockRegistry
 from mlblock.core.graph import Graph
 from mlblock.core.pipeline import Pipeline
@@ -21,6 +21,7 @@ from mlblock.server.schemas import (
     BlockDetail,
     BlockSummary,
     BuildResponse,
+    CategoryInfo,
     GenerateResponse,
     Page,
     PipelineCreate,
@@ -30,6 +31,7 @@ from mlblock.server.schemas import (
     ValidationRequest,
     ValidationResponse,
 )
+
 
 blocks_router = APIRouter(prefix="/api/blocks")
 pipelines_router = APIRouter(prefix="/api/pipelines")
@@ -101,11 +103,15 @@ def list_blocks(
 
 
 @blocks_router.get("/categories")
-def list_categories() -> dict[str, list[str]]:
-    categories = sorted(
-        {m.category for m in CoreBlockRegistry._blocks.values()}
+def list_categories() -> list[CategoryInfo]:
+    counts: dict[str, int] = {}
+    for meta in CoreBlockRegistry._blocks.values():
+        counts[meta.category] = counts.get(meta.category, 0) + 1
+    return sorted(
+        (CategoryInfo(name=c, color=CATEGORY_COLORS.get(c, "#6B7280"), block_count=n)
+         for c, n in counts.items()),
+        key=lambda ci: ci.name,
     )
-    return {"categories": categories}
 
 
 @blocks_router.get("/{type_name}")

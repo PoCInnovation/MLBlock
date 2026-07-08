@@ -87,10 +87,14 @@ def test_get_block_unknown_returns_404(client: TestClient):
 def test_list_categories(client: TestClient):
     resp = client.get("/api/blocks/categories")
     assert resp.status_code == 200
-    data = resp.json()
-    assert "categories" in data
-    assert len(data["categories"]) > 0
-    assert "neural" in data["categories"]
+    assert isinstance(data, list)
+    assert len(data) > 0
+    names = [c["name"] for c in data]
+    assert "neural" in names
+    for cat in data:
+        assert "color" in cat
+        assert "block_count" in cat
+        assert cat["color"].startswith("#")
 
 
 # ── Pipelines CRUD ──────────────────────────────────────────────────

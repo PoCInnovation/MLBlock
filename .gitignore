@@ -11,3 +11,7 @@ merged_minds/
 *.pyo
 .env
 mlblock.db
+/.agents
+/.opencode
+/.claude
+tmp.py
