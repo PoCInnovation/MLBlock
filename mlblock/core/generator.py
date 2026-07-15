@@ -94,7 +94,9 @@ def generate_code(nodes: list[PipelineNode], edges: list[PipelineEdge]) -> str:
                     var_name = f"out_{edge.source}_{edge.source_port}"
                 else:
                     var_name = f"out_{edge.source}"
-                resolved_inputs.append(f"{edge.target_port}={var_name}")
+                PORT_TO_PARAM = {"in": "x", "input": "x", "x": "x"}
+                target_param = PORT_TO_PARAM.get(edge.target_port, edge.target_port)
+                resolved_inputs.append(f"{target_param}={var_name}")
         inputs = ", ".join(resolved_inputs)
 
         args = ", ".join(filter(None, [inputs, params]))
