@@ -2,10 +2,10 @@ import torch
 from torch import nn
 
 
-def silu(x: "torch.Tensor") -> "torch.Tensor":
+def silu(in_1: "torch.Tensor") -> "torch.Tensor":
     """SiLU.
     
     Args:
-        x: Input tensor.
+        in_1: Input tensor.
     """
-    return nn.Silu()(x)
+    return nn.Silu()(in_1)

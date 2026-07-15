@@ -2,10 +2,10 @@ import torch
 from torch import nn
 
 
-def gelu(x: "torch.Tensor") -> "torch.Tensor":
+def gelu(in_1: "torch.Tensor") -> "torch.Tensor":
     """GELU.
     
     Args:
-        x: Input tensor.
+        in_1: Input tensor.
     """
-    return nn.Gelu()(x)
+    return nn.Gelu()(in_1)

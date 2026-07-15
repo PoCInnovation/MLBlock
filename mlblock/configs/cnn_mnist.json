@@ -110,17 +110,17 @@
       }
     ],
     "edges": [
-      { "source": "input_1", "source_port": "out", "target": "conv1", "target_port": "in" },
-      { "source": "conv1",   "source_port": "out", "target": "relu1",  "target_port": "in" },
-      { "source": "relu1",   "source_port": "out", "target": "pool1",  "target_port": "in" },
-      { "source": "pool1",   "source_port": "out", "target": "conv2",  "target_port": "in" },
-      { "source": "conv2",   "source_port": "out", "target": "relu2",  "target_port": "in" },
-      { "source": "relu2",   "source_port": "out", "target": "pool2",  "target_port": "in" },
-      { "source": "pool2",   "source_port": "out", "target": "flat",   "target_port": "in" },
-      { "source": "flat",    "source_port": "out", "target": "fc1",    "target_port": "in" },
-      { "source": "fc1",     "source_port": "out", "target": "relu3",  "target_port": "in" },
-      { "source": "relu3",   "source_port": "out", "target": "fc2",    "target_port": "in" },
-      { "source": "fc2",     "source_port": "out", "target": "output", "target_port": "in" }
+      { "source": "input_1", "source_port": "out_1", "target": "conv1", "target_port": "in_1" },
+      { "source": "conv1",   "source_port": "out_1", "target": "relu1",  "target_port": "in_1" },
+      { "source": "relu1",   "source_port": "out_1", "target": "pool1",  "target_port": "in_1" },
+      { "source": "pool1",   "source_port": "out_1", "target": "conv2",  "target_port": "in_1" },
+      { "source": "conv2",   "source_port": "out_1", "target": "relu2",  "target_port": "in_1" },
+      { "source": "relu2",   "source_port": "out_1", "target": "pool2",  "target_port": "in_1" },
+      { "source": "pool2",   "source_port": "out_1", "target": "flat",   "target_port": "in_1" },
+      { "source": "flat",    "source_port": "out_1", "target": "fc1",    "target_port": "in_1" },
+      { "source": "fc1",     "source_port": "out_1", "target": "relu3",  "target_port": "in_1" },
+      { "source": "relu3",   "source_port": "out_1", "target": "fc2",    "target_port": "in_1" },
+      { "source": "fc2",     "source_port": "out_1", "target": "output", "target_port": "in_1" }
     ]
   }
 }

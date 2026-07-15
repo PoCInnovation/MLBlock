@@ -2,10 +2,10 @@ import torch
 from torch import nn
 
 
-def relu(x: "torch.Tensor") -> "torch.Tensor":
+def relu(in_1: "torch.Tensor") -> "torch.Tensor":
     """ReLU.
     
     Args:
-        x: Input tensor.
+        in_1: Input tensor.
     """
-    return nn.ReLU()(x)
+    return nn.ReLU()(in_1)

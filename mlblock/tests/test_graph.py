@@ -22,8 +22,8 @@ SIMPLE_GRAPH = {
         },
     ],
     "edges": [
-        {"source": "input_1", "source_port": "out", "target": "conv1", "target_port": "in"},
-        {"source": "conv1", "source_port": "out", "target": "relu1", "target_port": "in"},
+        {"source": "input_1", "source_port": "out_1", "target": "conv1", "target_port": "in_1"},
+        {"source": "conv1", "source_port": "out_1", "target": "relu1", "target_port": "in_1"},
     ],
 }
 
@@ -49,14 +49,14 @@ def test_graph_edge_creation():
     edge = graph.edges[0]
     assert edge.source == "input_1"
     assert edge.target == "conv1"
-    assert edge.source_port == "out"
-    assert edge.target_port == "in"
+    assert edge.source_port == "out_1"
+    assert edge.target_port == "in_1"
 
 
 def test_edge_repr():
     graph = Graph(SIMPLE_GRAPH)
     edge = graph.edges[0]
-    assert str(edge) == "Edge(input_1.out -> conv1.in)"
+    assert str(edge) == "Edge(input_1.out_1 -> conv1.in_1)"
 
 
 def test_graph_node_repr():
@@ -89,8 +89,8 @@ def test_validate_unknown_source():
             {"id": "a", "type": "relu", "params": {}},
         ],
         "edges": [
-            {"source": "nonexistent", "source_port": "out",
-             "target": "a", "target_port": "in"},
+            {"source": "nonexistent", "source_port": "out_1",
+             "target": "a", "target_port": "in_1"},
         ],
     }
     graph = Graph(bad_graph)
@@ -104,8 +104,8 @@ def test_validate_unknown_target():
             {"id": "a", "type": "relu", "params": {}},
         ],
         "edges": [
-            {"source": "a", "source_port": "out",
-             "target": "nonexistent", "target_port": "in"},
+            {"source": "a", "source_port": "out_1",
+             "target": "nonexistent", "target_port": "in_1"},
         ],
     }
     graph = Graph(bad_graph)
@@ -120,8 +120,8 @@ def test_cyclic_graph():
             {"id": "b", "type": "relu", "params": {}},
         ],
         "edges": [
-            {"source": "a", "source_port": "out", "target": "b", "target_port": "in"},
-            {"source": "b", "source_port": "out", "target": "a", "target_port": "in"},
+            {"source": "a", "source_port": "out_1", "target": "b", "target_port": "in_1"},
+            {"source": "b", "source_port": "out_1", "target": "a", "target_port": "in_1"},
         ],
     }
     graph = Graph(cyclic)

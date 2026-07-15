@@ -33,7 +33,7 @@ def _extract_param_desc(doc: str | None, pname: str) -> str | None:
 
 def _parse_return_annotation(ret: Any) -> list[dict[str, str]]:
     if ret == inspect.Parameter.empty or ret is None:
-        return [{"name": "out", "dtype": "Any"}]
+        return [{"name": "out_1", "dtype": "Any"}]
 
     ret_str = str(ret)
     if "Tuple" in ret_str or "tuple" in ret_str:
@@ -41,10 +41,10 @@ def _parse_return_annotation(ret: Any) -> list[dict[str, str]]:
         types = re.findall(r"([A-Za-z0-9_\.]+)", ret_str)
         type_names = [t for t in types if t.lower() != "tuple"]
         for idx, t in enumerate(type_names):
-            ports.append({"name": f"out_{idx}", "dtype": t})
-        return ports if ports else [{"name": "out", "dtype": "Any"}]
+            ports.append({"name": f"out_{idx + 1}", "dtype": t})
+        return ports if ports else [{"name": "out_1", "dtype": "Any"}]
 
-    return [{"name": "out", "dtype": _name(ret)}]
+    return [{"name": "out_1", "dtype": _name(ret)}]
 
 
 def _extract_deps(fn: Callable) -> list[str]:

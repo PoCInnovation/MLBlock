@@ -25,9 +25,9 @@ def valid_json():
         "edges": [
             {
                 "source": "input_1",
-                "source_port": "out",
+                "source_port": "out_1",
                 "target": "conv1",
-                "target_port": "in",
+                "target_port": "in_1",
             }
         ],
     }
@@ -87,7 +87,7 @@ def test_config_loader_validate_edge_without_key():
         loader.validate(
             {
                 "nodes": [{"id": "a", "type": "conv2d"}],
-                "edges": [{"source_port": "out", "target": "a", "target_port": "in"}],
+                "edges": [{"source_port": "out_1", "target": "a", "target_port": "in_1"}],
             }
         )
 

@@ -8,4 +8,4 @@ def input(shape: "list[int]") -> "torch.Tensor":
     Args:
         shape: Parameter.
     """
-    return nn.Input(shape=shape)(x)
+    return nn.Input(shape=shape)(in_1)

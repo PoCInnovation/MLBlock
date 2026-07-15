@@ -2,10 +2,10 @@ import torch
 from torch import nn
 
 
-def flatten(x: "torch.Tensor") -> "torch.Tensor":
+def flatten(in_1: "torch.Tensor") -> "torch.Tensor":
     """Flatten.
     
     Args:
-        x: Input tensor.
+        in_1: Input tensor.
     """
-    return nn.Flatten()(x)
+    return nn.Flatten()(in_1)

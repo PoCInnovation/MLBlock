@@ -125,7 +125,7 @@ def test_create_pipeline_with_graph(client: TestClient):
         {"id": "relu1", "type": "relu", "params": {}},
     ]
     edges = [
-        {"source": "conv1", "source_port": "out", "target": "relu1", "target_port": "in"},
+        {"source": "conv1", "source_port": "out_1", "target": "relu1", "target_port": "in_1"},
     ]
     resp = client.post(
         "/api/pipelines",
@@ -237,7 +237,7 @@ def test_validate_valid_graph(client: TestClient):
         {"id": "relu1", "type": "relu", "params": {}},
     ]
     edges = [
-        {"source": "conv1", "source_port": "out", "target": "relu1", "target_port": "in"},
+        {"source": "conv1", "source_port": "out_1", "target": "relu1", "target_port": "in_1"},
     ]
     resp = client.post("/api/validate", json={"nodes": nodes, "edges": edges})
     assert resp.status_code == 200
@@ -264,8 +264,8 @@ def test_validate_cycle(client: TestClient):
         {"id": "b", "type": "relu", "params": {}},
     ]
     edges = [
-        {"source": "a", "source_port": "out", "target": "b", "target_port": "in"},
-        {"source": "b", "source_port": "out", "target": "a", "target_port": "in"},
+        {"source": "a", "source_port": "out_1", "target": "b", "target_port": "in_1"},
+        {"source": "b", "source_port": "out_1", "target": "a", "target_port": "in_1"},
     ]
     resp = client.post("/api/validate", json={"nodes": nodes, "edges": edges})
     assert resp.status_code == 200
@@ -283,7 +283,7 @@ def test_generate_code(client: TestClient):
         {"id": "relu1", "type": "relu", "params": {}},
     ]
     edges = [
-        {"source": "conv1", "source_port": "out", "target": "relu1", "target_port": "in"},
+        {"source": "conv1", "source_port": "out_1", "target": "relu1", "target_port": "in_1"},
     ]
     create = client.post(
         "/api/pipelines",
@@ -322,9 +322,9 @@ def test_build_model(client: TestClient):
         {"id": "fc1", "type": "linear", "params": {"in_features": 2704, "out_features": 10}},
     ]
     edges = [
-        {"source": "conv1", "source_port": "out", "target": "relu1", "target_port": "in"},
-        {"source": "relu1", "source_port": "out", "target": "flat1", "target_port": "in"},
-        {"source": "flat1", "source_port": "out", "target": "fc1", "target_port": "in"},
+        {"source": "conv1", "source_port": "out_1", "target": "relu1", "target_port": "in_1"},
+        {"source": "relu1", "source_port": "out_1", "target": "flat1", "target_port": "in_1"},
+        {"source": "flat1", "source_port": "out_1", "target": "fc1", "target_port": "in_1"},
     ]
     create = client.post(
         "/api/pipelines",

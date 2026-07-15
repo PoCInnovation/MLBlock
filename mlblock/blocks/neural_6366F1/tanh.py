@@ -2,10 +2,10 @@ import torch
 from torch import nn
 
 
-def tanh(x: "torch.Tensor") -> "torch.Tensor":
+def tanh(in_1: "torch.Tensor") -> "torch.Tensor":
     """Tanh.
     
     Args:
-        x: Input tensor.
+        in_1: Input tensor.
     """
-    return nn.Tanh()(x)
+    return nn.Tanh()(in_1)

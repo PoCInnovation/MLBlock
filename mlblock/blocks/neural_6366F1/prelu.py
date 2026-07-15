@@ -2,11 +2,11 @@ import torch
 from torch import nn
 
 
-def prelu(x: "torch.Tensor", num_parameters: "int" = 1) -> "torch.Tensor":
+def prelu(in_1: "torch.Tensor", num_parameters: "int" = 1) -> "torch.Tensor":
     """PReLU.
     
     Args:
-        x: Input tensor.
+        in_1: Input tensor.
         num_parameters: Parameter.
     """
-    return nn.Prelu(num_parameters=num_parameters)(x)
+    return nn.Prelu(num_parameters=num_parameters)(in_1)

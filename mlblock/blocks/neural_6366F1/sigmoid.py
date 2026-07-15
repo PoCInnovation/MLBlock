@@ -2,10 +2,10 @@ import torch
 from torch import nn
 
 
-def sigmoid(x: "torch.Tensor") -> "torch.Tensor":
+def sigmoid(in_1: "torch.Tensor") -> "torch.Tensor":
     """Sigmoid.
     
     Args:
-        x: Input tensor.
+        in_1: Input tensor.
     """
-    return nn.Sigmoid()(x)
+    return nn.Sigmoid()(in_1)

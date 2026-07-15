@@ -26,7 +26,7 @@ class Block(BaseModel):
 
     def get(self, key: str, default: Any = None) -> Any:
         if key == "inputs":
-            return [{"name": "in", "dtype": "torch.Tensor"}]
+            return [{"name": "in_1", "dtype": "torch.Tensor"}]
         if key == "outputs":
             return self.outputs
         if key == "params":
