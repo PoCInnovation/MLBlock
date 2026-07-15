@@ -22,7 +22,7 @@ export type DragState =
   | (DragBase & { source: 'script'; id: string })
 
 type AppState = {
-  screen: 'home' | 'build'
+  screen: 'home' | 'build' | 'how-it-works' | 'about'
   category: string
   script: Block[]
   running: boolean
@@ -37,6 +37,8 @@ type AppState = {
 
   goBuild: () => void
   goHome: () => void
+  goHowItWorks: () => void
+  goAbout: () => void
   setCategory: (id: string) => void
   addBlock: (type: string, index: number | null) => void
   deleteBlock: (id: string) => void
@@ -71,6 +73,8 @@ const useAppStore = create<AppState>((set) => ({
 
   goBuild: () => set({ screen: 'build' }),
   goHome: () => set({ screen: 'home', catalog: null, catalogError: false, catalogErrorMessage: null, pipelineId: null }),
+  goHowItWorks: () => set({ screen: 'how-it-works' }),
+  goAbout: () => set({ screen: 'about' }),
   setCategory: (id) => set({ category: id }),
 
   addBlock: (type, index) => set((s) => {
