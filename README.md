@@ -58,14 +58,14 @@ L'utilisateur dessine un DAG de blocs ML dans une interface visuelle → le back
 ### 1. Installer les dépendances
 
 ```bash
+cd backend
 pip install -e .
 ```
 
 ### 2. Configurer les variables d'environnement
 
-Copiez le fichier d'exemple et remplissez vos credentials :
-
 ```bash
+cd backend
 cp .env.example .env
 ```
 
@@ -86,6 +86,7 @@ Variables requises :
 ### 3. Lancer le serveur
 
 ```bash
+cd backend
 uvicorn mlblock.server.main:app --reload
 ```
 
@@ -94,6 +95,7 @@ Le serveur est accessible sur `http://localhost:8000`. L'initialisation des tabl
 ### 4. Lancer les tests
 
 ```bash
+cd backend
 pytest
 ```
 
@@ -102,34 +104,38 @@ pytest
 ## Structure du Projet
 
 ```
-mlblock/
-├── blocks/                    # Définitions des blocs ML
-│   ├── registry.py            # Auto-discovery des blocs (discovery, inspect)
-│   ├── neural_6366F1/         # Blocs réseaux de neurones (conv2d, relu, ...)
-│   ├── data_22C55E/           # Blocs data (load_csv, train_test_split)
-│   ├── models_F59E0B/         # Blocs modèles (linear_regression, random_forest)
-│   ├── evaluation_EF4444/     # Évaluation (evaluate)
-│   ├── advanced_6B7280/       # Avancé (auto_ml, code_block)
-│   ├── rl_8B5CF6/             # Reinforcement learning
-│   ├── environment_14B8A6/    # Environnements RL
-│   └── visualization_EC4899/  # Visualisation (plot, record_video)
-├── core/
-│   ├── graph.py               # Graphe orienté acyclique (DAG) + tri topologique
-│   ├── generator.py           # Générateur de code Python à partir du DAG
-│   ├── pipeline.py            # Exécution de pipeline (build_layer, run)
-│   ├── block.py               # Registre de blocs (BlockMeta, BlockRegistry)
-│   ├── config.py              # Validation de configurations JSON
-│   └── vast.py                # Wrapper API Vast.ai (location/destruction GPU)
-├── server/
-│   ├── main.py                # Application FastAPI (lifespan, CORS, routers)
-│   ├── routes.py              # Routes API REST (blocks, pipelines, jobs, validate)
-│   ├── models.py              # Modèles SQLModel (Pipeline, Job, JobOutput, Profile)
-│   ├── schemas.py             # Schémas Pydantic API (Block, Page, PipelineCreate...)
-│   ├── database.py            # Engine PostgreSQL, session, init_db()
-│   ├── auth.py                # Dépendance JWT Supabase (get_current_user)
-│   └── gpu_auth.py            # Dépendance GPU API KEY (verify_gpu_key)
-├── tests/                     # Tests unitaires et d'intégration
-└── configs/                   # Exemples de configurations de pipelines (JSON)
+backend/
+├── mlblock/
+│   ├── blocks/                    # Définitions des blocs ML
+│   │   ├── registry.py            # Auto-discovery des blocs (discovery, inspect)
+│   │   ├── neural_6366F1/         # Blocs réseaux de neurones (conv2d, relu, ...)
+│   │   ├── data_22C55E/           # Blocs data (load_csv, train_test_split)
+│   │   ├── models_F59E0B/         # Blocs modèles (linear_regression, random_forest)
+│   │   ├── evaluation_EF4444/     # Évaluation (evaluate)
+│   │   ├── advanced_6B7280/       # Avancé (auto_ml, code_block)
+│   │   ├── rl_8B5CF6/             # Reinforcement learning
+│   │   ├── environment_14B8A6/    # Environnements RL
+│   │   └── visualization_EC4899/  # Visualisation (plot, record_video)
+│   ├── core/
+│   │   ├── graph.py               # Graphe orienté acyclique (DAG) + tri topologique
+│   │   ├── generator.py           # Générateur de code Python à partir du DAG
+│   │   ├── pipeline.py            # Exécution de pipeline (build_layer, run)
+│   │   ├── block.py               # Registre de blocs (BlockMeta, BlockRegistry)
+│   │   ├── config.py              # Validation de configurations JSON
+│   │   └── vast.py                # Wrapper API Vast.ai (location/destruction GPU)
+│   ├── server/
+│   │   ├── main.py                # Application FastAPI (lifespan, CORS, routers)
+│   │   ├── routes.py              # Routes API REST (blocks, pipelines, jobs, validate)
+│   │   ├── models.py              # Modèles SQLModel (Pipeline, Job, JobOutput, Profile)
+│   │   ├── schemas.py             # Schémas Pydantic API (Block, Page, PipelineCreate...)
+│   │   ├── database.py            # Engine PostgreSQL, session, init_db()
+│   │   ├── auth.py                # Dépendance JWT Supabase (get_current_user)
+│   │   └── gpu_auth.py            # Dépendance GPU API KEY (verify_gpu_key)
+│   ├── tests/                     # Tests unitaires et d'intégration
+│   └── configs/                   # Exemples de configurations de pipelines (JSON)
+├── pyproject.toml                 # Configuration du projet Python
+├── .env                           # Variables d'environnement (non versionné)
+└── .env.example                   # Template des variables d'environnement
 ```
 
 ---
@@ -180,6 +186,7 @@ Le discovery extrait automatiquement :
 Le premier paramètre de tout bloc ML (le tenseur d'entrée) est toujours nommé `in_1`. Les sorties sont numérotées séquentiellement (`out_1`, `out_2`...) dans l'ordre d'exécution du pipeline.
 
 ---
+
 ## API REST
 
 Toutes les routes utilisateur nécessitent un header `Authorization: Bearer <jwt>`.
