@@ -119,8 +119,7 @@ mlblock/
 │   ├── pipeline.py            # Exécution de pipeline (build_layer, run)
 │   ├── block.py               # Registre de blocs (BlockMeta, BlockRegistry)
 │   ├── config.py              # Validation de configurations JSON
-│   ├── vast.py                # Wrapper API Vast.ai (location/destruction GPU)
-│   └── generator.py           # Génération de code avec notification GPU
+│   └── vast.py                # Wrapper API Vast.ai (location/destruction GPU)
 ├── server/
 │   ├── main.py                # Application FastAPI (lifespan, CORS, routers)
 │   ├── routes.py              # Routes API REST (blocks, pipelines, jobs, validate)
@@ -146,7 +145,7 @@ from torch import nn
 
 
 def conv2d(
-    x: torch.Tensor,
+    in_1: torch.Tensor,
     in_channels: int,
     out_channels: int,
     kernel_size: int = 3,
@@ -154,12 +153,12 @@ def conv2d(
     """Applies a 2D convolution over an input signal.
 
     Args:
-        x: Input tensor of shape (N, C_in, H, W).
+        in_1: Input tensor of shape (N, C_in, H, W).
         in_channels: Number of channels in the input image.
         out_channels: Number of channels produced by the convolution.
         kernel_size: Size of the convolving kernel (default 3).
     """
-    return nn.Conv2d(in_channels, out_channels, kernel_size)(x)
+    return nn.Conv2d(in_channels, out_channels, kernel_size)(in_1)
 ```
 
 Le discovery extrait automatiquement :
@@ -170,74 +169,171 @@ Le discovery extrait automatiquement :
 - La catégorie (extraite du nom du dossier)
 - Le code source (stocké pour inlining dans le code généré)
 
----
+### Convention des ports
 
+| Port | Convention | Exemple |
+|---|---|---|
+| **Entrée** | `in_1`, `in_2`, ... | `in_1: torch.Tensor` |
+| **Sortie** | `out_1`, `out_2`, ... | `-> torch.Tensor` → `out_1` |
+| **Paramètre** | nom libre | `in_channels: int`, `kernel_size: int = 3` |
+
+Le premier paramètre de tout bloc ML (le tenseur d'entrée) est toujours nommé `in_1`. Les sorties sont numérotées séquentiellement (`out_1`, `out_2`...) dans l'ordre d'exécution du pipeline.
+
+---
 ## API REST
 
-### Blocs
+Toutes les routes utilisateur nécessitent un header `Authorization: Bearer <jwt>`.
 
-| Méthode | Route | Description |
-|---|---|---|
-| `GET` | `/api/blocks` | Liste paginée des blocs (filtres `?category=`, `?q=`) |
-| `GET` | `/api/blocks/categories` | Liste des catégories avec nombre de blocs |
-| `GET` | `/api/blocks/{type_name}` | Détail d'un bloc |
+### Formats des données
 
-### Pipelines
+#### `GET /api/blocks` → Liste des blocs disponibles
 
-| Méthode | Route | Description |
-|---|---|---|
-| `GET` | `/api/pipelines` | Liste des pipelines de l'utilisateur |
-| `POST` | `/api/pipelines` | Création d'une pipeline (DAG nodes + edges) |
-| `GET` | `/api/pipelines/{id}` | Détail d'une pipeline |
-| `PUT` | `/api/pipelines/{id}` | Mise à jour d'une pipeline |
-| `DELETE` | `/api/pipelines/{id}` | Suppression d'une pipeline |
-| `POST` | `/api/pipelines/{id}/generate` | Preview du code généré (dry run) |
-| `POST` | `/api/pipelines/{id}/execute` | Exécution sur GPU Vast.ai |
-| `GET` | `/api/pipelines/{id}/jobs` | Historique des jobs d'une pipeline |
-| `POST` | `/api/pipelines/{id}/build` | Construction du modèle PyTorch |
-
-### Jobs & Callbacks GPU
-
-| Méthode | Route | Auth | Description |
-|---|---|---|---|
-| `GET` | `/api/jobs/{job_id}` | JWT | Détail d'un job |
-| `POST` | `/api/jobs/{job_id}/status` | GPU key | Mise à jour du statut |
-| `POST` | `/api/jobs/{job_id}/output` | GPU key | Push du résultat d'un bloc |
-| `POST` | `/api/jobs/{job_id}/error` | GPU key | Rapporter une erreur |
-
-### Validation
-
-| Méthode | Route | Description |
-|---|---|---|
-| `POST` | `/api/validate` | Validation d'un graphe (types, ports, cycles) |
-
----
-
-## Exemple de Pipeline (JSON)
+**Réponse** :
 
 ```json
 {
-  "name": "Analyse ventes",
+  "items": [
+    {
+      "name": "conv2d",
+      "description": "Applies a 2D convolution...",
+      "category": {"name": "neural", "color": "#6366F1"},
+      "params": {
+        "in_channels": {"type": "int", "description": "Number of channels", "default": null, "required": true},
+        "out_channels": {"type": "int", "description": "Output channels", "default": null, "required": true},
+        "kernel_size": {"type": "int", "description": "Kernel size", "default": 3, "required": false}
+      },
+      "outputs": [{"name": "out_1", "dtype": "torch.Tensor"}],
+      "deps": ["torch"]
+    }
+  ],
+  "total": 53,
+  "page": 1,
+  "size": 30
+}
+```
+
+#### `POST /api/pipelines` → Créer une pipeline
+
+**Body** :
+
+```json
+{
+  "name": "CNN MNIST",
+  "description": "Classification d'images",
   "nodes": [
-    {"id": "n1", "type": "load_csv",          "params": {"path": "ventes.csv"}},
-    {"id": "n2", "type": "train_test_split",  "params": {"target_column": "prix", "test_size": 0.2}},
-    {"id": "n3", "type": "linear_regression", "params": {}}
+    {"id": "n1", "type": "input",    "params": {"shape": [1, 28, 28]}},
+    {"id": "n2", "type": "conv2d",   "params": {"in_channels": 1, "out_channels": 32, "kernel_size": 3}},
+    {"id": "n3", "type": "relu",     "params": {}},
+    {"id": "n4", "type": "flatten",  "params": {}},
+    {"id": "n5", "type": "linear",   "params": {"in_features": 5408, "out_features": 10}},
+    {"id": "n6", "type": "softmax",  "params": {"dim": 1}}
   ],
   "edges": [
-    {"source": "n1", "source_port": "out", "target": "n2", "target_port": "data"},
-    {"source": "n1", "source_port": "out", "target": "n2", "target_port": "target_column"},
-    {"source": "n2", "source_port": "X_train", "target": "n3", "target_port": "train_data"},
-    {"source": "n2", "source_port": "y_train", "target": "n3", "target_port": "train_target"}
+    {"source": "n1", "source_port": "out_1", "target": "n2", "target_port": "in_1"},
+    {"source": "n2", "source_port": "out_1", "target": "n3", "target_port": "in_1"},
+    {"source": "n3", "source_port": "out_1", "target": "n4", "target_port": "in_1"},
+    {"source": "n4", "source_port": "out_1", "target": "n5", "target_port": "in_1"},
+    {"source": "n5", "source_port": "out_1", "target": "n6", "target_port": "in_1"}
   ]
 }
 ```
 
-Le backend calcule l'ordre d'exécution par **tri topologique** du graphe et génère le code Python correspondant :
+**Champs Node** :
+| Champ | Type | Description |
+|---|---|---|
+| `id` | string | Identifiant unique du nœud (généré par le frontend) |
+| `type` | string | Nom du bloc (ex: `conv2d`, `relu`) |
+| `params` | object | Paramètres utilisateur (clé → valeur) |
 
-```python
-out_n1 = load_csv(path="ventes.csv")
-out_n2_X_train, out_n2_y_train = train_test_split(data=out_n1, target_column="prix", test_size=0.2)
-out_n3 = linear_regression(train_data=out_n2_X_train, train_target=out_n2_y_train)
+**Champ Edge** :
+| Champ | Type | Description |
+|---|---|---|
+| `source` | string | ID du nœud source |
+| `source_port` | string | Port de sortie (toujours `out_1` sauf multi-sorties) |
+| `target` | string | ID du nœud cible |
+| `target_port` | string | Port d'entrée (toujours `in_1`, `in_2`...) |
+
+**Réponse** : `PipelineDetail` (voir ci-dessous)
+
+#### `POST /api/pipelines/{id}/generate` → Preview du code
+
+**Réponse** :
+
+```json
+{
+  "code": "\"\"\"Generated by MLBlock.\"\"\"\n\nimport requests\n...\n\ndef main():\n    try:\n        out_1 = input(shape=[1, 28, 28])\n        out_2 = conv2d(in_1=out_1, in_channels=1, out_channels=32)\n        ..."
+}
 ```
 
-Notre plateforme est conçue comme le Scratch de l'IA, permettant à chacun d'expérimenter le Machine Learning de manière visuelle et accessible.
+#### `POST /api/pipelines/{id}/execute` → Lancer sur GPU
+
+**Réponse** :
+
+```json
+{
+  "id": "uuid",
+  "pipeline_id": "uuid",
+  "user_id": "uuid",
+  "status": "queued",
+  "vast_instance_id": "12345",
+  "created_at": "2026-07-15T10:00:00"
+}
+```
+
+#### `POST /api/validate` → Valider un graphe
+
+**Body** : même format que `PipelineCreate` (nodes + edges)
+
+**Réponse** :
+
+```json
+{"valid": true, "errors": []}
+```
+ou
+```json
+{"valid": false, "errors": ["Unknown block type 'xyz' for node 'n1'"]}
+```
+
+#### `POST /api/jobs/{job_id}/status` → Callback GPU
+
+**Body** :
+
+```json
+{"block": "conv2d", "status": "running"}
+```
+Valeurs de `status` : `"running"`, `"done"`, `"error"`
+
+#### `POST /api/jobs/{job_id}/output` → Push résultat
+
+**Body** :
+
+```json
+{"block": "conv2d", "output": "conv2d running on tensor of shape [1, 32, 26, 26]"}
+```
+
+#### `POST /api/jobs/{job_id}/error` → Rapporter erreur
+
+**Body** :
+
+```json
+{"block": "conv2d", "error": "RuntimeError: shape mismatch"}
+```
+
+### Code généré
+
+Le backend génère le code Python correspondant au DAG. Les variables suivent la convention :
+
+```python
+out_1 = input(shape=[1, 28, 28])                # sortie du 1er bloc
+out_2 = conv2d(in_1=out_1, in_channels=1, ...)  # sortie du 2e bloc
+out_3 = relu(in_1=out_2)                         # sortie du 3e bloc
+out_4 = flatten(in_1=out_3)
+out_5 = linear(in_1=out_4, in_features=5408, out_features=10)
+out_6 = softmax(in_1=out_5, dim=1)
+```
+
+- **Entrées** : `in_1`, `in_2`, ... (port d'entrée générique)
+- **Sorties** : `out_1`, `out_2`, ... (numérotées séquentiellement selon l'ordre d'exécution)
+- **Paramètres** : passés directement en kwargs (`in_channels=1`, `kernel_size=3`)
+
+Les blocs peuvent avoir des connexions **non-linéaires** : un bloc peut alimenter n'importe quel autre bloc en amont via le mécanisme d'edges.
