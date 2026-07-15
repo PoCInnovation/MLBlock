@@ -1,34 +1,17 @@
+import torch
 from torch import nn
 
 
-def BUILD(params):
-    return nn.ConvTranspose2d(
-        in_channels=params["in_channels"],
-        out_channels=params["out_channels"],
-        kernel_size=params.get("kernel_size", 3),
-        stride=params.get("stride", 1),
-        padding=params.get("padding", 0),
-        output_padding=params.get("output_padding", 0),
-    )
-
-
-BLOCK = {
-    "label": "ConvTranspose2D",
-    "category": "neural",
-    "params": {
-        "in_channels": {"type": "int", "required": True},
-        "out_channels": {"type": "int", "required": True},
-        "kernel_size": {"type": "int", "default": 3},
-        "stride": {"type": "int", "default": 1},
-        "padding": {"type": "int", "default": 0},
-        "output_padding": {"type": "int", "default": 0},
-    },
-    "inputs": [{"name": "in", "dtype": "Tensor"}],
-    "outputs": [{"name": "out", "dtype": "Tensor"}],
-    "template": (
-        "import torch.nn as nn\n"
-        "{output.out} = nn.ConvTranspose2d({params.in_channels}, {params.out_channels}, "
-        "kernel_size={params.kernel_size}, stride={params.stride}, "
-        "padding={params.padding}, output_padding={params.output_padding})"
-    ),
-}
+def conv_transpose2d(x: "torch.Tensor", in_channels: "int", out_channels: "int", kernel_size: "int" = 3, stride: "int" = 1, padding: "int" = 0, output_padding: "int" = 0) -> "torch.Tensor":
+    """ConvTranspose2D.
+    
+    Args:
+        x: Input tensor.
+        in_channels: Parameter.
+        out_channels: Parameter.
+        kernel_size: Parameter.
+        stride: Parameter.
+        padding: Parameter.
+        output_padding: Parameter.
+    """
+    return nn.ConvTranspose2D(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel_size, stride=stride, padding=padding, output_padding=output_padding)(x)

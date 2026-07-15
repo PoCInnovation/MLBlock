@@ -1,18 +1,11 @@
+import torch
 from torch import nn
 
 
-def BUILD(params):
-    return nn.ReLU()
-
-
-BLOCK = {
-    "label": "ReLU",
-    "category": "neural",
-    "params": {},
-    "inputs": [{"name": "in", "dtype": "Tensor"}],
-    "outputs": [{"name": "out", "dtype": "Tensor"}],
-    "template": (
-        "import torch.nn as nn\n"
-        "{output.out} = nn.ReLU()"
-    ),
-}
+def relu(x: "torch.Tensor") -> "torch.Tensor":
+    """ReLU.
+    
+    Args:
+        x: Input tensor.
+    """
+    return nn.ReLU()(x)

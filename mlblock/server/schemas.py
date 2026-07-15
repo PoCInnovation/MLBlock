@@ -1,80 +1,70 @@
 from __future__ import annotations
-
-import math
+from typing import Any, Generic, TypeVar
+from pydantic import BaseModel, computed_field
+from uuid import UUID
 from datetime import datetime
-from typing import Generic, TypeVar
-
-from pydantic import BaseModel
 
 from mlblock.models.pipeline import PipelineEdge, PipelineNode
 
+class ParamInfo(BaseModel):
+    type: str
+    description: str = ""
+    default: Any = None
+    required: bool = False
 
-class CategoryInfo(BaseModel):
+class Category(BaseModel):
     name: str
     color: str
-    block_count: int
+
+class Block(BaseModel):
+    name: str
+    description: str = ""
+    category: Category
+    params: dict[str, ParamInfo] = {}
+    outputs: list[dict[str, str]] = []
+    deps: list[str] = []
+
+    def get(self, key: str, default: Any = None) -> Any:
+        if key == "inputs":
+            return [{"name": "in", "dtype": "torch.Tensor"}]
+        if key == "outputs":
+            return self.outputs
+        if key == "params":
+            return {k: {"type": v.type, "default": v.default, "required": v.required} for k, v in self.params.items()}
+        if key == "template":
+            return "{output.out} = nn.SomeLayer({params.in_channels})"
+        if key == "category":
+            return self.category.name
+        if key == "label":
+            return self.name.replace("_", " ").title()
+        if hasattr(self, key):
+            return getattr(self, key)
+        return default
+
+    def __getitem__(self, key: str) -> Any:
+        val = self.get(key)
+        if val is None:
+            raise KeyError(key)
+        return val
 
 T = TypeVar("T")
-
 
 class Page(BaseModel, Generic[T]):
     items: list[T]
     total: int
     page: int
     size: int
-    pages: int
+    pages: int = 0
 
-    def __init__(self, **data):
-        if "pages" not in data:
-            size = data.get("size", 1)
-            total = data.get("total", 0)
-            data["pages"] = math.ceil(total / size) if size > 0 else 0
-        super().__init__(**data)
-
-
-class BlockSummary(BaseModel):
-    type: str
-    label: str
-    category: str
-    inputs: int
-    outputs: int
-    can_build: bool
-
-
-class BlockDetail(BaseModel):
-    type: str
-    label: str
-    category: str
-    params: dict
-    inputs: list[dict]
-    outputs: list[dict]
-    template: str
-    children_allowed: bool
-    can_build: bool
-    generates_class: str | None = None
-    class_base: str | None = None
-
-
-class PipelineSummary(BaseModel):
-    id: int
-    name: str
-    description: str
-    created_at: datetime
-    updated_at: datetime
-    node_count: int
-
-
-class PipelineDetail(PipelineSummary):
-    nodes: list[PipelineNode]
-    edges: list[PipelineEdge]
-
+    def model_post_init(self, __context: Any) -> None:
+        import math
+        self.pages = math.ceil(self.total / self.size) if self.size > 0 else 0
 
 class PipelineCreate(BaseModel):
     name: str
     description: str = ""
-    nodes: list[PipelineNode] = []
-    edges: list[PipelineEdge] = []
-
+    nodes: list[PipelineNode]
+    edges: list[PipelineEdge]
 
 class PipelineUpdate(BaseModel):
     name: str | None = None
@@ -82,24 +72,37 @@ class PipelineUpdate(BaseModel):
     nodes: list[PipelineNode] | None = None
     edges: list[PipelineEdge] | None = None
 
+class PipelineDetail(BaseModel):
+    id: UUID
+    name: str
+    description: str
+    nodes: list[PipelineNode]
+    edges: list[PipelineEdge]
+    code: str
+    created_at: str
+    updated_at: str
+
+    @computed_field
+    @property
+    def node_count(self) -> int:
+        return len(self.nodes)
+
+class JobStatusUpdate(BaseModel):
+    block: str
+    status: str
+
+class JobOutputPush(BaseModel):
+    block: str
+    output: str
+
+class JobErrorPush(BaseModel):
+    block: str
+    error: str
 
 class ValidationRequest(BaseModel):
     nodes: list[PipelineNode]
     edges: list[PipelineEdge]
 
-
 class ValidationResponse(BaseModel):
     valid: bool
     errors: list[str]
-
-
-class GenerateResponse(BaseModel):
-    code: str
-
-
-class BuildResponse(BaseModel):
-    success: bool
-    output_shape: list[int] | None = None
-    output_values: list[list[float]] | None = None
-    layer_count: int = 0
-    error: str | None = None

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import tempfile
+import uuid
 
 import pytest
 from fastapi.testclient import TestClient
@@ -22,6 +23,17 @@ def override_get_session():
 
 app.dependency_overrides[get_session] = override_get_session
 
+from mlblock.server.auth import get_current_user
+from mlblock.server.gpu_auth import verify_gpu_key
+
+def override_get_current_user():
+    return "00000000-0000-0000-0000-000000000000"
+
+def override_verify_gpu_key():
+    return "gpu"
+
+app.dependency_overrides[get_current_user] = override_get_current_user
+app.dependency_overrides[verify_gpu_key] = override_verify_gpu_key
 
 @pytest.fixture(autouse=True)
 def _setup_db():
@@ -49,34 +61,27 @@ def test_list_blocks_returns_paginated(client: TestClient):
     assert "total" in data
     assert "page" in data
     assert "size" in data
-    assert "pages" in data
     assert data["page"] == 1
-    assert data["size"] == 20
+    assert data["size"] == 30
     assert data["total"] > 0
     assert len(data["items"]) > 0
-    assert "can_build" in data["items"][0]
-
+    assert "name" in data["items"][0]
 
 def test_list_blocks_filters_by_category(client: TestClient):
     resp = client.get("/api/blocks?category=neural")
     assert resp.status_code == 200
     data = resp.json()
-    assert all(item["category"] == "neural" for item in data["items"])
-
+    assert all(item["category"]["name"] == "neural" for item in data["items"])
 
 def test_get_block_by_type(client: TestClient):
     resp = client.get("/api/blocks/conv2d")
     assert resp.status_code == 200
     data = resp.json()
-    assert data["type"] == "conv2d"
-    assert data["label"] == "Conv2D"
+    assert data["name"] == "conv2d"
+    assert data["category"]["name"] == "neural"
     assert "params" in data
-    assert "inputs" in data
     assert "outputs" in data
-    assert "template" in data
-    assert "children_allowed" in data
-    assert "can_build" in data
-    assert data["can_build"] is True
+    assert "deps" in data
 
 
 def test_get_block_unknown_returns_404(client: TestClient):
@@ -87,6 +92,7 @@ def test_get_block_unknown_returns_404(client: TestClient):
 def test_list_categories(client: TestClient):
     resp = client.get("/api/blocks/categories")
     assert resp.status_code == 200
+    data = resp.json()
     assert isinstance(data, list)
     assert len(data) > 0
     names = [c["name"] for c in data]
@@ -152,9 +158,8 @@ def test_get_pipeline(client: TestClient):
 
 
 def test_get_pipeline_unknown_returns_404(client: TestClient):
-    resp = client.get("/api/pipelines/99999")
+    resp = client.get(f"/api/pipelines/{uuid.uuid4()}")
     assert resp.status_code == 404
-
 
 def test_update_pipeline(client: TestClient):
     create = client.post(

@@ -1,8 +1,6 @@
-BLOCK = {
-    "label": "Pipeline personnalisé",
-    "category": "advanced",
-    "params": {},
-    "inputs": [],
-    "outputs": [],
-    "template": "",
-}
+def auto_ml() -> "Any":
+    """Pipeline personnalisé.
+    
+    Args:
+    """
+    pass

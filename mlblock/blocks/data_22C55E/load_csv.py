@@ -1,20 +1,11 @@
 import pandas as pd
 
 
-def BUILD(params):
-    return {"dataset": pd.read_csv(params["path"])}
-
-
-BLOCK = {
-    "label": "Charger un CSV",
-    "category": "data",
-    "params": {
-        "path": {"type": "str", "required": True},
-    },
-    "inputs": [],
-    "outputs": [{"name": "dataset", "dtype": "DataFrame"}],
-    "template": (
-        "import pandas as pd\n"
-        "{output.dataset} = pd.read_csv({params.path})"
-    ),
-}
+def load_csv(path: "str") -> "pd.DataFrame":
+    """Charger un CSV.
+    
+    Args:
+        path: Parameter.
+    """
+    import pandas as pd
+    return pd.read_csv(path)

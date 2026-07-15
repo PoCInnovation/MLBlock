@@ -14,4 +14,6 @@ mlblock.db
 /.agents
 /.opencode
 /.claude
+/.mcp.json
+/opencode.json
 tmp.py

@@ -66,16 +66,28 @@ Fournisseurs : **Google** (OAuth 2.0), **Microsoft** (OAuth 2.0 / Azure AD).
 
 ### Realtime — progression live
 
-Le frontend s'abonne aux changements via **Supabase Realtime** :
+Le frontend s'abonne à deux tables via **Supabase Realtime** — statut global + résultats par bloc :
 
 ```typescript
-const subscription = supabase
+// Statut global du job
+const jobSub = supabase
   .channel('job-updates')
   .on('postgres_changes',
     { event: 'UPDATE', schema: 'public', table: 'jobs', filter: `id=eq.${jobId}` },
     (payload) => {
       setJobStatus(payload.new.status)
-      setOutput(payload.new.output)
+      if (payload.new.error) setError(payload.new.error)
+    }
+  )
+  .subscribe()
+
+// Résultats par bloc (un message par bloc exécuté)
+const outputSub = supabase
+  .channel('job-outputs')
+  .on('postgres_changes',
+    { event: 'INSERT', schema: 'public', table: 'job_outputs', filter: `job_id=eq.${jobId}` },
+    (payload) => {
+      appendBlockOutput(payload.new.block_name, payload.new.output)
     }
   )
   .subscribe()
@@ -88,6 +100,7 @@ const subscription = supabase
 | Technologie | Rôle |
 |---|---|
 | FastAPI (Python) | API REST, génération de code, orchestration GPU |
+| supabase-py | Client Python officiel (Auth et Storage) |
 | uv | Dépendances Python |
 
 ### Principes d'architecture
@@ -96,12 +109,13 @@ const subscription = supabase
 2. **State externalisé** : tout le state vit dans PostgreSQL. Le GPU est jetable.
 3. **Compute éphémère** : les instances GPU sont créées et détruites. Pas d'état persistant.
 4. **Realtime** : les résultats remontent en live via Supabase Realtime, pas de polling.
+5. **Storage et URLs signées** : Les données volumineuses et modèles entraînés transitent par Supabase Storage. Le backend génère des URLs temporaires signées pour sécuriser les transferts sans exposer les clés d'administration au GPU.
 
 ### Modèle Pydantic — Block
 
-```python
 from pydantic import BaseModel
 from typing import Any
+from uuid import UUID
 
 
 class ParamInfo(BaseModel):
@@ -122,6 +136,7 @@ class Block(BaseModel):
     category: Category
     params: dict[str, ParamInfo] = {}
     outputs: list[dict[str, str]] = []
+    deps: list[str] = []
 
 
 class Page(BaseModel):
@@ -129,6 +144,57 @@ class Page(BaseModel):
     total: int
     page: int
     size: int
+
+
+class PipelineNode(BaseModel):
+    id: str
+    type: str
+    params: dict[str, Any] = {}
+
+
+class PipelineEdge(BaseModel):
+    source: str
+    source_port: str
+    target: str
+    target_port: str
+
+
+class PipelineCreate(BaseModel):
+    name: str
+    description: str = ""
+    nodes: list[PipelineNode]
+    edges: list[PipelineEdge]
+
+
+class PipelineUpdate(BaseModel):
+    name: str | None = None
+    description: str | None = None
+    nodes: list[PipelineNode] | None = None
+    edges: list[PipelineEdge] | None = None
+
+
+class PipelineDetail(BaseModel):
+    id: UUID
+    name: str
+    description: str
+    nodes: list[PipelineNode]
+    edges: list[PipelineEdge]
+    code: str
+    created_at: str
+    updated_at: str
+
+def _row_to_summary(row) -> dict:
+    return {"id": row.id, "name": row.name, "description": row.description,
+            "updated_at": row.updated_at.isoformat()}
+
+
+def _row_to_detail(row, nodes: list[PipelineNode], edges: list[PipelineEdge]) -> dict:
+    return {"id": row.id, "name": row.name, "description": row.description,
+            "nodes": [n.model_dump() for n in nodes],
+            "edges": [e.model_dump() for e in edges],
+            "code": row.code,
+            "created_at": row.created_at.isoformat(),
+            "updated_at": row.updated_at.isoformat()}
 ```
 
 Le frontend reçoit par exemple :
@@ -152,109 +218,442 @@ Le frontend voit tous les paramètres. Pour chacun, il peut soit laisser l'utili
 
 ### Pipeline
 
-Une pipeline est une **liste ordonnée de blocs numérotés** (1, 2, 3…). Chaque bloc reçoit en entrée la sortie du bloc précédent, et une liste déroulante permet de choisir n'importe quel `out_N` antérieur.
+Une pipeline est un **graphe orienté acyclique (DAG)** de blocs. Chaque bloc est un nœud du graphe, et les connexions entre blocs sont des arêtes nommées (port-based).
+
 ```
 Frontend envoie :
 {
   "name": "Analyse ventes",
-  "blocks": [
-    {
-      "name": "load_csv",
-      "params": {"path": "ventes.csv"},
-      "inputs": {}                    # 1er bloc, pas d'entrée
-    },
-    {
-      "name": "train_test_split",
-      "params": {"target_column": "prix", "test_size": 0.2},
-      "inputs": {"data": "out_1"}     # par défaut : out_1
-    },
-    {
-      "name": "linear_regression",
-      "params": {},
-      "inputs": {"train_data": "out_2", "train_target": "out_4"}
-                                      # l'user a choisi out_2 et out_4
-    },
+  "nodes": [
+    {"id": "n1", "type": "load_csv",          "params": {"path": "ventes.csv"}},
+    {"id": "n2", "type": "train_test_split",  "params": {"target_column": "prix", "test_size": 0.2}},
+    {"id": "n3", "type": "linear_regression", "params": {}}
+  ],
+  "edges": [
+    {"source": "n1", "source_port": "out", "target": "n2", "target_port": "data"},
+    {"source": "n1", "source_port": "out", "target": "n2", "target_port": "target_column"},
+    {"source": "n2", "source_port": "X_train", "target": "n3", "target_port": "train_data"},
+    {"source": "n2", "source_port": "y_train", "target": "n3", "target_port": "train_target"}
   ]
 }
 ```
 
-Par défaut, chaque bloc pointe vers `out_N` où `N` est l'index du bloc immédiatement précédent. L'utilisateur peut changer cette valeur via une liste déroulante affichant `out_1`, `out_2`, `out_3`… jusqu'à l'index du bloc courant.
-
-Le serveur génère le `.py` en substituant les références :
+Chaque nœud a un `id` unique (généré par le frontend). Les arêtes relient un port de sortie (`source.source_port`) à un port d'entrée (`target.target_port`). Le serveur calcule l'ordre d'exécution par **tri topologique** du graphe.
 
 ```python
-out_1 = load_csv(path="ventes.csv")
-out_2, out_3, out_4, out_5 = train_test_split(data=out_1, target_column="prix", test_size=0.2)
-out_6 = linear_regression(train_data=out_2, train_target=out_4)
+order = graph.topological_sort()  # → ["n1", "n2", "n3"]
+for node_id in order:
+    node = graph.nodes[node_id]
+    inputs = {edge.target_port: outputs[edge.source]
+              for edge in graph.edges if edge.target == node_id}
+    result = node.block.execute(node.params, inputs)
+    outputs[node_id] = result
 ```
 
-Chaque `out_N` est la variable Python générée. Les paramètres utilisateur (`path`, `target_column`…) passent en kwargs, les connexions (`data=out_1`) aussi.
+Le code généré suit le même motif, avec des noms de variables basés sur les IDs de nœud :
+
+```python
+out_n1 = load_csv(path="ventes.csv")
+out_n2_X_train, out_n2_y_train = train_test_split(data=out_n1, target_column="prix", test_size=0.2)
+out_n3 = linear_regression(train_data=out_n2_X_train, train_target=out_n2_y_train)
+```
+
+Chaque variable générée suit le motif `out_{node_id}` (ou `out_{node_id}_{port_name}` pour les fonctions multi-sorties). Les paramètres utilisateur passent en kwargs, les connexions entre blocs passent via `out_{source_id}`.
 
 ### Routes
 
-| Méthode | Route | Action |
-|---|---|---|
-| `GET` | `/blocks?page=N` | Liste les blocs. Sans `?page` : tout. Avec `?page=N` : 30 par page |
-| `POST` | `/pipelines/save` | Valide les blocs, génère le `.py`, sauvegarde en DB |
-| `POST` | `/pipelines/{id}/execute` | Charge la pipeline de la DB, crée une instance Vast.ai, exécute le code |
+#### Aperçu
 
-#### POST /pipelines/save
+| Méthode | Route | Action | Auth |
+|---|---|---|---|
+| `GET` | `/blocks?page=N&category=&q=` | Liste les blocs (avec filtres optionnels) | Oui |
+| `GET` | `/blocks/categories` | Liste des catégories avec nombre de blocs | Oui |
+| `GET` | `/blocks/{type_name}` | Détail d'un bloc | Oui |
+| `GET` | `/pipelines` | Liste les pipelines de l'utilisateur | Oui |
+| `POST` | `/pipelines` | Crée une pipeline (valide, génère le `.py`, sauvegarde) | Oui |
+| `GET` | `/pipelines/{id}` | Charge une pipeline (nodes + edges) | Oui |
+| `PUT` | `/pipelines/{id}` | Met à jour une pipeline | Oui |
+| `DELETE` | `/pipelines/{id}` | Supprime une pipeline + ses jobs | Oui |
+| `POST` | `/pipelines/{id}/generate` | Preview du code généré (dry run) | Oui |
+| `POST` | `/pipelines/{id}/execute` | Exécute la pipeline sur GPU Vast.ai | Oui |
+| `GET` | `/pipelines/{id}/jobs` | Historique des jobs d'une pipeline | Oui |
+| `GET` | `/jobs/{job_id}` | Détail d'un job (output, error, status) | Oui |
+| `POST` | `/jobs/{job_id}/status` | GPU callback: met à jour le status du job | GPU key |
+| `POST` | `/jobs/{job_id}/output` | GPU callback: pousse le résultat d'un bloc | GPU key |
+| `POST` | `/jobs/{job_id}/error` | GPU callback: rapporte une erreur | GPU key |
+
+#### Authentification
+
+Toutes les routes marquées Auth = Oui nécessitent un header `Authorization: Bearer <jwt>`.
+Le backend vérifie le JWT Supabase via `jose.jwt`, extrait le `sub` comme `user_id`,
+et injecte ce dernier dans les handlers via `Depends(get_current_user)`.
 
 ```python
-def save_pipeline(body: PipelineCreate) -> PipelineDetail:
-    code = generate_code(body.blocks)
-    row = Pipeline(name=body.name, blocks=body.blocks, code=code)
-    session.add(row)
-    session.commit()
-    return row
-```
+# mlblock/server/auth.py
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from jose import jwt, JWTError
+import os
 
-#### POST /pipelines/{id}/execute
+security = HTTPBearer()
+SUPABASE_JWT_SECRET = os.environ["SUPABASE_JWT_SECRET"]
 
-```python
-def execute_pipeline(id: int) -> JobStatus:
-    row = session.get(Pipeline, id)
-    code = row.code
-    reqs = _detect_dependencies(code)
-
-    vast = VastAI(api_key="...")
-    instance = vast.create_instance(
-        image="ghcr.io/astral-sh/uv:python3.13-alpine",
-        disk=10,
-        onstart="uv sync && python main.py",
-    )
-    vast.upload(instance["id"], "/app/main.py", code)
-    vast.upload(instance["id"], "/app/requirements.txt", reqs)
-    vast.upload(instance["id"], "/app/pyproject.toml", _pyproject(reqs))
-    vast.start(instance["id"])
-
-    job = Job(pipeline_id=id, vast_instance_id=instance["id"])
-    session.add(job)
-    session.commit()
-    return job
-```
+def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+) -> str:
+    try:
+        payload = jwt.decode(
+            credentials.credentials,
+            SUPABASE_JWT_SECRET,
+            algorithms=["HS256"],
+            audience="authenticated",
+        )
+        return payload["sub"]  # user_id
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token has expired")
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
 
 #### GET /blocks
 
+Filtres optionnels :
+- `?category=neural` — filtre par nom de catégorie
+- `?q=conv` — recherche par nom ou description (insensible à la casse)
+- `?page=N` — pagination (30 par page)
+
 ```python
-def list_blocks(page: int | None = None) -> list[Block] | Page[Block]:
+def list_blocks(
+    page: int | None = None,
+    category: str | None = None,
+    q: str | None = None,
+    _: str = Depends(get_current_user),
+) -> list[Block] | Page[Block]:
     items = list(BLOCK_REGISTRY.values())
+    if category:
+        items = [b for b in items if b.category.name == category]
+    if q:
+        q_lower = q.lower()
+        items = [b for b in items if q_lower in b.name.lower() or q_lower in (b.description or "").lower()]
     if page is None:
         return items
     size = 30
     start = (page - 1) * size
     sliced = items[start : start + size]
-    total = len(items)
-    return Page(items=sliced, total=total, page=page, size=size)
+    return Page(items=sliced, total=len(items), page=page, size=size)
 ```
 
-Sans `?page` : retourne tous les blocs en une seule liste. Avec `?page=N` : retourne 30 blocs avec métadonnées de pagination (total, page, size).
+#### GET /blocks/categories
+
+```python
+def list_categories(
+    _: str = Depends(get_current_user),
+) -> list[dict]:
+    counts: dict[str, dict] = {}
+    for block in BLOCK_REGISTRY.values():
+        cat = block.category.name
+        if cat not in counts:
+            counts[cat] = {"name": cat, "color": block.category.color, "block_count": 0}
+        counts[cat]["block_count"] += 1
+    return list(counts.values())
+```
+
+#### GET /pipelines
+
+```python
+def list_pipelines(
+    user_id: str = Depends(get_current_user),
+    page: int = 1,
+) -> Page:
+    query = select(PipelineTable).where(PipelineTable.user_id == user_id).order_by(PipelineTable.updated_at.desc())
+    total = session.exec(select(func.count()).select_from(query.subquery())).one()
+    rows = session.exec(query.offset((page - 1) * 30).limit(30)).all()
+    return Page(items=[_row_to_summary(r) for r in rows], total=total, page=page, size=30)
+```
+
+#### POST /pipelines
+
+```python
+def create_pipeline(
+    body: PipelineCreate,
+    user_id: str = Depends(get_current_user),
+) -> PipelineDetail:
+    # Validation handled by PipelineDef model_validators:
+    #   - validate_types_in_registry: block type exists?
+    #   - validate_edges: port names valid on both sides?
+    #   - validate_dtype_compatibility: output dtype == input dtype?
+    # Plus Graph.validate(): cycle detection + edge references
+    row = PipelineTable(
+        user_id=user_id,
+        name=body.name,
+        description=body.description or "",
+        nodes=[n.model_dump() for n in body.nodes],
+        edges=[e.model_dump() for e in body.edges],
+        code=generate_code(body.nodes, body.edges),
+    )
+    session.add(row)
+    session.commit()
+    return _row_to_detail(row, body.nodes, body.edges)
+```
+
+#### GET /pipelines/{id}
+
+```python
+def get_pipeline(
+    pipeline_id: UUID,
+    user_id: str = Depends(get_current_user),
+) -> PipelineDetail:
+    row = session.get(PipelineTable, pipeline_id)
+    if not row or row.user_id != user_id:
+        raise HTTPException(status_code=404, detail="Pipeline not found")
+    nodes = [PipelineNode(**n) for n in row.nodes]
+    edges = [PipelineEdge(**e) for e in row.edges]
+    return _row_to_detail(row, nodes, edges)
+
+#### PUT /pipelines/{id}
+
+```python
+def update_pipeline(
+    pipeline_id: UUID,
+    body: PipelineUpdate,
+    user_id: str = Depends(get_current_user),
+) -> PipelineDetail:
+    row = session.get(PipelineTable, pipeline_id)
+    if body.name is not None: row.name = body.name
+    if body.description is not None: row.description = body.description
+    if body.nodes is not None: row.nodes = [n.model_dump() for n in body.nodes]
+    if body.edges is not None: row.edges = [e.model_dump() for e in body.edges]
+    row.updated_at = datetime.now(timezone.utc)
+    session.add(row)
+    session.commit()
+    nodes = [PipelineNode(**n) for n in row.nodes]
+    edges = [PipelineEdge(**e) for e in row.edges]
+    return _row_to_detail(row, nodes, edges)
+```
+
+#### DELETE /pipelines/{id}
+
+```python
+def delete_pipeline(
+    pipeline_id: UUID,
+    user_id: str = Depends(get_current_user),
+) -> None:
+    row = session.get(PipelineTable, pipeline_id)
+    session.commit()
+```
+
+#### POST /pipelines/{id}/generate
+
+Retourne le code généré sans sauvegarder (dry run pour preview).
+
+```python
+def generate_pipeline_code(
+    pipeline_id: UUID,
+    user_id: str = Depends(get_current_user),
+):
+    row = session.get(PipelineTable, pipeline_id)
+    if not row or row.user_id != user_id:
+        raise HTTPException(status_code=404, detail="Pipeline not found")
+    edges = [PipelineEdge(**e) for e in row.edges]
+    code = generate_code(nodes, edges)
+    return {"code": code}
+
+
+#### POST /pipelines/{id}/execute
+
+```python
+import base64
+import time
+
+def execute_pipeline(
+    id: UUID,
+    user_id: str = Depends(get_current_user),
+):
+    row = session.get(PipelineTable, id)
+    if not row or row.user_id != user_id:
+        raise HTTPException(status_code=404, detail="Pipeline not found")
+    code = row.code
+    with_args = _collect_dependencies(_blocks_used_in(row.nodes))
+
+    vast = VastAI(api_key=os.environ["VAST_API_KEY"])
+    # bookworm is glibc-compliant for scientific ML wheels (unlike alpine)
+    instance = vast.launch_instance(
+        gpu_name="T4", num_gpus=1,
+        image="ghcr.io/astral-sh/uv:python3.13-bookworm",
+        disk=10,
+    )
+    instance_id = instance["id"]
+
+    job = Job(pipeline_id=id, user_id=user_id, vast_instance_id=instance_id, status="queued")
+    session.add(job)
+    session.commit()
+
+    vast.start_instance(instance_id)
+    # ponytail: sleep 15s le temps que l'instance boot
+    time.sleep(15)
+
+    encoded = base64.b64encode(code.encode()).decode()
+    backend_url = os.environ["BACKEND_URL"]
+    gpu_api_key = os.environ["GPU_API_KEY"]
+    vast.execute(
+        instance_id,
+        f"echo '{encoded}' | base64 -d | JOB_ID={job.id} BACKEND_URL={backend_url} GPU_API_KEY={gpu_api_key} uv run {with_args} python",
+    )
+    return job
+
+#### GET /pipelines/{id}/jobs
+
+```python
+def list_pipeline_jobs(
+    pipeline_id: UUID,
+    user_id: str = Depends(get_current_user),
+):
+    pipeline = session.get(PipelineTable, pipeline_id)
+    if not pipeline or pipeline.user_id != user_id:
+        raise HTTPException(status_code=404, detail="Pipeline not found")
+    jobs = session.exec(
+        select(Job).where(Job.pipeline_id == pipeline_id).order_by(Job.created_at.desc())
+    ).all()
+    return jobs
+
+#### GET /jobs/{job_id}
+
+```python
+def get_job(
+    job_id: UUID,
+    user_id: str = Depends(get_current_user),
+):
+    job = session.get(Job, job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    pipeline = session.get(PipelineTable, job.pipeline_id)
+    if not pipeline or pipeline.user_id != user_id:
+        raise HTTPException(status_code=404, detail="Job not found")
+```
+
+#### GPU Callbacks (auth: GPU_API_KEY)
+
+Le GPU appelle ces endpoints pour rapporter son état. Pas de JWT — authentification par `GPU_API_KEY` partagé dans le header `Authorization: Bearer`.
+
+```python
+# mlblock/server/gpu_auth.py
+import os
+from fastapi import Header, HTTPException
+
+GPU_API_KEY = os.environ["GPU_API_KEY"]
+
+def verify_gpu_key(authorization: str = Header(...)) -> str:
+    if not authorization.startswith("Bearer ") or authorization[7:] != GPU_API_KEY:
+        raise HTTPException(status_code=403, detail="Invalid GPU key")
+    return "gpu"
+```
+
+#### POST /jobs/{job_id}/status
+
+Le GPU notifie le changement d'état d'un bloc.
+
+```python
+def update_job_status(
+    job_id: UUID,
+    body: JobStatusUpdate,
+    _: str = Depends(verify_gpu_key),
+) -> None:
+    job = session.get(Job, job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    job.status = body.status
+    if body.status == "running" and not job.started_at:
+        job.started_at = datetime.now(timezone.utc)
+    if body.status in ("done", "error"):
+        job.completed_at = datetime.now(timezone.utc)
+        # Destroy Vast.ai instance to stop charges
+        if job.vast_instance_id:
+            try:
+                vast = VastAI(api_key=os.environ["VAST_API_KEY"])
+                vast.destroy_instance(job.vast_instance_id)
+            except Exception:
+                pass
+    session.add(job)
+    session.commit()
+
+```python
+class JobStatusUpdate(BaseModel):
+    block: str           # nom du bloc en cours
+    status: str          # "running" | "done" | "error"
+```
+
+#### POST /jobs/{job_id}/output
+
+Le GPU pousse le résultat d'un bloc après exécution.
+
+```python
+def push_job_output(
+    job_id: UUID,
+    body: JobOutputPush,
+    _: str = Depends(verify_gpu_key),
+) -> None:
+    job = session.get(Job, job_id)
+    output = JobOutput(
+        job_id=job_id,
+        block_name=body.block,
+        output=body.output,
+    )
+    session.add(output)
+    session.commit()
+```
+
+```python
+class JobOutputPush(BaseModel):
+    block: str     # nom du bloc
+    output: str    # résultat (truncaté à 10k chars côté GPU)
+```
+
+#### POST /jobs/{job_id}/error
+
+Le GPU rapporte une erreur et le backend met le job en status `error`.
+
+```python
+def push_job_error(
+    job_id: UUID,
+    body: JobErrorPush,
+    _: str = Depends(verify_gpu_key),
+) -> None:
+    job = session.get(Job, job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    job.status = "error"
+    job.error = body.error
+    job.completed_at = datetime.now(timezone.utc)
+    # Destroy Vast.ai instance to stop charges
+    if job.vast_instance_id:
+        try:
+            vast = VastAI(api_key=os.environ["VAST_API_KEY"])
+            vast.destroy_instance(job.vast_instance_id)
+        except Exception:
+            pass
+    session.add(job)
+    # Enregistre aussi l'erreur comme output pour historique
+    output = JobOutput(
+        job_id=job_id,
+        block_name=body.block,
+        output=f"ERROR: {body.error}",
+    )
+    session.add(output)
+    session.commit()
+
+```python
+class JobErrorPush(BaseModel):
+    block: str    # nom du bloc qui a échoué
+    error: str    # message d'erreur
+```
+
 
 ### Auto-discovery des blocs
 
 Au démarrage, `mlblock/__init__.py` importe `mlblock.blocks.registry`, ce qui déclenche `_discover()` :
 
 ```python
+BLOCK_SOURCES: dict[str, str] = {}
+
 def _discover():
     pkg_dir = Path(__file__).parent
     for py_file in sorted(pkg_dir.rglob("*.py")):
@@ -276,6 +675,7 @@ def _discover():
                 continue
             block = _inspect_function(name, fn, category)
             BLOCK_REGISTRY[name] = block
+            BLOCK_SOURCES[name] = inspect.getsource(fn)
 ```
 
 **Mécanisme :**
@@ -296,6 +696,35 @@ Le discovery n'applique **aucune règle** pour distinguer entrées et paramètre
 Tous les paramètres de la fonction sont inspectés et deviennent des `ParamInfo` dans le schéma — aucun traitement spécial :
 
 ```python
+import re
+
+def _extract_deps(fn: Callable) -> list[str]:
+    deps: set[str] = set()
+    module = inspect.getmodule(fn)
+    if not module or not hasattr(module, "__file__") or not module.__file__:
+        return []
+    try:
+        with open(module.__file__, "r", encoding="utf-8") as f:
+            source = f.read()
+    except Exception:
+        return []
+    
+    IMPORT_TO_PIP = {
+        "sklearn": "scikit-learn",
+        "PIL": "pillow",
+        "yaml": "pyyaml",
+    }
+    
+    for line in source.splitlines():
+        m = re.match(r"^\s*(?:from\s+(\S+)|import\s+(\S+))", line)
+        if m:
+            pkg = (m.group(1) or m.group(2)).split(".")[0]
+            if pkg not in ("os", "sys", "math", "typing", "inspect", "importlib", "pathlib", "re"):
+                pkg = IMPORT_TO_PIP.get(pkg, pkg)
+                deps.add(pkg)
+    return sorted(deps)
+
+
 def _inspect_function(name: str, fn: Callable, category: Category) -> Block:
     sig = inspect.signature(fn)
     params = {}
@@ -306,8 +735,7 @@ def _inspect_function(name: str, fn: Callable, category: Category) -> Block:
         prequired = p.default == inspect.Parameter.empty
         params[pname] = ParamInfo(type=ptype, description=pdesc, default=pdefault, required=prequired)
     outputs = _parse_return_annotation(sig.return_annotation)
-    return Block(name=name, description=fn.__doc__, category=category, params=params, outputs=outputs)
-```
+    return Block(name=name, description=fn.__doc__, category=category, params=params, outputs=outputs, deps=_extract_deps(fn))
 
 Le discovery ne fait **aucune supposition** sur ce qui est une entrée ou un paramètre utilisateur. Toute cette logique est gérée par le frontend, qui utilise les types (`ParamInfo.type`) pour proposer des connexions entre blocs compatibles.
 
@@ -378,40 +806,156 @@ Les helpers privés (préfixés `_`) sont ignorés par le discovery. Les noms de
 
 ### Génération de code
 
-Le constructeur prend le **fichier source complet** de chaque fonction bloc et l'inline dans le code généré. Puis il appelle chaque fonction dans l'ordre avec ses paramètres.
+Le constructeur prend le **fichier source complet** de chaque fonction bloc et l'inline dans le code généré. Le generator ajoute les wrappers de notification GPU autour de chaque bloc.
 
 ```python
-def generate_code(blocks: list[BlockCall]) -> str:
+def _source_for(block_name: str) -> str:
+    return BLOCK_SOURCES[block_name]
+
+
+def _blocks_used_in(nodes: list[PipelineNode]) -> list[str]:
+    return list({n.type for n in nodes})
+
+
+def _topological_sort(nodes: list[PipelineNode], edges: list[PipelineEdge]) -> list[str]:
+    graph: dict[str, list[str]] = {n.id: [] for n in nodes}
+    in_degree: dict[str, int] = {n.id: 0 for n in nodes}
+    for edge in edges:
+        graph.setdefault(edge.source, []).append(edge.target)
+        in_degree[edge.target] = in_degree.get(edge.target, 0) + 1
+    queue = [nid for nid, deg in in_degree.items() if deg == 0]
+    order = []
+    while queue:
+        nid = queue.pop(0)
+        order.append(nid)
+        for t in graph.get(nid, []):
+            in_degree[t] -= 1
+            if in_degree[t] == 0:
+                queue.append(t)
+    return order
+
+
+def generate_code(nodes: list[PipelineNode], edges: list[PipelineEdge]) -> str:
     lines = ['"""Generated by MLBlock."""', ""]
 
+    # Imports pour les callbacks GPU
+    lines.append("import requests")
+    lines.append("import os")
+    lines.append("")
+    lines.append("BACKEND_URL = os.environ['BACKEND_URL']")
+    lines.append("GPU_API_KEY = os.environ['GPU_API_KEY']")
+    lines.append("JOB_ID = os.environ['JOB_ID']")
+    lines.append("")
+    lines.append("def notify_status(block, status):")
+    lines.append("    try:")
+    lines.append("        requests.post(f'{BACKEND_URL}/jobs/{JOB_ID}/status',")
+    lines.append("            json={'block': block, 'status': status},")
+    lines.append("            headers={'Authorization': f'Bearer {GPU_API_KEY}'}, timeout=5)")
+    lines.append("    except Exception: pass")
+    lines.append("")
+    lines.append("def notify_output(block, output):")
+    lines.append("    try:")
+    lines.append("        requests.post(f'{BACKEND_URL}/jobs/{JOB_ID}/output',")
+    lines.append("            json={'block': block, 'output': str(output)[:10000]},")
+    lines.append("            headers={'Authorization': f'Bearer {GPU_API_KEY}'}, timeout=5)")
+    lines.append("    except Exception: pass")
+    lines.append("")
+    lines.append("def notify_error(block, error):")
+    lines.append("    try:")
+    lines.append("        requests.post(f'{BACKEND_URL}/jobs/{JOB_ID}/error',")
+    lines.append("            json={'block': block, 'error': str(error)},")
+    lines.append("            headers={'Authorization': f'Bearer {GPU_API_KEY}'}, timeout=5)")
+    lines.append("    except Exception: pass")
+    lines.append("")
+
+    # Blocs dédupliqués
     seen = set()
-    for block in blocks:
-        if block.name in seen:
+    for node in nodes:
+        if node.type in seen:
             continue
-        seen.add(block.name)
-        source = _source_for(block.name)      # lit le fichier .py du bloc
-        lines.append(f"# === {block.name} ===")
+        seen.add(node.type)
+        source = _source_for(node.type)
+        lines.append(f"# === {node.type} ===")
         lines.append(source.strip())
         lines.append("")
 
+    # main() avec tri topologique + notifications par bloc
     lines.append("def main():")
-    for i, block in enumerate(blocks):
-        out_idx = i + 1
-        params = ", ".join(f"{k}={v!r}" for k, v in block.params.items())
-        inputs = ", ".join(f"{k}={v}" for k, v in block.inputs.items())
+    lines.append("    try:")
+    
+    order = _topological_sort(nodes, edges)
+    if len(order) != len(nodes):
+        raise ValueError("Cycle detected in pipeline graph")
+        
+    for node_id in order:
+        node = next(n for n in nodes if n.id == node_id)
+        block = BLOCK_REGISTRY[node.type]
+        params = ", ".join(f"{k}={v!r}" for k, v in node.params.items())
+        
+        resolved_inputs = []
+        for edge in edges:
+            if edge.target == node_id:
+                source_node = next(n for n in nodes if n.id == edge.source)
+                source_block = BLOCK_REGISTRY[source_node.type]
+                if len(source_block.outputs) > 1:
+                    var_name = f"out_{edge.source}_{edge.source_port}"
+                else:
+                    var_name = f"out_{edge.source}"
+                resolved_inputs.append(f"{edge.target_port}={var_name}")
+        inputs = ", ".join(resolved_inputs)
+        
         args = ", ".join(filter(None, [inputs, params]))
-        lines.append(f"    out_{out_idx} = {block.name}({args})")
-
+        lines.append(f"        notify_status('{node.type}', 'running')")
+        if len(block.outputs) <= 1:
+            lines.append(f"        out_{node_id} = {node.type}({args})")
+            lines.append(f"        notify_output('{node.type}', out_{node_id})")
+        else:
+            targets = ", ".join(f"out_{node_id}_{o['name']}" for o in block.outputs)
+            lines.append(f"        {targets} = {node.type}({args})")
+            lines.append(f"        notify_output('{node.type}', {targets})")
+        lines.append(f"        notify_status('{node.type}', 'done')")
+    lines.append("        notify_status('pipeline', 'done')")
+    lines.append("    except Exception as e:")
+    lines.append("        notify_error('pipeline', e)")
+    lines.append("        raise")
     lines.append("")
     lines.append('if __name__ == "__main__":')
     lines.append("    main()")
     return "\n".join(lines)
 ```
 
-Exemple de code généré :
+Exemple de code généré (pour le DAG ci-dessus) :
 
 ```python
 """Generated by MLBlock."""
+
+import requests
+import os
+
+BACKEND_URL = os.environ['BACKEND_URL']
+GPU_API_KEY = os.environ['GPU_API_KEY']
+JOB_ID = os.environ['JOB_ID']
+
+def notify_status(block, status):
+    try:
+        requests.post(f'{BACKEND_URL}/jobs/{JOB_ID}/status',
+            json={'block': block, 'status': status},
+            headers={'Authorization': f'Bearer {GPU_API_KEY}'}, timeout=5)
+    except Exception: pass
+
+def notify_output(block, output):
+    try:
+        requests.post(f'{BACKEND_URL}/jobs/{JOB_ID}/output',
+            json={'block': block, 'output': str(output)[:10000]},
+            headers={'Authorization': f'Bearer {GPU_API_KEY}'}, timeout=5)
+    except Exception: pass
+
+def notify_error(block, error):
+    try:
+        requests.post(f'{BACKEND_URL}/jobs/{JOB_ID}/error',
+            json={'block': block, 'error': str(error)},
+            headers={'Authorization': f'Bearer {GPU_API_KEY}'}, timeout=5)
+    except Exception: pass
 
 # === load_csv ===
 import pandas as pd
@@ -422,7 +966,7 @@ def load_csv(path: str) -> pd.DataFrame:
 # === train_test_split ===
 from sklearn.model_selection import train_test_split as tts
 
-def train_test_split(data: pd.DataFrame, target_column: str, test_size: float = 0.2) -> tuple:
+def train_test_split(data, target_column, test_size=0.2):
     X = data.drop(columns=[target_column])
     y = data[target_column]
     return tts(X, y, test_size=test_size)
@@ -430,51 +974,53 @@ def train_test_split(data: pd.DataFrame, target_column: str, test_size: float = 
 # === linear_regression ===
 from sklearn.linear_model import LinearRegression
 
-def linear_regression(train_data: pd.DataFrame, train_target: pd.Series) -> LinearRegression:
+def linear_regression(train_data, train_target):
     return LinearRegression().fit(train_data, train_target)
 
 def main():
-    out_1 = load_csv(path="ventes.csv")
-    out_2, out_3, out_4, out_5 = train_test_split(data=out_1, target_column="prix", test_size=0.2)
-    out_6 = linear_regression(train_data=out_2, train_target=out_4)
+    try:
+        notify_status('load_csv', 'running')
+        out_n1 = load_csv(path="ventes.csv")
+        notify_output('load_csv', out_n1.head().to_string())
+        notify_status('load_csv', 'done')
+
+        notify_status('train_test_split', 'running')
+        out_n2_X_train, out_n2_y_train = train_test_split(
+            data=out_n1, target_column="prix", test_size=0.2)
+        notify_output('train_test_split', f"X shape: {out_n2_X_train.shape}")
+        notify_status('train_test_split', 'done')
+
+        notify_status('linear_regression', 'running')
+        out_n3 = linear_regression(train_data=out_n2_X_train, train_target=out_n2_y_train)
+        notify_output('linear_regression', f"coef: {out_n3.coef_}")
+        notify_status('linear_regression', 'done')
+
+        notify_status('pipeline', 'done')
+    except Exception as e:
+        notify_error('pipeline', e)
+        raise
 
 if __name__ == "__main__":
     main()
 ```
 
 
-#### _detect_dependencies()
+#### Dépendances par bloc
 
-Avant l'exécution GPU, le backend analyse les imports du code généré pour construire un `requirements.txt` :
+Chaque bloc déclare ses dépendances pip via le champ `deps` du `Block` (extrait automatiquement des imports par le discovery). Le generator collecte les deps de tous les blocs utilisés et génère les arguments `--with` pour `uv run`.
 
 ```python
-IMPORT_MAP = {
-    "torch": "torch",
-    "sklearn": "scikit-learn",
-    "pandas": "pandas",
-    "numpy": "numpy",
-    "matplotlib": "matplotlib",
-    "gymnasium": "gymnasium",
-    "stable_baselines3": "stable-baselines3",
-}
-
-def _detect_dependencies(code: str) -> str:
-    """Analyse les imports du code et retourne un requirements.txt."""
-    reqs = set()
-    for line in code.splitlines():
-        line = line.strip()
-        if line.startswith("import "):
-            mod = line.split()[1].split(".")[0]
-            if mod in IMPORT_MAP:
-                reqs.add(IMPORT_MAP[mod])
-        elif line.startswith("from "):
-            mod = line.split()[1].split(".")[0]
-            if mod in IMPORT_MAP:
-                reqs.add(IMPORT_MAP[mod])
-    return "\n".join(sorted(reqs))
+def _collect_dependencies(blocks_used: list[str]) -> str:
+    """Collecte les deps de chaque bloc utilisé et retourne la chaîne --with."""
+    reqs: set[str] = set()
+    for block_name in blocks_used:
+        block = BLOCK_REGISTRY.get(block_name)
+        if block:
+            reqs.update(block.deps)
+    return " ".join(f"--with {d}" for d in sorted(reqs))
 ```
 
-Le fichier `requirements.txt` généré est uploadé sur l'instance Vast.ai avec le code. `uv sync` installe automatiquement les dépendances listées.
+Le fichier `requirements.txt` généré est converti en arguments `--with` pour `uv run` — pas de fichier sur l'instance, `uv run` installe les dépendances à la volée et pipe le code directement.
 
 ### Fichiers clés
 
@@ -482,12 +1028,13 @@ Le fichier `requirements.txt` généré est uploadé sur l'instance Vast.ai avec
 |---|---|
 | `mlblock/__main__.py` | CLI entry (dev local) |
 | `mlblock/blocks/registry.py` | Auto-discovery via `inspect.signature` |
-| `mlblock/server/routes.py` | API REST (save, execute) |
+| `mlblock/server/routes.py` | API REST (blocks, pipelines, validation, jobs) |
+| `mlblock/server/gpu_auth.py` | Auth GPU callback (GPU_API_KEY) |
 | `mlblock/server/main.py` | FastAPI app |
 
 ### Exécution GPU — Vast.ai
 
-Le backend utilise **Vast.ai** pour louer un GPU à la seconde. L'image Docker est `ghcr.io/astral-sh/uv:python3.13-alpine`.
+Le backend utilise **Vast.ai** pour louer un GPU à la seconde. L'image Docker est `ghcr.io/astral-sh/uv:python3.13-bookworm` (Debian-based glibc pour supporter les wheels de PyTorch/CUDA).
 
 #### Facturation
 
@@ -498,7 +1045,7 @@ Par contre, le **storage** est facturé tant que l'instance existe (même arrêt
 #### Image Docker
 
 ```dockerfile
-FROM ghcr.io/astral-sh/uv:python3.13-alpine
+FROM ghcr.io/astral-sh/uv:python3.13-bookworm
 WORKDIR /app
 ```
 
@@ -509,8 +1056,39 @@ WORKDIR /app
 | **GPU** | NVIDIA T4 |
 | **Type** | On-Demand (non-interruptible) |
 | **Prix** | $0.20-0.30/hr (GPU compute) + $0.001/hr (storage) |
-| **Image** | `ghcr.io/astral-sh/uv:python3.13-alpine` |
+| **Image** | `ghcr.io/astral-sh/uv:python3.13-bookworm` |
 | **Cold start** | ~30s + temps d'installation des dépendances |
+
+#### Supabase Storage & URLs Signées
+
+Pour les pipelines nécessitant des datasets volumineux en entrée (ex: `load_csv`) ou produisant des poids de modèle en sortie (ex: `save_model`), les instances de calcul GPU (Vast.ai) doivent pouvoir lire et écrire des fichiers de manière sécurisée.
+
+Plutôt que de partager la clé API d'administration (`service_role`) avec le conteneur GPU, le backend génère des **URLs signées temporaires** (valables pendant la durée de l'exécution, ex: 1 heure) :
+
+1. **Téléchargement (Lecture seule)** : Pour les blocs lisant des fichiers, le backend génère une URL de téléchargement signée via `create_signed_url` et l'injecte dans le script ou dans les variables d'environnement.
+2. **Dépôt (Écriture seule)** : Pour sauvegarder des artéfacts d'entraînement, le backend génère une URL de dépôt signée via `create_signed_upload_url` et un token associé, permettant au GPU de pousser les données avec une requête HTTP `PUT`.
+
+##### Exemple d'implémentation du client Python (backend) :
+
+```python
+from supabase import create_client, Client
+import os
+
+supabase: Client = create_client(os.environ["SUPABASE_URL"], os.environ["SUPABASE_KEY"])
+
+def get_dataset_download_url(bucket: str, path: str) -> str:
+    # Génère une URL signée valable 1 heure
+    res = supabase.storage.from_(bucket).create_signed_url(path, expires_in=3600)
+    return res["signedURL"]
+
+def get_model_upload_url(bucket: str, path: str) -> dict:
+    # Génère une URL signée pour pousser les poids du modèle
+    res = supabase.storage.from_(bucket).create_signed_upload_url(path)
+    return {
+        "signed_url": res["signed_url"],
+        "token": res["token"]
+    }
+```
 
 #### Session lifecycle
 
@@ -521,57 +1099,107 @@ POST /pipelines/{id}/execute
 Charge la pipeline + code depuis la DB
     │
     ▼
-Backend analyse les imports → génère requirements.txt
+Collecte les deps → construit les --with args pour uv
     │
     ▼
-Crée l'instance Vast.ai (onstart = "uv sync && python main.py")
+Crée l'instance + job en DB (status: queued)
     │
     ▼
-Upload main.py, requirements.txt, pyproject.toml
+start_instance → sleep 15s (attente SSH/execute)
     │
     ▼
-Démarre l'instance → uv sync → python main.py
+execute("echo '{code_b64}' | base64 -d | JOB_ID={id} BACKEND_URL={url} GPU_API_KEY={key} uv run --with torch ... python")
     │
     ▼
-Le script push les résultats vers Supabase Realtime
+GPU main() s'exécute:
+    │
+    ├── POST /jobs/{JOB_ID}/status → {block: "load_csv", status: "running"}
+    ├── execute load_csv
+    ├── POST /jobs/{JOB_ID}/output → {block: "load_csv", output: "..."}
+    ├── POST /jobs/{JOB_ID}/status → {block: "load_csv", status: "done"}
+    │
+    ├── POST /jobs/{JOB_ID}/status → {block: "train_test_split", status: "running"}
+    ├── execute train_test_split
+    ├── POST /jobs/{JOB_ID}/output → {block: "train_test_split", output: "..."}
+    ├── POST /jobs/{JOB_ID}/status → {block: "train_test_split", status: "done"}
+    │
+    ├── ... (chaque bloc suit le même pattern)
+    │
+    ├── POST /jobs/{JOB_ID}/status → {block: "pipeline", status: "done"}
     │
     ▼
-Backend détecte la fin → détruit l'instance (DELETE)
+GPU appelle POST /jobs/{JOB_ID}/status → done
     │
     ▼
-job status: done
+Backend reçoit status=done → détruit l'instance Vast.ai (DELETE)
+    │
+    ▼
+job status: done, completed_at: now
 ```
 
-#### Exemple d'implémentation
+#### Exemple d'implémentation — GPU callback
 
 ```python
-def execute_pipeline(id: int) -> JobStatus:
-    row = session.get(Pipeline, id)
-    code = row.code
-    reqs = _detect_dependencies(code)
+# Généré dans main.py uploadé sur le GPU
+import requests
+import os
 
-    vast = VastAI(api_key="...")
-    instance = vast.create_instance(
-        image="ghcr.io/astral-sh/uv:python3.13-alpine",
-        disk=10,
-        onstart="uv sync && python main.py",
-    )
-    vast.upload(instance["id"], "/app/main.py", code)
-    vast.upload(instance["id"], "/app/requirements.txt", reqs)
-    vast.upload(instance["id"], "/app/pyproject.toml", _pyproject(reqs))
-    vast.start(instance["id"])
+BACKEND_URL = os.environ["BACKEND_URL"]
+GPU_API_KEY = os.environ["GPU_API_KEY"]
+JOB_ID = os.environ["JOB_ID"]
 
-    job = Job(pipeline_id=id, vast_instance_id=instance["id"])
-    session.add(job)
-    session.commit()
-    return job
+def notify_status(block, status):
+    try:
+        requests.post(f"{BACKEND_URL}/jobs/{JOB_ID}/status",
+            json={"block": block, "status": status},
+            headers={"Authorization": f"Bearer {GPU_API_KEY}"},
+            timeout=5)
+    except Exception:
+        pass  # ponytail: ne pas crasher le pipeline pour un report
 
-def destroy_instance(instance_id: str):
-    vast = VastAI(api_key="...")
-    vast.destroy(instance_id)
+def notify_output(block, output):
+    try:
+        requests.post(f"{BACKEND_URL}/jobs/{JOB_ID}/output",
+            json={"block": block, "output": str(output)[:10000]},
+            headers={"Authorization": f"Bearer {GPU_API_KEY}"},
+            timeout=5)
+    except Exception:
+        pass
+
+def notify_error(block, error):
+    try:
+        requests.post(f"{BACKEND_URL}/jobs/{JOB_ID}/error",
+            json={"block": block, "error": str(error)},
+            headers={"Authorization": f"Bearer {GPU_API_KEY}"},
+            timeout=5)
+    except Exception:
+        pass
+
+def main():
+    try:
+        notify_status("load_csv", "running")
+        out_n1 = load_csv(path="ventes.csv")
+        notify_output("load_csv", out_n1.head().to_string())
+        notify_status("load_csv", "done")
+
+        notify_status("train_test_split", "running")
+        out_n2_X_train, out_n2_y_train = train_test_split(
+            data=out_n1, target_column="prix", test_size=0.2)
+        notify_output("train_test_split", f"X shape: {out_n2_X_train.shape}")
+        notify_status("train_test_split", "done")
+
+        notify_status("linear_regression", "running")
+        out_n3 = linear_regression(train_data=out_n2_X_train, train_target=out_n2_y_train)
+        notify_output("linear_regression", f"coef: {out_n3.coef_}")
+        notify_status("linear_regression", "done")
+
+        notify_status("pipeline", "done")
+    except Exception as e:
+        notify_error("pipeline", e)
+        raise
 ```
 
-Le backend peut poller le status du job sur Vast.ai toutes les 10s, ou faire en sorte que le script Python appel une API callback à la fin pour déclencher la destruction immédiate.
+
 
 ---
 
@@ -579,11 +1207,108 @@ Le backend peut poller le status du job sur Vast.ai toutes les 10s, ou faire en 
 
 Le backend utilise **PostgreSQL** via **Supabase**. Les tables sont créées avec SQLModel au démarrage.
 
+### Connexion et Configuration
+
+Le backend se connecte à PostgreSQL (Supabase) via **SQLModel** (avec le pilote `psycopg`). La configuration requiert la variable d'environnement `DATABASE_URL`.
+
+```python
+# mlblock/server/database.py
+import os
+from collections.abc import Generator
+from sqlmodel import create_engine, Session, SQLModel
+
+DATABASE_URL = os.environ["DATABASE_URL"]
+
+# Configuration de l'engine SQLModel avec pooling de connexions pour PostgreSQL
+engine = create_engine(
+    DATABASE_URL,
+    pool_size=20,
+    max_overflow=10,
+    pool_recycle=3600
+)
+
+def init_db() -> None:
+    # Création des tables si elles n'existent pas
+    SQLModel.metadata.create_all(engine)
+
+def get_session() -> Generator[Session, None, None]:
+    with Session(engine) as session:
+        yield session
+```
+
+La fonction `init_db()` est appelée au démarrage de l'application FastAPI via le mécanisme de `lifespan` :
+
+```python
+# mlblock/server/main.py
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
+from mlblock.server.database import init_db
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    init_db()
+    yield
+
+app = FastAPI(title="MLBlock Server", lifespan=lifespan)
+```
+
+### Guide d'Installation et Configuration Initiale de Supabase
+
+Pour configurer la connexion initiale et les dépendances nécessaires au projet :
+
+#### 1. Installation des Dépendances
+Installez les dépendances requises pour charger les variables d'environnement et s'interconnecter avec PostgreSQL :
+
+```bash
+pip install python-dotenv psycopg2
+```
+
+#### 2. Configuration des Variables d'Environnement
+
+Créez un fichier `.env` à la racine de votre projet avec la chaîne de connexion Supabase.
+> **Note :** Si votre mot de passe de base de données contient des caractères spéciaux, vous devrez les encoder en pourcentage (percent-encode) dans l'URL de connexion.
+
+```ini
+DATABASE_URL=postgresql://postgres:[YOUR-PASSWORD]@db.hrvbsbkcbtgephuntgqd.supabase.co:5432/postgres
+```
+
+##### Informations de connexion de référence :
+* **Host :** `db.hrvbsbkcbtgephuntgqd.supabase.co`
+* **Port :** `5432`
+* **Database :** `postgres`
+* **User :** `postgres`
+
+##### Exemple de script de test de connexion (`main.py`) :
+
+```python
+import os
+import psycopg2
+from dotenv import load_dotenv
+
+# Chargement des variables d'environnement du fichier .env
+load_dotenv()
+
+# Récupération de la chaîne de connexion
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+# Test de connexion directe à la base de données
+connection = psycopg2.connect(DATABASE_URL)
+```
+
+#### 3. Installation des Agent Skills (Optionnel)
+Les Agent Skills donnent aux outils de code IA des instructions clés en main, des scripts et des ressources pour travailler avec Supabase de façon plus précise et efficace.
+
+```bash
+npx skills add supabase/agent-skills
+```
+
+
 | Table | Rôle |
 |---|---|
 | `profiles` | Données utilisateur (optionnel) |
-| `pipelines` | Sauvegarde des pipelines (blocs + code généré) |
+| `pipelines` | Sauvegarde des pipelines (nodes + edges + code généré) |
 | `jobs` | Suivi d'exécution sur GPU |
+| `job_outputs` | Résultats par bloc (un row par bloc exécuté) |
 
 ### Table `profiles`
 
@@ -603,7 +1328,8 @@ CREATE TABLE pipelines (
   id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id    UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   name       TEXT NOT NULL,
-  blocks     JSONB DEFAULT '[]'    NOT NULL,  -- [{name, params, inputs}, ...]
+  nodes      JSONB DEFAULT '[]'    NOT NULL,  -- [{id, type, params, children}, ...]
+  edges      JSONB DEFAULT '[]'    NOT NULL,  -- [{source, source_port, target, target_port}, ...]
   code       TEXT DEFAULT ''       NOT NULL,  -- Python généré
   created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
   updated_at TIMESTAMPTZ DEFAULT now() NOT NULL
@@ -638,9 +1364,53 @@ CREATE INDEX idx_jobs_status  ON jobs(status);
 ALTER PUBLICATION supabase_realtime ADD TABLE jobs;
 ```
 
+### Table `job_outputs`
+
+```sql
+CREATE TABLE job_outputs (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  job_id     UUID NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+  block_name TEXT NOT NULL,
+  output     TEXT DEFAULT '',
+  created_at TIMESTAMPTZ DEFAULT now() NOT NULL
+);
+
+CREATE INDEX idx_job_outputs_job ON job_outputs(job_id);
+
+-- Realtime pour le frontend (progression par bloc)
+ALTER PUBLICATION supabase_realtime ADD TABLE job_outputs;
+```
+
 ### Realtime
 
-Le frontend s'abonne à la table `jobs` via Supabase Realtime pour recevoir les mises à jour de statut et le output en direct. La publication `supabase_realtime` inclut la table `jobs`.
+Le frontend s'abonne à deux tables via Supabase Realtime :
+- `jobs` — mises à jour de statut global (running, done, error)
+- `job_outputs` — résultats par bloc en direct (chaque bloc affiche son output au fur et à mesure)
+
+```typescript
+// Statut global du job
+const jobSub = supabase
+  .channel('job-updates')
+  .on('postgres_changes',
+    { event: 'UPDATE', schema: 'public', table: 'jobs', filter: `id=eq.${jobId}` },
+    (payload) => {
+      setJobStatus(payload.new.status)
+      if (payload.new.error) setError(payload.new.error)
+    }
+  )
+  .subscribe()
+
+// Résultats par bloc (un message par bloc exécuté)
+const outputSub = supabase
+  .channel('job-outputs')
+  .on('postgres_changes',
+    { event: 'INSERT', schema: 'public', table: 'job_outputs', filter: `job_id=eq.${jobId}` },
+    (payload) => {
+      appendBlockOutput(payload.new.block_name, payload.new.output)
+    }
+  )
+  .subscribe()
+```
 
 ---
 
