@@ -76,6 +76,9 @@ def generate_code(nodes: list[PipelineNode], edges: list[PipelineEdge]) -> str:
     if len(order) != len(nodes):
         raise ValueError("Cycle detected in pipeline graph")
 
+    output_counter = 0
+    output_map: dict = {}
+
     for node_id in order:
         node = next(n for n in nodes if n.id == node_id)
         block = BLOCK_REGISTRY.get(node.type)
@@ -85,16 +88,18 @@ def generate_code(nodes: list[PipelineNode], edges: list[PipelineEdge]) -> str:
         cleaned_params = {k: v for k, v in node.params.items() if not k.startswith("_")}
         params = ", ".join(f"{k}={v!r}" for k, v in cleaned_params.items())
 
+        PORT_TO_PARAM = {"in": "in_1", "input": "in_1", "x": "in_1", "in_1": "in_1"}
+
         resolved_inputs = []
         for edge in edges:
             if edge.target == node_id:
-                source_node = next(n for n in nodes if n.id == edge.source)
-                source_block = BLOCK_REGISTRY.get(source_node.type)
-                if source_block and len(source_block.outputs) > 1:
-                    var_name = f"out_{edge.source}_{edge.source_port}"
+                key = (edge.source, edge.source_port)
+                if key in output_map:
+                    var_name = f"out_{output_map[key]}"
+                elif edge.source in output_map:
+                    var_name = f"out_{output_map[edge.source]}"
                 else:
                     var_name = f"out_{edge.source}"
-                PORT_TO_PARAM = {"in": "in_1", "input": "in_1", "x": "in_1", "in_1": "in_1"}
                 target_param = PORT_TO_PARAM.get(edge.target_port, edge.target_port)
                 resolved_inputs.append(f"{target_param}={var_name}")
         inputs = ", ".join(resolved_inputs)
@@ -102,12 +107,18 @@ def generate_code(nodes: list[PipelineNode], edges: list[PipelineEdge]) -> str:
         args = ", ".join(filter(None, [inputs, params]))
         lines.append(f"        notify_status('{node.type}', 'running')")
         if len(block.outputs) <= 1:
-            lines.append(f"        out_{node_id} = {node.type}({args})")
-            lines.append(f"        notify_output('{node.type}', out_{node_id})")
+            output_counter += 1
+            output_map[node_id] = output_counter
+            lines.append(f"        out_{output_counter} = {node.type}({args})")
+            lines.append(f"        notify_output('{node.type}', out_{output_counter})")
         else:
-            targets = ", ".join(f"out_{node_id}_{o['name']}" for o in block.outputs)
-            lines.append(f"        {targets} = {node.type}({args})")
-            lines.append(f"        notify_output('{node.type}', {targets})")
+            targets = []
+            for o in block.outputs:
+                output_counter += 1
+                output_map[(node_id, o['name'])] = output_counter
+                targets.append(f"out_{output_counter}")
+            lines.append(f"        {', '.join(targets)} = {node.type}({args})")
+            lines.append(f"        notify_output('{node.type}', {', '.join(targets)})")
         lines.append(f"        notify_status('{node.type}', 'done')")
     lines.append("        notify_status('pipeline', 'done')")
     lines.append("    except Exception as e:")

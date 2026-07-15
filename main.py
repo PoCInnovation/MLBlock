@@ -39,146 +39,146 @@ def input(shape: "list[int]") -> "torch.Tensor":
     Args:
         shape: Parameter.
     """
-    return nn.Input(shape=shape)(x)
+    return nn.Input(shape=shape)(in_1)
 
 # === conv2d ===
 import torch
 from torch import nn
 
 
-def conv2d(x: "torch.Tensor", in_channels: "int", out_channels: "int", kernel_size: "int" = 3, stride: "int" = 1, padding: "int" = 0) -> "torch.Tensor":
+def conv2d(in_1: "torch.Tensor", in_channels: "int", out_channels: "int", kernel_size: "int" = 3, stride: "int" = 1, padding: "int" = 0) -> "torch.Tensor":
     """Conv2D.
     
     Args:
-        x: Input tensor.
+        in_1: Input tensor.
         in_channels: Parameter.
         out_channels: Parameter.
         kernel_size: Parameter.
         stride: Parameter.
         padding: Parameter.
     """
-    return nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel_size, stride=stride, padding=padding)(x)
+    return nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel_size, stride=stride, padding=padding)(in_1)
 
 # === relu ===
 import torch
 from torch import nn
 
 
-def relu(x: "torch.Tensor") -> "torch.Tensor":
+def relu(in_1: "torch.Tensor") -> "torch.Tensor":
     """ReLU.
     
     Args:
-        x: Input tensor.
+        in_1: Input tensor.
     """
-    return nn.ReLU()(x)
+    return nn.ReLU()(in_1)
 
 # === maxpool2d ===
 import torch
 from torch import nn
 
 
-def maxpool2d(x: "torch.Tensor", kernel_size: "int" = 2, stride: "int" = None) -> "torch.Tensor":
+def maxpool2d(in_1: "torch.Tensor", kernel_size: "int" = 2, stride: "int" = None) -> "torch.Tensor":
     """MaxPool2D.
     
     Args:
-        x: Input tensor.
+        in_1: Input tensor.
         kernel_size: Parameter.
         stride: Parameter.
     """
-    return nn.MaxPool2d(kernel_size=kernel_size, stride=stride)(x)
+    return nn.MaxPool2d(kernel_size=kernel_size, stride=stride)(in_1)
 
 # === flatten ===
 import torch
 from torch import nn
 
 
-def flatten(x: "torch.Tensor") -> "torch.Tensor":
+def flatten(in_1: "torch.Tensor") -> "torch.Tensor":
     """Flatten.
     
     Args:
-        x: Input tensor.
+        in_1: Input tensor.
     """
-    return nn.Flatten()(x)
+    return nn.Flatten()(in_1)
 
 # === linear ===
 import torch
 from torch import nn
 
 
-def linear(x: "torch.Tensor", in_features: "int", out_features: "int", bias: "bool" = True) -> "torch.Tensor":
+def linear(in_1: "torch.Tensor", in_features: "int", out_features: "int", bias: "bool" = True) -> "torch.Tensor":
     """Linear (FC).
     
     Args:
-        x: Input tensor.
+        in_1: Input tensor.
         in_features: Parameter.
         out_features: Parameter.
         bias: Parameter.
     """
-    return nn.Linear(in_features=in_features, out_features=out_features, bias=bias)(x)
+    return nn.Linear(in_features=in_features, out_features=out_features, bias=bias)(in_1)
 
 # === softmax ===
 import torch
 from torch import nn
 
 
-def softmax(x: "torch.Tensor", dim: "int" = 1) -> "torch.Tensor":
+def softmax(in_1: "torch.Tensor", dim: "int" = 1) -> "torch.Tensor":
     """Softmax.
     
     Args:
-        x: Input tensor.
+        in_1: Input tensor.
         dim: Parameter.
     """
-    return nn.Softmax(dim=dim)(x)
+    return nn.Softmax(dim=dim)(in_1)
 
 def main():
     try:
         notify_status('input', 'running')
-        out_input_1 = input(shape=[1, 28, 28])
-        notify_output('input', out_input_1)
+        out_1 = input(shape=[1, 28, 28])
+        notify_output('input', out_1)
         notify_status('input', 'done')
         notify_status('conv2d', 'running')
-        out_conv1 = conv2d(x=out_input_1, in_channels=1, out_channels=32, kernel_size=3)
-        notify_output('conv2d', out_conv1)
+        out_2 = conv2d(in_1=out_1, in_channels=1, out_channels=32, kernel_size=3)
+        notify_output('conv2d', out_2)
         notify_status('conv2d', 'done')
         notify_status('relu', 'running')
-        out_relu1 = relu(x=out_conv1)
-        notify_output('relu', out_relu1)
+        out_3 = relu(in_1=out_2)
+        notify_output('relu', out_3)
         notify_status('relu', 'done')
         notify_status('maxpool2d', 'running')
-        out_pool1 = maxpool2d(x=out_relu1, kernel_size=2)
-        notify_output('maxpool2d', out_pool1)
+        out_4 = maxpool2d(in_1=out_3, kernel_size=2)
+        notify_output('maxpool2d', out_4)
         notify_status('maxpool2d', 'done')
         notify_status('conv2d', 'running')
-        out_conv2 = conv2d(x=out_pool1, in_channels=32, out_channels=64, kernel_size=3)
-        notify_output('conv2d', out_conv2)
+        out_5 = conv2d(in_1=out_4, in_channels=32, out_channels=64, kernel_size=3)
+        notify_output('conv2d', out_5)
         notify_status('conv2d', 'done')
         notify_status('relu', 'running')
-        out_relu2 = relu(x=out_conv2)
-        notify_output('relu', out_relu2)
+        out_6 = relu(in_1=out_5)
+        notify_output('relu', out_6)
         notify_status('relu', 'done')
         notify_status('maxpool2d', 'running')
-        out_pool2 = maxpool2d(x=out_relu2, kernel_size=2)
-        notify_output('maxpool2d', out_pool2)
+        out_7 = maxpool2d(in_1=out_6, kernel_size=2)
+        notify_output('maxpool2d', out_7)
         notify_status('maxpool2d', 'done')
         notify_status('flatten', 'running')
-        out_flat = flatten(x=out_pool2)
-        notify_output('flatten', out_flat)
+        out_8 = flatten(in_1=out_7)
+        notify_output('flatten', out_8)
         notify_status('flatten', 'done')
         notify_status('linear', 'running')
-        out_fc1 = linear(x=out_flat, in_features=1600, out_features=128)
-        notify_output('linear', out_fc1)
+        out_9 = linear(in_1=out_8, in_features=1600, out_features=128)
+        notify_output('linear', out_9)
         notify_status('linear', 'done')
         notify_status('relu', 'running')
-        out_relu3 = relu(x=out_fc1)
-        notify_output('relu', out_relu3)
+        out_10 = relu(in_1=out_9)
+        notify_output('relu', out_10)
         notify_status('relu', 'done')
         notify_status('linear', 'running')
-        out_fc2 = linear(x=out_relu3, in_features=128, out_features=10)
-        notify_output('linear', out_fc2)
+        out_11 = linear(in_1=out_10, in_features=128, out_features=10)
+        notify_output('linear', out_11)
         notify_status('linear', 'done')
         notify_status('softmax', 'running')
-        out_output = softmax(x=out_fc2, dim=1)
-        notify_output('softmax', out_output)
+        out_12 = softmax(in_1=out_11, dim=1)
+        notify_output('softmax', out_12)
         notify_status('softmax', 'done')
         notify_status('pipeline', 'done')
     except Exception as e:

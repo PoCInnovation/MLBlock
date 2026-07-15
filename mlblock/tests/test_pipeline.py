@@ -70,10 +70,10 @@ def test_generated_code_contains_layers():
     graph = Graph(graph_data)
     pipeline = Pipeline(graph)
     code = pipeline.generate_code()
-    assert "out_conv1" in code
-    assert "out_relu1" in code
-    assert "out_fc1" in code
-    assert "out_output" in code
+    assert "out_1 = input" in code
+    assert "out_2 = conv2d" in code
+    assert "out_5 = flatten" in code
+    assert "out_9 = softmax" in code
 
 def test_generated_code_contains_params():
     graph_data = MNIST_CONFIG["graph"]
@@ -114,7 +114,7 @@ def test_all_block_templates_generate_code():
         code = pipeline.generate_code()
         assert isinstance(code, str)
         assert len(code) > 0
-        assert "out_layer" in code
+        assert "out_2 = " + type_name in code
 
 def test_generated_code_has_main_block():
     graph_data = MNIST_CONFIG["graph"]
