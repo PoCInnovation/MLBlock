@@ -18,11 +18,11 @@ For each of the following branches, add the required protections.
 
 ```markdown
 - [x] Require a pull request before merging
-  - [x] Require approvals
-        Required number of approvals before merging: 1
+    - [x] Require approvals
+          Required number of approvals before merging: 1
 
 - [x] Require status checks to pass before merging
-  - [x] Require branches to be up to date before merging
+    - [x] Require branches to be up to date before merging
 
 - [x] Require conversation resolution before merging
 ```
@@ -36,6 +36,7 @@ This template provides the must-have documents.
 The README.md is the showcase of your project. It always must be clean and consistent. Otherwise, no one will care of your project.
 
 Fill every sections of the [README.md](/README.md).
+
 > If you add pictures, put them in the [assets](./assets/) folder.
 
 #### CONTRIBUTING.md
@@ -49,6 +50,7 @@ Fill every sections of the [CONTRIBUTING.md](/CONTRIBUTING.md).
 The LICENSE protects your code and contributors.
 
 This template provides an [Apache Licence 2.0](https://www.apache.org/licenses/LICENSE-2.0).
+
 > If you want another one, check this [guide](https://choosealicense.com).
 
 If your project doesn't belong to [PoC Innovation](https://github.com/PoCInnovation), make sure to update the copyrights of the [LICENCE](/LICENSE).
@@ -66,6 +68,7 @@ This template provides the must-have templates.
 An issue is a tool to track and focus tasks.
 
 This template provides two issues templates :
+
 - `Bug Report`
 - `Feature Request`
 
@@ -119,6 +122,7 @@ This template provides some GitHub actions.
 A release is tool with changelogs that present a full history of a project.
 
 This template provides an [action](./workflows/release-drafter.yml) that drafts [next releases notes](./release-drafter.yml) as pull requests are merged into the main branch. You don't need to update it.
+
 > Check this [action's documentation](https://github.com/release-drafter/release-drafter) to understand how it works
 
 ### Settings
@@ -138,22 +142,23 @@ A task is associated as an issue.
 
 The workflow to follow is:
 
-1) Create a milestone
-2) Create all the needed issues linked to this milestone
-3) Manage the pull requests linked with these issues using the GitHib project
-4) Resolve these issues
-5) Publish a release
-6) Close the milestone
+1. Create a milestone
+2. Create all the needed issues linked to this milestone
+3. Manage the pull requests linked with these issues using the GitHib project
+4. Resolve these issues
+5. Publish a release
+6. Close the milestone
 
 ### Milestones
 
 Each milestones must use the [milestone template](./milestone_template.md).
 
 There are two parts :
+
 - Overall
-  > **⚠️ It's checklist must be completed before starting this sprint ⚠️**
+    > **⚠️ It's checklist must be completed before starting this sprint ⚠️**
 - Final Report
-  > **⚠️ It's checklist must be completed before starting a new sprint ⚠️**
+    > **⚠️ It's checklist must be completed before starting a new sprint ⚠️**
 
 Additional information is written in the milestones's checklists. Read them carefully!
 
@@ -201,4 +206,4 @@ Follow this [tutorial](https://docs.github.com/en/code-security/dependabot/depen
 
 If you have any questions, please contact [Reza Rahemtola](https://github.com/RezaRahemtola).
 
-> Made with ❤️ by PoC
+> Made with 💜 by PoC
