@@ -140,4 +140,20 @@ dist
 # Vite files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
-.vite/
+.vite/__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+*.db
+*.sqlite3
+*.egg-info/
+*.pyo
+/.agents
+/.opencode
+/.claude
+/.mcp.json
+/opencode.json
+backend/.env
+backend/main.py
+backend/tmp.py
+backend/mlblock.db
