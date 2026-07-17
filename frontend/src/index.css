@@ -21,6 +21,73 @@ input, select, button { font-family: inherit; }
   50%       { opacity: .35; }
 }
 
+/* PoC Innovation button — design system match */
+.poc-btn {
+  position: relative;
+  display: inline-block;
+  font-family: 'Fredoka', sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  color: #000;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 24px;
+  padding: 14px 28px;
+  text-decoration: none;
+  letter-spacing: .04em;
+  overflow: hidden;
+  cursor: pointer;
+  transition: background .3s ease, box-shadow .3s ease;
+  box-shadow:
+    rgba(29,  78, 216, 0.9) 0px -1px  3px -1px,
+    rgba(29,  78, 216, 0.7) 0px -3px  7px -2px,
+    rgba(29,  78, 216, 0.4) 0px -6px 12px -3px,
+    rgba(29,  78, 216, 0.2) 0px -9px 18px -4px,
+    rgba(185, 28,  28, 0.9) 0px  1px  3px -1px,
+    rgba(185, 28,  28, 0.7) 0px  3px  7px -2px,
+    rgba(185, 28,  28, 0.4) 0px  6px 12px -3px,
+    rgba(185, 28,  28, 0.2) 0px  9px 18px -4px,
+    rgba(0,    0,   0, 0.05) 0px 4px 20px;
+}
+/* gradient border */
+.poc-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 24px;
+  padding: 2px;
+  background: linear-gradient(to bottom, #3b82f6, #a855f7, #ef4444);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+}
+/* hover shimmer */
+.poc-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 24px;
+  background: linear-gradient(to bottom right, rgba(209,213,219,.2), rgba(249,250,251,.1));
+  opacity: 0;
+  transition: opacity .3s;
+  pointer-events: none;
+}
+.poc-btn:hover {
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow:
+    rgba(29,  78, 216, 0.9) 0px -1px  3px -1px,
+    rgba(29,  78, 216, 0.7) 0px -3px  7px -2px,
+    rgba(29,  78, 216, 0.4) 0px -6px 12px -3px,
+    rgba(29,  78, 216, 0.2) 0px -9px 18px -4px,
+    rgba(185, 28,  28, 0.9) 0px  1px  3px -1px,
+    rgba(185, 28,  28, 0.7) 0px  3px  7px -2px,
+    rgba(185, 28,  28, 0.4) 0px  6px 12px -3px,
+    rgba(185, 28,  28, 0.2) 0px  9px 18px -4px,
+    rgba(0,    0,   0, 0.10) 0px 4px 20px;
+}
+.poc-btn:hover::after { opacity: 1; }
+
 ::-webkit-scrollbar { width: 11px; height: 11px; }
 ::-webkit-scrollbar-thumb {
   background: rgba(255,255,255,.12);
@@ -32,4 +99,13 @@ input, select, button { font-family: inherit; }
   background: rgba(255,255,255,.2);
   background-clip: padding-box;
   border: 3px solid transparent;
+}
+
+@media (max-width: 768px) {
+  .landing-nav { padding: 18px 20px !important; }
+  .landing-hero { grid-template-columns: 1fr !important; padding: 32px 20px 48px !important; }
+  .landing-hero h1 { font-size: 40px !important; }
+  .landing-hero-visual { display: none; }
+  .landing-section-pad { padding: 48px 20px !important; }
+  .landing-features-grid { grid-template-columns: 1fr !important; }
 }
