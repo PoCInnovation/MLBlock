@@ -1,6 +1,8 @@
 import axios from 'axios'
+import { SignJWT } from 'jose'
 import type {
-  BlockDetail,
+  BackendBlock,
+  BackendCategory,
   BlockSummary,
   BlockDef,
   BlockDefMap,
@@ -21,16 +23,49 @@ const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000'
 
 const http = axios.create({ baseURL: BASE, timeout: 10_000 })
 
-const CATEGORY_META: Record<string, { name: string; color: string }> = {
-  data:    { name: 'Données',       color: '#5B8DEF' },
-  prep:    { name: 'Prétraitement', color: '#7C67E5' },
-  model:   { name: 'Modèle',        color: '#D97757' },
-  train:   { name: 'Entraînement',  color: '#E8A44A' },
-  eval:    { name: 'Évaluation',    color: '#66C7B0' },
-  control: { name: 'Contrôle',      color: '#C06B8A' },
+// ── Dev auth shim (VITE_DEV_MODE=true only) ──────────────────────────
+// Signs a JWT with the backend's mock secret so local dev does not need
+// a real Supabase session. Never runs when VITE_DEV_MODE is unset/false.
+if (import.meta.env.VITE_DEV_MODE === 'true') {
+  let _cachedToken: string | null = null
+  let _tokenExpiry = 0
+
+  http.interceptors.request.use(async (config) => {
+    const now = Math.floor(Date.now() / 1000)
+    if (!_cachedToken || _tokenExpiry < now + 60) {
+      const secret = new TextEncoder().encode('mock-secret-for-testing')
+      _cachedToken = await new SignJWT({ sub: 'dev-user-00000000-0000-0000-0000-000000000001' })
+        .setProtectedHeader({ alg: 'HS256' })
+        .setAudience('authenticated')
+        .setIssuedAt()
+        .setExpirationTime('24h')
+        .sign(secret)
+      _tokenExpiry = now + 86400
+    }
+    config.headers.Authorization = `Bearer ${_cachedToken}`
+    return config
+  })
+}
+
+// ── Category display name overrides (French labels) ──────────────────
+// Keys are the exact category names the backend derives from folder names
+// (e.g. "data" from "data_22C55E"). Colors come from the API, not here.
+const CATEGORY_DISPLAY: Record<string, string> = {
+  data:          'Données',
+  neural:        'Neuronal',
+  models:        'Modèles',
+  rl:            'Renforcement',
+  environment:   'Environnement',
+  evaluation:    'Évaluation',
+  visualization: 'Visualisation',
+  advanced:      'Avancé',
 }
 
 const FALLBACK_COLOR = '#888888'
+
+function toTitleCase(name: string): string {
+  return name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+}
 
 function adaptParam(key: string, raw: unknown): Segment {
   if (raw !== null && typeof raw === 'object') {
@@ -44,42 +79,71 @@ function adaptParam(key: string, raw: unknown): Segment {
   return { t: 'num', k: key, def: '' }
 }
 
-function adaptBlockDetail(detail: BlockDetail): { type: string; def: BlockDef } {
-  const segs: Segment[] = [{ t: 'text', v: detail.label }]
-  for (const [key, raw] of Object.entries(detail.params)) {
+function adaptBlockDef(block: BackendBlock): { type: string; def: BlockDef } {
+  const label = toTitleCase(block.name)
+  const segs: Segment[] = [{ t: 'text', v: label }]
+  for (const [key, raw] of Object.entries(block.params)) {
     segs.push(adaptParam(key, raw))
   }
-  return { type: detail.type, def: { cat: detail.category, segs } }
+  return { type: block.name, def: { cat: block.category.name, segs } }
 }
 
-function adaptCategories(apiCategories: Record<string, string[]>): Category[] {
-  return Object.keys(apiCategories).map(id => {
-    const meta = CATEGORY_META[id]
-    return { id, name: meta?.name ?? id, color: meta?.color ?? FALLBACK_COLOR }
-  })
+function adaptBlockSummary(block: BackendBlock): BlockSummary {
+  return {
+    type: block.name,
+    label: toTitleCase(block.name),
+    category: block.category.name,
+    // KNOWN GAP: backend provides no input port count — defaults to 0.
+    // Requires a backend "inputs: list[dict]" field to be populated correctly.
+    inputs: 0,
+    outputs: block.outputs.length,
+    can_build: true,
+  }
 }
 
-async function fetchBlockSummariesPage(page: number, size: number): Promise<PageResult<BlockSummary>> {
-  const { data } = await http.get<PageResult<BlockSummary>>('/api/blocks', { params: { page, size } })
+function adaptCategories(
+  apiCats: BackendCategory[],
+  summaries: BlockSummary[],
+): Category[] {
+  // Group block types by category from summaries (the categories endpoint
+  // only returns metadata with counts, not which blocks belong to each).
+  const seenInSummaries = new Set(summaries.map(s => s.category))
+  const catMap = new Map(apiCats.map(c => [c.name, c]))
+
+  // Merge: include all categories that appeared in either the API list or summaries
+  const allNames = new Set([...apiCats.map(c => c.name), ...seenInSummaries])
+
+  return [...allNames].map(id => ({
+    id,
+    name: CATEGORY_DISPLAY[id] ?? id,
+    color: catMap.get(id)?.color ?? FALLBACK_COLOR,
+  }))
+}
+
+async function fetchBlockSummariesPage(page: number): Promise<PageResult<BackendBlock>> {
+  const { data } = await http.get<PageResult<BackendBlock>>('/api/blocks', { params: { page } })
   return data
 }
 
 async function fetchAllBlockSummaries(): Promise<BlockSummary[]> {
-  const first = await fetchBlockSummariesPage(1, 100)
-  if (first.pages <= 1) return first.items
-  const rest = await Promise.all(
-    Array.from({ length: first.pages - 1 }, (_, i) => fetchBlockSummariesPage(i + 2, 100))
-  )
-  return [first.items, ...rest.map(p => p.items)].flat()
+  const first = await fetchBlockSummariesPage(1)
+  const rawBlocks: BackendBlock[] = [...first.items]
+  if (first.pages > 1) {
+    const rest = await Promise.all(
+      Array.from({ length: first.pages - 1 }, (_, i) => fetchBlockSummariesPage(i + 2))
+    )
+    rawBlocks.push(...rest.flatMap(p => p.items))
+  }
+  return rawBlocks.map(adaptBlockSummary)
 }
 
-async function fetchBlockCategories(): Promise<Record<string, string[]>> {
-  const { data } = await http.get<Record<string, string[]>>('/api/blocks/categories')
+async function fetchBlockCategories(): Promise<BackendCategory[]> {
+  const { data } = await http.get<BackendCategory[]>('/api/blocks/categories')
   return data
 }
 
-export async function fetchBlockDetail(typeName: string): Promise<BlockDetail> {
-  const { data } = await http.get<BlockDetail>(`/api/blocks/${encodeURIComponent(typeName)}`)
+export async function fetchBlockDetail(typeName: string): Promise<BackendBlock> {
+  const { data } = await http.get<BackendBlock>(`/api/blocks/${encodeURIComponent(typeName)}`)
   return data
 }
 
@@ -90,15 +154,15 @@ export async function fetchCatalog(): Promise<InternalCatalog> {
   ])
 
   const types = [...new Set(summaries.map(s => s.type))]
-  const details = await Promise.all(types.map(fetchBlockDetail))
+  const rawDetails = await Promise.all(types.map(fetchBlockDetail))
 
   const blocks: BlockDefMap = {}
-  for (const detail of details) {
-    const { type, def } = adaptBlockDetail(detail)
+  for (const raw of rawDetails) {
+    const { type, def } = adaptBlockDef(raw)
     blocks[type] = def
   }
 
-  return { categories: adaptCategories(apiCategories), blocks }
+  return { categories: adaptCategories(apiCategories, summaries), blocks }
 }
 
 export async function createPipeline(data: PipelineCreate): Promise<PipelineDetail> {
@@ -106,12 +170,12 @@ export async function createPipeline(data: PipelineCreate): Promise<PipelineDeta
   return res
 }
 
-export async function updatePipeline(id: number, data: PipelineCreate): Promise<PipelineDetail> {
+export async function updatePipeline(id: string, data: PipelineCreate): Promise<PipelineDetail> {
   const { data: res } = await http.put<PipelineDetail>(`/api/pipelines/${id}`, data)
   return res
 }
 
-export async function deletePipeline(id: number): Promise<void> {
+export async function deletePipeline(id: string): Promise<void> {
   await http.delete(`/api/pipelines/${id}`)
 }
 
@@ -120,12 +184,12 @@ export async function validateGraph(nodes: PipelineNode[], edges: PipelineEdge[]
   return data
 }
 
-export async function buildPipeline(id: number): Promise<BuildResponse> {
+export async function buildPipeline(id: string): Promise<BuildResponse> {
   const { data } = await http.post<BuildResponse>(`/api/pipelines/${id}/build`)
   return data
 }
 
-export async function generatePipelineCode(id: number): Promise<GenerateResponse> {
+export async function generatePipelineCode(id: string): Promise<GenerateResponse> {
   const { data } = await http.post<GenerateResponse>(`/api/pipelines/${id}/generate`)
   return data
 }

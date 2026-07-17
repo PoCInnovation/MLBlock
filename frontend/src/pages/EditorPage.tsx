@@ -15,12 +15,15 @@ export default function EditorPage() {
     fetchCatalog()
       .then(data => useAppStore.getState().setCatalog(data))
       .catch((err) => {
+        const status = err?.response?.status
         const isNetworkError = !err?.response
         useAppStore.getState().setCatalogError(
           true,
           isNetworkError
             ? 'Impossible de joindre le serveur. Vérifie que le backend est lancé et réessaie.'
-            : `Réponse inattendue du serveur (${String(err?.response?.status ?? '?')}). Vérifie la version du backend.`
+            : status === 401
+            ? 'Authentification manquante — token de dev requis. Active VITE_DEV_MODE=true dans .env.local.'
+            : `Réponse inattendue du serveur (${String(status ?? '?')}). Vérifie la version du backend.`
         )
       })
   }, [])

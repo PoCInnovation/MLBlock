@@ -15,29 +15,39 @@ export interface InternalCatalog {
   blocks: BlockDefMap
 }
 
-// API wire types — exact match to OpenAPI spec
-
+// Internal derived type — computed from BackendBlock, not fetched directly
 export interface BlockSummary {
   type: string
   label: string
   category: string
+  /** KNOWN GAP: backend has no input count field; always 0 until backend adds "inputs" list */
   inputs: number
   outputs: number
   can_build: boolean
 }
 
-export interface BlockDetail {
+// Backend wire types — exact match to what /api/blocks returns
+
+export interface BackendParamInfo {
   type: string
-  label: string
-  category: string
-  params: Record<string, unknown>
-  inputs: Record<string, unknown>[]
-  outputs: Record<string, unknown>[]
-  template: string
-  children_allowed: boolean
-  can_build: boolean
-  generates_class: string | null
-  class_base: string | null
+  description: string
+  default: unknown
+  required: boolean
+}
+
+export interface BackendBlock {
+  name: string
+  description: string
+  category: { name: string; color: string }
+  params: Record<string, BackendParamInfo>
+  outputs: { name: string; dtype: string }[]
+  deps: string[]
+}
+
+export interface BackendCategory {
+  name: string
+  color: string
+  block_count: number
 }
 
 export interface PageResult<T> {
@@ -70,7 +80,7 @@ export interface PipelineCreate {
 }
 
 export interface PipelineSummary {
-  id: number
+  id: string  // UUID string — backend returns UUID, not integer
   name: string
   description: string
   created_at: string

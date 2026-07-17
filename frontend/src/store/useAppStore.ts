@@ -33,7 +33,7 @@ type AppState = {
   catalog: InternalCatalog | null
   catalogError: boolean
   catalogErrorMessage: string | null
-  pipelineId: number | null
+  pipelineId: string | null
 
   goBuild: () => void
   goHome: () => void
@@ -54,7 +54,7 @@ type AppState = {
   clearAll: () => void
   setCatalog: (catalog: InternalCatalog) => void
   setCatalogError: (error: boolean, message?: string) => void
-  setPipelineId: (id: number | null) => void
+  setPipelineId: (id: string | null) => void
 }
 
 const useAppStore = create<AppState>((set) => ({
