@@ -66,7 +66,7 @@ def get_current_user(
         payload = jwt.decode(
             credentials.credentials,
             signing_key,
-            algorithms=["HS256", "RS256"],
+            algorithms=["HS256", "RS256", "ES256"],
             audience="authenticated",
         )
         return payload["sub"]  # user_id
