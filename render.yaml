@@ -1,0 +1,43 @@
+services:
+  # ── Backend FastAPI ──────────────────────────────────────────────
+  - type: web
+    plan: free
+    name: mlblock-backend
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install uv && uv sync
+    startCommand: uv run uvicorn mlblock.server.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      # Database — Supabase PostgreSQL (transaction mode pooler)
+      - key: DATABASE_URL
+        sync: false
+      # Supabase project credentials
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: SUPABASE_SECRET_KEY
+        sync: false
+      - key: SUPABASE_JWKS_URL
+        sync: false
+      - key: SUPABASE_JWT_SECRET
+        sync: false
+      # GPU (Vast.ai)
+      - key: VAST_API_KEY
+        sync: false
+      # GPU callbacks
+      - key: BACKEND_URL
+        value: https://mlblock-backend.onrender.com
+      - key: GPU_API_KEY
+        generateValue: true
+
+  # ── Frontend React/Vite ─────────────────────────────────────────
+  - type: static_site
+    name: mlblock-frontend
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
