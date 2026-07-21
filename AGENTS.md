@@ -149,7 +149,7 @@ def relu(in_features: int = 512) -> torch.nn.Module:
 - **Package manager**: `uv` (pyproject.toml is canonical, uv.lock committed)
 - **Framework**: FastAPI + Uvicorn + SQLModel
 - **ML**: PyTorch ≥2.0, scikit-learn ≥1.7, stable-baselines3 ≥2.9, gymnasium ≥1.3
-- **Database**: PostgreSQL (Supabase) in prod, SQLite fallback for dev/test
+- **Database**: PostgreSQL (Supabase) — required, no SQLite fallback
 - **Pooler**: `aws-0-eu-west-3.pooler.supabase.com:6543` (IPv4, transaction mode). Direct `db.*` host is IPv6-only.
 - **GPU orchestration**: Vast.ai API + SSH command execution
 - **Auth**: Supabase JWT (HS256) for users, shared Bearer token for GPU callbacks
@@ -161,7 +161,7 @@ def relu(in_features: int = 512) -> torch.nn.Module:
 - **52 tests** across 5 files in `backend/mlblock/tests/`
 - **Run**: `cd backend && uv run pytest -v`
 - **Auth bypassed**: `dependency_overrides` swaps `get_current_user` → fixed UUID, `verify_gpu_key` → fixed string
-- **DB isolation**: `conftest.py` strips `DATABASE_URL` env var before imports → forces SQLite fallback; tests use `StaticPool` in-memory SQLite with per-test `create_all`/cleanup
+- **DB isolation**: Tests use real PostgreSQL (Supabase) via `DATABASE_URL` from `.env`
 - **Coverage gaps**: GPU execution, job management, real auth, PostgreSQL integration, error edge cases
 - **No CI test workflow** — only release-drafter exists
 - **`main.py`** in project root is generated code output, NOT a test
