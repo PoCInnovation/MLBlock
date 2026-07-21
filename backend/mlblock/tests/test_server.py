@@ -5,12 +5,12 @@ import uuid
 from datetime import datetime, timezone
 
 import pytest
+from dotenv import load_dotenv
 from fastapi.testclient import TestClient
 from sqlmodel import Session, SQLModel, create_engine
 from sqlmodel.pool import StaticPool
 
-# Ensure SQLite fallback — must be set before any database imports
-os.environ.pop("DATABASE_URL", None)
+load_dotenv()
 
 from mlblock.server.main import app
 from mlblock.server.database import get_session
@@ -20,12 +20,15 @@ from mlblock.server.gpu_auth import verify_gpu_key
 
 @pytest.fixture(name="client")
 def client_fixture():
+    database_url = os.environ.get("DATABASE_URL")
+    if not database_url:
+        pytest.skip("DATABASE_URL not set")
+
     engine = create_engine(
-        "sqlite://",
-        connect_args={"check_same_thread": False},
+        database_url,
         poolclass=StaticPool,
+        connect_args={"options": "-c statement_timeout=10000"},
     )
-    SQLModel.metadata.create_all(engine)
 
     def override_get_session():
         with Session(engine) as session:

@@ -10,14 +10,15 @@ def _get_engine():
     if _engine is None:
         database_url = os.environ.get("DATABASE_URL")
         if not database_url:
-            _engine = create_engine("sqlite:///mlblock.db", echo=False)
-        else:
-            _engine = create_engine(
-                database_url,
-                pool_size=20,
-                max_overflow=10,
-                pool_recycle=3600,
+            raise RuntimeError(
+                "DATABASE_URL is required. Set it in your .env or environment."
             )
+        _engine = create_engine(
+            database_url,
+            pool_size=20,
+            max_overflow=10,
+            pool_recycle=3600,
+        )
     return _engine
 
 
