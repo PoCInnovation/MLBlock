@@ -15,14 +15,14 @@ L'utilisateur dessine un DAG de blocs ML dans une interface visuelle → le back
 ```
 ┌─────────────────┐         ┌──────────────────────────────┐
 │   Frontend SPA  │ ◀─────▶ │   Backend FastAPI             │
-│   (React/Vue)   │  REST   │   POST /pipelines/save       │
-│                 │         │   POST /pipelines/{id}/execute│
-│   Supabase JS   │ ◀─────▶ │                              │
+│   (React/Vue)   │  REST   │   (Render — free tier)        │
+│                 │         │   POST /pipelines/save       │
+│   Supabase JS   │ ◀─────▶ │   POST /pipelines/{id}/execute│
 │   (Auth + RT)   │  WS     └──────────┬───────────────────┘
 └─────────────────┘                    │
                               ┌────────▼────────┐
                               │   PostgreSQL     │
-                              │   (pipelines)    │
+                              │   (Supabase)     │
                               └────────┬────────┘
                                        │
                               ┌────────▼────────┐
@@ -100,8 +100,9 @@ const outputSub = supabase
 | Technologie | Rôle |
 |---|---|
 | FastAPI (Python) | API REST, génération de code, orchestration GPU |
-| supabase-py | Client Python officiel (Auth et Storage) |
+| python-jose | Vérification JWT Supabase (JWKS + HS256/ES256) |
 | uv | Dépendances Python |
+| Render | Hébergement backend (free tier, spin down 15min) |
 
 ### Principes d'architecture
 
@@ -285,8 +286,7 @@ Chaque variable générée suit le motif `out_{node_id}` (ou `out_{node_id}_{por
 #### Authentification
 
 Toutes les routes marquées Auth = Oui nécessitent un header `Authorization: Bearer <jwt>`.
-Le backend vérifie le JWT Supabase via `jose.jwt`, extrait le `sub` comme `user_id`,
-et injecte ce dernier dans les handlers via `Depends(get_current_user)`.
+Le backend vérifie le JWT Supabase via **JWKS** (clé publique) avec fallback sur **HS256** (secret statique). L'algorithme **ES256** est aussi supporté. Le `sub` du JWT est extrait comme `user_id` et injecté dans les handlers via `Depends(get_current_user)`.
 
 ```python
 # mlblock/server/auth.py
@@ -533,6 +533,8 @@ def get_job(
 #### GPU Callbacks (auth: GPU_API_KEY)
 
 Le GPU appelle ces endpoints pour rapporter son état. Pas de JWT — authentification par `GPU_API_KEY` partagé dans le header `Authorization: Bearer`.
+
+Le timeout des callbacks GPU est de **90 secondes** (configurable via `BACKEND_TIMEOUT`) pour supporter le spin down de Render free tier (~60s de wake-up).
 
 ```python
 # mlblock/server/gpu_auth.py
@@ -1205,11 +1207,17 @@ def main():
 
 ## Database
 
-Le backend utilise **PostgreSQL** via **Supabase**. Les tables sont créées avec SQLModel au démarrage.
+Le backend utilise **PostgreSQL** via **Supabase**. Pas de fallback SQLite — `DATABASE_URL` est obligatoire.
 
 ### Connexion et Configuration
 
-Le backend se connecte à PostgreSQL (Supabase) via **SQLModel** (avec le pilote `psycopg`). La configuration requiert la variable d'environnement `DATABASE_URL`.
+Le backend se connecte au pooler Supabase (transaction mode) via **SQLModel** (pilote `psycopg2`). La configuration requiert la variable d'environnement `DATABASE_URL`.
+
+```
+postgresql://postgres.[PROJECT-REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:6543/postgres
+```
+
+> Le host `db.*.supabase.co` est IPv6-only. Utiliser le pooler `aws-0-*.pooler.supabase.com:6543` (IPv4).
 
 ```python
 # mlblock/server/database.py
@@ -1252,55 +1260,28 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="MLBlock Server", lifespan=lifespan)
 ```
 
-### Guide d'Installation et Configuration Initiale de Supabase
-
-Pour configurer la connexion initiale et les dépendances nécessaires au projet :
+### Guide d'Installation et Configuration
 
 #### 1. Installation des Dépendances
-Installez les dépendances requises pour charger les variables d'environnement et s'interconnecter avec PostgreSQL :
 
 ```bash
-pip install python-dotenv psycopg2
+cd backend
+uv sync
 ```
 
 #### 2. Configuration des Variables d'Environnement
 
-Créez un fichier `.env` à la racine de votre projet avec la chaîne de connexion Supabase.
-> **Note :** Si votre mot de passe de base de données contient des caractères spéciaux, vous devrez les encoder en pourcentage (percent-encode) dans l'URL de connexion.
+Copie `.env.example` en `.env` et remplir les valeurs. Voir `.env.example` pour la liste complète.
 
-```ini
-DATABASE_URL=postgresql://postgres:[YOUR-PASSWORD]@db.hrvbsbkcbtgephuntgqd.supabase.co:5432/postgres
-```
+> **Note :** Si votre mot de passe de base de données contient des caractères spéciaux, percent-encodez-les (`?` → `%3F`, `@` → `%40`, `*` → `%2A`).
 
-##### Informations de connexion de référence :
-* **Host :** `db.hrvbsbkcbtgephuntgqd.supabase.co`
-* **Port :** `5432`
-* **Database :** `postgres`
-* **User :** `postgres`
-
-##### Exemple de script de test de connexion (`main.py`) :
-
-```python
-import os
-import psycopg2
-from dotenv import load_dotenv
-
-# Chargement des variables d'environnement du fichier .env
-load_dotenv()
-
-# Récupération de la chaîne de connexion
-DATABASE_URL = os.getenv("DATABASE_URL")
-
-# Test de connexion directe à la base de données
-connection = psycopg2.connect(DATABASE_URL)
-```
-
-#### 3. Installation des Agent Skills (Optionnel)
-Les Agent Skills donnent aux outils de code IA des instructions clés en main, des scripts et des ressources pour travailler avec Supabase de façon plus précise et efficace.
+#### 3. Lancement
 
 ```bash
-npx skills add supabase/agent-skills
+uv run uvicorn mlblock.server.main:app --reload
 ```
+
+Le serveur est accessible sur `http://localhost:8000`. Les tables PostgreSQL sont créées automatiquement au démarrage via `init_db()`.
 
 
 | Table | Rôle |
@@ -1414,6 +1395,70 @@ const outputSub = supabase
 
 ---
 
+## Déploiement — Render
+
+Le backend est hébergé sur **Render** (free tier). Le frontend est un SPA statique hébergé séparément.
+
+### Pourquoi Render
+
+- **Gratuit** : 750h/mois, suffisant pour un mois complet
+- **URL publique** : le GPU (Vast.ai) peut y envoyer ses callbacks
+- **Auto-deploiement** : push Git → deploy automatique
+- **Pas de Docker** : Render détecte Python et installe les deps
+
+### Limites du free tier
+
+| Ressource | Limite | Impact |
+|-----------|--------|--------|
+| Spin down | Après 15min d'inactivité | Backend dorme, wake-up ~60s |
+| RAM | 512 MB | Suffisant pour l'API, pas pour du ML lourd |
+| CPU | 0.1 | ~2-3 users simultanés |
+| Bandwidth | 5 GB/mois | OK pour du REST |
+
+### Compatibilité Vast.ai
+
+Le GPU envoie des callbacks HTTP au backend. Sur Render free tier, le backend se réveille à la première requête HTTP (~60s). Le script généré a un timeout de 90s (`BACKEND_TIMEOUT`) pour attendre ce wake-up.
+
+```
+GPU → POST /jobs/{id}/status (timeout=90s)
+    → Render réveille le backend (~60s)
+    → Backend traite le callback
+    → GPU reçoit la réponse
+```
+
+### render.yaml
+
+```yaml
+services:
+  - type: web
+    plan: free
+    name: mlblock-backend
+    runtime: python
+    buildCommand: cd backend && uv sync
+    startCommand: cd backend && uv run uvicorn mlblock.server.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        sync: false  # manuellement dans le dashboard
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: SUPABASE_SECRET_KEY
+        sync: false
+      - key: SUPABASE_JWKS_URL
+        sync: false
+      - key: SUPABASE_JWT_SECRET
+        sync: false
+      - key: VAST_API_KEY
+        sync: false
+      - key: BACKEND_URL
+        value: https://mlblock-backend.onrender.com
+      - key: GPU_API_KEY
+        generateValue: true
+```
+
+---
+
 ## Coûts estimés — MVP
 
 Hypothèses : 100 users, 50 actifs/jour, 3 runs/user/jour, 5min moyen par run, GPU T4 On-Demand.
@@ -1421,10 +1466,12 @@ Hypothèses : 100 users, 50 actifs/jour, 3 runs/user/jour, 5min moyen par run, G
 | Composant | Coût/mois |
 |---|---|
 | **Frontend** (Vercel/Netlify Free) | $0 |
-| **Backend** (VPS léger ou free tier) | $0-10 |
-| **Supabase** (Free tier) | $0 |
+| **Backend** (Render Free) | $0 |
+| **Database** (Supabase Free) | $0 |
 | **Vast.ai T4** (150 runs × 5min × $0.25/hr) | ~$31 |
-| **TOTAL** | **~$31-41/mois** |
+| **TOTAL** | **~$31/mois** |
+
+> Si le spin down pose problème (callbacks lents), passer au Render Starter ($7/mois) pour un backend toujours actif.
 
 Par user : $0.31/mois de compute. Pricing $5/mois → marge 16×.
 
