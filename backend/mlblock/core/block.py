@@ -47,9 +47,12 @@ class BlockMeta:
 
     def execute(self, params: dict[str, Any]) -> Any:
         if self._build_fn is not None:
-            params.pop("_inputs", None)
-            result = self._build_fn(params)
+            inputs = params.pop("_inputs", None) or {}
+            params.update(inputs)
+            result = self._build_fn(**params)
             if isinstance(result, dict):
+                return result
+            if len(self.outputs) == 1:
                 return result
             if self.outputs:
                 return {self.outputs[0]["name"]: result}

@@ -49,5 +49,5 @@ def test_block_meta_params_schema():
 def test_block_meta_template():
     block = BlockRegistry.get("conv2d")
     assert block is not None
-    assert "{output.out}" in block.template
-    assert "{params.in_channels}" in block.template
+    # template is not populated by discovery — always empty
+    assert block.template == ""
