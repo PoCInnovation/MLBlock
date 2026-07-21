@@ -1,14 +1,11 @@
 from __future__ import annotations
 
-import base64
 import os
-import time
 from datetime import datetime, timezone
 from uuid import UUID
-from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlmodel import Session, select, func
+from sqlmodel import Session, select
 
 from mlblock.blocks.registry import BLOCK_REGISTRY
 from mlblock.core.vast import VastAI
@@ -22,6 +19,8 @@ from mlblock.server.schemas import (
     Page,
     PipelineCreate,
     PipelineDetail,
+    PipelineEdge,
+    PipelineNode,
     PipelineUpdate,
     JobStatusUpdate,
     JobOutputPush,
@@ -29,7 +28,7 @@ from mlblock.server.schemas import (
     ValidationRequest,
     ValidationResponse,
 )
-from mlblock.core.generator import generate_code, _topological_sort
+from mlblock.core.generator import generate_code
 
 blocks_router = APIRouter(prefix="/api/blocks")
 pipelines_router = APIRouter(prefix="/api/pipelines")
@@ -42,20 +41,16 @@ jobs_router = APIRouter(prefix="/api/jobs")
 @blocks_router.get("")
 def list_blocks(
     page: int = Query(1, ge=1),
+    size: int = Query(20, ge=1, le=100),
     category: str | None = None,
-    q: str | None = Query(None),
     _: str = Depends(get_current_user),
 ) -> Page[Block]:
     items = list(BLOCK_REGISTRY.values())
     if category:
         items = [b for b in items if b.category.name == category]
-    if q:
-        q_lower = q.lower()
-        items = [b for b in items if q_lower in b.name.lower() or q_lower in (b.description or "").lower()]
-    size = 30
-    start = (page - 1) * size
-    sliced = items[start : start + size]
-    return Page(items=sliced, total=len(items), page=page, size=size)
+    total = len(items)
+    sliced = items[(page - 1) * size : page * size]
+    return Page(items=sliced, total=total, page=page, size=size)
 
 
 @blocks_router.get("/categories")
@@ -78,7 +73,7 @@ def get_block(
 ) -> Block:
     block = BLOCK_REGISTRY.get(type_name)
     if not block:
-        raise HTTPException(status_code=404, detail="Block not found")
+        raise HTTPException(status_code=404, detail=f"Block '{type_name}' not found")
     return block
 
 
@@ -94,7 +89,6 @@ def _row_to_summary(row: PipelineTable) -> dict:
 
 
 def _row_to_detail(row: PipelineTable, nodes, edges) -> PipelineDetail:
-    from mlblock.server.schemas import PipelineNode, PipelineEdge
     node_schemas = [PipelineNode(**n) if isinstance(n, dict) else n for n in nodes]
     edge_schemas = [PipelineEdge(**e) if isinstance(e, dict) else e for e in edges]
     return PipelineDetail(
@@ -111,17 +105,17 @@ def _row_to_detail(row: PipelineTable, nodes, edges) -> PipelineDetail:
 
 @pipelines_router.get("")
 def list_pipelines(
-    user_id: str = Depends(get_current_user),
     page: int = Query(1, ge=1),
-    size: int = Query(30, ge=1),
+    size: int = Query(20, ge=1, le=100),
     search: str | None = None,
+    user_id: str = Depends(get_current_user),
     session: Session = Depends(get_session),
 ) -> Page[dict]:
     query = select(PipelineTable).where(PipelineTable.user_id == UUID(user_id))
     if search:
         query = query.where(PipelineTable.name.ilike(f"%{search}%"))
     query = query.order_by(PipelineTable.updated_at.desc())
-    
+
     total = len(session.exec(query).all())
     rows = session.exec(query.offset((page - 1) * size).limit(size)).all()
     items = [_row_to_summary(r) for r in rows]
@@ -139,8 +133,7 @@ def create_pipeline(
         "nodes": [n.model_dump() for n in body.nodes],
         "edges": [e.model_dump() for e in body.edges],
     }
-    graph = Graph(graph_data)
-    graph.validate()
+    graph = Graph(graph_data)  # raises ValueError on cycle
 
     row = PipelineTable(
         user_id=UUID(user_id),
@@ -148,7 +141,6 @@ def create_pipeline(
         description=body.description,
         nodes=[n.model_dump() for n in body.nodes],
         edges=[e.model_dump() for e in body.edges],
-        code=generate_code(body.nodes, body.edges),
     )
     session.add(row)
     session.commit()
@@ -165,10 +157,8 @@ def get_pipeline(
     row = session.get(PipelineTable, pipeline_id)
     if not row or str(row.user_id) != user_id:
         raise HTTPException(status_code=404, detail="Pipeline not found")
-
-    from mlblock.models.pipeline import PipelineEdge, PipelineNode
-    nodes = [PipelineNode(**n) for n in (row.nodes or [])]
-    edges = [PipelineEdge(**e) for e in (row.edges or [])]
+    nodes = [PipelineNode(**n) if isinstance(n, dict) else n for n in row.nodes]
+    edges = [PipelineEdge(**e) if isinstance(e, dict) else e for e in row.edges]
     return _row_to_detail(row, nodes, edges)
 
 
@@ -191,25 +181,14 @@ def update_pipeline(
         row.nodes = [n.model_dump() for n in body.nodes]
     if body.edges is not None:
         row.edges = [e.model_dump() for e in body.edges]
-
-    from mlblock.models.pipeline import PipelineEdge as PE, PipelineNode as PN
-    nodes_schemas = [PN(**n) for n in (row.nodes or [])]
-    edges_schemas = [PE(**e) for e in (row.edges or [])]
-
-    # Enforce topological sort check
-    graph_data = {
-        "nodes": [n.model_dump() for n in nodes_schemas],
-        "edges": [e.model_dump() for e in edges_schemas],
-    }
-    graph = Graph(graph_data)
-    graph.validate()
-
-    row.code = generate_code(nodes_schemas, edges_schemas)
     row.updated_at = datetime.now(timezone.utc)
 
     session.add(row)
     session.commit()
     session.refresh(row)
+
+    nodes_schemas = [PipelineNode(**n) if isinstance(n, dict) else n for n in row.nodes]
+    edges_schemas = [PipelineEdge(**e) if isinstance(e, dict) else e for e in row.edges]
     return _row_to_detail(row, nodes_schemas, edges_schemas)
 
 
@@ -222,6 +201,7 @@ def delete_pipeline(
     row = session.get(PipelineTable, pipeline_id)
     if not row or str(row.user_id) != user_id:
         raise HTTPException(status_code=404, detail="Pipeline not found")
+    # CASCADE: deleting pipeline auto-deletes its jobs and job_outputs
     session.delete(row)
     session.commit()
 
@@ -237,25 +217,10 @@ def generate_pipeline_code(
         raise HTTPException(status_code=404, detail="Pipeline not found")
     if not row.nodes:
         raise HTTPException(status_code=400, detail="Pipeline has no nodes")
-    from mlblock.models.pipeline import PipelineEdge, PipelineNode
-    nodes = [PipelineNode(**n) for n in (row.nodes or [])]
-    edges = [PipelineEdge(**e) for e in (row.edges or [])]
-
+    nodes = [PipelineNode(**n) if isinstance(n, dict) else n for n in row.nodes]
+    edges = [PipelineEdge(**e) if isinstance(e, dict) else e for e in row.edges]
     code = generate_code(nodes, edges)
     return {"code": code}
-
-
-def _blocks_used_in(nodes: list[Any]) -> list[str]:
-    return list({n["type"] if isinstance(n, dict) else n.type for n in nodes})
-
-
-def _collect_dependencies(blocks_used: list[str]) -> str:
-    reqs: set[str] = set()
-    for block_name in blocks_used:
-        block = BLOCK_REGISTRY.get(block_name)
-        if block:
-            reqs.update(block.deps)
-    return " ".join(f"--with {d}" for d in sorted(reqs))
 
 
 @pipelines_router.post("/{pipeline_id}/execute")
@@ -268,38 +233,41 @@ def execute_pipeline(
     if not row or str(row.user_id) != user_id:
         raise HTTPException(status_code=404, detail="Pipeline not found")
 
-    code = row.code
-    with_args = _collect_dependencies(_blocks_used_in(row.nodes))
-
-    vast = VastAI(api_key=os.environ.get("VAST_API_KEY", "mock-vast-key"))
-    instance = vast.launch_instance(
-        gpu_name="T4",
-        num_gpus=1,
-        image="ghcr.io/astral-sh/uv:python3.13-bookworm",
-        disk=10,
-    )
-    instance_id = instance.get("id", "mock-instance-id")
-
+    # Create job
     job = Job(
-        pipeline_id=pipeline_id,
         user_id=UUID(user_id),
-        vast_instance_id=instance_id,
-        status="queued"
+        pipeline_id=pipeline_id,
+        status="queued",
     )
     session.add(job)
     session.commit()
     session.refresh(job)
 
-    vast.start_instance(instance_id)
-    time.sleep(0.1 if instance_id == "mock-instance-id" else 15)
-
-    encoded = base64.b64encode(code.encode()).decode()
-    backend_url = os.environ.get("BACKEND_URL", "http://localhost:8000")
-    gpu_api_key = os.environ.get("GPU_API_KEY", "mock-gpu-key")
-    vast.execute(
-        instance_id,
-        f"echo '{encoded}' | base64 -d | JOB_ID={job.id} BACKEND_URL={backend_url} GPU_API_KEY={gpu_api_key} uv run {with_args} python",
+    # Launch on Vast.ai (or mock)
+    vast = VastAI(api_key=os.environ.get("VAST_API_KEY", "mock-vast-key"))
+    instance = vast.launch_instance(
+        gpu_name="RTX 3090",
+        num_gpus=1,
+        image="pytorch/pytorch:latest",
+        disk=50,
     )
+    job.vast_instance_id = instance.get("id", "")
+    job.status = "dispatched"
+    session.add(job)
+    session.commit()
+
+    # Generate code and push to GPU
+    nodes = [PipelineNode(**n) if isinstance(n, dict) else n for n in row.nodes]
+    edges = [PipelineEdge(**e) if isinstance(e, dict) else e for e in row.edges]
+    code = generate_code(nodes, edges)
+    row.code = code
+    session.add(row)
+    session.commit()
+
+    # Start instance and execute code
+    vast.start_instance(job.vast_instance_id)
+    vast.execute(job.vast_instance_id, code)
+
     return job
 
 
@@ -411,46 +379,90 @@ def push_job_error(
 @validation_router.post("")
 def validate_graph(body: ValidationRequest) -> ValidationResponse:
     errors = []
-    for n in body.nodes:
-        if n.type not in BLOCK_REGISTRY:
-            errors.append(f"Unknown block type '{n.type}' for node '{n.id}'")
-
-    if not errors:
-        try:
-            order = _topological_sort(body.nodes, body.edges)
-            if len(order) != len(body.nodes):
-                errors.append("Graph contains a cycle")
-        except Exception as e:
-            errors.append(str(e))
-
-    if errors:
-        return ValidationResponse(valid=False, errors=errors)
-    return ValidationResponse(valid=True, errors=[])
+    try:
+        graph_data = {
+            "nodes": [n.model_dump() for n in body.nodes],
+            "edges": [e.model_dump() for e in body.edges],
+        }
+        graph = Graph(graph_data)
+        graph.validate()
+    except ValueError as e:
+        errors.append(str(e))
+    return ValidationResponse(valid=len(errors) == 0, errors=errors)
 
 
 @pipelines_router.post("/{pipeline_id}/build")
 def build_pipeline_model(
     pipeline_id: UUID,
+    user_id: str = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
     row = session.get(PipelineTable, pipeline_id)
     if row is None:
         raise HTTPException(404, "Pipeline not found")
 
-    unbuildable = []
-    for node in (row.nodes or []):
-        block = BLOCK_REGISTRY.get(node.get("type"))
-        if block and (block.category.name != "neural" or block.name == "input"):
-            unbuildable.append(node.get("id"))
-    if unbuildable:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Cannot build model: blocks without BUILD function: {unbuildable}"
-        )
+    from mlblock.core.graph import Graph as CoreGraph
+    from mlblock.core.pipeline import Pipeline as CorePipeline
+
+    nodes = [PipelineNode(**n) if isinstance(n, dict) else n for n in row.nodes]
+    edges = [PipelineEdge(**e) if isinstance(e, dict) else e for e in row.edges]
+
+    graph_data = {
+        "nodes": [n.model_dump() for n in nodes],
+        "edges": [e.model_dump() for e in edges],
+    }
+    graph = CoreGraph(graph_data)
+
+    import torch
+    import torch.nn as nn
+
+    # Pre-populate root nodes (no incoming edges) with dummy tensors
+    incoming = {e.target for e in graph.edges}
+    for node_id in graph.topological_sort():
+        node = graph.nodes[node_id]
+        if node_id not in incoming and node.block and node.block.can_build():
+            # Infer input shape from params or default to [1, 1, 28, 28]
+            shape = node.params.get("shape", node.params.get("in_channels", [1, 1, 28, 28]))
+            if isinstance(shape, int):
+                shape = [1, shape, 28, 28]
+            elif isinstance(shape, list):
+                shape = [1] + shape if len(shape) < 4 else shape
+            node.params["in_1"] = torch.randn(*shape)
+
+    pipeline = CorePipeline(graph)
+
+    try:
+        outputs = pipeline.run()
+    except Exception as e:
+        raise HTTPException(400, detail=str(e))
+
+    if not outputs:
+        raise HTTPException(400, detail="Pipeline produced no outputs")
+
+    layers = []
+    for node_id in graph.topological_sort():
+        node = graph.nodes[node_id]
+        if node.block and node.block.can_build():
+            try:
+                result = outputs.get(node_id)
+                if isinstance(result, dict):
+                    for v in result.values():
+                        if isinstance(v, nn.Module):
+                            layers.append(v)
+                elif isinstance(result, nn.Module):
+                    layers.append(result)
+            except Exception:
+                pass
+
+    last_output = list(outputs.values())[-1]
+    if isinstance(last_output, dict):
+        last_output = list(last_output.values())[-1]
+
+    if not isinstance(last_output, torch.Tensor):
+        raise HTTPException(400, detail="Pipeline did not produce a tensor output")
+
     return {
         "success": True,
-        "output_shape": [1, 10],
-        "output_values": [],
-        "layer_count": len(row.nodes) if row.nodes else 0,
-        "error": None
+        "output_shape": list(last_output.shape),
+        "layer_count": len(layers) if layers else len([n for n in graph.topological_sort() if graph.nodes[n].block and graph.nodes[n].block.can_build()]),
     }
