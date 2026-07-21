@@ -1,4 +1,7 @@
-def knn(in_1: "pd.DataFrame", target_column: "str", task: "str" = "classification", n_neighbors: "int" = 5) -> "object":
+from typing import Literal
+
+
+def knn(in_1: "pd.DataFrame", target_column: "str", task: Literal["classification", "regression"] = "classification", n_neighbors: "int" = 5) -> "object":
     """K-nearest neighbors.
     
     Args:

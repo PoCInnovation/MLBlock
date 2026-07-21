@@ -1,6 +1,7 @@
 import importlib
 import inspect
 import re
+import typing
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -41,13 +42,38 @@ def _parse_return_annotation(ret: Any) -> list[dict[str, str]]:
 def _inspect_function(name: str, fn: Callable, category: Any) -> Any:
     from mlblock.server.schemas import Block, ParamInfo
     sig = inspect.signature(fn)
+    try:
+        type_hints = typing.get_type_hints(fn)
+    except Exception:
+        type_hints = {}
     params = {}
     for pname, p in sig.parameters.items():
-        ptype = _name(p.annotation) if p.annotation != inspect.Parameter.empty else "Any"
+        hint = type_hints.get(pname)
+        options = None
+        ptype = "Any"
+        if typing.get_origin(hint) is typing.Literal:
+            options = [str(v) for v in typing.get_args(hint)]
+            base = getattr(hint, "__origin__", None)
+            ptype = _name(base) if base else "str"
+        elif hint and hint != inspect.Parameter.empty:
+            ptype = _name(hint)
+        elif p.annotation != inspect.Parameter.empty:
+            ann = p.annotation
+            if typing.get_origin(ann) is typing.Literal:
+                options = [str(v) for v in typing.get_args(ann)]
+                ptype = "str"
+            else:
+                ann_str = _name(ann)
+                m = re.match(r"Literal\[(.+)\]", ann_str)
+                if m:
+                    options = [v.strip().strip("'\"") for v in m.group(1).split(",")]
+                    ptype = "str"
+                else:
+                    ptype = ann_str
         pdesc = _extract_param_desc(fn.__doc__, pname) or ""
         pdefault = None if p.default == inspect.Parameter.empty else p.default
         prequired = p.default == inspect.Parameter.empty
-        params[pname] = ParamInfo(type=ptype, description=pdesc, default=pdefault, required=prequired)
+        params[pname] = ParamInfo(type=ptype, description=pdesc, default=pdefault, required=prequired, options=options)
     outputs = _parse_return_annotation(sig.return_annotation)
     return Block(
         name=name,

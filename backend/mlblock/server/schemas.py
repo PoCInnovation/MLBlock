@@ -11,6 +11,7 @@ class ParamInfo(BaseModel):
     description: str = ""
     default: Any = None
     required: bool = False
+    options: list[str] | None = None
 
 
 class Category(BaseModel):
