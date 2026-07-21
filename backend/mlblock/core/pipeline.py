@@ -13,9 +13,6 @@ class Pipeline:
         generator = CodeGenerator(self.graph)
         return generator.generate()
 
-    def build_model(self):
-        return self.run()
-
     def run(self):
         order = self.graph.topological_sort()
         outputs: dict[str, Any] = {}
@@ -28,7 +25,7 @@ class Pipeline:
             node.params["_inputs"] = inputs
             try:
                 result = node.block.execute(node.params)
-                if result:
+                if result is not None:
                     outputs[node_id] = result
             except NotImplementedError:
                 pass
