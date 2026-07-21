@@ -1,8 +1,10 @@
+from typing import Literal
+
 import torch
 from torch import nn
 
 
-def upsample(in_1: "torch.Tensor", scale_factor: "int" = None, mode: "str" = 'nearest') -> "torch.Tensor":
+def upsample(in_1: "torch.Tensor", scale_factor: "int" = None, mode: Literal["nearest", "bilinear", "bicubic", "trilinear"] = 'nearest') -> "torch.Tensor":
     """Upsample.
     
     Args:

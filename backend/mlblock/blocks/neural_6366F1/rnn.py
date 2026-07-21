@@ -1,8 +1,10 @@
+from typing import Literal
+
 import torch
 from torch import nn
 
 
-def rnn(in_1: "torch.Tensor", input_size: "int", hidden_size: "int", num_layers: "int" = 1, nonlinearity: "str" = 'tanh', bias: "bool" = True, batch_first: "bool" = True, dropout: "float" = 0.0, bidirectional: "bool" = False) -> "torch.Tensor":
+def rnn(in_1: "torch.Tensor", input_size: "int", hidden_size: "int", num_layers: "int" = 1, nonlinearity: Literal["tanh", "relu"] = 'tanh', bias: "bool" = True, batch_first: "bool" = True, dropout: "float" = 0.0, bidirectional: "bool" = False) -> "torch.Tensor":
     """RNN.
     
     Args:
