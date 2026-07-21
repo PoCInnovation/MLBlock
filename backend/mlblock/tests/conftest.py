@@ -1,4 +1,3 @@
-import os
+from dotenv import load_dotenv
 
-# Unset DATABASE_URL before any imports that might trigger database module
-os.environ.pop("DATABASE_URL", None)
+load_dotenv()
