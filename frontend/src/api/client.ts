@@ -17,7 +17,7 @@ import { supabase } from '../services/supabase'
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000'
 
-const http = axios.create({ baseURL: BASE, timeout: 10_000 })
+const http = axios.create({ baseURL: BASE, timeout: 60_000 })
 
 http.interceptors.request.use(async (config) => {
   const { data: { session } } = await supabase.auth.getSession()
