@@ -44,12 +44,12 @@ function adaptParam(key: string, raw: unknown): Segment {
   return { t: 'num', k: key, def: '' }
 }
 
-function adaptBlockDetail(detail: BlockDetail): { type: string; def: BlockDef } {
-  const segs: Segment[] = [{ t: 'text', v: detail.label }]
-  for (const [key, raw] of Object.entries(detail.params)) {
+function adaptBlockDetail(detail: any): { type: string; def: BlockDef } {
+  const segs: Segment[] = [{ t: 'text', v: detail.label ?? detail.name }]
+  for (const [key, raw] of Object.entries(detail.params ?? {})) {
     segs.push(adaptParam(key, raw))
   }
-  return { type: detail.type, def: { cat: detail.category, segs } }
+  return { type: detail.type ?? detail.name, def: { cat: detail.category?.name ?? detail.category, segs } }
 }
 
 function adaptCategories(apiCategories: Record<string, string[]>): Category[] {
