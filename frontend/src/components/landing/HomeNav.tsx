@@ -1,12 +1,16 @@
 import type { CSSProperties } from 'react'
 import useAppStore from '../../store/useAppStore'
+import { signOut } from '../../services/auth'
 
 export default function HomeNav() {
   const screen       = useAppStore(s => s.screen)
   const goBuild      = useAppStore(s => s.goBuild)
   const goHome       = useAppStore(s => s.goHome)
+  const goLogin      = useAppStore(s => s.goLogin)
   const goHowItWorks = useAppStore(s => s.goHowItWorks)
   const goAbout      = useAppStore(s => s.goAbout)
+  const user         = useAppStore(s => s.user)
+  const setUser      = useAppStore(s => s.setUser)
 
   const scrollToFeatures = () =>
     document.getElementById('fonctionnalites')?.scrollIntoView({ behavior: 'smooth' })
@@ -54,6 +58,15 @@ export default function HomeNav() {
         >
           Ouvrir l'éditeur
         </button>
+        {user ? (
+          <button onClick={async () => { await signOut(); setUser(null); goHome() }} style={{ background: '#3a3531', color: '#b7ada3', border: 'none', padding: '11px 20px', borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+            Déconnexion
+          </button>
+        ) : (
+          <button onClick={goLogin} style={{ background: '#3a3531', color: '#b7ada3', border: 'none', padding: '11px 20px', borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+            Connexion
+          </button>
+        )}
       </div>
     </nav>
   )

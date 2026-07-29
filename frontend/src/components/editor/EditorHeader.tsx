@@ -1,4 +1,5 @@
 import useAppStore from '../../store/useAppStore'
+import { signOut } from '../../services/auth'
 
 const ACCENT = '#D97757'
 
@@ -15,6 +16,7 @@ export default function EditorHeader({ onRun, onStop, onClear }: EditorHeaderPro
   const goHome      = useAppStore(s => s.goHome)
   const projectName = useAppStore(s => 'mon-premier-modèle')
   const running     = useAppStore(s => s.running)
+  const setUser     = useAppStore(s => s.setUser)
 
   return (
     <div style={{ height: 60, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', background: '#1f1916', borderBottom: '1px solid rgba(255,255,255,.07)', zIndex: 20 }}>
@@ -34,6 +36,7 @@ export default function EditorHeader({ onRun, onStop, onClear }: EditorHeaderPro
         <button style={ghostBtn}><span style={{ opacity: .7 }}>↥</span> Exporter</button>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+        <button onClick={async () => { await signOut(); setUser(null); goHome() }} style={ghostBtn}>Déconnexion</button>
         <button onClick={onClear} style={actionBtn}>Tout effacer</button>
         <button style={{ ...actionBtn, display: 'inline-flex', alignItems: 'center', gap: 7 }}><span style={{ fontSize: 11 }}>⏭</span> Pas à pas</button>
         <button onClick={onStop} style={{ ...actionBtn, background: 'rgba(224,112,95,.16)', color: '#E8917F', border: '1px solid rgba(224,112,95,.4)', fontWeight: 800 }}>

@@ -21,7 +21,7 @@
 
 ## 5. Deploy
 
-- [ ] 5.1 Commit and push both backend + frontend changes
+- [x] 5.1 Commit and push both backend + frontend changes
 - [ ] 5.2 Deploy backend on Render (auto)
 - [ ] 5.3 Deploy frontend on Render (auto, rebuild static site)
 - [ ] 5.4 Verify frontend loads catalog without errors
