@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import threading
 from datetime import datetime, timezone
 from uuid import UUID
 
@@ -249,6 +250,26 @@ def execute_pipeline(
     # Start instance and execute code
     vast.start_instance(job.vast_instance_id)
     vast.execute(job.vast_instance_id, code)
+
+    # DEV ONLY: auto-destroy instance after 60s if job hasn't completed
+    # Prevents orphan GPUs during development when callbacks may not fire
+    job_id = job.id
+    instance_id = job.vast_instance_id
+
+    def _timeout_cleanup():
+        from mlblock.server.database import _get_engine
+        from sqlmodel import Session as SqlSession
+        with SqlSession(_get_engine()) as s:
+            j = s.get(Job, job_id)
+            if j and j.status not in ("done", "error"):
+                j.status = "error"
+                j.error = "DEV TIMEOUT: job did not complete within 60s"
+                j.completed_at = datetime.now(timezone.utc)
+                s.add(j)
+                s.commit()
+                VastAI(api_key=os.environ.get("VAST_API_KEY", "mock-vast-key")).destroy_instance(instance_id)
+
+    threading.Timer(60.0, _timeout_cleanup).start()
 
     return job
 
