@@ -43,7 +43,6 @@ def list_blocks(
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
     category: str | None = None,
-    _: str = Depends(get_current_user),
 ) -> Page[Block]:
     items = list(BLOCK_REGISTRY.values())
     if category:
@@ -54,9 +53,7 @@ def list_blocks(
 
 
 @blocks_router.get("/categories")
-def list_categories(
-    _: str = Depends(get_current_user),
-) -> list[dict]:
+def list_categories() -> list[dict]:
     counts: dict[str, dict] = {}
     for block in BLOCK_REGISTRY.values():
         cat = block.category.name
@@ -67,10 +64,7 @@ def list_categories(
 
 
 @blocks_router.get("/{type_name}")
-def get_block(
-    type_name: str,
-    _: str = Depends(get_current_user),
-) -> Block:
+def get_block(type_name: str) -> Block:
     block = BLOCK_REGISTRY.get(type_name)
     if not block:
         raise HTTPException(status_code=404, detail=f"Block '{type_name}' not found")
