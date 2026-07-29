@@ -29,64 +29,34 @@ from mlblock.server.schemas import (
 )
 from mlblock.core.generator import generate_code
 
-blocks_router = APIRouter(prefix="/api/blocks")
+catalog_router = APIRouter(prefix="/api/catalog")
 pipelines_router = APIRouter(prefix="/api/pipelines")
 validation_router = APIRouter(prefix="/api/validate")
 jobs_router = APIRouter(prefix="/api/jobs")
 
 
-# ── Blocks ──────────────────────────────────────────────────────────
+# ── Catalog ─────────────────────────────────────────────────────────
 
-@blocks_router.get("")
-def list_blocks(
-    page: int = Query(1, ge=1),
-    size: int = Query(20, ge=1, le=100),
-    category: str | None = None,
-) -> Page[dict]:
-    items = list(BLOCK_REGISTRY.values())
-    if category:
-        items = [b for b in items if b.category.name == category]
-    total = len(items)
-    sliced = items[(page - 1) * size : page * size]
-    return Page(
-        items=[{
-            "type": b.name,
-            "label": b.description or b.name,
-            "category": b.category.name,
-            "inputs": len(b.inputs),
-            "outputs": len(b.outputs),
-            "can_build": False,
-        } for b in sliced],
-        total=total, page=page, size=size,
-    )
-
-
-@blocks_router.get("/categories")
-def list_categories() -> dict[str, list[str]]:
-    result: dict[str, list[str]] = {}
+@catalog_router.get("")
+def get_catalog() -> dict:
+    categories: dict[str, dict] = {}
     for block in BLOCK_REGISTRY.values():
-        result.setdefault(block.category.name, []).append(block.name)
-    return result
-
-
-@blocks_router.get("/{type_name}")
-def get_block(type_name: str) -> dict:
-    block = BLOCK_REGISTRY.get(type_name)
-    if not block:
-        raise HTTPException(status_code=404, detail=f"Block '{type_name}' not found")
-    return {
-        "type": block.name,
-        "label": block.description or block.name,
-        "category": block.category.name,
-        "params": {k: v.model_dump() for k, v in block.params.items()},
-        "inputs": block.inputs,
-        "outputs": block.outputs,
-        "template": "",
-        "children_allowed": False,
-        "can_build": False,
-        "generates_class": None,
-        "class_base": None,
-    }
+        cat = block.category.name
+        if cat not in categories:
+            categories[cat] = {
+                "id": cat,
+                "name": cat,
+                "color": block.category.color,
+                "blocks": [],
+            }
+        categories[cat]["blocks"].append({
+            "type": block.name,
+            "label": block.description or block.name,
+            "params": {k: v.model_dump() for k, v in block.params.items()},
+            "inputs": block.inputs,
+            "outputs": block.outputs,
+        })
+    return {"categories": list(categories.values())}
 
 
 # ── Pipelines ───────────────────────────────────────────────────────

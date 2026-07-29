@@ -15,39 +15,6 @@ export interface InternalCatalog {
   blocks: BlockDefMap
 }
 
-// API wire types — exact match to OpenAPI spec
-
-export interface BlockSummary {
-  type: string
-  label: string
-  category: string
-  inputs: number
-  outputs: number
-  can_build: boolean
-}
-
-export interface BlockDetail {
-  type: string
-  label: string
-  category: string
-  params: Record<string, unknown>
-  inputs: Record<string, unknown>[]
-  outputs: Record<string, unknown>[]
-  template: string
-  children_allowed: boolean
-  can_build: boolean
-  generates_class: string | null
-  class_base: string | null
-}
-
-export interface PageResult<T> {
-  items: T[]
-  total: number
-  page: number
-  size: number
-  pages: number
-}
-
 export interface PipelineNode {
   id: string
   type: string

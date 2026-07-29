@@ -22,9 +22,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from mlblock.server.routes import blocks_router, pipelines_router, validation_router, jobs_router
+from mlblock.server.routes import catalog_router, pipelines_router, validation_router, jobs_router
 
-app.include_router(blocks_router)
+app.include_router(catalog_router)
 app.include_router(pipelines_router)
 app.include_router(validation_router)
 app.include_router(jobs_router)
