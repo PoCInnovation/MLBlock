@@ -1,7 +1,7 @@
 import pandas as pd
 
 
-def load_csv(path: "str") -> "pd.DataFrame":
+def load_csv(path: "file") -> "pd.DataFrame":
     """Charger un CSV.
     
     Args:
