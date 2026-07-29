@@ -2,7 +2,8 @@
 export type TextSeg = { t: 'text'; v: string }
 export type NumSeg  = { t: 'num';  k: string; def: string; w?: number }
 export type SelSeg  = { t: 'sel';  k: string; def: string; opts: string[] }
-export type Segment = TextSeg | NumSeg | SelSeg
+export type FileSeg = { t: 'file'; k: string; def: string }
+export type Segment = TextSeg | NumSeg | SelSeg | FileSeg
 
 export type BlockDef = { cat: string; segs: Segment[] }
 export type BlockDefMap = Record<string, BlockDef>

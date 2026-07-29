@@ -31,6 +31,8 @@ function toSegments(key: string, raw: unknown): Segment {
   if (raw !== null && typeof raw === 'object') {
     const p = raw as Record<string, unknown>
     const def = String(p.default ?? '')
+    const typ = String(p.type ?? '')
+    if (typ === 'file') return { t: 'file', k: key, def }
     if (Array.isArray(p.options) && p.options.length > 0) {
       return { t: 'sel', k: key, def, opts: p.options.map(String) }
     }

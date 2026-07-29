@@ -28,5 +28,5 @@
 
 ## 5. Déploiement
 
-- [ ] 5.1 Configurer les env vars frontend sur Render (`VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`)
-- [ ] 5.2 Commit, push, déployer
+- [ ] 5.1 Configurer les env vars frontend sur Render (`VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`)  <!-- à faire dans le dashboard Render -->
+- [x] 5.2 Commit, push, déployer

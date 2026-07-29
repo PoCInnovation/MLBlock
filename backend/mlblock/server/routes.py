@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import os
+import re
 import threading
 from datetime import datetime, timezone
 from uuid import UUID
+
+import requests
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Session, select
@@ -34,6 +37,43 @@ catalog_router = APIRouter(prefix="/api/catalog")
 pipelines_router = APIRouter(prefix="/api/pipelines")
 validation_router = APIRouter(prefix="/api/validate")
 jobs_router = APIRouter(prefix="/api/jobs")
+
+SUPABASE_STORAGE_URL = re.compile(r"^https://[^/]+/storage/v1/object/(?:public|authenticated)/([^/]+)/(.+)$")
+
+
+def _delete_file_from_storage(file_url: str) -> None:
+    """Delete a file from Supabase Storage given its public URL."""
+    m = SUPABASE_STORAGE_URL.match(file_url)
+    if not m:
+        return
+    bucket, path = m.group(1), m.group(2)
+    secret = os.environ.get("SUPABASE_SECRET_KEY", "")
+    if not secret:
+        return
+    project = os.environ.get("SUPABASE_URL", "").replace("https://", "").split(".")[0]
+    if not project:
+        return
+    try:
+        url = f"https://{project}.supabase.co/storage/v1/object/{bucket}/{path}"
+        requests.delete(url, headers={"apikey": secret, "Authorization": f"Bearer {secret}"}, timeout=10)
+    except Exception:
+        pass
+
+
+def _cleanup_pipeline_files(pipeline_id: UUID) -> None:
+    """Find all file-type params in a pipeline and delete them from storage."""
+    from mlblock.server.database import _get_engine
+    from sqlmodel import Session as SqlSession
+    with SqlSession(_get_engine()) as s:
+        row = s.get(PipelineTable, pipeline_id)
+        if not row or not row.nodes:
+            return
+        for node in row.nodes:
+            params = node.get("params", {}) if isinstance(node, dict) else node.params
+            if isinstance(params, dict):
+                for val in params.values():
+                    if isinstance(val, str) and SUPABASE_STORAGE_URL.match(val):
+                        _delete_file_from_storage(val)
 
 
 # ── Catalog ─────────────────────────────────────────────────────────
@@ -268,6 +308,7 @@ def execute_pipeline(
                 s.add(j)
                 s.commit()
                 VastAI(api_key=os.environ.get("VAST_API_KEY", "mock-vast-key")).destroy_instance(instance_id)
+                _cleanup_pipeline_files(j.pipeline_id)
 
     threading.Timer(60.0, _timeout_cleanup).start()
 
@@ -325,6 +366,7 @@ def update_job_status(
                 vast.destroy_instance(job.vast_instance_id)
             except Exception:
                 pass
+        _cleanup_pipeline_files(job.pipeline_id)
     session.add(job)
     session.commit()
 
@@ -367,6 +409,7 @@ def push_job_error(
             vast.destroy_instance(job.vast_instance_id)
         except Exception:
             pass
+    _cleanup_pipeline_files(job.pipeline_id)
     session.add(job)
     output = JobOutput(
         job_id=job_id,

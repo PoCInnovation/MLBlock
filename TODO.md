@@ -36,7 +36,12 @@ Ajouter un bouton "Réessayer" qui relance `fetchCatalog()` sans repasser par la
 Le nom est fixé à `'mon-premier-modèle'` dans `useBlockRunner.ts`.
 À terme : champ éditable dans `EditorHeader` (lié à `useAppStore`), envoyé dans `PipelineCreate.name`.
 
-### Auth
+### Auth — Configuration Supabase
 
-Aucune gestion de token pour l'instant. `src/api/client.ts` reste sans headers d'auth.
-À ajouter quand le backend expose des routes protégées.
+- [ ] **SITE_URL** : dans le dashboard Supabase > Authentication > URL Configuration, mettre `SITE_URL` à `https://mlblock-frontend.onrender.com`
+- [ ] **Redirect URLs** : ajouter `https://mlblock-frontend.onrender.com/**` dans les redirect URLs autorisées
+- [ ] **Google OAuth** : dans Supabase > Authentication > Providers > Google, activer et configurer :
+  - Récupérer les credentials depuis Google Cloud Console (OAuth consent screen + OAuth 2.0 Client ID)
+  - `Client ID` et `Client Secret` dans Supabase
+  - `Authorized redirect URIs` dans Google Cloud : `https://hrvbsbkcbtgephuntgqd.supabase.co/auth/v1/callback`
+- [ ] **Env vars Render** : ajouter `VITE_SUPABASE_URL` et `VITE_SUPABASE_PUBLISHABLE_KEY` dans le service frontend sur Render
