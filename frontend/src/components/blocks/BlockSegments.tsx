@@ -15,10 +15,36 @@ const selectBase: React.CSSProperties = {
 const fieldPill: React.CSSProperties = {
   background: 'rgba(255,255,255,.85)', padding: '2px 8px', borderRadius: 7, fontWeight: 800,
 }
+const fileCard: React.CSSProperties = {
+  display: 'inline-flex', alignItems: 'center', gap: 6,
+  background: 'rgba(99,102,241,.15)', borderRadius: 8,
+  padding: '4px 8px', fontSize: 12, fontWeight: 700,
+}
+const fileNameStyle: React.CSSProperties = {
+  color: '#c7d2fe', maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+}
+const fileMeta: React.CSSProperties = {
+  color: '#818cf8', fontSize: 11, fontWeight: 600,
+}
 const fileBtn: React.CSSProperties = {
   background: 'rgba(99,102,241,.2)', border: '1px dashed rgba(99,102,241,.5)',
   borderRadius: 7, padding: '3px 8px', color: '#a5b4fc', fontWeight: 700,
   fontSize: 12, cursor: 'pointer', display: 'inline-block',
+}
+const removeBtn: React.CSSProperties = {
+  width: 16, height: 16, borderRadius: '50%', border: 'none',
+  background: 'rgba(0,0,0,.2)', color: '#c7d2fe', fontSize: 10,
+  lineHeight: '16px', cursor: 'pointer', padding: 0, display: 'inline-flex',
+  alignItems: 'center', justifyContent: 'center',
+}
+const errStyle: React.CSSProperties = {
+  color: '#fca5a5', fontSize: 11, fontWeight: 600, cursor: 'pointer',
+}
+
+function fmtSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} o`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} Ko`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`
 }
 
 type BlockSegmentsProps = {
@@ -29,22 +55,30 @@ type BlockSegmentsProps = {
 }
 
 export default function BlockSegments({ segs, fields, blockId, onUpdate }: BlockSegmentsProps): React.ReactNode {
-  const [uploading, setUploading] = useState<string | null>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const [uploadState, setUploadState] = useState<Record<string, 'uploading' | 'error'>>({})
+  const [fileMetaState, setFileMetaState] = useState<Record<string, { name: string; size: number }>>({})
+  const inputRefs = useRef<Record<string, HTMLInputElement | null>>({})
 
   const handleFile = async (k: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file || !onUpdate || !blockId) return
-    setUploading(k)
+    setUploadState(s => ({ ...s, [k]: 'uploading' }))
+    setFileMetaState(s => ({ ...s, [k]: { name: file.name, size: file.size } }))
     try {
       const { data: { user } } = await supabase.auth.getUser()
       const path = `${user?.id ?? 'anonymous'}/${blockId}_${Date.now()}.csv`
       const url = await uploadFile(file, 'user-uploads', path)
-      if (url) onUpdate(blockId, k, url)
+      if (url) {
+        onUpdate(blockId, k, url)
+        setUploadState(s => ({ ...s, [k]: 'uploading' }))
+        setUploadState(s => {
+          const next = { ...s }
+          delete next[k]
+          return next
+        })
+      }
     } catch {
-      /* upload failed */
-    } finally {
-      setUploading(k)
+      setUploadState(s => ({ ...s, [k]: 'error' }))
     }
   }
 
@@ -71,12 +105,41 @@ export default function BlockSegments({ segs, fields, blockId, onUpdate }: Block
       </select>
     )
     if (s.t === 'file') {
-      const hasFile = fields?.[s.k]?.startsWith('https://')
+      const state = uploadState[s.k]
+      const meta = fileMetaState[s.k]
+      const hasUrl = fields?.[s.k]?.startsWith('https://')
+      const fname = meta?.name ?? (hasUrl ? fields![s.k].split('/').pop() : null)
+      const fsize = meta?.size
+
+      if (state === 'uploading') return (
+        <span key={i} style={fileCard}>
+          <span style={fileNameStyle}>{meta?.name ?? 'Upload…'}</span>
+          <span style={fileMeta}>⏳…</span>
+        </span>
+      )
+
+      if (state === 'error') return (
+        <span key={i} style={fileCard}>
+          <span style={errStyle}>⚠ Échec</span>
+          <span style={errStyle} onClick={() => inputRefs.current[s.k]?.click()}>Réessayer</span>
+          <input ref={el => { inputRefs.current[s.k] = el }} type="file" accept=".csv" style={{ display: 'none' }} onChange={e => handleFile(s.k, e)} />
+        </span>
+      )
+
+      if (hasUrl && fname) return (
+        <span key={i} style={fileCard}>
+          <span style={fileNameStyle}>{fname}</span>
+          {fsize && <span style={fileMeta}>{fmtSize(fsize)}</span>}
+          <button style={removeBtn} onClick={() => { onUpdate(blockId!, s.k, ''); setFileMetaState(m => { const n = { ...m }; delete n[s.k]; return n }) }}>×</button>
+          <input ref={el => { inputRefs.current[s.k] = el }} type="file" accept=".csv" style={{ display: 'none' }} onChange={e => handleFile(s.k, e)} />
+        </span>
+      )
+
       return (
         <span key={i}>
-          <input ref={inputRef} type="file" accept=".csv" style={{ display: 'none' }} onChange={e => handleFile(s.k, e)} />
-          <span onClick={() => inputRef.current?.click()} style={fileBtn}>
-            {uploading === s.k ? '⏳...' : hasFile ? '✓ CSV' : '📁 CSV'}
+          <input ref={el => { inputRefs.current[s.k] = el }} type="file" accept=".csv" style={{ display: 'none' }} onChange={e => handleFile(s.k, e)} />
+          <span onClick={() => inputRefs.current[s.k]?.click()} style={fileBtn}>
+            📁 CSV
           </span>
         </span>
       )
