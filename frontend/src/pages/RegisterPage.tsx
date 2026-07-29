@@ -2,17 +2,18 @@ import { useState } from 'react'
 import useAppStore from '../store/useAppStore'
 import { signUp } from '../services/auth'
 import SiteLayout from '../components/landing/SiteLayout'
+import { theme } from '../theme'
 
 const s: Record<string, React.CSSProperties> = {
   wrapper: { display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh', padding: '40px 20px' },
-  card: { background: '#1e1c19', borderRadius: 12, padding: 40, width: '100%', maxWidth: 400 },
-  title: { fontSize: 24, fontWeight: 700, marginBottom: 24, textAlign: 'center', color: '#f0e9e3' },
-  input: { width: '100%', padding: '10px 14px', marginBottom: 16, borderRadius: 8, border: '1px solid #3a3531', background: '#2a2724', color: '#f0e9e3', fontSize: 14, outline: 'none' },
+  card: { background: theme.color.surface4, borderRadius: theme.radius.md, padding: 40, width: '100%', maxWidth: 400 },
+  title: { fontSize: 24, fontWeight: 700, marginBottom: 24, textAlign: 'center', color: theme.color.text },
+  input: { width: '100%', padding: '10px 14px', marginBottom: 16, borderRadius: 8, border: `1px solid ${theme.color.border}`, background: '#2a2724', color: theme.color.text, fontSize: 14, outline: 'none' },
   btn: { width: '100%', padding: '10px 14px', borderRadius: 8, border: 'none', fontSize: 14, fontWeight: 600, cursor: 'pointer', marginBottom: 12 },
-  primaryBtn: { background: '#6366F1', color: '#fff' },
-  error: { color: '#ef4444', fontSize: 13, marginBottom: 12, textAlign: 'center' },
-  success: { color: '#22c55e', fontSize: 13, marginBottom: 12, textAlign: 'center' },
-  link: { color: '#6366F1', cursor: 'pointer', textAlign: 'center', marginTop: 12, fontSize: 14 },
+  primaryBtn: { background: theme.color.auth, color: '#fff' },
+  error: { color: theme.color.error, fontSize: 13, marginBottom: 12, textAlign: 'center' },
+  success: { color: theme.color.success, fontSize: 13, marginBottom: 12, textAlign: 'center' },
+  link: { color: theme.color.auth, cursor: 'pointer', textAlign: 'center', marginTop: 12, fontSize: 14 },
 }
 
 export default function RegisterPage() {

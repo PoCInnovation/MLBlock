@@ -1,19 +1,20 @@
 import React, { useRef, useState } from 'react'
 import type { Segment } from '../../types/catalog'
 import { uploadFile, supabase } from '../../services/supabase'
+import { theme } from '../../theme'
 
 const inputBase: React.CSSProperties = {
-  background: 'rgba(255,255,255,.9)', border: 'none', borderRadius: 7,
-  padding: '3px 5px', textAlign: 'center', color: '#2a211c',
+  background: 'rgba(255,255,255,.9)', border: 'none', borderRadius: theme.radius.sm,
+  padding: '3px 5px', textAlign: 'center', color: theme.color.textInput,
   fontWeight: 800, fontSize: 13, outline: 'none',
 }
 const selectBase: React.CSSProperties = {
-  background: 'rgba(255,255,255,.9)', border: 'none', borderRadius: 7,
-  padding: '3px 6px', color: '#2a211c', fontWeight: 800, fontSize: 13,
+  background: 'rgba(255,255,255,.9)', border: 'none', borderRadius: theme.radius.sm,
+  padding: '3px 6px', color: theme.color.textInput, fontWeight: 800, fontSize: 13,
   outline: 'none', cursor: 'pointer',
 }
 const fieldPill: React.CSSProperties = {
-  background: 'rgba(255,255,255,.85)', padding: '2px 8px', borderRadius: 7, fontWeight: 800,
+  background: 'rgba(255,255,255,.85)', padding: '2px 8px', borderRadius: theme.radius.sm, fontWeight: 800,
 }
 const fileCard: React.CSSProperties = {
   display: 'inline-flex', alignItems: 'center', gap: 6,
@@ -21,24 +22,24 @@ const fileCard: React.CSSProperties = {
   padding: '4px 8px', fontSize: 12, fontWeight: 700,
 }
 const fileNameStyle: React.CSSProperties = {
-  color: '#c7d2fe', maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+  color: theme.color.file, maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
 }
 const fileMeta: React.CSSProperties = {
-  color: '#818cf8', fontSize: 11, fontWeight: 600,
+  color: theme.color.fileMeta, fontSize: 11, fontWeight: 600,
 }
 const fileBtn: React.CSSProperties = {
   background: 'rgba(99,102,241,.2)', border: '1px dashed rgba(99,102,241,.5)',
-  borderRadius: 7, padding: '3px 8px', color: '#a5b4fc', fontWeight: 700,
+  borderRadius: theme.radius.sm, padding: '3px 8px', color: theme.color.fileBtn, fontWeight: 700,
   fontSize: 12, cursor: 'pointer', display: 'inline-block',
 }
 const removeBtn: React.CSSProperties = {
   width: 16, height: 16, borderRadius: '50%', border: 'none',
-  background: 'rgba(0,0,0,.2)', color: '#c7d2fe', fontSize: 10,
+  background: 'rgba(0,0,0,.2)', color: theme.color.file, fontSize: 10,
   lineHeight: '16px', cursor: 'pointer', padding: 0, display: 'inline-flex',
   alignItems: 'center', justifyContent: 'center',
 }
 const errStyle: React.CSSProperties = {
-  color: '#fca5a5', fontSize: 11, fontWeight: 600, cursor: 'pointer',
+  color: theme.color.errorLight, fontSize: 11, fontWeight: 600, cursor: 'pointer',
 }
 
 function fmtSize(bytes: number): string {

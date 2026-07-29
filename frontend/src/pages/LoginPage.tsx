@@ -2,19 +2,20 @@ import { useState } from 'react'
 import useAppStore from '../store/useAppStore'
 import { signInWithEmail, signInWithMagicLink, signInWithGoogle } from '../services/auth'
 import SiteLayout from '../components/landing/SiteLayout'
+import { theme } from '../theme'
 
 const s: Record<string, React.CSSProperties> = {
   wrapper: { display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh', padding: '40px 20px' },
-  card: { background: '#1e1c19', borderRadius: 12, padding: 40, width: '100%', maxWidth: 400 },
-  title: { fontSize: 24, fontWeight: 700, marginBottom: 24, textAlign: 'center', color: '#f0e9e3' },
-  input: { width: '100%', padding: '10px 14px', marginBottom: 16, borderRadius: 8, border: '1px solid #3a3531', background: '#2a2724', color: '#f0e9e3', fontSize: 14, outline: 'none' },
+  card: { background: theme.color.surface4, borderRadius: theme.radius.md, padding: 40, width: '100%', maxWidth: 400 },
+  title: { fontSize: 24, fontWeight: 700, marginBottom: 24, textAlign: 'center', color: theme.color.text },
+  input: { width: '100%', padding: '10px 14px', marginBottom: 16, borderRadius: 8, border: `1px solid ${theme.color.border}`, background: '#2a2724', color: theme.color.text, fontSize: 14, outline: 'none' },
   btn: { width: '100%', padding: '10px 14px', borderRadius: 8, border: 'none', fontSize: 14, fontWeight: 600, cursor: 'pointer', marginBottom: 12 },
-  primaryBtn: { background: '#6366F1', color: '#fff' },
-  secondaryBtn: { background: '#3a3531', color: '#f0e9e3' },
-  divider: { display: 'flex', alignItems: 'center', gap: 12, margin: '16px 0', color: '#6b6560', fontSize: 13 },
-  line: { flex: 1, height: 1, background: '#3a3531' },
-  error: { color: '#ef4444', fontSize: 13, marginBottom: 12, textAlign: 'center' },
-  link: { color: '#6366F1', cursor: 'pointer', textAlign: 'center', marginTop: 12, fontSize: 14 },
+  primaryBtn: { background: theme.color.auth, color: '#fff' },
+  secondaryBtn: { background: theme.color.border, color: theme.color.text },
+  divider: { display: 'flex', alignItems: 'center', gap: 12, margin: '16px 0', color: theme.color.divider, fontSize: 13 },
+  line: { flex: 1, height: 1, background: theme.color.border },
+  error: { color: theme.color.error, fontSize: 13, marginBottom: 12, textAlign: 'center' },
+  link: { color: theme.color.auth, cursor: 'pointer', textAlign: 'center', marginTop: 12, fontSize: 14 },
 }
 
 export default function LoginPage() {

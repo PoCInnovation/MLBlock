@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react'
 import useAppStore from '../../store/useAppStore'
 import { signOut } from '../../services/auth'
+import { theme } from '../../theme'
 
 export default function HomeNav() {
   const screen       = useAppStore(s => s.screen)
@@ -28,9 +29,9 @@ export default function HomeNav() {
   const linkStyle = (active: boolean): CSSProperties => ({
     fontSize: 15,
     fontWeight: 700,
-    color: active ? '#E8915F' : '#b7ada3',
+    color: active ? theme.color.accentLight : theme.color.textMuted,
     cursor: 'pointer',
-    borderBottom: active ? '2px solid #E8915F' : '2px solid transparent',
+    borderBottom: active ? `2px solid ${theme.color.accentLight}` : '2px solid transparent',
     paddingBottom: 2,
     transition: 'color .15s, border-color .15s',
   })
@@ -42,10 +43,10 @@ export default function HomeNav() {
           onClick={goHome}
           style={{ display: 'flex', alignItems: 'center', gap: 11, cursor: 'pointer' }}
         >
-          <div style={{ width: 34, height: 34, borderRadius: 10, background: '#D97757', boxShadow: '0 3px 0 rgba(0,0,0,.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: 34, height: 34, borderRadius: 10, background: theme.color.accent, boxShadow: theme.shadow.btn, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ width: 13, height: 13, background: '#fff', borderRadius: 4 }} />
           </div>
-          <span style={{ fontFamily: "'Fredoka', sans-serif", fontWeight: 600, fontSize: 23, letterSpacing: '-.01em' }}>MLBlock</span>
+          <span style={{ fontFamily: theme.font.heading, fontWeight: 600, fontSize: 23, letterSpacing: '-.01em' }}>MLBlock</span>
         </div>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 30 }}>
@@ -54,16 +55,16 @@ export default function HomeNav() {
         <span onClick={goAbout} style={linkStyle(screen === 'about')}>Qui sommes nous</span>
         <button
           onClick={goBuild}
-          style={{ background: '#D97757', color: '#fff', border: 'none', padding: '11px 20px', borderRadius: 12, fontWeight: 800, fontSize: 15, cursor: 'pointer', boxShadow: '0 3px 0 rgba(0,0,0,.25)' }}
+          style={{ background: theme.color.accent, color: '#fff', border: 'none', padding: '11px 20px', borderRadius: 12, fontWeight: 800, fontSize: 15, cursor: 'pointer', boxShadow: theme.shadow.btn }}
         >
           Ouvrir l'éditeur
         </button>
         {user ? (
-          <button onClick={async () => { await signOut(); setUser(null); goHome() }} style={{ background: '#3a3531', color: '#b7ada3', border: 'none', padding: '11px 20px', borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+          <button onClick={async () => { await signOut(); setUser(null); goHome() }} style={{ background: theme.color.border, color: theme.color.textMuted, border: 'none', padding: '11px 20px', borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
             Déconnexion
           </button>
         ) : (
-          <button onClick={goLogin} style={{ background: '#3a3531', color: '#b7ada3', border: 'none', padding: '11px 20px', borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+          <button onClick={goLogin} style={{ background: theme.color.border, color: theme.color.textMuted, border: 'none', padding: '11px 20px', borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
             Connexion
           </button>
         )}
