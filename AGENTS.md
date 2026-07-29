@@ -36,12 +36,10 @@ backend/                          # Python backend (uv workspace root)
 │   ├── models/                   # Pydantic v2: PipelineDef, BlockSpec, BlockRegistry (v2)
 │   ├── configs/                  # Pipeline JSON configs (e.g., cnn_mnist.json)
 │   └── tests/                    # pytest suite (58 tests, 6 test files)
-├── alembic/                      # DB migrations
 ├── main.py                       # Example generated code output (standalone CNN script)
 ├── .env.example                  # Required: DATABASE_URL, SUPABASE_*, VAST_API_KEY, GPU_API_KEY
 ├── pyproject.toml                # Canonical deps — uv (pyproject.toml, uv.lock committed)
-├── requirements.txt              # Exact match of pyproject.toml deps (flat, for non-uv envs)
-└── alembic.ini
+└── requirements.txt              # Exact match of pyproject.toml deps (flat, for non-uv envs)
 frontend/                         # React + Vite frontend
 ├── src/
 ├── package.json
@@ -64,8 +62,6 @@ uv run python -m mlblock config.json --mode build  # Build + run model
 uv run uvicorn mlblock.server.main:app --reload    # Dev server
 uv run pytest -v                     # All tests (requires DATABASE_URL in env)
 uv run pytest mlblock/tests/test_server.py -v  # Single file
-uv run alembic upgrade head          # Run pending migrations
-uv run alembic revision --autogenerate -m "desc"  # New migration
 ```
 
 Frontend commands from `frontend/`:

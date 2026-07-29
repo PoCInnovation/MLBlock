@@ -6,7 +6,7 @@ services:
     runtime: python
     rootDir: backend
     buildCommand: pip install uv && uv sync
-    startCommand: uv run alembic upgrade head && uv run uvicorn mlblock.server.main:app --host 0.0.0.0 --port $PORT
+    startCommand: uv run uvicorn mlblock.server.main:app --host 0.0.0.0 --port $PORT
     envVars:
       # Database — Supabase PostgreSQL (transaction mode pooler)
       - key: DATABASE_URL
