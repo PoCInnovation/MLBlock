@@ -5,13 +5,10 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from mlblock.server.database import init_db
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     load_dotenv()
-    init_db()
     yield
 
 
