@@ -50,6 +50,12 @@ function FlowCanvasInner() {
     setFlowEdges(edges)
   }, [edges, setFlowEdges])
 
+  // ponytail: resync store→canvas by length; misses equal-length add+delete swaps, fine for dev
+  useEffect(() => {
+    if (flowNodes.length !== nodes.length) setNodes(flowNodes)
+    if (flowEdges.length !== edges.length) setEdges(flowEdges)
+  }, [flowNodes, flowEdges, nodes.length, edges.length])
+
   const onDragStart = useCallback((e: React.DragEvent, type: string) => {
     e.dataTransfer.setData('application/mlblock-type', type)
     e.dataTransfer.effectAllowed = 'move'

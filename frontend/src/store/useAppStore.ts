@@ -150,7 +150,7 @@ const useAppStore = create<AppState>((set) => ({
     consoleLines: [...s.consoleLines, { k: 'sys', t: '■ Arrêté' }],
   })),
 
-  clearAll: () => set({ script: [], consoleLines: [], result: null, running: false, runningId: null }),
+  clearAll: () => set({ script: [], flowNodes: [], flowEdges: [], consoleLines: [], result: null, running: false, runningId: null }),
 
   setCatalog: (catalog) => set((s) => {
     const firstCat = catalog.categories[0]?.id ?? 'data'
