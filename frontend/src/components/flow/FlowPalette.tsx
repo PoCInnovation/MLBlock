@@ -6,6 +6,7 @@ import { theme } from '../../theme'
 const paletteStyle: React.CSSProperties = {
   width: 260,
   flexShrink: 0,
+  height: '100%',
   background: theme.color.surface2,
   borderRight: `1px solid rgba(255,255,255,.06)`,
   display: 'flex',
@@ -129,7 +130,7 @@ export default function FlowPalette({ onDragStart }: FlowPaletteProps) {
         <input
           value={query}
           onChange={e => setQuery(e.target.value)}
-          placeholder="🔍 Rechercher un block…"
+          placeholder="Rechercher un block…"
           style={searchInputStyle}
         />
         <div style={chipsStyle}>

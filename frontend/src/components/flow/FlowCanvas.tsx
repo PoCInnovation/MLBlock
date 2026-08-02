@@ -99,7 +99,7 @@ function FlowCanvasInner() {
   )
 
   return (
-    <div style={{ flex: 1, display: 'flex', minWidth: 0 }}>
+    <div style={{ flex: 1, display: 'flex', minWidth: 0, minHeight: 0, height: '100%' }}>
       <FlowPalette onDragStart={onDragStart} />
       <div ref={wrapperRef} style={{ flex: 1, height: '100%' }}>
         <ReactFlow
