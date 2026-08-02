@@ -1,0 +1,105 @@
+import useAppStore from '../../store/useAppStore'
+import { colorFor } from '../../utils/blockHelpers'
+import { theme } from '../../theme'
+
+const paletteStyle: React.CSSProperties = {
+  width: 260,
+  flexShrink: 0,
+  background: theme.color.surface2,
+  borderRight: `1px solid rgba(255,255,255,.06)`,
+  display: 'flex',
+  flexDirection: 'column',
+  minHeight: 0,
+}
+
+const headerStyle: React.CSSProperties = {
+  padding: '14px 18px 12px',
+  borderBottom: '1px solid rgba(255,255,255,.05)',
+  flexShrink: 0,
+  fontFamily: theme.font.heading,
+  fontWeight: 600,
+  fontSize: 17,
+  color: theme.color.text,
+}
+
+const scrollStyle: React.CSSProperties = {
+  flex: 1,
+  overflowY: 'auto',
+  padding: '14px 14px 28px',
+}
+
+const catStyle: React.CSSProperties = {
+  fontFamily: theme.font.heading,
+  fontWeight: 600,
+  fontSize: 13,
+  color: theme.color.textMuted,
+  margin: '12px 0 8px',
+}
+
+const itemStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 8,
+  padding: '8px 10px',
+  borderRadius: theme.radius.md,
+  marginBottom: 8,
+  cursor: 'grab',
+  background: 'rgba(255,255,255,.04)',
+  border: `1px solid rgba(255,255,255,.06)`,
+  color: theme.color.text,
+  fontSize: 13,
+  fontWeight: 700,
+  transition: 'background .2s, border-color .2s',
+  userSelect: 'none',
+}
+
+const dotStyle = (color: string): React.CSSProperties => ({
+  width: 10,
+  height: 10,
+  borderRadius: 3,
+  background: color,
+  flexShrink: 0,
+})
+
+type FlowPaletteProps = {
+  onDragStart: (e: React.DragEvent, type: string) => void
+}
+
+export default function FlowPalette({ onDragStart }: FlowPaletteProps) {
+  const catalog = useAppStore(s => s.catalog)
+  if (!catalog) return null
+
+  const categories = catalog.categories
+
+  return (
+    <div style={paletteStyle}>
+      <div style={headerStyle}>Blocks</div>
+      <div style={scrollStyle}>
+        {categories.map(cat => {
+          const types = Object.keys(catalog.blocks).filter(t => catalog.blocks[t].cat === cat.id)
+          if (types.length === 0) return null
+          return (
+            <div key={cat.id}>
+              <div style={catStyle}>{cat.name}</div>
+              {types.map(type => {
+                const def = catalog.blocks[type]
+                const label = def.segs.find(s => s.t === 'text')?.v ?? type
+                return (
+                  <div
+                    key={type}
+                    draggable
+                    onDragStart={e => onDragStart(e, type)}
+                    style={itemStyle}
+                  >
+                    <span style={dotStyle(colorFor(cat.id, categories))} />
+                    <span>{label}</span>
+                  </div>
+                )
+              })}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
