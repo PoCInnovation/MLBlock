@@ -1,0 +1,20 @@
+- generic [ref=f1e3]:
+  - navigation [ref=f1e4]:
+    - generic [ref=f1e5]: MLBlock
+    - generic [ref=f1e10]:
+      - generic [ref=f1e11] [cursor=pointer]: Découvrir
+      - generic [ref=f1e12] [cursor=pointer]: Comment ça marche
+      - generic [ref=f1e13] [cursor=pointer]: Qui sommes nous
+      - button "Ouvrir l'éditeur" [ref=f1e14] [cursor=pointer]
+      - button "Connexion" [ref=f1e15] [cursor=pointer]
+  - generic [ref=f1e17]:
+    - generic [ref=f1e18]: Connexion
+    - textbox "Email" [ref=f1e19]
+    - textbox "Mot de passe" [ref=f1e20]
+    - button "Se connecter" [ref=f1e21] [cursor=pointer]
+    - generic [ref=f1e22]: ou
+    - button "Envoyer un lien magique" [ref=f1e26] [cursor=pointer]
+    - button "Continuer avec Google" [ref=f1e27] [cursor=pointer]
+    - generic [ref=f1e28] [cursor=pointer]: Pas encore de compte ? S'inscrire
+  - contentinfo [ref=f1e29]:
+    - generic [ref=f1e30]: © 2026 PoC Innovation

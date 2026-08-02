@@ -34,7 +34,7 @@ function FlowCanvasInner() {
 
   const [nodes, setNodes, onNodesChange] = useNodesState(flowNodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(flowEdges)
-  const { screenToFlowPosition } = useReactFlow()
+  const { screenToFlowPosition, fitView } = useReactFlow()
   const wrapperRef = useRef<HTMLDivElement>(null)
 
   const onConnect = useCallback(
@@ -91,8 +91,11 @@ function FlowCanvasInner() {
         },
       }
       setNodes(nds => [...nds, node])
+      // ponytail: fitView recenters on the dropped node — screenToFlowPosition
+      // on an empty canvas (fitView scale ~0.1) yields enormous flow coords
+      setTimeout(() => fitView({ padding: 0.2, duration: 300 }), 50)
     },
-    [catalog, screenToFlowPosition, setNodes]
+    [catalog, screenToFlowPosition, setNodes, fitView]
   )
 
   return (

@@ -92,7 +92,7 @@ def get_catalog() -> dict:
             }
         categories[cat]["blocks"].append({
             "type": block.name,
-            "label": block.description or block.name,
+            "label": block.name.replace("_", " ").title(),
             "params": {k: v.model_dump() for k, v in block.params.items()},
             "inputs": block.inputs,
             "outputs": block.outputs,
