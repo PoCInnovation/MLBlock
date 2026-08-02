@@ -1,6 +1,3 @@
-from torchvision import transforms
-
-
 def random_crop(in_1: "torch.Tensor", size: "int") -> "torch.Tensor":
     """Random crop.
     
@@ -8,4 +5,5 @@ def random_crop(in_1: "torch.Tensor", size: "int") -> "torch.Tensor":
         in_1: Input image.
         size: Output size.
     """
+    from torchvision import transforms
     return transforms.RandomCrop(size)(in_1)

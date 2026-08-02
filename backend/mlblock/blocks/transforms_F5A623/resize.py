@@ -1,6 +1,3 @@
-from torchvision import transforms
-
-
 def resize(in_1: "torch.Tensor", size: "int") -> "torch.Tensor":
     """Resize image.
     
@@ -8,4 +5,5 @@ def resize(in_1: "torch.Tensor", size: "int") -> "torch.Tensor":
         in_1: Input image.
         size: Output size.
     """
+    from torchvision import transforms
     return transforms.Resize(size)(in_1)

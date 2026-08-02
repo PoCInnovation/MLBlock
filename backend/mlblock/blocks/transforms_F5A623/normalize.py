@@ -1,7 +1,3 @@
-import torch
-from torchvision import transforms
-
-
 def normalize(in_1: "torch.Tensor", mean: "list", std: "list") -> "torch.Tensor":
     """Normalize tensor.
     
@@ -10,4 +6,5 @@ def normalize(in_1: "torch.Tensor", mean: "list", std: "list") -> "torch.Tensor"
         mean: Mean values.
         std: Standard deviation values.
     """
+    from torchvision import transforms
     return transforms.Normalize(mean=mean, std=std)(in_1)
