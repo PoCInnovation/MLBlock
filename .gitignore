@@ -156,3 +156,4 @@ backend/main.py
 backend/tmp.py
 backend/mlblock.db
 .mcp.json
+.playwright-mcp
