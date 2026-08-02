@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { signInWithEmail, signInWithMagicLink, signInWithGoogle } from '../services/auth'
 import SiteLayout from '../components/landing/SiteLayout'
 import { theme } from '../theme'
+import { loginSchema } from '../schemas/auth'
+import { formatZodError } from '../schemas/format'
 
 const s: Record<string, React.CSSProperties> = {
   wrapper: { display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh', padding: '40px 20px' },
@@ -27,6 +29,11 @@ export default function LoginPage() {
 
   const handleEmailLogin = async () => {
     setError('')
+    const parsed = loginSchema.safeParse({ email, password })
+    if (!parsed.success) {
+      setError(formatZodError(parsed.error))
+      return
+    }
     const { error: err } = await signInWithEmail(email, password)
     if (err) setError(err.message)
     else navigate('/editor')

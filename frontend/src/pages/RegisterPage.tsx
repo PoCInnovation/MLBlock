@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { signUp } from '../services/auth'
 import SiteLayout from '../components/landing/SiteLayout'
 import { theme } from '../theme'
+import { registerSchema } from '../schemas/auth'
+import { formatZodError } from '../schemas/format'
 
 const s: Record<string, React.CSSProperties> = {
   wrapper: { display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh', padding: '40px 20px' },
@@ -26,12 +28,9 @@ export default function RegisterPage() {
 
   const handleRegister = async () => {
     setError('')
-    if (password !== confirm) {
-      setError('Les mots de passe ne correspondent pas.')
-      return
-    }
-    if (password.length < 6) {
-      setError('Le mot de passe doit faire au moins 6 caractères.')
+    const parsed = registerSchema.safeParse({ email, password, confirm })
+    if (!parsed.success) {
+      setError(formatZodError(parsed.error))
       return
     }
     const { error: err } = await signUp(email, password)

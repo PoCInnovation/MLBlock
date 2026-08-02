@@ -31,9 +31,9 @@ export function useBlockRunner() {
       }))
       edges = store.flowEdges.map(e => ({
         source: e.source,
-        sourcePort: e.sourceHandle ?? 'out_1',
+        source_port: e.sourceHandle ?? 'out_1',
         target: e.target,
-        targetPort: e.targetHandle ?? 'in_1',
+        target_port: e.targetHandle ?? 'in_1',
       }))
     } else {
       if (store.script.length === 0) {

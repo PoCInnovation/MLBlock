@@ -14,6 +14,7 @@ import type {
   Segment,
 } from '../types/catalog'
 import { supabase } from '../services/supabase'
+import { catalogSchema, validationSchema } from '../schemas/api'
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000'
 
@@ -42,17 +43,13 @@ function toSegments(key: string, raw: unknown): Segment {
 }
 
 export async function fetchCatalog(): Promise<InternalCatalog> {
-  const { data } = await http.get<{
-    categories: {
-      id: string; name: string; color: string;
-      blocks: { type: string; label: string; params: Record<string, unknown>; inputs: unknown[]; outputs: unknown[] }[]
-    }[]
-  }>('/api/catalog')
+  const { data } = await http.get<unknown>('/api/catalog')
+  const parsed = catalogSchema.parse(data)
 
-  const categories: Category[] = data.categories.map(c => ({ id: c.id, name: c.name, color: c.color }))
+  const categories: Category[] = parsed.categories.map(c => ({ id: c.id, name: c.name, color: c.color }))
   const blocks: BlockDefMap = {}
 
-  for (const cat of data.categories) {
+  for (const cat of parsed.categories) {
     for (const b of cat.blocks) {
       const segs: Segment[] = [{ t: 'text', v: b.label }]
       for (const [key, raw] of Object.entries(b.params)) {
@@ -80,8 +77,8 @@ export async function deletePipeline(id: number): Promise<void> {
 }
 
 export async function validateGraph(nodes: PipelineNode[], edges: PipelineEdge[]): Promise<ValidationResponse> {
-  const { data } = await http.post<ValidationResponse>('/api/validate', { nodes, edges })
-  return data
+  const { data } = await http.post<unknown>('/api/validate', { nodes, edges })
+  return validationSchema.parse(data)
 }
 
 export async function buildPipeline(id: number): Promise<BuildResponse> {

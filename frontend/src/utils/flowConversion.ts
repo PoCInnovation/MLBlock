@@ -21,13 +21,14 @@ export function segsToParams(def: BlockDefMap[string] | undefined): Record<strin
 export function linearToFlow(blocks: FlowBlock[], catalog: InternalCatalog): Node[] {
   return blocks.map((b, i) => {
     const def = catalog.blocks[b.type]
+    const first = def?.segs[0]
     return {
       id: b.id,
       type: 'block',
       position: { x: 100, y: 80 + i * 120 },
       data: {
         type: b.type,
-        label: def?.segs[0]?.type === 'text' ? def.segs[0].v : b.type,
+        label: first?.t === 'text' ? first.v : b.type,
         category: def?.cat ?? 'unknown',
         categoryColor: catalog.categories.find(c => c.id === def?.cat)?.color ?? '#888',
         params: segsToParams(def),
