@@ -34,8 +34,8 @@ export default function EditorHeader({ onRun, onStop, onClear }: EditorHeaderPro
           <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#66C7B0', display: 'inline-block' }} />
           <span style={{ fontWeight: 800, fontSize: 14 }}>{projectName}</span>
         </div>
-        <button onClick={() => setEditorMode(editorMode === 'linear' ? 'advanced' : 'linear')} style={{ ...ghostBtn, background: editorMode === 'advanced' ? 'rgba(99,102,241,.2)' : undefined }}>
-          {editorMode === 'linear' ? '⚡ Avancé' : '📋 Linéaire'}
+        <button onClick={() => setEditorMode(editorMode === 'linear' ? 'advanced' : 'linear')} style={editorMode === 'advanced' ? { ...ghostBtn, background: theme.color.auth, color: '#fff', border: '1px solid transparent' } : ghostBtn}>
+          {editorMode === 'linear' ? 'Avancé' : 'Linéaire'}
         </button>
         <button style={ghostBtn}><span style={{ opacity: .7 }}>↧</span> Importer</button>
         <button style={ghostBtn}><span style={{ opacity: .7 }}>↥</span> Exporter</button>
