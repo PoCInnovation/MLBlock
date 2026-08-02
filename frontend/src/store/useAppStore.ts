@@ -2,6 +2,9 @@ import { create } from 'zustand'
 import { instantiate } from '../utils/blockHelpers'
 import type { Block } from '../utils/blockHelpers'
 import type { InternalCatalog } from '../types/catalog'
+import type { Node, Edge } from 'reactflow'
+import { linearToFlow, flowToLinear } from '../utils/flowConversion'
+import type { FlowBlock } from '../utils/flowConversion'
 
 export type ConsoleLine = { k: string; t: string }
 
@@ -23,9 +26,12 @@ export type DragState =
 
 type AppState = {
   screen: 'home' | 'build' | 'login' | 'register' | 'how-it-works' | 'about'
+  editorMode: 'linear' | 'advanced'
   category: string
   user: unknown | null
   script: Block[]
+  flowNodes: Node[]
+  flowEdges: Edge[]
   running: boolean
   runningId: string | null
   consoleLines: ConsoleLine[]
@@ -43,6 +49,7 @@ type AppState = {
   goHowItWorks: () => void
   goAbout: () => void
   setUser: (user: unknown | null) => void
+  setEditorMode: (mode: 'linear' | 'advanced') => void
   setCategory: (id: string) => void
   addBlock: (type: string, index: number | null) => void
   deleteBlock: (id: string) => void
@@ -50,6 +57,8 @@ type AppState = {
   updateField: (id: string, k: string, v: string) => void
   setDrag: (drag: DragState) => void
   clearDrag: () => void
+  setFlowNodes: (nodes: Node[]) => void
+  setFlowEdges: (edges: Edge[]) => void
   appendConsoleLines: (lines: ConsoleLine[]) => void
   startRun: () => void
   setRunningId: (id: string | null) => void
@@ -63,8 +72,11 @@ type AppState = {
 
 const useAppStore = create<AppState>((set) => ({
   screen: 'home',
+  editorMode: 'linear',
   category: 'data',
   script: [],
+  flowNodes: [],
+  flowEdges: [],
   running: false,
   runningId: null,
   consoleLines: [],
@@ -83,6 +95,21 @@ const useAppStore = create<AppState>((set) => ({
   goHowItWorks: () => set({ screen: 'how-it-works' }),
   goAbout: () => set({ screen: 'about' }),
   setCategory: (id) => set({ category: id }),
+
+  setEditorMode: (mode) => set((s) => {
+    if (mode === 'advanced' && s.catalog) {
+      const flowNodes = linearToFlow(s.script as FlowBlock[], s.catalog)
+      return { editorMode: mode, flowNodes }
+    }
+    if (mode === 'linear') {
+      const script = flowToLinear(s.flowNodes)
+      return { editorMode: mode, script: script as any }
+    }
+    return { editorMode: mode }
+  }),
+
+  setFlowNodes: (nodes) => set({ flowNodes: nodes }),
+  setFlowEdges: (edges) => set({ flowEdges: edges }),
 
   addBlock: (type, index) => set((s) => {
     if (!s.catalog) return {}

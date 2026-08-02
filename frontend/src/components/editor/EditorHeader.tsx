@@ -16,6 +16,8 @@ export default function EditorHeader({ onRun, onStop, onClear }: EditorHeaderPro
   const projectName = useAppStore(s => 'mon-premier-modèle')
   const running     = useAppStore(s => s.running)
   const setUser     = useAppStore(s => s.setUser)
+  const editorMode  = useAppStore(s => s.editorMode)
+  const setEditorMode = useAppStore(s => s.setEditorMode)
 
   return (
     <div style={{ height: 60, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', background: theme.color.surface, borderBottom: '1px solid rgba(255,255,255,.07)', zIndex: 20 }}>
@@ -31,6 +33,9 @@ export default function EditorHeader({ onRun, onStop, onClear }: EditorHeaderPro
           <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#66C7B0', display: 'inline-block' }} />
           <span style={{ fontWeight: 800, fontSize: 14 }}>{projectName}</span>
         </div>
+        <button onClick={() => setEditorMode(editorMode === 'linear' ? 'advanced' : 'linear')} style={{ ...ghostBtn, background: editorMode === 'advanced' ? 'rgba(99,102,241,.2)' : undefined }}>
+          {editorMode === 'linear' ? '⚡ Avancé' : '📋 Linéaire'}
+        </button>
         <button style={ghostBtn}><span style={{ opacity: .7 }}>↧</span> Importer</button>
         <button style={ghostBtn}><span style={{ opacity: .7 }}>↥</span> Exporter</button>
       </div>

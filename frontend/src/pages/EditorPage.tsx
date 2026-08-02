@@ -5,11 +5,14 @@ import { fetchCatalog } from '../api/client'
 import EditorHeader from '../components/editor/EditorHeader'
 import EditorLayout from '../components/editor/EditorLayout'
 import EditorUnavailableModal from '../components/ui/EditorUnavailableModal'
+import FlowCanvas from '../components/flow/FlowCanvas'
+import { theme } from '../theme'
 
 export default function EditorPage() {
   const { onRun, onStop, onClear } = useBlockRunner()
   const catalog      = useAppStore(s => s.catalog)
   const catalogError = useAppStore(s => s.catalogError)
+  const editorMode   = useAppStore(s => s.editorMode)
 
   useEffect(() => {
     fetchCatalog()
@@ -29,16 +32,16 @@ export default function EditorPage() {
 
   if (!catalog) {
     return (
-      <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#171311', color: '#9a9088', fontFamily: "'Fredoka', sans-serif", fontSize: 18 }}>
+      <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: theme.color.bg, color: '#9a9088', fontFamily: theme.font.heading, fontSize: 18 }}>
         Chargement…
       </div>
     )
   }
 
   return (
-    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#171311', color: '#f0e9e3', overflow: 'hidden' }}>
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: theme.color.bg, color: theme.color.text, overflow: 'hidden' }}>
       <EditorHeader onRun={onRun} onStop={onStop} onClear={onClear} />
-      <EditorLayout />
+      {editorMode === 'linear' ? <EditorLayout /> : <FlowCanvas />}
     </div>
   )
 }

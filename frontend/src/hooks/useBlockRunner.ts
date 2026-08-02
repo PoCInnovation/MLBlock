@@ -18,15 +18,33 @@ export function useBlockRunner() {
   const onRun = useCallback(async () => {
     const store = useAppStore.getState()
     if (store.running) return
-    if (store.script.length === 0) {
-      store.appendConsoleLines([{ k: 'sys', t: '⚠ Aucun bloc à exécuter.' }])
-      return
+
+    let nodes: PipelineNode[]
+    let edges: PipelineEdge[]
+
+    if (store.editorMode === 'advanced') {
+      nodes = store.flowNodes.map(n => ({
+        id: n.id,
+        type: (n.data as any)?.label ?? n.id,
+        params: {},
+        children: [],
+      }))
+      edges = store.flowEdges.map(e => ({
+        source: e.source,
+        sourcePort: e.sourceHandle ?? 'out_1',
+        target: e.target,
+        targetPort: e.targetHandle ?? 'in_1',
+      }))
+    } else {
+      if (store.script.length === 0) {
+        store.appendConsoleLines([{ k: 'sys', t: '⚠ Aucun bloc à exécuter.' }])
+        return
+      }
+      nodes = buildNodes(store.script)
+      edges = []
     }
 
     store.startRun()
-
-    const nodes: PipelineNode[] = buildNodes(store.script)
-    const edges: PipelineEdge[] = []
 
     try {
       const validation = await validateGraph(nodes, edges)
