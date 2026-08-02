@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react'
+import React, { useCallback, useEffect, useRef } from 'react'
 import ReactFlow, {
   Background,
   Controls,
@@ -6,6 +6,7 @@ import ReactFlow, {
   ReactFlowProvider,
   useNodesState,
   useEdgesState,
+  useReactFlow,
   addEdge,
   applyNodeChanges,
   applyEdgeChanges,
@@ -15,6 +16,7 @@ import 'reactflow/dist/style.css'
 import useAppStore from '../../store/useAppStore'
 import { theme } from '../../theme'
 import BlockNode from './BlockNode'
+import FlowPalette from './FlowPalette'
 
 const nodeTypes = { block: BlockNode }
 
@@ -27,9 +29,12 @@ function FlowCanvasInner() {
   const flowEdges = useAppStore(s => s.flowEdges)
   const setFlowNodes = useAppStore(s => s.setFlowNodes)
   const setFlowEdges = useAppStore(s => s.setFlowEdges)
+  const catalog = useAppStore(s => s.catalog)
 
   const [nodes, setNodes, onNodesChange] = useNodesState(flowNodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(flowEdges)
+  const { screenToFlowPosition } = useReactFlow()
+  const wrapperRef = useRef<HTMLDivElement>(null)
 
   const onConnect = useCallback(
     (params: any) => setEdges((eds) => addEdge(params, eds)),
@@ -44,22 +49,65 @@ function FlowCanvasInner() {
     setFlowEdges(edges)
   }, [edges, setFlowEdges])
 
+  const onDragStart = useCallback((e: React.DragEvent, type: string) => {
+    e.dataTransfer.setData('application/mlblock-type', type)
+    e.dataTransfer.effectAllowed = 'move'
+  }, [])
+
+  const onDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+  }, [])
+
+  const onDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault()
+      if (!catalog) return
+      const type = e.dataTransfer.getData('application/mlblock-type')
+      if (!type || !catalog.blocks[type]) return
+
+      const position = screenToFlowPosition({ x: e.clientX, y: e.clientY })
+      const def = catalog.blocks[type]
+      const cat = catalog.categories.find(c => c.id === def.cat)
+      const label = def.segs.find(s => s.t === 'text')?.v ?? type
+
+      const node = {
+        id: `${type}_${Date.now()}`,
+        type: 'block',
+        position,
+        data: {
+          label,
+          category: def.cat,
+          categoryColor: cat?.color ?? theme.color.accent,
+          params: {},
+        },
+      }
+      setNodes(nds => [...nds, node])
+    },
+    [catalog, screenToFlowPosition, setNodes]
+  )
+
   return (
-    <div style={{ flex: 1, height: '100%' }}>
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        nodeTypes={nodeTypes}
-        style={reactFlowStyle}
-        fitView
-      >
-        <Controls />
-        <MiniMap />
-        <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
-      </ReactFlow>
+    <div style={{ flex: 1, display: 'flex', minWidth: 0 }}>
+      <FlowPalette onDragStart={onDragStart} />
+      <div ref={wrapperRef} style={{ flex: 1, height: '100%' }}>
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          onDragOver={onDragOver}
+          onDrop={onDrop}
+          nodeTypes={nodeTypes}
+          style={reactFlowStyle}
+          fitView
+        >
+          <Controls />
+          <MiniMap />
+          <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
+        </ReactFlow>
+      </div>
     </div>
   )
 }
