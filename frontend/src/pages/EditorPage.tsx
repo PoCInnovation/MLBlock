@@ -15,17 +15,29 @@ export default function EditorPage() {
   const editorMode   = useAppStore(s => s.editorMode)
 
   useEffect(() => {
-    fetchCatalog()
-      .then(data => useAppStore.getState().setCatalog(data))
-      .catch((err) => {
-        const isNetworkError = !err?.response
-        useAppStore.getState().setCatalogError(
-          true,
-          isNetworkError
-            ? 'Impossible de joindre le serveur. Vérifie que le backend est lancé et réessaie.'
-            : `Réponse inattendue du serveur (${String(err?.response?.status ?? '?')}). Vérifie la version du backend.`
-        )
-      })
+    let cancelled = false
+    let retries = 0
+    const MAX_RETRIES = 5
+
+    async function tryLoad() {
+      try {
+        const data = await fetchCatalog()
+        if (!cancelled) useAppStore.getState().setCatalog(data)
+      } catch {
+        retries++
+        if (!cancelled && retries < MAX_RETRIES) {
+          setTimeout(tryLoad, 15_000)
+        } else if (!cancelled) {
+          useAppStore.getState().setCatalogError(
+            true,
+            'Impossible de joindre le serveur. Le backend est peut-être en veille, réessaie dans quelques minutes.'
+          )
+        }
+      }
+    }
+
+    tryLoad()
+    return () => { cancelled = true }
   }, [])
 
   if (catalogError) return <EditorUnavailableModal />
