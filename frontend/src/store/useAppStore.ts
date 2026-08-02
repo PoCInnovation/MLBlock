@@ -25,7 +25,6 @@ export type DragState =
   | (DragBase & { source: 'script'; id: string })
 
 type AppState = {
-  screen: 'home' | 'build' | 'login' | 'register' | 'how-it-works' | 'about'
   editorMode: 'linear' | 'advanced'
   category: string
   user: unknown | null
@@ -42,12 +41,6 @@ type AppState = {
   catalogErrorMessage: string | null
   pipelineId: number | null
 
-  goBuild: () => void
-  goHome: () => void
-  goLogin: () => void
-  goRegister: () => void
-  goHowItWorks: () => void
-  goAbout: () => void
   setUser: (user: unknown | null) => void
   setEditorMode: (mode: 'linear' | 'advanced') => void
   setCategory: (id: string) => void
@@ -71,7 +64,6 @@ type AppState = {
 }
 
 const useAppStore = create<AppState>((set) => ({
-  screen: 'home',
   editorMode: 'linear',
   category: 'data',
   script: [],
@@ -88,12 +80,6 @@ const useAppStore = create<AppState>((set) => ({
   catalogErrorMessage: null,
   pipelineId: null,
 
-  goBuild: () => set({ screen: 'build' }),
-  goHome: () => set({ screen: 'home', catalog: null, catalogError: false, catalogErrorMessage: null, pipelineId: null }),
-  goLogin: () => set({ screen: 'login' }),
-  goRegister: () => set({ screen: 'register' }),
-  goHowItWorks: () => set({ screen: 'how-it-works' }),
-  goAbout: () => set({ screen: 'about' }),
   setCategory: (id) => set({ category: id }),
 
   setEditorMode: (mode) => set((s) => {

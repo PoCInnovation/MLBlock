@@ -34,6 +34,7 @@ const paramStyle: React.CSSProperties = {
 }
 
 type BlockNodeData = {
+  type: string
   label: string
   category: string
   categoryColor: string

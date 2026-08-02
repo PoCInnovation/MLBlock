@@ -1,7 +1,8 @@
+import { useNavigate } from 'react-router-dom'
 import useAppStore from '../../store/useAppStore'
 
 export default function EditorUnavailableModal() {
-  const goHome  = useAppStore(s => s.goHome)
+  const navigate = useNavigate()
   const message = useAppStore(s => s.catalogErrorMessage)
 
   return (
@@ -15,7 +16,7 @@ export default function EditorUnavailableModal() {
           {message ?? 'Impossible de joindre le serveur. Vérifie que le backend est lancé et réessaie.'}
         </div>
         <button
-          onClick={goHome}
+          onClick={() => navigate('/')}
           style={{ background: 'rgba(255,255,255,.08)', color: '#e8e0d8', border: '1px solid rgba(255,255,255,.15)', padding: '10px 24px', borderRadius: 10, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}
         >
           ← Retour

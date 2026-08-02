@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import useAppStore from '../store/useAppStore'
+import { useNavigate } from 'react-router-dom'
 import { signUp } from '../services/auth'
 import SiteLayout from '../components/landing/SiteLayout'
 import { theme } from '../theme'
@@ -22,7 +22,7 @@ export default function RegisterPage() {
   const [confirm, setConfirm] = useState('')
   const [error, setError] = useState('')
   const [done, setDone] = useState(false)
-  const goLogin = useAppStore(s => s.goLogin)
+  const navigate = useNavigate()
 
   const handleRegister = async () => {
     setError('')
@@ -57,7 +57,7 @@ export default function RegisterPage() {
               <button style={{ ...s.btn, ...s.primaryBtn }} onClick={handleRegister}>Créer un compte</button>
             </>
           )}
-          <div style={s.link} onClick={goLogin}>Déjà un compte ? Se connecter</div>
+          <div style={s.link} onClick={() => navigate('/login')}>Déjà un compte ? Se connecter</div>
         </div>
       </div>
     </SiteLayout>

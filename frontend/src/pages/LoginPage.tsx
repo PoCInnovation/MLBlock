@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import useAppStore from '../store/useAppStore'
+import { useNavigate } from 'react-router-dom'
 import { signInWithEmail, signInWithMagicLink, signInWithGoogle } from '../services/auth'
 import SiteLayout from '../components/landing/SiteLayout'
 import { theme } from '../theme'
@@ -23,14 +23,13 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [magicSent, setMagicSent] = useState(false)
-  const goBuild = useAppStore(s => s.goBuild)
-  const goRegister = useAppStore(s => s.goRegister)
+  const navigate = useNavigate()
 
   const handleEmailLogin = async () => {
     setError('')
     const { error: err } = await signInWithEmail(email, password)
     if (err) setError(err.message)
-    else goBuild()
+    else navigate('/editor')
   }
 
   const handleMagicLink = async () => {
@@ -68,7 +67,7 @@ export default function LoginPage() {
               <button style={{ ...s.btn, ...s.secondaryBtn }} onClick={handleGoogle}>Continuer avec Google</button>
             </>
           )}
-          <div style={s.link} onClick={goRegister}>Pas encore de compte ? S'inscrire</div>
+          <div style={s.link} onClick={() => navigate('/register')}>Pas encore de compte ? S'inscrire</div>
         </div>
       </div>
     </SiteLayout>

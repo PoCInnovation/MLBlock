@@ -1,15 +1,12 @@
 import type { CSSProperties } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import useAppStore from '../../store/useAppStore'
 import { signOut } from '../../services/auth'
 import { theme } from '../../theme'
 
 export default function HomeNav() {
-  const screen       = useAppStore(s => s.screen)
-  const goBuild      = useAppStore(s => s.goBuild)
-  const goHome       = useAppStore(s => s.goHome)
-  const goLogin      = useAppStore(s => s.goLogin)
-  const goHowItWorks = useAppStore(s => s.goHowItWorks)
-  const goAbout      = useAppStore(s => s.goAbout)
+  const location     = useLocation()
+  const navigate     = useNavigate()
   const user         = useAppStore(s => s.user)
   const setUser      = useAppStore(s => s.setUser)
 
@@ -17,10 +14,10 @@ export default function HomeNav() {
     document.getElementById('fonctionnalites')?.scrollIntoView({ behavior: 'smooth' })
 
   const handleDecouvrir = () => {
-    if (screen === 'home') {
+    if (location.pathname === '/') {
       scrollToFeatures()
     } else {
-      goHome()
+      navigate('/')
       // After navigation the DOM re-renders; scroll on next tick
       setTimeout(scrollToFeatures, 80)
     }
@@ -40,7 +37,7 @@ export default function HomeNav() {
     <nav className="landing-nav" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '22px 48px', maxWidth: 1240, margin: '0 auto' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
         <div
-          onClick={goHome}
+          onClick={() => navigate('/')}
           style={{ display: 'flex', alignItems: 'center', gap: 11, cursor: 'pointer' }}
         >
           <div style={{ width: 34, height: 34, borderRadius: 10, background: theme.color.accent, boxShadow: theme.shadow.btn, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -51,20 +48,20 @@ export default function HomeNav() {
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 30 }}>
         <span onClick={handleDecouvrir} style={linkStyle(false)}>Découvrir</span>
-        <span onClick={goHowItWorks} style={linkStyle(screen === 'how-it-works')}>Comment ça marche</span>
-        <span onClick={goAbout} style={linkStyle(screen === 'about')}>Qui sommes nous</span>
+        <span onClick={() => navigate('/how-it-works')} style={linkStyle(location.pathname === '/how-it-works')}>Comment ça marche</span>
+        <span onClick={() => navigate('/about')} style={linkStyle(location.pathname === '/about')}>Qui sommes nous</span>
         <button
-          onClick={goBuild}
+          onClick={() => navigate('/editor')}
           style={{ background: theme.color.accent, color: '#fff', border: 'none', padding: '11px 20px', borderRadius: 12, fontWeight: 800, fontSize: 15, cursor: 'pointer', boxShadow: theme.shadow.btn }}
         >
           Ouvrir l'éditeur
         </button>
         {user ? (
-          <button onClick={async () => { await signOut(); setUser(null); goHome() }} style={{ background: theme.color.border, color: theme.color.textMuted, border: 'none', padding: '11px 20px', borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+          <button onClick={async () => { await signOut(); setUser(null); navigate('/') }} style={{ background: theme.color.border, color: theme.color.textMuted, border: 'none', padding: '11px 20px', borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
             Déconnexion
           </button>
         ) : (
-          <button onClick={goLogin} style={{ background: theme.color.border, color: theme.color.textMuted, border: 'none', padding: '11px 20px', borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+          <button onClick={() => navigate('/login')} style={{ background: theme.color.border, color: theme.color.textMuted, border: 'none', padding: '11px 20px', borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
             Connexion
           </button>
         )}

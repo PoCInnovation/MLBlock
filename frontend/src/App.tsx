@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import useAppStore from './store/useAppStore'
 import { getSession, onAuthStateChange } from './services/auth'
 import HomePage from './pages/HomePage'
@@ -9,7 +10,6 @@ import HowItWorksPage from './pages/HowItWorksPage'
 import AboutPage from './pages/AboutPage'
 
 export default function App() {
-  const screen = useAppStore(s => s.screen)
   const user  = useAppStore(s => s.user)
   const setUser = useAppStore(s => s.setUser)
 
@@ -19,13 +19,14 @@ export default function App() {
     return () => subscription.unsubscribe()
   }, [setUser])
 
-  if (screen === 'build') {
-    if (!user) return <LoginPage />
-    return <EditorPage />
-  }
-  if (screen === 'login')         return <LoginPage />
-  if (screen === 'register')      return <RegisterPage />
-  if (screen === 'how-it-works')  return <HowItWorksPage />
-  if (screen === 'about')         return <AboutPage />
-  return <HomePage />
+  return (
+    <Routes>
+      <Route path="/" element={<HomePage />} />
+      <Route path="/editor" element={user ? <EditorPage /> : <Navigate to="/login" replace />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/how-it-works" element={<HowItWorksPage />} />
+      <Route path="/about" element={<AboutPage />} />
+    </Routes>
+  )
 }

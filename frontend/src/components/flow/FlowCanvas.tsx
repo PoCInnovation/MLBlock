@@ -17,6 +17,7 @@ import useAppStore from '../../store/useAppStore'
 import { theme } from '../../theme'
 import BlockNode from './BlockNode'
 import FlowPalette from './FlowPalette'
+import { segsToParams } from '../../utils/flowConversion'
 
 const nodeTypes = { block: BlockNode }
 
@@ -76,10 +77,11 @@ function FlowCanvasInner() {
         type: 'block',
         position,
         data: {
+          type,
           label,
           category: def.cat,
           categoryColor: cat?.color ?? theme.color.accent,
-          params: {},
+          params: segsToParams(def),
         },
       }
       setNodes(nds => [...nds, node])
