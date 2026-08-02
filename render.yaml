@@ -5,8 +5,12 @@ services:
     name: mlblock-backend
     runtime: python
     rootDir: backend
-    buildCommand: pip install uv && uv sync
-    startCommand: uv run uvicorn mlblock.server.main:app --host 0.0.0.0 --port $PORT
+    buildCommand: uv sync
+    startCommand: .venv/bin/uvicorn mlblock.server.main:app --host 0.0.0.0 --port $PORT
+    buildFilter:
+      ignoredPaths:
+        - frontend/**
+        - openspec/**
     envVars:
       # Database — Supabase PostgreSQL (transaction mode pooler)
       - key: DATABASE_URL
@@ -40,6 +44,10 @@ services:
     runtime: static
     rootDir: frontend
     buildCommand: npm install && VITE_API_BASE_URL=https://mlblock-backend.onrender.com npm run build
+    buildFilter:
+      ignoredPaths:
+        - backend/**
+        - openspec/**
     staticPublishPath: dist
     routes:
       - type: rewrite
