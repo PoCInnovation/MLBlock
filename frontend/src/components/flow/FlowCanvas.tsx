@@ -1,3 +1,4 @@
+import React, { useCallback, useEffect } from 'react'
 import ReactFlow, {
   Background,
   Controls,
@@ -30,16 +31,16 @@ function FlowCanvasInner() {
   const [nodes, setNodes, onNodesChange] = useNodesState(flowNodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(flowEdges)
 
-  const onConnect = React.useCallback(
+  const onConnect = useCallback(
     (params: any) => setEdges((eds) => addEdge(params, eds)),
     [setEdges]
   )
 
-  React.useEffect(() => {
+  useEffect(() => {
     setFlowNodes(nodes)
   }, [nodes, setFlowNodes])
 
-  React.useEffect(() => {
+  useEffect(() => {
     setFlowEdges(edges)
   }, [edges, setFlowEdges])
 
