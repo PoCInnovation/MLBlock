@@ -1,45 +1,44 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { signUp } from '../services/auth'
 import SiteLayout from '../components/landing/SiteLayout'
 import { theme } from '../theme'
-import { registerSchema } from '../schemas/auth'
-import { formatZodError } from '../schemas/format'
+import { registerSchema, type RegisterInput } from '../schemas/auth'
 import { mapSupabaseError } from '../schemas/errors'
 
 const s: Record<string, React.CSSProperties> = {
   wrapper: { display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh', padding: '40px 20px' },
   card: { background: theme.color.surface4, borderRadius: theme.radius.md, padding: 40, width: '100%', maxWidth: 400 },
   title: { fontSize: 24, fontWeight: 700, marginBottom: 24, textAlign: 'center', color: theme.color.text },
+  label: { display: 'block', marginBottom: 6, fontSize: 13, fontWeight: 700, color: theme.color.textMuted },
   input: { width: '100%', padding: '10px 14px', marginBottom: 16, borderRadius: 8, border: `1px solid ${theme.color.border}`, background: '#2a2724', color: theme.color.text, fontSize: 14 },
+  fieldError: { color: theme.color.error, fontSize: 12, marginTop: -12, marginBottom: 12 },
   btn: { width: '100%', padding: '10px 14px', borderRadius: 8, border: 'none', fontSize: 14, fontWeight: 600, cursor: 'pointer', marginBottom: 12 },
   primaryBtn: { background: theme.color.auth, color: '#fff' },
   error: { color: theme.color.error, fontSize: 13, marginBottom: 12, textAlign: 'center' },
-  success: { color: theme.color.success, fontSize: 13, marginBottom: 12, textAlign: 'center' },
   link: { color: theme.color.auth, cursor: 'pointer', textAlign: 'center', marginTop: 12, fontSize: 14 },
 }
 
 export default function RegisterPage() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [confirm, setConfirm] = useState('')
   const [error, setError] = useState('')
   const [done, setDone] = useState(false)
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
 
-  const handleRegister = async () => {
+  const form = useForm<RegisterInput>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: { email: '', password: '', confirm: '' },
+  })
+
+  const onSubmit = async (data: RegisterInput) => {
     setError('')
-    const parsed = registerSchema.safeParse({ email, password, confirm })
-    if (!parsed.success) {
-      setError(formatZodError(parsed.error))
-      return
-    }
     setLoading(true)
     try {
-      const { data, error: err } = await signUp(email, password)
+      const { data: res, error: err } = await signUp(data.email, data.password)
       if (err) setError(mapSupabaseError(err.message))
-      else if (!data.user) setError('Un compte existe déjà avec cet email')
+      else if (!res.user) setError('Un compte existe déjà avec cet email')
       else setDone(true)
     } catch {
       setError(mapSupabaseError('Network request failed'))
@@ -59,12 +58,18 @@ export default function RegisterPage() {
               Compte créé ! Vérifie tes emails pour confirmer.
             </div>
           ) : (
-            <>
-              <input style={s.input} placeholder="Email" type="email" value={email} onChange={e => setEmail(e.target.value)} />
-              <input style={s.input} placeholder="Mot de passe" type="password" value={password} onChange={e => setPassword(e.target.value)} />
-              <input style={s.input} placeholder="Confirmer le mot de passe" type="password" value={confirm} onChange={e => setConfirm(e.target.value)} />
-              <button disabled={loading} style={{ ...s.btn, ...s.primaryBtn, opacity: loading ? 0.6 : 1 }} onClick={handleRegister}>{loading ? 'Création…' : 'Créer un compte'}</button>
-            </>
+            <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
+              <label style={s.label} htmlFor="register-email">Email</label>
+              <input id="register-email" style={s.input} type="email" placeholder="exemple@mail.com" aria-invalid={!!form.formState.errors.email} {...form.register('email')} />
+              {form.formState.errors.email && <div style={s.fieldError} role="alert">{form.formState.errors.email.message}</div>}
+              <label style={s.label} htmlFor="register-password">Mot de passe</label>
+              <input id="register-password" style={s.input} type="password" placeholder="••••••" aria-invalid={!!form.formState.errors.password} {...form.register('password')} />
+              {form.formState.errors.password && <div style={s.fieldError} role="alert">{form.formState.errors.password.message}</div>}
+              <label style={s.label} htmlFor="register-confirm">Confirmer le mot de passe</label>
+              <input id="register-confirm" style={s.input} type="password" placeholder="••••••" aria-invalid={!!form.formState.errors.confirm} {...form.register('confirm')} />
+              {form.formState.errors.confirm && <div style={s.fieldError} role="alert">{form.formState.errors.confirm.message}</div>}
+              <button type="submit" disabled={loading} style={{ ...s.btn, ...s.primaryBtn, opacity: loading ? 0.6 : 1 }}>{loading ? 'Création…' : 'Créer un compte'}</button>
+            </form>
           )}
           <button style={{ ...s.link, background: 'none', border: 'none' }} onClick={() => navigate('/login')}>Déjà un compte ? Se connecter</button>
         </div>
