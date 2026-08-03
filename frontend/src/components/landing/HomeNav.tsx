@@ -47,9 +47,9 @@ export default function HomeNav() {
         </div>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 30 }}>
-        <span onClick={handleDecouvrir} style={linkStyle(false)}>Découvrir</span>
-        <span onClick={() => navigate('/how-it-works')} style={linkStyle(location.pathname === '/how-it-works')}>Comment ça marche</span>
-        <span onClick={() => navigate('/about')} style={linkStyle(location.pathname === '/about')}>Qui sommes nous</span>
+        <button onClick={handleDecouvrir} style={{ ...linkStyle(false), background: 'none', border: 'none' }}>Découvrir</button>
+        <button onClick={() => navigate('/how-it-works')} style={{ ...linkStyle(location.pathname === '/how-it-works'), background: 'none', border: 'none' }}>Comment ça marche</button>
+        <button onClick={() => navigate('/about')} style={{ ...linkStyle(location.pathname === '/about'), background: 'none', border: 'none' }}>Qui sommes nous</button>
         <button
           onClick={() => navigate('/editor')}
           style={{ background: theme.color.accent, color: '#fff', border: 'none', padding: '11px 20px', borderRadius: 12, fontWeight: 800, fontSize: 15, cursor: 'pointer', boxShadow: theme.shadow.btn }}
@@ -57,7 +57,7 @@ export default function HomeNav() {
           Ouvrir l'éditeur
         </button>
         {user ? (
-          <button onClick={async () => { await signOut(); setUser(null); navigate('/') }} style={{ background: theme.color.border, color: theme.color.textMuted, border: 'none', padding: '11px 20px', borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+          <button onClick={async () => { try { await signOut() } catch {} setUser(null); navigate('/') }} style={{ background: theme.color.border, color: theme.color.textMuted, border: 'none', padding: '11px 20px', borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
             Déconnexion
           </button>
         ) : (

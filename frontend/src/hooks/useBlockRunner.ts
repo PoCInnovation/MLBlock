@@ -25,7 +25,7 @@ export function useBlockRunner() {
     if (store.editorMode === 'advanced') {
       nodes = store.flowNodes.map(n => ({
         id: n.id,
-        type: (n.data as any)?.label ?? n.id,
+        type: (n.data as any)?.type ?? n.id,
         params: {},
         children: [],
       }))
@@ -53,7 +53,7 @@ export function useBlockRunner() {
           { k: 'sys', t: '⚠ Graphe invalide :' },
           ...validation.errors.map(e => ({ k: 'sys', t: `  • ${e}` })),
         ])
-        useAppStore.getState().stopRun()
+        useAppStore.getState().failRun()
         return
       }
 
@@ -85,12 +85,12 @@ export function useBlockRunner() {
         useAppStore.getState().appendConsoleLines([
           { k: 'sys', t: `⚠ Erreur de build : ${build.error ?? 'inconnue'}` },
         ])
-        useAppStore.getState().stopRun()
+        useAppStore.getState().failRun()
       }
     } catch (err) {
       console.error('Pipeline run failed:', err)
       if (useAppStore.getState().running) {
-        useAppStore.getState().stopRun()
+        useAppStore.getState().failRun()
         useAppStore.getState().appendConsoleLines([{ k: 'sys', t: "⚠ Erreur lors de l'exécution." }])
       }
     }

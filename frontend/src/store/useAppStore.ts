@@ -57,6 +57,7 @@ type AppState = {
   setRunningId: (id: string | null) => void
   finishRun: (result: unknown) => void
   stopRun: () => void
+  failRun: () => void
   clearAll: () => void
   setCatalog: (catalog: InternalCatalog) => void
   setCatalogError: (error: boolean, message?: string) => void
@@ -149,6 +150,8 @@ const useAppStore = create<AppState>((set) => ({
     runningId: null,
     consoleLines: [...s.consoleLines, { k: 'sys', t: '■ Arrêté' }],
   })),
+
+  failRun: () => set((s) => ({ running: false, runningId: null })),
 
   clearAll: () => set({ script: [], flowNodes: [], flowEdges: [], consoleLines: [], result: null, running: false, runningId: null }),
 

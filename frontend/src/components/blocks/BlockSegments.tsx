@@ -6,12 +6,12 @@ import { theme } from '../../theme'
 const inputBase: React.CSSProperties = {
   background: 'rgba(255,255,255,.9)', border: 'none', borderRadius: theme.radius.sm,
   padding: '3px 5px', textAlign: 'center', color: theme.color.textInput,
-  fontWeight: 800, fontSize: 13, outline: 'none',
+  fontWeight: 800, fontSize: 13,
 }
 const selectBase: React.CSSProperties = {
   background: 'rgba(255,255,255,.9)', border: 'none', borderRadius: theme.radius.sm,
   padding: '3px 6px', color: theme.color.textInput, fontWeight: 800, fontSize: 13,
-  outline: 'none', cursor: 'pointer',
+  cursor: 'pointer',
 }
 const fieldPill: React.CSSProperties = {
   background: 'rgba(255,255,255,.85)', padding: '2px 8px', borderRadius: theme.radius.sm, fontWeight: 800,

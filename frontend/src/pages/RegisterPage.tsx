@@ -5,12 +5,13 @@ import SiteLayout from '../components/landing/SiteLayout'
 import { theme } from '../theme'
 import { registerSchema } from '../schemas/auth'
 import { formatZodError } from '../schemas/format'
+import { mapSupabaseError } from '../schemas/errors'
 
 const s: Record<string, React.CSSProperties> = {
   wrapper: { display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh', padding: '40px 20px' },
   card: { background: theme.color.surface4, borderRadius: theme.radius.md, padding: 40, width: '100%', maxWidth: 400 },
   title: { fontSize: 24, fontWeight: 700, marginBottom: 24, textAlign: 'center', color: theme.color.text },
-  input: { width: '100%', padding: '10px 14px', marginBottom: 16, borderRadius: 8, border: `1px solid ${theme.color.border}`, background: '#2a2724', color: theme.color.text, fontSize: 14, outline: 'none' },
+  input: { width: '100%', padding: '10px 14px', marginBottom: 16, borderRadius: 8, border: `1px solid ${theme.color.border}`, background: '#2a2724', color: theme.color.text, fontSize: 14 },
   btn: { width: '100%', padding: '10px 14px', borderRadius: 8, border: 'none', fontSize: 14, fontWeight: 600, cursor: 'pointer', marginBottom: 12 },
   primaryBtn: { background: theme.color.auth, color: '#fff' },
   error: { color: theme.color.error, fontSize: 13, marginBottom: 12, textAlign: 'center' },
@@ -24,6 +25,7 @@ export default function RegisterPage() {
   const [confirm, setConfirm] = useState('')
   const [error, setError] = useState('')
   const [done, setDone] = useState(false)
+  const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
 
   const handleRegister = async () => {
@@ -33,9 +35,17 @@ export default function RegisterPage() {
       setError(formatZodError(parsed.error))
       return
     }
-    const { error: err } = await signUp(email, password)
-    if (err) setError(err.message)
-    else setDone(true)
+    setLoading(true)
+    try {
+      const { data, error: err } = await signUp(email, password)
+      if (err) setError(mapSupabaseError(err.message))
+      else if (!data.user) setError('Un compte existe déjà avec cet email')
+      else setDone(true)
+    } catch {
+      setError(mapSupabaseError('Network request failed'))
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -45,7 +55,7 @@ export default function RegisterPage() {
           <div style={s.title}>Inscription</div>
           {error && <div style={s.error}>{error}</div>}
           {done ? (
-            <div style={{ ...s.title, fontSize: 16, color: '#6b6560' }}>
+            <div style={{ ...s.title, fontSize: 16, color: theme.color.textMuted }}>
               Compte créé ! Vérifie tes emails pour confirmer.
             </div>
           ) : (
@@ -53,10 +63,10 @@ export default function RegisterPage() {
               <input style={s.input} placeholder="Email" type="email" value={email} onChange={e => setEmail(e.target.value)} />
               <input style={s.input} placeholder="Mot de passe" type="password" value={password} onChange={e => setPassword(e.target.value)} />
               <input style={s.input} placeholder="Confirmer le mot de passe" type="password" value={confirm} onChange={e => setConfirm(e.target.value)} />
-              <button style={{ ...s.btn, ...s.primaryBtn }} onClick={handleRegister}>Créer un compte</button>
+              <button disabled={loading} style={{ ...s.btn, ...s.primaryBtn, opacity: loading ? 0.6 : 1 }} onClick={handleRegister}>{loading ? 'Création…' : 'Créer un compte'}</button>
             </>
           )}
-          <div style={s.link} onClick={() => navigate('/login')}>Déjà un compte ? Se connecter</div>
+          <button style={{ ...s.link, background: 'none', border: 'none' }} onClick={() => navigate('/login')}>Déjà un compte ? Se connecter</button>
         </div>
       </div>
     </SiteLayout>

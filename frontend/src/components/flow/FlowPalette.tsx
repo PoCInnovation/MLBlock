@@ -33,7 +33,6 @@ const searchInputStyle: React.CSSProperties = {
   background: 'rgba(255,255,255,.05)',
   color: theme.color.text,
   fontSize: 13,
-  outline: 'none',
 }
 
 const chipsStyle: React.CSSProperties = {
@@ -49,9 +48,9 @@ const chipStyle = (active: boolean): React.CSSProperties => ({
   fontSize: 11,
   fontWeight: 700,
   cursor: 'pointer',
+  border: 'none',
   background: active ? theme.color.accent : 'rgba(255,255,255,.05)',
   color: active ? '#fff' : theme.color.textMuted,
-  border: `1px solid ${active ? theme.color.accent : 'rgba(255,255,255,.1)'}`,
   transition: 'background .2s, color .2s',
 })
 
@@ -134,9 +133,9 @@ export default function FlowPalette({ onDragStart }: FlowPaletteProps) {
           style={searchInputStyle}
         />
         <div style={chipsStyle}>
-          <span style={chipStyle(cat === 'all')} onClick={() => setCat('all')}>Tous</span>
+          <button style={chipStyle(cat === 'all')} onClick={() => setCat('all')}>Tous</button>
           {categories.map(c => (
-            <span key={c.id} style={chipStyle(cat === c.id)} onClick={() => setCat(c.id)}>{c.name}</span>
+            <button key={c.id} style={chipStyle(cat === c.id)} onClick={() => setCat(c.id)}>{c.name}</button>
           ))}
         </div>
       </div>

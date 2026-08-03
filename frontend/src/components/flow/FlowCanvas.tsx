@@ -17,6 +17,7 @@ import useAppStore from '../../store/useAppStore'
 import { theme } from '../../theme'
 import BlockNode from './BlockNode'
 import FlowPalette from './FlowPalette'
+import ConsolePanel from '../ui/ConsolePanel'
 import { segsToParams } from '../../utils/flowConversion'
 
 const nodeTypes = { block: BlockNode }
@@ -99,7 +100,7 @@ function FlowCanvasInner() {
   )
 
   return (
-    <div style={{ flex: 1, display: 'flex', minWidth: 0, minHeight: 0, height: '100%' }}>
+    <div style={{ flex: 1, position: 'relative', display: 'flex', minWidth: 0, minHeight: 0, height: '100%' }}>
       <FlowPalette onDragStart={onDragStart} />
       <div ref={wrapperRef} style={{ flex: 1, height: '100%' }}>
         <ReactFlow
@@ -119,6 +120,7 @@ function FlowCanvasInner() {
           <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
         </ReactFlow>
       </div>
+      <ConsolePanel />
     </div>
   )
 }
