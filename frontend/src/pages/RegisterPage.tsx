@@ -21,6 +21,13 @@ const s: Record<string, React.CSSProperties> = {
   link: { color: theme.color.auth, cursor: 'pointer', textAlign: 'center', marginTop: 12, fontSize: 14 },
 }
 
+const ruleStyle = (ok: boolean): React.CSSProperties => ({
+  color: ok ? theme.color.success : theme.color.textDim,
+  fontSize: 12,
+  fontWeight: 700,
+  marginBottom: 4,
+})
+
 export default function RegisterPage() {
   const [error, setError] = useState('')
   const [done, setDone] = useState(false)
@@ -29,8 +36,17 @@ export default function RegisterPage() {
 
   const form = useForm<RegisterInput>({
     resolver: zodResolver(registerSchema),
+    mode: 'onChange',
     defaultValues: { email: '', password: '', confirm: '' },
   })
+  const password = form.watch('password')
+
+  const rules = [
+    { label: 'Au moins 6 caractères', ok: password.length >= 6 },
+    { label: 'Une majuscule', ok: /[A-Z]/.test(password) },
+    { label: 'Une minuscule', ok: /[a-z]/.test(password) },
+    { label: 'Un chiffre', ok: /[0-9]/.test(password) },
+  ]
 
   const onSubmit = async (data: RegisterInput) => {
     setError('')
@@ -65,6 +81,11 @@ export default function RegisterPage() {
               <label style={s.label} htmlFor="register-password">Mot de passe</label>
               <input id="register-password" style={s.input} type="password" placeholder="••••••" aria-invalid={!!form.formState.errors.password} {...form.register('password')} />
               {form.formState.errors.password && <div style={s.fieldError} role="alert">{form.formState.errors.password.message}</div>}
+              <div style={{ marginTop: -8, marginBottom: 12 }}>
+                {rules.map(r => (
+                  <div key={r.label} style={ruleStyle(r.ok)}>{r.ok ? '✓' : '○'} {r.label}</div>
+                ))}
+              </div>
               <label style={s.label} htmlFor="register-confirm">Confirmer le mot de passe</label>
               <input id="register-confirm" style={s.input} type="password" placeholder="••••••" aria-invalid={!!form.formState.errors.confirm} {...form.register('confirm')} />
               {form.formState.errors.confirm && <div style={s.fieldError} role="alert">{form.formState.errors.confirm.message}</div>}
