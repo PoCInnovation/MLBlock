@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { signInWithEmail, signInWithMagicLink, signInWithGoogle } from '../services/auth'
 import SiteLayout from '../components/landing/SiteLayout'
+import { Field, FieldError, FieldLabel } from '../components/ui/field'
 import { theme } from '../theme'
 import { loginSchema, type LoginInput } from '../schemas/auth'
 import { mapSupabaseError } from '../schemas/errors'
@@ -12,9 +13,7 @@ const s: Record<string, React.CSSProperties> = {
   wrapper: { display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh', padding: '40px 20px' },
   card: { background: theme.color.surface4, borderRadius: theme.radius.md, padding: 40, width: '100%', maxWidth: 400 },
   title: { fontSize: 24, fontWeight: 700, marginBottom: 24, textAlign: 'center', color: theme.color.text },
-  label: { display: 'block', marginBottom: 6, fontSize: 13, fontWeight: 700, color: theme.color.textMuted },
   input: { width: '100%', padding: '10px 14px', marginBottom: 16, borderRadius: 8, border: `1px solid ${theme.color.border}`, background: '#2a2724', color: theme.color.text, fontSize: 14 },
-  fieldError: { color: theme.color.error, fontSize: 12, marginTop: -12, marginBottom: 12 },
   btn: { width: '100%', padding: '10px 14px', borderRadius: 8, border: 'none', fontSize: 14, fontWeight: 600, cursor: 'pointer', marginBottom: 12 },
   primaryBtn: { background: theme.color.auth, color: '#fff' },
   secondaryBtn: { background: theme.color.border, color: theme.color.text },
@@ -32,6 +31,7 @@ export default function LoginPage() {
 
   const form = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
+    mode: 'onChange',
     defaultValues: { email: '', password: '' },
   })
   const email = form.watch('email')
@@ -89,12 +89,42 @@ export default function LoginPage() {
             </div>
           ) : (
             <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
-              <label style={s.label} htmlFor="login-email">Email</label>
-              <input id="login-email" style={s.input} type="email" placeholder="exemple@mail.com" aria-invalid={!!form.formState.errors.email} {...form.register('email')} />
-              {form.formState.errors.email && <div style={s.fieldError} role="alert">{form.formState.errors.email.message}</div>}
-              <label style={s.label} htmlFor="login-password">Mot de passe</label>
-              <input id="login-password" style={s.input} type="password" placeholder="••••••" aria-invalid={!!form.formState.errors.password} {...form.register('password')} />
-              {form.formState.errors.password && <div style={s.fieldError} role="alert">{form.formState.errors.password.message}</div>}
+              <Controller
+                name="email"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="login-email">Email</FieldLabel>
+                    <input
+                      {...field}
+                      id="login-email"
+                      type="email"
+                      placeholder="exemple@mail.com"
+                      aria-invalid={fieldState.invalid}
+                      style={{ ...s.input, borderColor: fieldState.invalid ? theme.color.error : undefined }}
+                    />
+                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                  </Field>
+                )}
+              />
+              <Controller
+                name="password"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="login-password">Mot de passe</FieldLabel>
+                    <input
+                      {...field}
+                      id="login-password"
+                      type="password"
+                      placeholder="••••••"
+                      aria-invalid={fieldState.invalid}
+                      style={{ ...s.input, borderColor: fieldState.invalid ? theme.color.error : undefined }}
+                    />
+                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                  </Field>
+                )}
+              />
               <button type="submit" disabled={loading} style={{ ...s.btn, ...s.primaryBtn, opacity: loading ? 0.6 : 1 }}>{loading ? 'Connexion…' : 'Se connecter'}</button>
               <div style={s.divider}>
                 <div style={s.line} /><span>ou</span><div style={s.line} />
