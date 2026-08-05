@@ -8,6 +8,12 @@ import type { FlowBlock } from '../utils/flowConversion'
 
 export type ConsoleLine = { k: string; t: string }
 
+export type Toast = {
+  kind: 'error' | 'convert'
+  message: string
+  action?: () => void
+}
+
 type DragBase = {
   active: boolean
   type: string
@@ -40,6 +46,7 @@ type AppState = {
   catalogError: boolean
   catalogErrorMessage: string | null
   pipelineId: number | null
+  toast: Toast | null
 
   setUser: (user: unknown | null) => void
   setEditorMode: (mode: 'linear' | 'advanced') => void
@@ -62,6 +69,8 @@ type AppState = {
   setCatalog: (catalog: InternalCatalog) => void
   setCatalogError: (error: boolean, message?: string) => void
   setPipelineId: (id: number | null) => void
+  showToast: (toast: Toast) => void
+  clearToast: () => void
 }
 
 const useAppStore = create<AppState>((set) => ({
@@ -80,6 +89,7 @@ const useAppStore = create<AppState>((set) => ({
   catalogError: false,
   catalogErrorMessage: null,
   pipelineId: null,
+  toast: null,
 
   setCategory: (id) => set({ category: id }),
 
@@ -167,6 +177,8 @@ const useAppStore = create<AppState>((set) => ({
   }),
 
   setPipelineId: (id) => set({ pipelineId: id }),
+  showToast: (toast) => set({ toast }),
+  clearToast: () => set({ toast: null }),
   setUser: (user) => set({ user }),
 }))
 

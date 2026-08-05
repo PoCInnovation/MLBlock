@@ -1,0 +1,8 @@
+def df_to_tensor(in_1: "pd.DataFrame") -> "torch.Tensor":
+    """Convertir un DataFrame en tenseur.
+
+    Args:
+        in_1: DataFrame numérique à convertir.
+    """
+    import torch
+    return torch.from_numpy(in_1.values.astype("float32"))

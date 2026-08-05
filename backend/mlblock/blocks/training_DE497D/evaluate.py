@@ -1,14 +1,17 @@
 def evaluate(model: "Model", test_data: "pd.DataFrame", target_column: "str", method: "str" = 'mse', plot: "bool" = False) -> "float":
     """Évaluer le modèle.
-    
+
     Args:
-        model: Input tensor.
-        test_data: Input tensor.
-        target_column: Parameter.
-        method: Parameter.
-        plot: Parameter.
+        model: Modèle entraîné.
+        test_data: Données de test.
+        target_column: Colonne cible.
+        method: Métrique ('mse' ou 'accuracy').
+        plot: Générer un graphique.
     """
     import numpy as np
-    predictions = model.predict(test_data)
-    accuracy = np.mean(predictions == test_target)
-    return accuracy
+    X = test_data.drop(columns=[target_column])
+    y_true = test_data[target_column]
+    predictions = model.predict(X)
+    if method == "mse":
+        return float(np.mean((predictions - y_true) ** 2))
+    return float(np.mean(predictions == y_true))

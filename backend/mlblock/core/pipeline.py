@@ -21,7 +21,9 @@ class Pipeline:
             inputs = {}
             for edge in self.graph.edges:
                 if edge.target == node_id:
-                    inputs[edge.target_port] = outputs.get(edge.source)
+                    inputs[edge.target_port] = _value_for(
+                        outputs, edge.source, edge.source_port
+                    )
             node.params["_inputs"] = inputs
             try:
                 result = node.block.execute(node.params)
@@ -30,3 +32,15 @@ class Pipeline:
             except NotImplementedError:
                 pass
         return outputs
+
+
+def _value_for(outputs: dict[str, Any], node_id: str, port: str) -> Any:
+    """Resolve a node's output value for a given source port.
+
+    Multi-output nodes store {port: value}; single-output nodes store the
+    raw value (which is returned for any port).
+    """
+    val = outputs.get(node_id)
+    if isinstance(val, dict) and port in val:
+        return val[port]
+    return val

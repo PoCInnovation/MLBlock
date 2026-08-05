@@ -5,7 +5,9 @@ export type SelSeg  = { t: 'sel';  k: string; def: string; opts: string[] }
 export type FileSeg = { t: 'file'; k: string; def: string }
 export type Segment = TextSeg | NumSeg | SelSeg | FileSeg
 
-export type BlockDef = { cat: string; segs: Segment[] }
+export type Port = { name: string; dtype: string }
+
+export type BlockDef = { cat: string; segs: Segment[]; inputs: Port[]; outputs: Port[] }
 export type BlockDefMap = Record<string, BlockDef>
 
 export type Category = { id: string; name: string; color: string }

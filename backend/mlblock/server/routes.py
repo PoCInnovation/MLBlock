@@ -434,6 +434,16 @@ def validate_graph(body: ValidationRequest) -> ValidationResponse:
         graph.validate()
     except ValueError as e:
         errors.append(str(e))
+    try:
+        from mlblock.blocks.registry import BLOCK_REGISTRY
+        from mlblock.models.pipeline import PipelineDef
+
+        PipelineDef.model_validate(
+            {"nodes": body.nodes, "edges": body.edges},
+            context={"registry": BLOCK_REGISTRY},
+        )
+    except ValueError as e:
+        errors.append(str(e))
     return ValidationResponse(valid=len(errors) == 0, errors=errors)
 
 
@@ -452,6 +462,18 @@ def build_pipeline_model(
 
     nodes = [PipelineNode(**n) if isinstance(n, dict) else n for n in row.nodes]
     edges = [PipelineEdge(**e) if isinstance(e, dict) else e for e in row.edges]
+
+    # Fail fast on type-incompatible graphs (same gate as /api/validate)
+    try:
+        from mlblock.blocks.registry import BLOCK_REGISTRY
+        from mlblock.models.pipeline import PipelineDef
+
+        PipelineDef.model_validate(
+            {"nodes": nodes, "edges": edges},
+            context={"registry": BLOCK_REGISTRY},
+        )
+    except ValueError as e:
+        raise HTTPException(400, detail=str(e))
 
     graph_data = {
         "nodes": [n.model_dump() for n in nodes],

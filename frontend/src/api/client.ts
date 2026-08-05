@@ -55,7 +55,12 @@ export async function fetchCatalog(): Promise<InternalCatalog> {
       for (const [key, raw] of Object.entries(b.params)) {
         segs.push(toSegments(key, raw))
       }
-      blocks[b.type] = { cat: cat.id, segs }
+      blocks[b.type] = {
+        cat: cat.id,
+        segs,
+        inputs: (b.inputs ?? []).map(p => ({ name: String(p.name), dtype: String(p.dtype) })),
+        outputs: (b.outputs ?? []).map(p => ({ name: String(p.name), dtype: String(p.dtype) })),
+      }
     }
   }
 

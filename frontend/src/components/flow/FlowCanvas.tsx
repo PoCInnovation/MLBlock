@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef } from 'react'
 import ReactFlow, {
   Background,
   Controls,
@@ -11,6 +11,9 @@ import ReactFlow, {
   applyNodeChanges,
   applyEdgeChanges,
   BackgroundVariant,
+  type Connection,
+  type Edge,
+  type Node,
 } from 'reactflow'
 import 'reactflow/dist/style.css'
 import useAppStore from '../../store/useAppStore'
@@ -19,11 +22,37 @@ import BlockNode from './BlockNode'
 import FlowPalette from './FlowPalette'
 import ConsolePanel from '../ui/ConsolePanel'
 import { segsToParams } from '../../utils/flowConversion'
+import { buildConversionGraph, classifyEdge, converterFor, portDtype } from '../../utils/typeCheck'
+import type { InternalCatalog, Port } from '../../types/catalog'
 
 const nodeTypes = { block: BlockNode }
 
 const reactFlowStyle: React.CSSProperties = {
   background: theme.color.canvas,
+}
+
+const edgeColor: Record<string, string> = {
+  compatible: theme.color.success,
+  convertible: theme.color.convert,
+  incompatible: theme.color.error,
+}
+
+/** Ports of a flow node (reactflow Node data is untyped `any`). */
+function portList(node: Node | undefined, side: 'inputs' | 'outputs'): Port[] | undefined {
+  return node?.data?.[side]
+}
+
+function edgeStyleFor(e: Edge, nodes: Node[], graph: Map<string, Set<string>>): React.CSSProperties {
+  const src = nodes.find(n => n.id === e.source)
+  const tgt = nodes.find(n => n.id === e.target)
+  const srcDtype = portDtype(portList(src, 'outputs'), e.sourceHandle)
+  const tgtDtype = portDtype(portList(tgt, 'inputs'), e.targetHandle)
+  if (!srcDtype || !tgtDtype) return {}
+  const verdict = classifyEdge(srcDtype, tgtDtype, graph)
+  return {
+    stroke: edgeColor[verdict],
+    strokeDasharray: verdict === 'convertible' ? '6 4' : undefined,
+  }
 }
 
 function FlowCanvasInner() {
@@ -32,16 +61,94 @@ function FlowCanvasInner() {
   const setFlowNodes = useAppStore(s => s.setFlowNodes)
   const setFlowEdges = useAppStore(s => s.setFlowEdges)
   const catalog = useAppStore(s => s.catalog)
+  const showToast = useAppStore(s => s.showToast)
 
   const [nodes, setNodes, onNodesChange] = useNodesState(flowNodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(flowEdges)
   const { screenToFlowPosition, fitView } = useReactFlow()
   const wrapperRef = useRef<HTMLDivElement>(null)
 
-  const onConnect = useCallback(
-    (params: any) => setEdges((eds) => addEdge(params, eds)),
-    [setEdges]
+  const graph = useMemo(
+    () => (catalog ? buildConversionGraph(catalog.blocks) : new Map<string, Set<string>>()),
+    [catalog]
   )
+
+  const insertConverter = useCallback((conn: Connection, convType: string) => {
+    if (!catalog) return
+    const def = catalog.blocks[convType]
+    if (!def) return
+    const convIn = def.inputs[0]?.name ?? 'in_1'
+    const convOut = def.outputs[0]?.name ?? 'out_1'
+    const srcPos = nodes.find(n => n.id === conn.source)?.position
+    const tgtPos = nodes.find(n => n.id === conn.target)?.position
+    const position = srcPos && tgtPos
+      ? { x: (srcPos.x + tgtPos.x) / 2, y: (srcPos.y + tgtPos.y) / 2 }
+      : { x: 300, y: 300 }
+    const convId = `${convType}_${Date.now()}`
+    const cat = catalog.categories.find(c => c.id === def.cat)
+    const node: Node = {
+      id: convId,
+      type: 'block',
+      position,
+      data: {
+        type: convType,
+        label: def.segs.find(s => s.t === 'text')?.v ?? convType,
+        category: def.cat,
+        categoryColor: cat?.color ?? theme.color.accent,
+        params: segsToParams(def),
+        inputs: def.inputs,
+        outputs: def.outputs,
+      },
+    }
+    const edgeA: Edge = {
+      id: `e_${conn.source}_${convId}`,
+      source: conn.source ?? '',
+      sourceHandle: conn.sourceHandle ?? 'out_1',
+      target: convId,
+      targetHandle: convIn,
+    }
+    const edgeB: Edge = {
+      id: `e_${convId}_${conn.target}`,
+      source: convId,
+      sourceHandle: convOut,
+      target: conn.target ?? '',
+      targetHandle: conn.targetHandle ?? 'in_1',
+    }
+    setNodes(nds => [...nds, node])
+    setEdges(eds => [...eds.filter(ed => !(ed.source === conn.source && ed.target === conn.target)), edgeA, edgeB])
+  }, [catalog, nodes, setNodes, setEdges])
+
+  const onConnect = useCallback((params: Connection) => {
+    if (!catalog) {
+      setEdges(eds => addEdge(params, eds))
+      return
+    }
+    const src = nodes.find(n => n.id === params.source)
+    const tgt = nodes.find(n => n.id === params.target)
+    const srcDtype = portDtype(portList(src, 'outputs'), params.sourceHandle)
+    const tgtDtype = portDtype(portList(tgt, 'inputs'), params.targetHandle)
+    if (!src || !tgt || !srcDtype || !tgtDtype) {
+      setEdges(eds => addEdge(params, eds))
+      return
+    }
+    const verdict = classifyEdge(srcDtype, tgtDtype, graph)
+    if (verdict === 'compatible') {
+      setEdges(eds => addEdge(params, eds))
+    } else if (verdict === 'convertible') {
+      const conv = converterFor(srcDtype, tgtDtype, catalog.blocks)
+      if (!conv) {
+        showToast({ kind: 'error', message: `${srcDtype} → ${tgtDtype} : chemin de conversion introuvable` })
+        return
+      }
+      showToast({
+        kind: 'convert',
+        message: `${srcDtype} → ${tgtDtype} : conversion via ${conv}`,
+        action: () => insertConverter(params, conv),
+      })
+    } else {
+      showToast({ kind: 'error', message: `${srcDtype} → ${tgtDtype} : aucune conversion possible` })
+    }
+  }, [catalog, nodes, graph, setEdges, showToast, insertConverter])
 
   useEffect(() => {
     setFlowNodes(nodes)
@@ -79,7 +186,7 @@ function FlowCanvasInner() {
       const cat = catalog.categories.find(c => c.id === def.cat)
       const label = def.segs.find(s => s.t === 'text')?.v ?? type
 
-      const node = {
+      const node: Node = {
         id: `${type}_${Date.now()}`,
         type: 'block',
         position,
@@ -89,6 +196,8 @@ function FlowCanvasInner() {
           category: def.cat,
           categoryColor: cat?.color ?? theme.color.accent,
           params: segsToParams(def),
+          inputs: def.inputs,
+          outputs: def.outputs,
         },
       }
       setNodes(nds => [...nds, node])
@@ -99,13 +208,18 @@ function FlowCanvasInner() {
     [catalog, screenToFlowPosition, setNodes, fitView]
   )
 
+  const renderEdges = useMemo(
+    () => edges.map(e => ({ ...e, style: edgeStyleFor(e, nodes, graph) })),
+    [edges, nodes, graph]
+  )
+
   return (
     <div style={{ flex: 1, position: 'relative', display: 'flex', minWidth: 0, minHeight: 0, height: '100%' }}>
       <FlowPalette onDragStart={onDragStart} />
       <div ref={wrapperRef} style={{ flex: 1, height: '100%' }}>
         <ReactFlow
           nodes={nodes}
-          edges={edges}
+          edges={renderEdges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}

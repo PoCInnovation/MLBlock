@@ -36,7 +36,52 @@ def _parse_return_annotation(ret: Any) -> list[dict[str, str]]:
     if ret == inspect.Parameter.empty or ret is None:
         return [{"name": "out_1", "dtype": "Any"}]
     name = _name(ret)
+    m = re.match(r"^(?:tuple|Tuple)\[(.+)\]$", name)
+    if m:
+        return [
+            {"name": f"out_{i + 1}", "dtype": part}
+            for i, part in enumerate(_split_top_level(m.group(1)))
+        ]
     return [{"name": "out_1", "dtype": name}]
+
+
+def _split_top_level(s: str) -> list[str]:
+    """Split on top-level commas (depth-aware): 'A, B[C, D]' → ['A', 'B[C, D]']."""
+    parts: list[str] = []
+    depth, cur = 0, ""
+    for ch in s:
+        if ch in "[(":
+            depth += 1
+        elif ch in "])":
+            depth -= 1
+        if ch == "," and depth == 0:
+            parts.append(cur.strip())
+            cur = ""
+        else:
+            cur += ch
+    if cur.strip():
+        parts.append(cur.strip())
+    return parts
+
+
+def _normalize_type(t: str) -> str:
+    """'int | None' → 'int'; 'list[int]' → 'list'; 'Literal[...]' → 'str'."""
+    t = t.strip()
+    if " | " in t:
+        t = t.split(" | ", 1)[0].strip()
+    if t.startswith("list["):
+        return "list"
+    if t.startswith("Literal["):
+        return "str"
+    return t
+
+
+def _is_data_port_type(ptype: str) -> bool:
+    """Data-flow types (input/output ports) vs hyperparams."""
+    p = _normalize_type(ptype)
+    if p in ("pd.DataFrame", "Model", "object", "Tensor", "DataFrame", "Dataset", "DataLoader", "Module", "Optimizer"):
+        return True
+    return p.startswith(("torch.", "numpy.", "tuple["))
 
 
 def _inspect_function(name: str, fn: Callable, category: Any) -> Any:
@@ -47,6 +92,7 @@ def _inspect_function(name: str, fn: Callable, category: Any) -> Any:
     except Exception:
         type_hints = {}
     params = {}
+    inputs = []
     for pname, p in sig.parameters.items():
         hint = type_hints.get(pname)
         options = None
@@ -70,6 +116,12 @@ def _inspect_function(name: str, fn: Callable, category: Any) -> Any:
                     ptype = "str"
                 else:
                     ptype = ann_str
+        # Port dtype comes from the raw annotation string (get_type_hints
+        # strips module prefixes: torch.Tensor → Tensor)
+        port_dtype = p.annotation if isinstance(p.annotation, str) else ptype
+        # Data ports: in_<N> prefix or data-flow type (hyperparams stay params)
+        if re.match(r"^in_\d+$", pname) or _is_data_port_type(port_dtype):
+            inputs.append({"name": pname, "dtype": port_dtype})
         pdesc = _extract_param_desc(fn.__doc__, pname) or ""
         pdefault = None if p.default == inspect.Parameter.empty else p.default
         prequired = p.default == inspect.Parameter.empty
@@ -80,6 +132,7 @@ def _inspect_function(name: str, fn: Callable, category: Any) -> Any:
         description=fn.__doc__ or "",
         category=category,
         params=params,
+        inputs=inputs,
         outputs=outputs,
     )
 

@@ -19,6 +19,7 @@ export const theme = {
     success: '#22c55e',
     successMuted: '#8fd1a8',
     warning: '#E8C77A',
+    convert: '#F59E0B',
     info: '#9aa0c4',
     auth: '#6366F1',
     file: '#c7d2fe',

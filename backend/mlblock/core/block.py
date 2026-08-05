@@ -52,10 +52,11 @@ class BlockMeta:
             result = self._build_fn(**params)
             if isinstance(result, dict):
                 return result
+            if len(self.outputs) > 1:
+                # tuple/list result → {out_1: v0, out_2: v1}
+                return {o["name"]: v for o, v in zip(self.outputs, result)}
             if len(self.outputs) == 1:
                 return result
-            if self.outputs:
-                return {self.outputs[0]["name"]: result}
             return {}
         raise NotImplementedError(
             f"Block '{self.name}' n'a pas de builder enregistré"

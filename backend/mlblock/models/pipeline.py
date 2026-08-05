@@ -54,8 +54,8 @@ class PipelineDef(BaseModel):
                     )
                 spec = registry[node.type]
                 direction = "outputs" if side == "source" else "inputs"
-                if not any(p.name == port_name for p in getattr(spec, direction)):
-                    valid = [p.name for p in getattr(spec, direction)]
+                if not any(p["name"] == port_name for p in getattr(spec, direction)):
+                    valid = [p["name"] for p in getattr(spec, direction)]
                     raise ValueError(
                         f"Port '{port_name}' not found on {side} '{node.id}' ({node.type}). "
                         f"Valid ports: {valid}"
@@ -67,6 +67,9 @@ class PipelineDef(BaseModel):
         registry = info.context.get("registry") if info.context else None
         if registry is None:
             return self
+        from mlblock.core.types import build_conversion_graph, classify
+
+        graph = build_conversion_graph(registry)
         node_map = {n.id: n for n in self._all_nodes()}
         for edge in self.edges:
             src_node = node_map[edge.source]
@@ -74,15 +77,16 @@ class PipelineDef(BaseModel):
             src_spec = registry[src_node.type]
             tgt_spec = registry[tgt_node.type]
             src_dtype = next(
-                p.dtype for p in src_spec.outputs if p.name == edge.source_port
+                p["dtype"] for p in src_spec.outputs if p["name"] == edge.source_port
             )
             tgt_dtype = next(
-                p.dtype for p in tgt_spec.inputs if p.name == edge.target_port
+                p["dtype"] for p in tgt_spec.inputs if p["name"] == edge.target_port
             )
-            if src_dtype != tgt_dtype:
+            verdict = classify(src_dtype, tgt_dtype, graph)
+            if verdict == "incompatible":
                 raise ValueError(
                     f"Type mismatch: {edge.source}.{edge.source_port} ({src_dtype}) -> "
-                    f"{edge.target}.{edge.target_port} ({tgt_dtype})"
+                    f"{edge.target}.{edge.target_port} ({tgt_dtype}) — aucune conversion possible"
                 )
         return self
 

@@ -32,6 +32,8 @@ export function linearToFlow(blocks: FlowBlock[], catalog: InternalCatalog): Nod
         category: def?.cat ?? 'unknown',
         categoryColor: catalog.categories.find(c => c.id === def?.cat)?.color ?? '#888',
         params: segsToParams(def),
+        inputs: def?.inputs ?? [],
+        outputs: def?.outputs ?? [],
       },
     }
   })

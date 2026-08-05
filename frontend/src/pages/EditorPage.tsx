@@ -5,6 +5,7 @@ import { fetchCatalog } from '../api/client'
 import EditorHeader from '../components/editor/EditorHeader'
 import EditorLayout from '../components/editor/EditorLayout'
 import EditorUnavailableModal from '../components/ui/EditorUnavailableModal'
+import Toast from '../components/ui/Toast'
 import FlowCanvas from '../components/flow/FlowCanvas'
 import { theme } from '../theme'
 
@@ -54,6 +55,7 @@ export default function EditorPage() {
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: theme.color.bg, color: theme.color.text, overflow: 'hidden' }}>
       <EditorHeader onRun={onRun} onStop={onStop} onClear={onClear} />
       {editorMode === 'linear' ? <EditorLayout /> : <FlowCanvas />}
+      <Toast />
     </div>
   )
 }

@@ -1,10 +1,12 @@
 import useAppStore from '../../store/useAppStore'
 import HatBlock from '../blocks/HatBlock'
 import ScriptBlock from '../blocks/ScriptBlock'
+import ChainConnector from './ChainConnector'
 import DropIndicator from './DropIndicator'
 import EmptyCanvas from './EmptyCanvas'
 import ConsolePanel from '../ui/ConsolePanel'
 import DragGhost from '../ui/DragGhost'
+import { Fragment } from 'react'
 
 const canvasStyle: React.CSSProperties = {
   position: 'absolute', inset: 0, overflow: 'auto', padding: 36,
@@ -32,16 +34,18 @@ export default function Canvas({ canvasRef, hatRef, blockElsRef, startBlockDrag,
         <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'stretch', minWidth: 280, paddingBottom: 220 }}>
           <HatBlock hatRef={hatRef} hatBand={hatBand} n={n} band0={bands[0] ?? null} />
           {script.map((block, i) => (
-            <ScriptBlock
-              key={block.id}
-              block={block}
-              index={i}
-              n={n}
-              bands={bands}
-              hatBand={hatBand}
-              blockElsRef={blockElsRef}
-              startBlockDrag={startBlockDrag}
-            />
+            <Fragment key={block.id}>
+              <ScriptBlock
+                block={block}
+                index={i}
+                n={n}
+                bands={bands}
+                hatBand={hatBand}
+                blockElsRef={blockElsRef}
+                startBlockDrag={startBlockDrag}
+              />
+              {i < n - 1 && <ChainConnector prev={block} next={script[i + 1]} insertIndex={i + 1} />}
+            </Fragment>
           ))}
           {dropEnd && <DropIndicator />}
           {n === 0 && <EmptyCanvas />}
