@@ -8,8 +8,6 @@ import ReactFlow, {
   useEdgesState,
   useReactFlow,
   addEdge,
-  applyNodeChanges,
-  applyEdgeChanges,
   BackgroundVariant,
   type Connection,
   type Edge,
@@ -40,6 +38,13 @@ const edgeColor: Record<string, string> = {
 /** Ports of a flow node (reactflow Node data is untyped `any`). */
 function portList(node: Node | undefined, side: 'inputs' | 'outputs'): Port[] | undefined {
   return node?.data?.[side]
+}
+
+/** True when both arrays contain exactly the same element ids. */
+function sameIds(a: { id: string }[], b: { id: string }[]): boolean {
+  if (a.length !== b.length) return false
+  const ids = new Set(a.map(x => x.id))
+  return b.every(x => ids.has(x.id))
 }
 
 function edgeStyleFor(e: Edge, nodes: Node[], graph: Map<string, Set<string>>): React.CSSProperties {
@@ -158,11 +163,12 @@ function FlowCanvasInner() {
     setFlowEdges(edges)
   }, [edges, setFlowEdges])
 
-  // ponytail: resync store→canvas by length; misses equal-length add+delete swaps, fine for dev
+  // Resync store→canvas when the store changed externally (clearAll, import…).
+  // Compare by id sets so equal-length add+delete swaps are not missed.
   useEffect(() => {
-    if (flowNodes.length !== nodes.length) setNodes(flowNodes)
-    if (flowEdges.length !== edges.length) setEdges(flowEdges)
-  }, [flowNodes, flowEdges, nodes.length, edges.length])
+    if (!sameIds(flowNodes, nodes)) setNodes(flowNodes)
+    if (!sameIds(flowEdges, edges)) setEdges(flowEdges)
+  }, [flowNodes, flowEdges, nodes, edges, setNodes, setEdges])
 
   const onDragStart = useCallback((e: React.DragEvent, type: string) => {
     e.dataTransfer.setData('application/mlblock-type', type)
