@@ -120,6 +120,75 @@ def test_classifier_verdicts():
     assert classify("pd.DataFrame", "numpy.ndarray", graph) == "incompatible"
 
 
+# ── Param coercion ──────────────────────────────────────────────────
+
+_COERCE_SPEC = {
+    "label": "coerce_test",
+    "category": "test",
+    "params": {
+        "n": {"type": "int", "default": None, "required": True},
+        "f": {"type": "float", "default": None, "required": True},
+        "b": {"type": "bool", "default": None, "required": True},
+        "l": {"type": "list[int]", "default": None, "required": False},
+        "o": {"type": "int | None", "default": None, "required": False},
+        "s": {"type": "str", "default": None, "required": False},
+    },
+    "inputs": [],
+    "outputs": [{"name": "out_1", "dtype": "Any"}],
+    "template": "",
+}
+
+
+def test_coerce_params_strings_to_types():
+    captured = {}
+
+    def build_fn(**kwargs):
+        captured.update(kwargs)
+        return kwargs
+
+    CoreRegistry.register("coerce_test", _COERCE_SPEC, build_fn)
+    CoreRegistry.get("coerce_test").execute({
+        "n": "4", "f": "0.5", "b": "true", "l": "[1, 28, 28]", "o": "", "s": "toto",
+    })
+    assert captured["n"] == 4 and isinstance(captured["n"], int)
+    assert captured["f"] == 0.5 and isinstance(captured["f"], float)
+    assert captured["b"] is True
+    assert captured["l"] == [1, 28, 28]
+    assert captured["o"] is None
+    assert captured["s"] == "toto"
+
+
+def test_coerce_param_already_typed_passthrough():
+    captured = {}
+
+    def build_fn(**kwargs):
+        captured.update(kwargs)
+        return kwargs
+
+    CoreRegistry.register("coerce_test", _COERCE_SPEC, build_fn)
+    CoreRegistry.get("coerce_test").execute({"n": 4, "b": False, "o": None})
+    assert captured["n"] == 4
+    assert captured["b"] is False
+    assert captured["o"] is None
+
+
+def test_coerce_param_invalid_raises_clear_error():
+    def build_fn(**kwargs):
+        return kwargs
+
+    CoreRegistry.register("coerce_test", _COERCE_SPEC, build_fn)
+    with pytest.raises(TypeError, match="'n' du bloc 'coerce_test'.*'abc'"):
+        CoreRegistry.get("coerce_test").execute({"n": "abc"})
+
+
+def test_linear_runs_with_string_params():
+    import torch
+
+    b = CoreRegistry.get("linear")
+    out = b.execute({"in_features": "4", "out_features": "8", "bias": "true", "in_1": torch.randn(2, 4)})
+    assert isinstance(out, torch.Tensor)
+
+
 # ── PipelineDef validation ───────────────────────────────────────────
 
 def _validate(nodes, edges):

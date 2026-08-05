@@ -52,7 +52,9 @@ export async function fetchCatalog(): Promise<InternalCatalog> {
   for (const cat of parsed.categories) {
     for (const b of cat.blocks) {
       const segs: Segment[] = [{ t: 'text', v: b.label }]
+      const portNames = new Set((b.inputs ?? []).map(p => String(p.name)))
       for (const [key, raw] of Object.entries(b.params)) {
+        if (portNames.has(key)) continue // data ports are handles, not fields
         segs.push(toSegments(key, raw))
       }
       blocks[b.type] = {

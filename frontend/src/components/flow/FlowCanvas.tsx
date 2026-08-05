@@ -17,7 +17,7 @@ import { theme } from '../../theme'
 import BlockNode from './BlockNode'
 import FlowPalette from './FlowPalette'
 import ConsolePanel from '../ui/ConsolePanel'
-import { segsToParams } from '../../utils/flowConversion'
+import { segsToFields } from '../../utils/flowConversion'
 import { buildConversionGraph, classifyEdge, converterFor, portDtype } from '../../utils/typeCheck'
 import type { InternalCatalog, Port } from '../../types/catalog'
 
@@ -92,7 +92,8 @@ function FlowCanvasInner() {
         label: def.segs.find(s => s.t === 'text')?.v ?? convType,
         category: def.cat,
         categoryColor: cat?.color ?? theme.color.accent,
-        params: segsToParams(def),
+        segs: def.segs,
+        fields: segsToFields(def),
         inputs: def.inputs,
         outputs: def.outputs,
       },
@@ -178,7 +179,8 @@ function FlowCanvasInner() {
           label,
           category: def.cat,
           categoryColor: cat?.color ?? theme.color.accent,
-          params: segsToParams(def),
+          segs: def.segs,
+          fields: segsToFields(def),
           inputs: def.inputs,
           outputs: def.outputs,
         },

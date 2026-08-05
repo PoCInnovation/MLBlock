@@ -1,7 +1,40 @@
 from __future__ import annotations
 
+import json
 from collections.abc import Callable
 from typing import Any
+
+
+def _coerce_param_value(
+    block_name: str, key: str, value: Any, ptype: str
+) -> Any:
+    """Coerce a frontend string param to its declared Python type.
+
+    Empty string → None (optional param). Types come from ParamInfo
+    ('int', 'float', 'bool', 'list[int]', 'int | None', 'str', 'file'…).
+    """
+    if value is None or value == "":
+        return None
+    t = ptype.split(" | ")[0].strip()
+    try:
+        if t == "int":
+            return int(value)
+        if t == "float":
+            return float(value)
+        if t == "bool":
+            if isinstance(value, bool):
+                return value
+            return str(value).strip().lower() in ("true", "1", "yes", "on")
+        if t.startswith("list"):
+            if isinstance(value, list):
+                return value
+            return json.loads(value)
+        return value
+    except (ValueError, TypeError, json.JSONDecodeError) as e:
+        raise TypeError(
+            f"Paramètre '{key}' du bloc '{block_name}' : "
+            f"'{value}' non convertible en {ptype}"
+        ) from e
 
 
 class BlockMeta:
@@ -42,12 +75,23 @@ class BlockMeta:
     def build_layer(self, params: dict[str, Any]) -> Any:
         return self.execute(params)
 
+    def coerce_params(self, params: dict[str, Any]) -> None:
+        """Coerce declared params (frontend strings) to their Python types."""
+        declared = self.spec.get("params", {})
+        for key, value in params.items():
+            pinfo = declared.get(key)
+            ptype = pinfo.get("type") if isinstance(pinfo, dict) else None
+            if not ptype:
+                continue
+            params[key] = _coerce_param_value(self.name, key, value, ptype)
+
     def can_build(self) -> bool:
         return self._build_fn is not None
 
     def execute(self, params: dict[str, Any]) -> Any:
         if self._build_fn is not None:
             inputs = params.pop("_inputs", None) or {}
+            self.coerce_params(params)
             params.update(inputs)
             result = self._build_fn(**params)
             if isinstance(result, dict):

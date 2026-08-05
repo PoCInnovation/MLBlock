@@ -26,7 +26,7 @@ export function useBlockRunner() {
       nodes = store.flowNodes.map(n => ({
         id: n.id,
         type: (n.data as any)?.type ?? n.id,
-        params: {},
+        params: (n.data as any)?.fields ?? {},
         children: [],
       }))
       edges = store.flowEdges.map(e => ({

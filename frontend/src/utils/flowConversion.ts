@@ -7,15 +7,14 @@ export type FlowBlock = {
   fields: Record<string, string>
 }
 
-export function segsToParams(def: BlockDefMap[string] | undefined): Record<string, { type: string; default?: unknown }> {
-  const params: Record<string, { type: string; default?: unknown }> = {}
-  if (!def) return params
+/** Default field values from a block definition's segments. */
+export function segsToFields(def: BlockDefMap[string] | undefined): Record<string, string> {
+  const fields: Record<string, string> = {}
+  if (!def) return fields
   for (const seg of def.segs) {
-    if (seg.t === 'num') params[seg.k] = { type: 'num', default: seg.def }
-    else if (seg.t === 'sel') params[seg.k] = { type: 'sel', default: seg.def }
-    else if (seg.t === 'file') params[seg.k] = { type: 'file', default: seg.def }
+    if ('k' in seg) fields[seg.k] = seg.def
   }
-  return params
+  return fields
 }
 
 export function linearToFlow(blocks: FlowBlock[], catalog: InternalCatalog): Node[] {
@@ -31,7 +30,8 @@ export function linearToFlow(blocks: FlowBlock[], catalog: InternalCatalog): Nod
         label: first?.t === 'text' ? first.v : b.type,
         category: def?.cat ?? 'unknown',
         categoryColor: catalog.categories.find(c => c.id === def?.cat)?.color ?? '#888',
-        params: segsToParams(def),
+        segs: def?.segs ?? [],
+        fields: { ...b.fields },
         inputs: def?.inputs ?? [],
         outputs: def?.outputs ?? [],
       },
@@ -42,17 +42,11 @@ export function linearToFlow(blocks: FlowBlock[], catalog: InternalCatalog): Nod
 export function flowToLinear(nodes: Node[]): FlowBlock[] {
   const sorted = [...nodes].sort((a, b) => a.position.y - b.position.y)
   return sorted.map(n => {
-    const data = n.data as any
-    const segs = Object.entries(data?.params ?? {}).map(([k, v]) => ({
-      k,
-      def: String((v as any)?.default ?? ''),
-    }))
-    const fields: Record<string, string> = {}
-    for (const s of segs) fields[s.k] = s.def
+    const data = n.data as { type?: string; fields?: Record<string, string> } | undefined
     return {
       id: n.id,
       type: data?.type ?? n.id,
-      fields,
+      fields: data?.fields ?? {},
     }
   })
 }

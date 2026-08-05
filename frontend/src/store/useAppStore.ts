@@ -64,6 +64,7 @@ type AppState = {
   applyFlowEdgeChanges: (changes: EdgeChange[]) => void
   addFlowNode: (node: Node) => void
   addFlowEdges: (edges: Edge[]) => void
+  updateFlowParam: (nodeId: string, k: string, v: string) => void
   appendConsoleLines: (lines: ConsoleLine[]) => void
   startRun: () => void
   setRunningId: (id: string | null) => void
@@ -119,6 +120,11 @@ const useAppStore = create<AppState>((set) => ({
   applyFlowEdgeChanges: (changes) => set((s) => ({ flowEdges: applyEdgeChanges(changes, s.flowEdges) })),
   addFlowNode: (node) => set((s) => ({ flowNodes: [...s.flowNodes, node] })),
   addFlowEdges: (edges) => set((s) => ({ flowEdges: [...s.flowEdges, ...edges] })),
+  updateFlowParam: (nodeId, k, v) => set((s) => ({
+    flowNodes: s.flowNodes.map(n => n.id === nodeId
+      ? { ...n, data: { ...(n.data as { fields?: Record<string, string> }), fields: { ...(n.data as { fields?: Record<string, string> })?.fields, [k]: v } } }
+      : n),
+  })),
 
   addBlock: (type, index) => set((s) => {
     if (!s.catalog) return {}

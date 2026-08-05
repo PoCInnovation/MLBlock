@@ -489,6 +489,8 @@ def build_pipeline_model(
     for node_id in graph.topological_sort():
         node = graph.nodes[node_id]
         if node_id not in incoming and node.block and node.block.can_build():
+            # String params (frontend) must be typed before shape inference
+            node.block.coerce_params(node.params)
             # Infer input shape from params or default to [1, 1, 28, 28]
             shape = node.params.get("shape", node.params.get("in_channels", [1, 1, 28, 28]))
             if isinstance(shape, int):

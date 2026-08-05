@@ -1,13 +1,16 @@
 import { memo } from 'react'
 import { Handle, Position, type NodeProps } from 'reactflow'
+import useAppStore from '../../store/useAppStore'
+import BlockSegments from '../blocks/BlockSegments'
 import { theme } from '../../theme'
-import type { Port } from '../../types/catalog'
+import type { Port, Segment } from '../../types/catalog'
 
 const nodeStyle: React.CSSProperties = {
   background: theme.color.surface2,
   borderRadius: theme.radius.md,
   padding: '10px 14px',
-  minWidth: 140,
+  minWidth: 180,
+  maxWidth: 260,
   boxShadow: theme.shadow.block,
   border: `1px solid rgba(255,255,255,.08)`,
   fontFamily: theme.font.body,
@@ -25,13 +28,17 @@ const handleStyle: React.CSSProperties = {
 
 const labelStyle: React.CSSProperties = {
   fontWeight: 700,
-  marginBottom: 4,
+  marginBottom: 6,
   fontSize: 14,
 }
 
-const paramStyle: React.CSSProperties = {
-  fontSize: 11,
+const segmentsStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  flexWrap: 'wrap',
+  gap: 6,
   color: theme.color.textMuted,
+  fontSize: 12,
 }
 
 type BlockNodeData = {
@@ -39,7 +46,8 @@ type BlockNodeData = {
   label: string
   category: string
   categoryColor: string
-  params: Record<string, { type: string; default?: unknown }>
+  segs: Segment[]
+  fields: Record<string, string>
   inputs: Port[]
   outputs: Port[]
 }
@@ -49,7 +57,8 @@ function topFor(i: number, n: number): string {
   return `${((i + 1) * 100) / (n + 1)}%`
 }
 
-function BlockNode({ data }: NodeProps<BlockNodeData>) {
+function BlockNode({ data, id }: NodeProps<BlockNodeData>) {
+  const updateFlowParam = useAppStore(s => s.updateFlowParam)
   return (
     <div style={{ ...nodeStyle, borderTop: `3px solid ${data.categoryColor}` }}>
       {data.inputs.map((p, i, arr) => (
@@ -63,10 +72,8 @@ function BlockNode({ data }: NodeProps<BlockNodeData>) {
         />
       ))}
       <div style={labelStyle}>{data.label}</div>
-      <div style={paramStyle}>
-        {Object.entries(data.params).map(([k, v]) => (
-          <div key={k}>{k}: {v.type}</div>
-        ))}
+      <div style={segmentsStyle}>
+        <BlockSegments segs={data.segs} fields={data.fields} blockId={id} onUpdate={updateFlowParam} />
       </div>
       {data.outputs.map((p, i, arr) => (
         <Handle
