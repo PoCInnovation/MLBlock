@@ -1,10 +1,12 @@
 def linear_regression(train_data: "pd.DataFrame", target_column: "str", fit_intercept: "bool" = True) -> "Model":
     """Régression linéaire.
-    
+
     Args:
-        train_data: Input tensor.
-        target_column: Parameter.
-        fit_intercept: Parameter.
+        train_data: Données d'entraînement.
+        target_column: Colonne cible.
+        fit_intercept: Ajuster l'ordonnée à l'origine.
     """
     from sklearn.linear_model import LinearRegression
-    return LinearRegression().fit(train_data, train_target)
+    X = train_data.drop(columns=[target_column])
+    y = train_data[target_column]
+    return LinearRegression(fit_intercept=fit_intercept).fit(X, y)

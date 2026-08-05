@@ -18,15 +18,33 @@ export function useBlockRunner() {
   const onRun = useCallback(async () => {
     const store = useAppStore.getState()
     if (store.running) return
-    if (store.script.length === 0) {
-      store.appendConsoleLines([{ k: 'sys', t: '⚠ Aucun bloc à exécuter.' }])
-      return
+
+    let nodes: PipelineNode[]
+    let edges: PipelineEdge[]
+
+    if (store.editorMode === 'advanced') {
+      nodes = store.flowNodes.map(n => ({
+        id: n.id,
+        type: (n.data as any)?.type ?? n.id,
+        params: (n.data as any)?.fields ?? {},
+        children: [],
+      }))
+      edges = store.flowEdges.map(e => ({
+        source: e.source,
+        source_port: e.sourceHandle ?? 'out_1',
+        target: e.target,
+        target_port: e.targetHandle ?? 'in_1',
+      }))
+    } else {
+      if (store.script.length === 0) {
+        store.appendConsoleLines([{ k: 'sys', t: '⚠ Aucun bloc à exécuter.' }])
+        return
+      }
+      nodes = buildNodes(store.script)
+      edges = []
     }
 
     store.startRun()
-
-    const nodes: PipelineNode[] = buildNodes(store.script)
-    const edges: PipelineEdge[] = []
 
     try {
       const validation = await validateGraph(nodes, edges)
@@ -35,7 +53,7 @@ export function useBlockRunner() {
           { k: 'sys', t: '⚠ Graphe invalide :' },
           ...validation.errors.map(e => ({ k: 'sys', t: `  • ${e}` })),
         ])
-        useAppStore.getState().stopRun()
+        useAppStore.getState().failRun()
         return
       }
 
@@ -67,12 +85,12 @@ export function useBlockRunner() {
         useAppStore.getState().appendConsoleLines([
           { k: 'sys', t: `⚠ Erreur de build : ${build.error ?? 'inconnue'}` },
         ])
-        useAppStore.getState().stopRun()
+        useAppStore.getState().failRun()
       }
     } catch (err) {
       console.error('Pipeline run failed:', err)
       if (useAppStore.getState().running) {
-        useAppStore.getState().stopRun()
+        useAppStore.getState().failRun()
         useAppStore.getState().appendConsoleLines([{ k: 'sys', t: "⚠ Erreur lors de l'exécution." }])
       }
     }

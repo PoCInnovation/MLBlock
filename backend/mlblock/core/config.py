@@ -49,25 +49,29 @@ class ConfigLoader:
                 if self.registry:
                     spec = self.registry[node["type"]]
                     direction = "outputs" if side == "source" else "inputs"
-                    ports = spec.get(direction, [])
-                    port_name = edge[port_key]
-                    if not any(p["name"] == port_name for p in ports):
-                        valid = [p["name"] for p in ports]
-                        raise ValueError(
-                            f"Port '{port_name}' not found on {side} '{node_id}' ({node['type']}). "
-                            f"Valid ports: {valid}"
-                        )
+                    ports = getattr(spec, direction, [])
+                    # Skip port validation when registry doesn't populate ports
+                    if ports:
+                        port_name = edge[port_key]
+                        if not any(p["name"] == port_name for p in ports):
+                            valid = [p["name"] for p in ports]
+                            raise ValueError(
+                                f"Port '{port_name}' not found on {side} '{node_id}' ({node['type']}). "
+                                f"Valid ports: {valid}"
+                            )
         for edge in edges:
             src_node = node_map[edge["source"]]
             tgt_node = node_map[edge["target"]]
             src_spec = self.registry[src_node["type"]]
             tgt_spec = self.registry[tgt_node["type"]]
+            if not src_spec.outputs or not tgt_spec.inputs:
+                continue
             src_dtype = next(
-                p["dtype"] for p in src_spec.get("outputs", [])
+                p["dtype"] for p in src_spec.outputs
                 if p["name"] == edge["source_port"]
             )
             tgt_dtype = next(
-                p["dtype"] for p in tgt_spec.get("inputs", [])
+                p["dtype"] for p in tgt_spec.inputs
                 if p["name"] == edge["target_port"]
             )
             if src_dtype != tgt_dtype:

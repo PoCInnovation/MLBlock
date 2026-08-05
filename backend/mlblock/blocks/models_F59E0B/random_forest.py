@@ -1,11 +1,13 @@
 def random_forest(train_data: "pd.DataFrame", target_column: "str", n_estimators: "int" = 100, max_depth: "int" = None) -> "Model":
     """Random Forest.
-    
+
     Args:
-        train_data: Input tensor.
-        target_column: Parameter.
-        n_estimators: Parameter.
-        max_depth: Parameter.
+        train_data: Données d'entraînement.
+        target_column: Colonne cible.
+        n_estimators: Nombre d'arbres.
+        max_depth: Profondeur maximale.
     """
     from sklearn.ensemble import RandomForestClassifier
-    return RandomForestClassifier(n_estimators=n_estimators).fit(train_data, train_target)
+    X = train_data.drop(columns=[target_column])
+    y = train_data[target_column]
+    return RandomForestClassifier(n_estimators=n_estimators, max_depth=max_depth).fit(X, y)

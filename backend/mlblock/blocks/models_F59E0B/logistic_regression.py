@@ -1,10 +1,12 @@
 def logistic_regression(train_data: "pd.DataFrame", target_column: "str", max_iter: "int" = 1000) -> "Model":
     """Régression logistique.
-    
+
     Args:
-        train_data: Input tensor.
-        target_column: Parameter.
-        max_iter: Parameter.
+        train_data: Données d'entraînement.
+        target_column: Colonne cible.
+        max_iter: Nombre maximal d'itérations.
     """
     from sklearn.linear_model import LogisticRegression
-    return LogisticRegression().fit(train_data, train_target)
+    X = train_data.drop(columns=[target_column])
+    y = train_data[target_column]
+    return LogisticRegression(max_iter=max_iter).fit(X, y)

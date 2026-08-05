@@ -2,8 +2,18 @@ import { create } from 'zustand'
 import { instantiate } from '../utils/blockHelpers'
 import type { Block } from '../utils/blockHelpers'
 import type { InternalCatalog } from '../types/catalog'
+import type { Node, Edge, NodeChange, EdgeChange } from 'reactflow'
+import { applyNodeChanges, applyEdgeChanges, addEdge, type Connection } from 'reactflow'
+import { linearToFlow, flowToLinear } from '../utils/flowConversion'
+import type { FlowBlock } from '../utils/flowConversion'
 
 export type ConsoleLine = { k: string; t: string }
+
+export type Toast = {
+  kind: 'error' | 'convert'
+  message: string
+  action?: () => void
+}
 
 type DragBase = {
   active: boolean
@@ -22,9 +32,12 @@ export type DragState =
   | (DragBase & { source: 'script'; id: string })
 
 type AppState = {
-  screen: 'home' | 'build' | 'how-it-works' | 'about'
+  editorMode: 'linear' | 'advanced'
   category: string
+  user: unknown | null
   script: Block[]
+  flowNodes: Node[]
+  flowEdges: Edge[]
   running: boolean
   runningId: string | null
   consoleLines: ConsoleLine[]
@@ -33,12 +46,11 @@ type AppState = {
   catalog: InternalCatalog | null
   catalogError: boolean
   catalogErrorMessage: string | null
-  pipelineId: string | null
+  pipelineId: number | null
+  toast: Toast | null
 
-  goBuild: () => void
-  goHome: () => void
-  goHowItWorks: () => void
-  goAbout: () => void
+  setUser: (user: unknown | null) => void
+  setEditorMode: (mode: 'linear' | 'advanced') => void
   setCategory: (id: string) => void
   addBlock: (type: string, index: number | null) => void
   deleteBlock: (id: string) => void
@@ -46,36 +58,73 @@ type AppState = {
   updateField: (id: string, k: string, v: string) => void
   setDrag: (drag: DragState) => void
   clearDrag: () => void
+  setFlowNodes: (nodes: Node[]) => void
+  setFlowEdges: (edges: Edge[]) => void
+  applyFlowNodeChanges: (changes: NodeChange[]) => void
+  applyFlowEdgeChanges: (changes: EdgeChange[]) => void
+  addFlowNode: (node: Node) => void
+  addFlowEdges: (edges: Edge[]) => void
+  updateFlowParam: (nodeId: string, k: string, v: string) => void
   appendConsoleLines: (lines: ConsoleLine[]) => void
   startRun: () => void
   setRunningId: (id: string | null) => void
   finishRun: (result: unknown) => void
   stopRun: () => void
+  failRun: () => void
   clearAll: () => void
   setCatalog: (catalog: InternalCatalog) => void
   setCatalogError: (error: boolean, message?: string) => void
-  setPipelineId: (id: string | null) => void
+  setPipelineId: (id: number | null) => void
+  showToast: (toast: Toast) => void
+  clearToast: () => void
 }
 
 const useAppStore = create<AppState>((set) => ({
-  screen: 'home',
+  editorMode: 'linear',
   category: 'data',
   script: [],
+  flowNodes: [],
+  flowEdges: [],
   running: false,
   runningId: null,
   consoleLines: [],
   result: null,
   drag: null,
+  user: null,
   catalog: null,
   catalogError: false,
   catalogErrorMessage: null,
   pipelineId: null,
+  toast: null,
 
-  goBuild: () => set({ screen: 'build' }),
-  goHome: () => set({ screen: 'home', catalog: null, catalogError: false, catalogErrorMessage: null, pipelineId: null }),
-  goHowItWorks: () => set({ screen: 'how-it-works' }),
-  goAbout: () => set({ screen: 'about' }),
   setCategory: (id) => set({ category: id }),
+
+  setEditorMode: (mode) => set((s) => {
+    if (mode === 'advanced' && s.catalog) {
+      const flowNodes = linearToFlow(s.script as FlowBlock[], s.catalog)
+      return { editorMode: mode, flowNodes }
+    }
+    if (mode === 'linear') {
+      const script = flowToLinear(s.flowNodes)
+      return { editorMode: mode, script: script as any }
+    }
+    return { editorMode: mode }
+  }),
+
+  setFlowNodes: (nodes) => set({ flowNodes: nodes }),
+  setFlowEdges: (edges) => set({ flowEdges: edges }),
+
+  // Controlled-flow actions: the store is the single source of truth for the
+  // advanced canvas — no canvas↔store sync effects, no render loops.
+  applyFlowNodeChanges: (changes) => set((s) => ({ flowNodes: applyNodeChanges(changes, s.flowNodes) })),
+  applyFlowEdgeChanges: (changes) => set((s) => ({ flowEdges: applyEdgeChanges(changes, s.flowEdges) })),
+  addFlowNode: (node) => set((s) => ({ flowNodes: [...s.flowNodes, node] })),
+  addFlowEdges: (edges) => set((s) => ({ flowEdges: [...s.flowEdges, ...edges] })),
+  updateFlowParam: (nodeId, k, v) => set((s) => ({
+    flowNodes: s.flowNodes.map(n => n.id === nodeId
+      ? { ...n, data: { ...(n.data as { fields?: Record<string, string> }), fields: { ...(n.data as { fields?: Record<string, string> })?.fields, [k]: v } } }
+      : n),
+  })),
 
   addBlock: (type, index) => set((s) => {
     if (!s.catalog) return {}
@@ -130,7 +179,9 @@ const useAppStore = create<AppState>((set) => ({
     consoleLines: [...s.consoleLines, { k: 'sys', t: '■ Arrêté' }],
   })),
 
-  clearAll: () => set({ script: [], consoleLines: [], result: null, running: false, runningId: null }),
+  failRun: () => set((s) => ({ running: false, runningId: null })),
+
+  clearAll: () => set({ script: [], flowNodes: [], flowEdges: [], consoleLines: [], result: null, running: false, runningId: null }),
 
   setCatalog: (catalog) => set((s) => {
     const firstCat = catalog.categories[0]?.id ?? 'data'
@@ -144,6 +195,9 @@ const useAppStore = create<AppState>((set) => ({
   }),
 
   setPipelineId: (id) => set({ pipelineId: id }),
+  showToast: (toast) => set({ toast }),
+  clearToast: () => set({ toast: null }),
+  setUser: (user) => set({ user }),
 }))
 
 export default useAppStore

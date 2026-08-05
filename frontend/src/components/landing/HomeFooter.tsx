@@ -1,3 +1,5 @@
+import { theme } from '../../theme'
+
 export default function HomeFooter() {
     return (
         <footer
@@ -8,7 +10,7 @@ export default function HomeFooter() {
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                color: '#6f665e',
+                color: theme.color.textMuted,
                 fontSize: 14,
                 fontWeight: 700,
             }}

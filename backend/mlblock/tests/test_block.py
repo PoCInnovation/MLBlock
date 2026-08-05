@@ -1,4 +1,5 @@
 from mlblock.core.block import BlockRegistry
+from mlblock.blocks.registry import BLOCK_REGISTRY
 
 
 def test_block_registry_register_and_get():
@@ -30,11 +31,11 @@ def test_block_registry_list():
 
 
 def test_block_registry_by_category():
-    neural_blocks = BlockRegistry.by_category("neural")
+    neural_blocks = BlockRegistry.by_category("neural_conv")
     assert len(neural_blocks) > 0
     names = [b.name for b in neural_blocks]
     assert "conv2d" in names
-    assert "softmax" in names
+    assert "linear" in names
 
 
 def test_block_meta_params_schema():
@@ -49,5 +50,27 @@ def test_block_meta_params_schema():
 def test_block_meta_template():
     block = BlockRegistry.get("conv2d")
     assert block is not None
-    assert "{output.out}" in block.template
-    assert "{params.in_channels}" in block.template
+    # template is not populated by discovery — always empty
+    assert block.template == ""
+
+
+def test_literal_param_has_options():
+    block = BLOCK_REGISTRY.get("decision_tree")
+    assert block is not None
+    task_param = block.params["task"]
+    assert task_param.options == ["classification", "regression"]
+    assert task_param.type == "str"
+
+
+def test_literal_param_multiple_choices():
+    block = BLOCK_REGISTRY.get("svm")
+    assert block is not None
+    assert block.params["task"].options == ["classification", "regression"]
+    assert block.params["kernel"].options == ["rbf", "linear", "poly", "sigmoid"]
+
+
+def test_non_literal_param_has_no_options():
+    block = BLOCK_REGISTRY.get("linear")
+    assert block is not None
+    assert block.params["in_features"].options is None
+    assert block.params["out_features"].options is None

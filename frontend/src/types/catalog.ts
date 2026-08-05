@@ -2,9 +2,12 @@
 export type TextSeg = { t: 'text'; v: string }
 export type NumSeg  = { t: 'num';  k: string; def: string; w?: number }
 export type SelSeg  = { t: 'sel';  k: string; def: string; opts: string[] }
-export type Segment = TextSeg | NumSeg | SelSeg
+export type FileSeg = { t: 'file'; k: string; def: string }
+export type Segment = TextSeg | NumSeg | SelSeg | FileSeg
 
-export type BlockDef = { cat: string; segs: Segment[] }
+export type Port = { name: string; dtype: string }
+
+export type BlockDef = { cat: string; segs: Segment[]; inputs: Port[]; outputs: Port[] }
 export type BlockDefMap = Record<string, BlockDef>
 
 export type Category = { id: string; name: string; color: string }
@@ -13,49 +16,6 @@ export type Category = { id: string; name: string; color: string }
 export interface InternalCatalog {
   categories: Category[]
   blocks: BlockDefMap
-}
-
-// Internal derived type — computed from BackendBlock, not fetched directly
-export interface BlockSummary {
-  type: string
-  label: string
-  category: string
-  /** KNOWN GAP: backend has no input count field; always 0 until backend adds "inputs" list */
-  inputs: number
-  outputs: number
-  can_build: boolean
-}
-
-// Backend wire types — exact match to what /api/blocks returns
-
-export interface BackendParamInfo {
-  type: string
-  description: string
-  default: unknown
-  required: boolean
-}
-
-export interface BackendBlock {
-  name: string
-  description: string
-  category: { name: string; color: string }
-  params: Record<string, BackendParamInfo>
-  outputs: { name: string; dtype: string }[]
-  deps: string[]
-}
-
-export interface BackendCategory {
-  name: string
-  color: string
-  block_count: number
-}
-
-export interface PageResult<T> {
-  items: T[]
-  total: number
-  page: number
-  size: number
-  pages: number
 }
 
 export interface PipelineNode {
@@ -80,7 +40,7 @@ export interface PipelineCreate {
 }
 
 export interface PipelineSummary {
-  id: string  // UUID string — backend returns UUID, not integer
+  id: number
   name: string
   description: string
   created_at: string

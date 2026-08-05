@@ -1,8 +1,8 @@
+import { useNavigate } from 'react-router-dom'
 import SiteLayout from '../components/landing/SiteLayout'
-import useAppStore from '../store/useAppStore'
 
 export default function HowItWorksPage() {
-  const goBuild = useAppStore(s => s.goBuild)
+  const navigate = useNavigate()
 
   return (
     <SiteLayout>
@@ -88,7 +88,7 @@ export default function HowItWorksPage() {
               </p>
             </div>
             <button
-              onClick={goBuild}
+              onClick={() => navigate('/editor')}
               style={{ background: '#D97757', color: '#fff', border: 'none', padding: '15px 28px', borderRadius: 14, fontWeight: 800, fontSize: 16, cursor: 'pointer', boxShadow: '0 4px 0 rgba(0,0,0,.25)', display: 'inline-flex', alignItems: 'center', gap: 9, whiteSpace: 'nowrap' }}
             >
               <span style={{ fontSize: 13 }}>▶</span> Ouvrir l'éditeur
