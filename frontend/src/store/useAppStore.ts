@@ -2,7 +2,8 @@ import { create } from 'zustand'
 import { instantiate } from '../utils/blockHelpers'
 import type { Block } from '../utils/blockHelpers'
 import type { InternalCatalog } from '../types/catalog'
-import type { Node, Edge } from 'reactflow'
+import type { Node, Edge, NodeChange, EdgeChange } from 'reactflow'
+import { applyNodeChanges, applyEdgeChanges, addEdge, type Connection } from 'reactflow'
 import { linearToFlow, flowToLinear } from '../utils/flowConversion'
 import type { FlowBlock } from '../utils/flowConversion'
 
@@ -59,6 +60,10 @@ type AppState = {
   clearDrag: () => void
   setFlowNodes: (nodes: Node[]) => void
   setFlowEdges: (edges: Edge[]) => void
+  applyFlowNodeChanges: (changes: NodeChange[]) => void
+  applyFlowEdgeChanges: (changes: EdgeChange[]) => void
+  addFlowNode: (node: Node) => void
+  addFlowEdges: (edges: Edge[]) => void
   appendConsoleLines: (lines: ConsoleLine[]) => void
   startRun: () => void
   setRunningId: (id: string | null) => void
@@ -107,6 +112,13 @@ const useAppStore = create<AppState>((set) => ({
 
   setFlowNodes: (nodes) => set({ flowNodes: nodes }),
   setFlowEdges: (edges) => set({ flowEdges: edges }),
+
+  // Controlled-flow actions: the store is the single source of truth for the
+  // advanced canvas — no canvas↔store sync effects, no render loops.
+  applyFlowNodeChanges: (changes) => set((s) => ({ flowNodes: applyNodeChanges(changes, s.flowNodes) })),
+  applyFlowEdgeChanges: (changes) => set((s) => ({ flowEdges: applyEdgeChanges(changes, s.flowEdges) })),
+  addFlowNode: (node) => set((s) => ({ flowNodes: [...s.flowNodes, node] })),
+  addFlowEdges: (edges) => set((s) => ({ flowEdges: [...s.flowEdges, ...edges] })),
 
   addBlock: (type, index) => set((s) => {
     if (!s.catalog) return {}

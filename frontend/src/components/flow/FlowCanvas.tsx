@@ -1,11 +1,9 @@
-import React, { useCallback, useEffect, useMemo, useRef } from 'react'
+import React, { useCallback, useMemo, useRef } from 'react'
 import ReactFlow, {
   Background,
   Controls,
   MiniMap,
   ReactFlowProvider,
-  useNodesState,
-  useEdgesState,
   useReactFlow,
   addEdge,
   BackgroundVariant,
@@ -40,13 +38,6 @@ function portList(node: Node | undefined, side: 'inputs' | 'outputs'): Port[] | 
   return node?.data?.[side]
 }
 
-/** True when both arrays contain exactly the same element ids. */
-function sameIds(a: { id: string }[], b: { id: string }[]): boolean {
-  if (a.length !== b.length) return false
-  const ids = new Set(a.map(x => x.id))
-  return b.every(x => ids.has(x.id))
-}
-
 function edgeStyleFor(e: Edge, nodes: Node[], graph: Map<string, Set<string>>): React.CSSProperties {
   const src = nodes.find(n => n.id === e.source)
   const tgt = nodes.find(n => n.id === e.target)
@@ -61,15 +52,16 @@ function edgeStyleFor(e: Edge, nodes: Node[], graph: Map<string, Set<string>>): 
 }
 
 function FlowCanvasInner() {
+  // Single source of truth: the store. No local canvas state, no sync effects.
   const flowNodes = useAppStore(s => s.flowNodes)
   const flowEdges = useAppStore(s => s.flowEdges)
-  const setFlowNodes = useAppStore(s => s.setFlowNodes)
-  const setFlowEdges = useAppStore(s => s.setFlowEdges)
+  const applyFlowNodeChanges = useAppStore(s => s.applyFlowNodeChanges)
+  const applyFlowEdgeChanges = useAppStore(s => s.applyFlowEdgeChanges)
+  const addFlowNode = useAppStore(s => s.addFlowNode)
+  const addFlowEdges = useAppStore(s => s.addFlowEdges)
   const catalog = useAppStore(s => s.catalog)
   const showToast = useAppStore(s => s.showToast)
 
-  const [nodes, setNodes, onNodesChange] = useNodesState(flowNodes)
-  const [edges, setEdges, onEdgesChange] = useEdgesState(flowEdges)
   const { screenToFlowPosition, fitView } = useReactFlow()
   const wrapperRef = useRef<HTMLDivElement>(null)
 
@@ -84,8 +76,8 @@ function FlowCanvasInner() {
     if (!def) return
     const convIn = def.inputs[0]?.name ?? 'in_1'
     const convOut = def.outputs[0]?.name ?? 'out_1'
-    const srcPos = nodes.find(n => n.id === conn.source)?.position
-    const tgtPos = nodes.find(n => n.id === conn.target)?.position
+    const srcPos = flowNodes.find(n => n.id === conn.source)?.position
+    const tgtPos = flowNodes.find(n => n.id === conn.target)?.position
     const position = srcPos && tgtPos
       ? { x: (srcPos.x + tgtPos.x) / 2, y: (srcPos.y + tgtPos.y) / 2 }
       : { x: 300, y: 300 }
@@ -119,26 +111,26 @@ function FlowCanvasInner() {
       target: conn.target ?? '',
       targetHandle: conn.targetHandle ?? 'in_1',
     }
-    setNodes(nds => [...nds, node])
-    setEdges(eds => [...eds.filter(ed => !(ed.source === conn.source && ed.target === conn.target)), edgeA, edgeB])
-  }, [catalog, nodes, setNodes, setEdges])
+    addFlowNode(node)
+    addFlowEdges(flowEdges.filter(ed => !(ed.source === conn.source && ed.target === conn.target)).concat([edgeA, edgeB]))
+  }, [catalog, flowNodes, flowEdges, addFlowNode, addFlowEdges])
 
   const onConnect = useCallback((params: Connection) => {
     if (!catalog) {
-      setEdges(eds => addEdge(params, eds))
+      addFlowEdges(addEdge(params, []))
       return
     }
-    const src = nodes.find(n => n.id === params.source)
-    const tgt = nodes.find(n => n.id === params.target)
+    const src = flowNodes.find(n => n.id === params.source)
+    const tgt = flowNodes.find(n => n.id === params.target)
     const srcDtype = portDtype(portList(src, 'outputs'), params.sourceHandle)
     const tgtDtype = portDtype(portList(tgt, 'inputs'), params.targetHandle)
     if (!src || !tgt || !srcDtype || !tgtDtype) {
-      setEdges(eds => addEdge(params, eds))
+      addFlowEdges(addEdge(params, []))
       return
     }
     const verdict = classifyEdge(srcDtype, tgtDtype, graph)
     if (verdict === 'compatible') {
-      setEdges(eds => addEdge(params, eds))
+      addFlowEdges(addEdge(params, []))
     } else if (verdict === 'convertible') {
       const conv = converterFor(srcDtype, tgtDtype, catalog.blocks)
       if (!conv) {
@@ -153,22 +145,7 @@ function FlowCanvasInner() {
     } else {
       showToast({ kind: 'error', message: `${srcDtype} → ${tgtDtype} : aucune conversion possible` })
     }
-  }, [catalog, nodes, graph, setEdges, showToast, insertConverter])
-
-  useEffect(() => {
-    setFlowNodes(nodes)
-  }, [nodes, setFlowNodes])
-
-  useEffect(() => {
-    setFlowEdges(edges)
-  }, [edges, setFlowEdges])
-
-  // Resync store→canvas when the store changed externally (clearAll, import…).
-  // Compare by id sets so equal-length add+delete swaps are not missed.
-  useEffect(() => {
-    if (!sameIds(flowNodes, nodes)) setNodes(flowNodes)
-    if (!sameIds(flowEdges, edges)) setEdges(flowEdges)
-  }, [flowNodes, flowEdges, nodes, edges, setNodes, setEdges])
+  }, [catalog, flowNodes, flowEdges, graph, addFlowEdges, showToast, insertConverter])
 
   const onDragStart = useCallback((e: React.DragEvent, type: string) => {
     e.dataTransfer.setData('application/mlblock-type', type)
@@ -206,17 +183,17 @@ function FlowCanvasInner() {
           outputs: def.outputs,
         },
       }
-      setNodes(nds => [...nds, node])
+      addFlowNode(node)
       // ponytail: fitView recenters on the dropped node — screenToFlowPosition
       // on an empty canvas (fitView scale ~0.1) yields enormous flow coords
       setTimeout(() => fitView({ padding: 0.2, duration: 300 }), 50)
     },
-    [catalog, screenToFlowPosition, setNodes, fitView]
+    [catalog, screenToFlowPosition, addFlowNode, fitView]
   )
 
   const renderEdges = useMemo(
-    () => edges.map(e => ({ ...e, style: edgeStyleFor(e, nodes, graph) })),
-    [edges, nodes, graph]
+    () => flowEdges.map(e => ({ ...e, style: edgeStyleFor(e, flowNodes, graph) })),
+    [flowEdges, flowNodes, graph]
   )
 
   return (
@@ -224,10 +201,10 @@ function FlowCanvasInner() {
       <FlowPalette onDragStart={onDragStart} />
       <div ref={wrapperRef} style={{ flex: 1, height: '100%' }}>
         <ReactFlow
-          nodes={nodes}
+          nodes={flowNodes}
           edges={renderEdges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
+          onNodesChange={applyFlowNodeChanges}
+          onEdgesChange={applyFlowEdgeChanges}
           onConnect={onConnect}
           onDragOver={onDragOver}
           onDrop={onDrop}
