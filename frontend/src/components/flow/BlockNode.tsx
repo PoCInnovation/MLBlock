@@ -52,6 +52,26 @@ const outputStyle: React.CSSProperties = {
   color: theme.color.textMuted,
 }
 
+const deleteBtnStyle: React.CSSProperties = {
+  position: 'absolute',
+  top: 6,
+  right: 6,
+  width: 18,
+  height: 18,
+  borderRadius: '50%',
+  border: 'none',
+  background: 'rgba(255,255,255,.1)',
+  color: theme.color.textMuted,
+  fontWeight: 900,
+  fontSize: 11,
+  lineHeight: 1,
+  cursor: 'pointer',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: 0,
+}
+
 type BlockNodeData = {
   type: string
   label: string
@@ -70,6 +90,7 @@ function topFor(i: number, n: number): string {
 
 function BlockNode({ data, id }: NodeProps<BlockNodeData>) {
   const updateFlowParam = useAppStore(s => s.updateFlowParam)
+  const removeFlowNode = useAppStore(s => s.removeFlowNode)
   const catalog = useAppStore(s => s.catalog)
   const flowNodes = useAppStore(s => s.flowNodes)
   const flowEdges = useAppStore(s => s.flowEdges)
@@ -91,6 +112,7 @@ function BlockNode({ data, id }: NodeProps<BlockNodeData>) {
 
   return (
     <div style={{ ...nodeStyle, borderTop: `3px solid ${data.categoryColor}` }}>
+      <button style={deleteBtnStyle} onClick={() => removeFlowNode(id)} title="Supprimer le bloc">×</button>
       {data.inputs.map((p, i, arr) => (
         <Handle
           key={p.name}

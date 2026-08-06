@@ -65,6 +65,7 @@ type AppState = {
   addFlowNode: (node: Node) => void
   addFlowEdges: (edges: Edge[]) => void
   updateFlowParam: (nodeId: string, k: string, v: string) => void
+  removeFlowNode: (nodeId: string) => void
   appendConsoleLines: (lines: ConsoleLine[]) => void
   startRun: () => void
   setRunningId: (id: string | null) => void
@@ -124,6 +125,10 @@ const useAppStore = create<AppState>((set) => ({
     flowNodes: s.flowNodes.map(n => n.id === nodeId
       ? { ...n, data: { ...(n.data as { fields?: Record<string, string> }), fields: { ...(n.data as { fields?: Record<string, string> })?.fields, [k]: v } } }
       : n),
+  })),
+  removeFlowNode: (nodeId) => set((s) => ({
+    flowNodes: s.flowNodes.filter(n => n.id !== nodeId),
+    flowEdges: s.flowEdges.filter(e => e.source !== nodeId && e.target !== nodeId),
   })),
 
   addBlock: (type, index) => set((s) => {
