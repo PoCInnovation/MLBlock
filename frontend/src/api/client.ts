@@ -35,6 +35,7 @@ function toSegments(key: string, raw: unknown): Segment {
     const typ = String(p.type ?? '')
     const desc = p.description ? String(p.description) : undefined
     if (typ === 'file') return { t: 'file', k: key, def, desc }
+    if (typ === 'bool') return { t: 'bool', k: key, def, desc }
     if (Array.isArray(p.options) && p.options.length > 0) {
       return { t: 'sel', k: key, def, opts: p.options.map(String), desc }
     }

@@ -52,6 +52,8 @@ function fmtSize(bytes: number): string {
 function validateSeg(seg: Segment, value: string): { ok: boolean; msg?: string } {
   if (seg.t === 'num') {
     if (value.trim() === '') return { ok: true }
+    // Sans métadonnées numériques, le champ est libre (str/bool fallback) — pas de validation
+    if (seg.min == null && seg.max == null && seg.step == null && !seg.odd) return { ok: true }
     const n = Number(value)
     if (Number.isNaN(n)) return { ok: false, msg: 'Valeur numérique attendue' }
     if (seg.min != null && n < seg.min) return { ok: false, msg: `Doit être ≥ ${seg.min}` }
@@ -153,6 +155,20 @@ export default function BlockSegments({ segs, fields, blockId, onUpdate, columnO
         {s.opts.map(o => <option key={o} value={o}>{o}</option>)}
       </select>
     )
+
+    if (s.t === 'bool') {
+      const checked = value === 'true'
+      return (
+        <input
+          key={i}
+          type="checkbox"
+          checked={checked}
+          onChange={e => onUpdate(blockId!, s.k, e.target.checked ? 'true' : 'false')}
+          title={s.desc}
+          style={{ cursor: 'pointer', accentColor: '#2a211c' }}
+        />
+      )
+    }
 
     if (s.t === 'num') {
       const v = validateSeg(s, value)
