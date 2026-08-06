@@ -1,5 +1,5 @@
 def normalize(in_1: "torch.Tensor", mean: "list", std: "list") -> "torch.Tensor":
-    """Normalize tensor.
+    """Normaliser un tenseur.
     
     Args:
         in_1: Input tensor.

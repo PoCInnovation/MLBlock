@@ -3,7 +3,7 @@ from torch import nn
 
 
 def identity(in_1: "torch.Tensor") -> "torch.Tensor":
-    """Identity.
+    """Identité.
     
     Args:
         in_1: Input tensor.

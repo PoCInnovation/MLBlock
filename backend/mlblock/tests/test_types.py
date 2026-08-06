@@ -241,6 +241,33 @@ def test_param_meta_from_discovered_blocks():
     assert BLOCK_REGISTRY["normalize"].params["mean"].len == 3
 
 
+def test_param_suggestions():
+    from mlblock.blocks.registry import _extract_param_desc
+    _, meta = _extract_param_desc(
+        "Args:\n    out_channels: Canaux. (suggestions: 16|32|64|128)",
+        "out_channels",
+    )
+    assert meta["suggestions"] == ["16", "32", "64", "128"]
+    assert BLOCK_REGISTRY["conv2d"].params["out_channels"].suggestions == ["16", "32", "64", "128", "256"]
+    assert BLOCK_REGISTRY["input"].params["shape"].suggestions == ["[1, 28, 28]", "[3, 32, 32]", "[1, 3, 224, 224]"]
+
+
+def test_fr_label_from_docstring():
+    from mlblock.server.routes import _fr_label
+    assert _fr_label(BLOCK_REGISTRY["conv2d"]) == "Convolution 2D"
+    assert _fr_label(BLOCK_REGISTRY["train_test_split"]) == "Séparer train/test"
+    assert _fr_label(BLOCK_REGISTRY["cross_entropy_loss"]) == "Perte d'entropie croisée"
+
+
+def test_fr_label_fallback():
+    from mlblock.server.routes import _fr_label
+    # docstring vide/générique → fallback name.title()
+    class Fake:
+        name = "load_csv"
+        description = ""
+    assert _fr_label(Fake()) == "Load Csv"
+
+
 # ── PipelineDef validation ───────────────────────────────────────────
 
 def _validate(nodes, edges):

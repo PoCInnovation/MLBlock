@@ -22,10 +22,11 @@ imaginer l'UI/UX
 Coder l'ui/ux
 
 # To fix
-Les noms des outputs doivent apparaitrent
-Les noms des params doivent apparaitrent
+Les noms des outputs doivent apparaitrent directement pour meilleur ui/ux
+Les noms des params doivent apparaitrent directement pour meilleur ui/ux
 Il faux plus d'autocomplétion dans les params des blocks (trop imprécis)
 Tout traduire en français
+impossible de retirer les blocks en mode avancé
 
 # Idea
 TOutes les sorties des blocks sont accessibles à tous et le systeme linéaire deviens possible 

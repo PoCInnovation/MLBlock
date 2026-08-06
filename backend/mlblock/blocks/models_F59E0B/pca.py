@@ -1,5 +1,5 @@
 def pca(in_1: "pd.DataFrame", n_components: "int" = 2, target_column: "str | None" = None) -> "dict":
-    """PCA dimensionality reduction.
+    """Réduction de dimensionnalité PCA.
     
     Args:
         in_1: Input data.

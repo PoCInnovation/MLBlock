@@ -47,6 +47,7 @@ function toSegments(key: string, raw: unknown): Segment {
         t: 'list', k: key, def,
         format: p.format ? String(p.format) : undefined,
         len: typeof p.len === 'number' ? p.len : undefined,
+        opts: Array.isArray(p.suggestions) ? p.suggestions.map(String) : undefined,
         desc,
       }
     }
@@ -56,6 +57,7 @@ function toSegments(key: string, raw: unknown): Segment {
       max: typeof p.max === 'number' ? p.max : undefined,
       step: typeof p.step === 'number' ? p.step : undefined,
       odd: p.odd === true ? true : undefined,
+      opts: Array.isArray(p.suggestions) ? p.suggestions.map(String) : undefined,
       desc,
     }
   }

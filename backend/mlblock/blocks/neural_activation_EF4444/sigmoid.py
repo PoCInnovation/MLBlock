@@ -3,7 +3,7 @@ from torch import nn
 
 
 def sigmoid(in_1: "torch.Tensor") -> "torch.Tensor":
-    """Sigmoid.
+    """Sigmoïde.
     
     Args:
         in_1: Input tensor.

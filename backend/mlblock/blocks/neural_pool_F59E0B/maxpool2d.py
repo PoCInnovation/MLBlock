@@ -3,7 +3,7 @@ from torch import nn
 
 
 def maxpool2d(in_1: "torch.Tensor", kernel_size: "int" = 2, stride: "int" = None) -> "torch.Tensor":
-    """MaxPool2D.
+    """Pool maximum.
     
     Args:
         in_1: Input tensor.

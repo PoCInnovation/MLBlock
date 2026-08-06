@@ -86,6 +86,15 @@ def _cleanup_pipeline_files(pipeline_id: UUID) -> None:
 
 # ── Catalog ─────────────────────────────────────────────────────────
 
+def _fr_label(block) -> str:
+    """Label FR : première ligne de la docstring, sinon name.title()."""
+    first = next((l.strip() for l in (block.description or "").splitlines() if l.strip()), "")
+    first = first.rstrip(".")
+    if len(first) >= 3 and not first.startswith(("Parameter", "Block", "Args")):
+        return first
+    return block.name.replace("_", " ").title()
+
+
 @catalog_router.get("")
 def get_catalog() -> dict:
     categories: dict[str, dict] = {}
@@ -100,7 +109,7 @@ def get_catalog() -> dict:
             }
         categories[cat]["blocks"].append({
             "type": block.name,
-            "label": block.name.replace("_", " ").title(),
+            "label": _fr_label(block),
             "params": {k: v.model_dump() for k, v in block.params.items()},
             "inputs": block.inputs,
             "outputs": block.outputs,

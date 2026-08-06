@@ -1,5 +1,5 @@
 def random_crop(in_1: "torch.Tensor", size: "int") -> "torch.Tensor":
-    """Random crop.
+    """Recadrage aléatoire.
     
     Args:
         in_1: Input image.

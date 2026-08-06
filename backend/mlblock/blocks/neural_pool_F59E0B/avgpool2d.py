@@ -3,7 +3,7 @@ from torch import nn
 
 
 def avgpool2d(in_1: "torch.Tensor", kernel_size: "int" = 2) -> "torch.Tensor":
-    """AvgPool2D.
+    """Pool moyen.
     
     Args:
         in_1: Input tensor.

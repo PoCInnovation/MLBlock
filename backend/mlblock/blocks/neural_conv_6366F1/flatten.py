@@ -3,7 +3,7 @@ from torch import nn
 
 
 def flatten(in_1: "torch.Tensor") -> "torch.Tensor":
-    """Flatten.
+    """Aplatissement.
     
     Args:
         in_1: Input tensor.

@@ -3,7 +3,7 @@ _early_stopping_counter = 0
 
 
 def early_stopping(in_1: "float", patience: "int" = 10) -> "bool":
-    """Early stopping.
+    """Arrêt précoce.
     
     Args:
         in_1: Current loss value.

@@ -42,6 +42,16 @@ const segmentsStyle: React.CSSProperties = {
   fontSize: 12,
 }
 
+const outputStyle: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 2,
+  marginTop: 8,
+  fontSize: 11,
+  fontWeight: 700,
+  color: theme.color.textMuted,
+}
+
 type BlockNodeData = {
   type: string
   label: string
@@ -93,6 +103,13 @@ function BlockNode({ data, id }: NodeProps<BlockNodeData>) {
       <div style={segmentsStyle}>
         <BlockSegments segs={data.segs} fields={data.fields} blockId={id} onUpdate={updateFlowParam} columnOptions={columnOptions} />
       </div>
+      {data.outputs.length > 0 && (
+        <div style={outputStyle}>
+          {data.outputs.map(p => (
+            <div key={p.name}>{p.name} · {p.dtype}</div>
+          ))}
+        </div>
+      )}
       {data.outputs.map((p, i, arr) => (
         <Handle
           key={p.name}

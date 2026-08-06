@@ -125,11 +125,11 @@ export default function FlowPalette({ onDragStart }: FlowPaletteProps) {
   return (
     <div style={paletteStyle}>
       <div style={headerStyle}>
-        Blocks
+        Blocs
         <input
           value={query}
           onChange={e => setQuery(e.target.value)}
-          placeholder="Rechercher un block…"
+          placeholder="Rechercher un bloc…"
           style={searchInputStyle}
         />
         <div style={chipsStyle}>
@@ -165,7 +165,7 @@ export default function FlowPalette({ onDragStart }: FlowPaletteProps) {
           )
         })}
         {Object.keys(catalog.blocks).filter(matches).length === 0 && (
-          <div style={emptyStyle}>Aucun block trouvé</div>
+          <div style={emptyStyle}>Aucun bloc trouvé</div>
         )}
       </div>
     </div>

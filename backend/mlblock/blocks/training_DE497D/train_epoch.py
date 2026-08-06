@@ -4,7 +4,7 @@ import torch
 
 
 def train_epoch(in_1: "torch.nn.Module", in_2: "torch.utils.data.DataLoader", in_3: "torch.optim.Optimizer", in_4: "torch.nn.Module", device: Literal["cpu", "cuda", "mps"] = "cpu") -> "float":
-    """Train for one epoch.
+    """Entraîner une époque.
     
     Args:
         in_1: Model.

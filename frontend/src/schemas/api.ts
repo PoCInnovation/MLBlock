@@ -11,6 +11,7 @@ const paramSchema = z.object({
   step: z.number().nullable().optional(),
   odd: z.boolean().nullable().optional(),
   choices: z.array(z.string()).nullable().optional(),
+  suggestions: z.array(z.string()).nullable().optional(),
   format: z.string().nullable().optional(),
   len: z.number().nullable().optional(),
 })

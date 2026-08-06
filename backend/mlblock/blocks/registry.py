@@ -56,6 +56,10 @@ def _extract_param_desc(doc: str | None, pname: str) -> tuple[str, dict[str, Any
             choices = [c.strip() for c in group[len("choix:"):].strip().split("|")]
             if choices:
                 parsed = {"choices": choices}
+        elif group.startswith("suggestions:"):
+            sug = [c.strip() for c in group[len("suggestions:"):].strip().split("|")]
+            if sug:
+                parsed = {"suggestions": sug}
         elif group.startswith("format:"):
             parsed = {"format": group[len("format:"):].strip()}
         elif group.startswith("longueur:"):

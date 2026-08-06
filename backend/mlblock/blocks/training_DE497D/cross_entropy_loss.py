@@ -1,6 +1,3 @@
-import torch
-
-
 def cross_entropy_loss() -> "torch.nn.CrossEntropyLoss":
-    """Cross-entropy loss."""
+    """Perte d'entropie croisée."""
     return torch.nn.CrossEntropyLoss()

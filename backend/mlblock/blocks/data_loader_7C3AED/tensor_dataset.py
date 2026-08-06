@@ -2,7 +2,7 @@ import torch
 
 
 def tensor_dataset(in_1: "torch.Tensor", in_2: "torch.Tensor") -> "torch.utils.data.TensorDataset":
-    """Tensor dataset.
+    """Dataset tensoriel.
     
     Args:
         in_1: Features tensor.

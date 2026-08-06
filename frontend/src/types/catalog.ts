@@ -1,10 +1,10 @@
 // Internal rendering types — used by components unchanged
 export type TextSeg = { t: 'text'; v: string }
 export type BoolSeg = { t: 'bool'; k: string; def: string; desc?: string }
-export type NumSeg = { t: 'num'; k: string; def: string; w?: number; min?: number; max?: number; step?: number; odd?: boolean; desc?: string }
+export type NumSeg = { t: 'num'; k: string; def: string; w?: number; min?: number; max?: number; step?: number; odd?: boolean; opts?: string[]; desc?: string }
 export type SelSeg = { t: 'sel'; k: string; def: string; opts: string[]; desc?: string }
 export type SugSeg = { t: 'sug'; k: string; def: string; opts: string[]; desc?: string }
-export type ListSeg = { t: 'list'; k: string; def: string; format?: string; len?: number; desc?: string }
+export type ListSeg = { t: 'list'; k: string; def: string; format?: string; len?: number; opts?: string[]; desc?: string }
 export type FileSeg = { t: 'file'; k: string; def: string; desc?: string }
 export type Segment = TextSeg | BoolSeg | NumSeg | SelSeg | SugSeg | ListSeg | FileSeg
 

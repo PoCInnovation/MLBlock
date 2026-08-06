@@ -3,7 +3,7 @@ from torch import nn
 
 
 def adaptive_maxpool2d(in_1: "torch.Tensor", output_size: "int" = 1) -> "torch.Tensor":
-    """AdaptiveMaxPool2D.
+    """Pool max adaptatif.
     
     Args:
         in_1: Input tensor.

@@ -3,7 +3,7 @@ from torch import nn
 
 
 def adaptive_avgpool2d(in_1: "torch.Tensor", output_size: "int" = 1) -> "torch.Tensor":
-    """AdaptiveAvgPool2D.
+    """Pool moyen adaptatif.
     
     Args:
         in_1: Input tensor.

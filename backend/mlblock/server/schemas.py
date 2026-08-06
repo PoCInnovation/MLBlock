@@ -17,6 +17,7 @@ class ParamInfo(BaseModel):
     step: float | None = None
     odd: bool | None = None
     choices: list[str] | None = None
+    suggestions: list[str] | None = None
     format: str | None = None
     len: int | None = None
 

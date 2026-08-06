@@ -5,11 +5,11 @@ from torch import nn
 
 
 def upsample(in_1: "torch.Tensor", scale_factor: "int" = None, mode: Literal["nearest", "bilinear", "bicubic", "trilinear"] = 'nearest') -> "torch.Tensor":
-    """Upsample.
+    """Sur-échantillonnage.
     
     Args:
         in_1: Input tensor.
-        scale_factor: Facteur d'échelle. (entre: 1-8)
+        scale_factor: Facteur d'échelle. (entre: 1-8) (suggestions: 2|3|4)
         mode: Parameter.
     """
     return nn.Upsample(scale_factor=scale_factor, mode=mode)(in_1)

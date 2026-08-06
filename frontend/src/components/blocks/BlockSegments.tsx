@@ -16,6 +16,9 @@ const selectBase: React.CSSProperties = {
 const fieldPill: React.CSSProperties = {
   background: 'rgba(255,255,255,.85)', padding: '2px 8px', borderRadius: theme.radius.sm, fontWeight: 800,
 }
+const labelStyle: React.CSSProperties = {
+  fontSize: 11, fontWeight: 700, opacity: 0.85, whiteSpace: 'nowrap',
+}
 const fileCard: React.CSSProperties = {
   display: 'inline-flex', alignItems: 'center', gap: 6,
   background: 'rgba(99,102,241,.15)', borderRadius: 8,
@@ -129,7 +132,8 @@ export default function BlockSegments({ segs, fields, blockId, onUpdate, columnO
       const opts = cols ?? (s.t === 'sug' ? s.opts : [])
       const dlId = `mlb-dl-${blockId}-${s.k}`
       return (
-        <span key={i}>
+        <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+          <span style={labelStyle}>{s.k}:</span>
           <input
             list={dlId}
             type="text"
@@ -145,28 +149,32 @@ export default function BlockSegments({ segs, fields, blockId, onUpdate, columnO
     }
 
     if (s.t === 'sel') return (
-      <select
-        key={i}
-        value={value}
-        onChange={e => onUpdate(blockId!, s.k, e.target.value)}
-        style={selectBase}
-        title={s.desc}
-      >
-        {s.opts.map(o => <option key={o} value={o}>{o}</option>)}
-      </select>
+      <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+        <span style={labelStyle}>{s.k}:</span>
+        <select
+          value={value}
+          onChange={e => onUpdate(blockId!, s.k, e.target.value)}
+          style={selectBase}
+          title={s.desc}
+        >
+          {s.opts.map(o => <option key={o} value={o}>{o}</option>)}
+        </select>
+      </span>
     )
 
     if (s.t === 'bool') {
       const checked = value === 'true'
       return (
-        <input
-          key={i}
-          type="checkbox"
-          checked={checked}
-          onChange={e => onUpdate(blockId!, s.k, e.target.checked ? 'true' : 'false')}
-          title={s.desc}
-          style={{ cursor: 'pointer', accentColor: '#2a211c' }}
-        />
+        <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+          <span style={labelStyle}>{s.k}:</span>
+          <input
+            type="checkbox"
+            checked={checked}
+            onChange={e => onUpdate(blockId!, s.k, e.target.checked ? 'true' : 'false')}
+            title={s.desc}
+            style={{ cursor: 'pointer', accentColor: '#2a211c' }}
+          />
+        </span>
       )
     }
 
@@ -174,34 +182,63 @@ export default function BlockSegments({ segs, fields, blockId, onUpdate, columnO
       const v = validateSeg(s, value)
       const placeholder = s.min != null && s.max != null ? `entre ${s.min} et ${s.max}` : undefined
       const isNumeric = s.min != null || s.max != null || s.step != null
+      // datalist incompatible avec type=number → text quand suggestions
+      const useText = !!s.opts && s.opts.length > 0
+      if (useText) {
+        const dlId = `mlb-dl-${blockId}-${s.k}`
+        return (
+          <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            <span style={labelStyle}>{s.k}:</span>
+            <input
+              list={dlId}
+              type="text"
+              value={value}
+              onChange={e => onUpdate(blockId!, s.k, e.target.value)}
+              style={{ ...inputBase, width: (s.w || 60) + 'px', ...validBorder(v, value.trim() !== '') }}
+              title={v.msg ?? s.desc}
+              placeholder={placeholder}
+            />
+            <datalist id={dlId}>{s.opts!.map(o => <option key={o} value={o} />)}</datalist>
+          </span>
+        )
+      }
       return (
-        <input
-          key={i}
-          type={isNumeric ? 'number' : 'text'}
-          value={value}
-          onChange={e => onUpdate(blockId!, s.k, e.target.value)}
-          style={{ ...inputBase, width: (s.w || (isNumeric ? 60 : 90)) + 'px', ...validBorder(v, value.trim() !== '') }}
-          title={v.msg ?? s.desc}
-          placeholder={placeholder}
-          min={s.min}
-          max={s.max}
-          step={s.step}
-        />
+        <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+          <span style={labelStyle}>{s.k}:</span>
+          <input
+            type={isNumeric ? 'number' : 'text'}
+            value={value}
+            onChange={e => onUpdate(blockId!, s.k, e.target.value)}
+            style={{ ...inputBase, width: (s.w || (isNumeric ? 60 : 90)) + 'px', ...validBorder(v, value.trim() !== '') }}
+            title={v.msg ?? s.desc}
+            placeholder={placeholder}
+            min={s.min}
+            max={s.max}
+            step={s.step}
+          />
+        </span>
       )
     }
 
     if (s.t === 'list') {
       const v = validateSeg(s, value)
+      const dlId = `mlb-dl-${blockId}-${s.k}`
       return (
-        <input
-          key={i}
-          type="text"
-          value={value}
-          onChange={e => onUpdate(blockId!, s.k, e.target.value)}
-          style={{ ...inputBase, width: 110, ...validBorder(v, value.trim() !== '') }}
-          title={v.msg ?? s.desc}
-          placeholder={s.format ?? '[1, 2, 3]'}
-        />
+        <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+          <span style={labelStyle}>{s.k}:</span>
+          <input
+            list={s.opts && s.opts.length > 0 ? dlId : undefined}
+            type="text"
+            value={value}
+            onChange={e => onUpdate(blockId!, s.k, e.target.value)}
+            style={{ ...inputBase, width: 110, ...validBorder(v, value.trim() !== '') }}
+            title={v.msg ?? s.desc}
+            placeholder={s.format ?? '[1, 2, 3]'}
+          />
+          {s.opts && s.opts.length > 0 && (
+            <datalist id={dlId}>{s.opts.map(o => <option key={o} value={o} />)}</datalist>
+          )}
+        </span>
       )
     }
 

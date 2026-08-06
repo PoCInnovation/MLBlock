@@ -2,7 +2,7 @@ import torch
 
 
 def step_lr(in_1: "torch.optim.Optimizer", step_size: "int" = 30, gamma: "float" = 0.1) -> "torch.optim.lr_scheduler.StepLR":
-    """Step LR scheduler.
+    """Taux d'apprentissage par paliers.
     
     Args:
         in_1: Optimizer.

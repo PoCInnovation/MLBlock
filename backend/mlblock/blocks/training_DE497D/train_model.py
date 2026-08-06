@@ -4,14 +4,14 @@ import torch
 
 
 def train_model(in_1: "torch.nn.Module", in_2: "torch.utils.data.DataLoader", in_3: "torch.optim.Optimizer", in_4: "torch.nn.Module", epochs: "int" = 5, device: Literal["cpu", "cuda", "mps"] = "cpu") -> "dict":
-    """Train model.
+    """Entraîner le modèle.
     
     Args:
         in_1: Model.
         in_2: Dataloader.
         in_3: Optimizer.
         in_4: Loss function.
-        epochs: Number of epochs.
+        epochs: Number of epochs. (suggestions: 5|10|20|50)
         device: Device to train on.
     """
     in_1.to(device)
