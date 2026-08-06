@@ -8,7 +8,18 @@ Le backend Render (`mlblock-backend`, plan free) s'endort après **15 minutes sa
 
 - `GET /health` → `200 {"status": "ok"}` — aucune requête DB, coût négligeable (cible des sondes uniquement).
 
-## Setup UptimeRobot (gratuit)
+## Setup du keep-alive
+
+Le mécanisme ne fonctionne que si **un pinger tourne réellement** — l'endpoint seul ne maintient rien.
+
+### Option 1 (recommandée, code-only) — GitHub Actions cron
+
+Le repo embarque `.github/workflows/keep-alive.yml` : un job planifié qui curl `/health` toutes les 10 min. Aucun compte externe, minutes illimitées (repo public). Il s'active dès qu'il est sur la branche par défaut.
+
+- Vérifier l'exécution : onglet **Actions** du repo → workflow `keep-alive` → runs toutes les 10 min
+- Caveat GitHub : les crons sont désactivés si le repo est inactif 60 jours (notre cas : actif)
+
+### Option 2 — UptimeRobot (compte externe)
 
 1. Créer un compte sur [uptimerobot.com](https://uptimerobot.com) (plan gratuit : 50 monitors).
 2. **Add New Monitor** :

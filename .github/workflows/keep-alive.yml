@@ -1,0 +1,14 @@
+name: keep-alive
+
+on:
+  schedule:
+    # Toutes les 10 min (< fenêtre de spin-down Render de 15 min)
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Réveiller le backend Render
+        run: curl -fsS --max-time 120 https://mlblock-backend.onrender.com/health
