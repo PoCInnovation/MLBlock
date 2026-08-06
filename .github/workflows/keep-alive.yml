@@ -2,8 +2,9 @@ name: keep-alive
 
 on:
   schedule:
-    # Toutes les 10 min (< fenêtre de spin-down Render de 15 min)
-    - cron: '*/10 * * * *'
+    # Toutes les 5 min — le scheduler GitHub peut retarder les crons (jitter
+    # observé jusqu'à 45 min), 5 min laisse de la marge sous la fenêtre de 15 min
+    - cron: '*/5 * * * *'
   workflow_dispatch:
 
 jobs:
