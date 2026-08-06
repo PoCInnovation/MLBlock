@@ -8,7 +8,7 @@ def decision_tree(in_1: "pd.DataFrame", target_column: "str", task: Literal["cla
         in_1: Training data.
         target_column: Target column name.
         task: Task type.
-        max_depth: Maximum depth.
+        max_depth: Profondeur max. (entre: 1-100)
     """
     from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
     X = in_1.drop(columns=[target_column])

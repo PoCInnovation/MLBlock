@@ -7,6 +7,6 @@ def dropout(in_1: "torch.Tensor", p: "float" = 0.5) -> "torch.Tensor":
     
     Args:
         in_1: Input tensor.
-        p: Parameter.
+        p: Probabilité de dropout. (entre: 0-1, pas: 0.05)
     """
     return nn.Dropout(p=p)(in_1)

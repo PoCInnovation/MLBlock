@@ -1,8 +1,9 @@
-import { memo } from 'react'
+import { memo, useEffect, useState } from 'react'
 import { Handle, Position, type NodeProps } from 'reactflow'
 import useAppStore from '../../store/useAppStore'
 import BlockSegments from '../blocks/BlockSegments'
 import { theme } from '../../theme'
+import { resolveColumnsForPath, resolveFlowSourcePath } from '../../utils/columns'
 import type { Port, Segment } from '../../types/catalog'
 
 const nodeStyle: React.CSSProperties = {
@@ -59,6 +60,23 @@ function topFor(i: number, n: number): string {
 
 function BlockNode({ data, id }: NodeProps<BlockNodeData>) {
   const updateFlowParam = useAppStore(s => s.updateFlowParam)
+  const flowNodes = useAppStore(s => s.flowNodes)
+  const flowEdges = useAppStore(s => s.flowEdges)
+  const [columnOptions, setColumnOptions] = useState<Record<string, string[]>>({})
+
+  useEffect(() => {
+    setColumnOptions({})
+    const hasTarget = data.segs.some(s => 'k' in s && s.k === 'target_column')
+    if (!hasTarget) return
+    const path = resolveFlowSourcePath(flowNodes, flowEdges, id)
+    if (!path) return
+    let cancelled = false
+    resolveColumnsForPath(path).then(cols => {
+      if (cols && !cancelled) setColumnOptions({ target_column: cols })
+    })
+    return () => { cancelled = true }
+  }, [id, data.segs, flowNodes, flowEdges])
+
   return (
     <div style={{ ...nodeStyle, borderTop: `3px solid ${data.categoryColor}` }}>
       {data.inputs.map((p, i, arr) => (
@@ -73,7 +91,7 @@ function BlockNode({ data, id }: NodeProps<BlockNodeData>) {
       ))}
       <div style={labelStyle}>{data.label}</div>
       <div style={segmentsStyle}>
-        <BlockSegments segs={data.segs} fields={data.fields} blockId={id} onUpdate={updateFlowParam} />
+        <BlockSegments segs={data.segs} fields={data.fields} blockId={id} onUpdate={updateFlowParam} columnOptions={columnOptions} />
       </div>
       {data.outputs.map((p, i, arr) => (
         <Handle

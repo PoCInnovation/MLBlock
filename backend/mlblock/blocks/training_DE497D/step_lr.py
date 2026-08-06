@@ -6,7 +6,7 @@ def step_lr(in_1: "torch.optim.Optimizer", step_size: "int" = 30, gamma: "float"
     
     Args:
         in_1: Optimizer.
-        step_size: Period of learning rate decay.
-        gamma: Multiplicative factor of learning rate decay.
+        step_size: Période. (entre: 1-1000)
+        gamma: Facteur de décroissance. (entre: 0-1)
     """
     return torch.optim.lr_scheduler.StepLR(in_1, step_size=step_size, gamma=gamma)

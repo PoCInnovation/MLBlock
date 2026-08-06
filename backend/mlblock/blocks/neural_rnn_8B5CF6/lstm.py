@@ -12,7 +12,7 @@ def lstm(in_1: "torch.Tensor", input_size: "int", hidden_size: "int", num_layers
         num_layers: Parameter.
         bias: Parameter.
         batch_first: Parameter.
-        dropout: Parameter.
+        dropout: Probabilité de dropout. (entre: 0-1)
         bidirectional: Parameter.
     """
     return nn.Lstm(input_size=input_size, hidden_size=hidden_size, num_layers=num_layers, bias=bias, batch_first=batch_first, dropout=dropout, bidirectional=bidirectional)(in_1)

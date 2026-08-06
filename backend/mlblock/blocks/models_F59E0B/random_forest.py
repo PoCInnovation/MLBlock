@@ -4,8 +4,8 @@ def random_forest(train_data: "pd.DataFrame", target_column: "str", n_estimators
     Args:
         train_data: Données d'entraînement.
         target_column: Colonne cible.
-        n_estimators: Nombre d'arbres.
-        max_depth: Profondeur maximale.
+        n_estimators: Nombre d'arbres. (entre: 10-1000)
+        max_depth: Profondeur max. (entre: 1-100)
     """
     from sklearn.ensemble import RandomForestClassifier
     X = train_data.drop(columns=[target_column])

@@ -7,10 +7,10 @@ def conv2d(in_1: "torch.Tensor", in_channels: "int", out_channels: "int", kernel
     
     Args:
         in_1: Input tensor.
-        in_channels: Parameter.
-        out_channels: Parameter.
-        kernel_size: Parameter.
-        stride: Parameter.
-        padding: Parameter.
+        in_channels: Canaux d'entrée. (entre: 1-4096)
+        out_channels: Canaux de sortie. (entre: 1-4096)
+        kernel_size: Taille du filtre. (impair)
+        stride: Pas. (entre: 1-8)
+        padding: Padding. (entre: 0-8)
     """
     return nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel_size, stride=stride, padding=padding)(in_1)

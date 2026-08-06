@@ -9,7 +9,7 @@ def svm(in_1: "pd.DataFrame", target_column: "str", task: Literal["classificatio
         target_column: Target column name.
         task: Task type.
         kernel: Kernel type.
-        C: Regularization parameter.
+        C: Régularisation. (entre: 0.001-100)
     """
     from sklearn.svm import SVC, SVR
     X = in_1.drop(columns=[target_column])

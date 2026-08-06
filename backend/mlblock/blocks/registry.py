@@ -22,14 +22,51 @@ def _name(obj: Any) -> str:
     return str(obj)
 
 
-def _extract_param_desc(doc: str | None, pname: str) -> str | None:
+def _extract_param_desc(doc: str | None, pname: str) -> tuple[str, dict[str, Any]]:
+    """Description + structured FR suffix from a param docstring line.
+
+    Suffixes: (entre: 0-1, pas: 0.05) (impair) (choix: a|b)
+              (format: [C,H,W]) (longueur: 3)
+    Unknown/malformed suffixes are ignored (never block discovery).
+    """
     if not doc:
-        return None
+        return "", {}
     pattern = rf"(?:param\s+{pname}\s*:\s*|{pname}\s*:\s*)([^\n]+)"
     m = re.search(pattern, doc, re.IGNORECASE)
-    if m:
-        return m.group(1).strip()
-    return None
+    if not m:
+        return "", {}
+    line = m.group(1).strip()
+    meta: dict[str, Any] = {}
+    while True:
+        mm = re.search(r"\(([^()]*)\)\s*\.?\s*$", line)
+        if not mm:
+            break
+        group = mm.group(1).strip()
+        parsed: dict[str, Any] | None = None
+        if group.startswith("entre:"):
+            body = group[len("entre:"):].strip()
+            m2 = re.match(r"(-?[\d.]+)\s*[—-]\s*(-?[\d.]+)(?:,\s*pas:\s*(-?[\d.]+))?", body)
+            if m2:
+                parsed = {"min": float(m2.group(1)), "max": float(m2.group(2))}
+                if m2.group(3):
+                    parsed["step"] = float(m2.group(3))
+        elif group == "impair":
+            parsed = {"odd": True}
+        elif group.startswith("choix:"):
+            choices = [c.strip() for c in group[len("choix:"):].strip().split("|")]
+            if choices:
+                parsed = {"choices": choices}
+        elif group.startswith("format:"):
+            parsed = {"format": group[len("format:"):].strip()}
+        elif group.startswith("longueur:"):
+            v = group[len("longueur:"):].strip()
+            if v.isdigit():
+                parsed = {"len": int(v)}
+        if parsed is None:
+            break  # not a meta suffix — keep the rest of the line as description
+        meta.update(parsed)
+        line = line[: mm.start()].rstrip()
+    return line, meta
 
 
 def _parse_return_annotation(ret: Any) -> list[dict[str, str]]:
@@ -122,10 +159,13 @@ def _inspect_function(name: str, fn: Callable, category: Any) -> Any:
         # Data ports: in_<N> prefix or data-flow type (hyperparams stay params)
         if re.match(r"^in_\d+$", pname) or _is_data_port_type(port_dtype):
             inputs.append({"name": pname, "dtype": port_dtype})
-        pdesc = _extract_param_desc(fn.__doc__, pname) or ""
+        pdesc, pmeta = _extract_param_desc(fn.__doc__, pname)
         pdefault = None if p.default == inspect.Parameter.empty else p.default
         prequired = p.default == inspect.Parameter.empty
-        params[pname] = ParamInfo(type=ptype, description=pdesc, default=pdefault, required=prequired, options=options)
+        params[pname] = ParamInfo(
+            type=ptype, description=pdesc, default=pdefault,
+            required=prequired, options=options, **pmeta,
+        )
     outputs = _parse_return_annotation(sig.return_annotation)
     return Block(
         name=name,

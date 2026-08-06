@@ -37,6 +37,7 @@ catalog_router = APIRouter(prefix="/api/catalog")
 pipelines_router = APIRouter(prefix="/api/pipelines")
 validation_router = APIRouter(prefix="/api/validate")
 jobs_router = APIRouter(prefix="/api/jobs")
+files_router = APIRouter(prefix="/api/files")
 
 SUPABASE_STORAGE_URL = re.compile(r"^https://[^/]+/storage/v1/object/(?:public|authenticated)/([^/]+)/(.+)$")
 
@@ -98,6 +99,36 @@ def get_catalog() -> dict:
             "outputs": block.outputs,
         })
     return {"categories": list(categories.values())}
+
+
+# ── Files ───────────────────────────────────────────────────────────
+
+@files_router.get("/columns")
+def get_file_columns(url: str) -> dict:
+    """Column names of a stored CSV (header line)."""
+    import csv
+    import io
+
+    m = SUPABASE_STORAGE_URL.match(url)
+    if not m:
+        raise HTTPException(400, detail="URL de fichier invalide")
+    bucket, path = m.group(1), m.group(2)
+    secret = os.environ.get("SUPABASE_SECRET_KEY", "")
+    project = os.environ.get("SUPABASE_URL", "").replace("https://", "").split(".")[0]
+    if not secret or not project:
+        raise HTTPException(400, detail="Stockage non configuré")
+    try:
+        r = requests.get(
+            f"https://{project}.supabase.co/storage/v1/object/{bucket}/{path}",
+            headers={"apikey": secret, "Authorization": f"Bearer {secret}"},
+            timeout=10,
+        )
+        r.raise_for_status()
+    except Exception:
+        raise HTTPException(404, detail="Fichier introuvable")
+    first_line = r.text.splitlines()[0] if r.text.strip() else ""
+    columns = next(csv.reader(io.StringIO(first_line)), [])
+    return {"columns": [c.strip() for c in columns if c.strip()]}
 
 
 # ── Pipelines ───────────────────────────────────────────────────────

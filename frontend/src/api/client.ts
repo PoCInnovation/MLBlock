@@ -33,11 +33,30 @@ function toSegments(key: string, raw: unknown): Segment {
     const p = raw as Record<string, unknown>
     const def = String(p.default ?? '')
     const typ = String(p.type ?? '')
-    if (typ === 'file') return { t: 'file', k: key, def }
+    const desc = p.description ? String(p.description) : undefined
+    if (typ === 'file') return { t: 'file', k: key, def, desc }
     if (Array.isArray(p.options) && p.options.length > 0) {
-      return { t: 'sel', k: key, def, opts: p.options.map(String) }
+      return { t: 'sel', k: key, def, opts: p.options.map(String), desc }
     }
-    return { t: 'num', k: key, def }
+    if (Array.isArray(p.choices) && p.choices.length > 0) {
+      return { t: 'sug', k: key, def, opts: p.choices.map(String), desc }
+    }
+    if (typ.startsWith('list')) {
+      return {
+        t: 'list', k: key, def,
+        format: p.format ? String(p.format) : undefined,
+        len: typeof p.len === 'number' ? p.len : undefined,
+        desc,
+      }
+    }
+    return {
+      t: 'num', k: key, def,
+      min: typeof p.min === 'number' ? p.min : undefined,
+      max: typeof p.max === 'number' ? p.max : undefined,
+      step: typeof p.step === 'number' ? p.step : undefined,
+      odd: p.odd === true ? true : undefined,
+      desc,
+    }
   }
   return { t: 'num', k: key, def: '' }
 }
@@ -96,4 +115,20 @@ export async function buildPipeline(id: number): Promise<BuildResponse> {
 export async function generatePipelineCode(id: number): Promise<GenerateResponse> {
   const { data } = await http.post<GenerateResponse>(`/api/pipelines/${id}/generate`)
   return data
+}
+
+const columnsCache = new Map<string, string[] | null>()
+
+/** Column names of a stored CSV (cached per URL). Null = unknown/unresolvable. */
+export async function fetchFileColumns(url: string): Promise<string[] | null> {
+  if (columnsCache.has(url)) return columnsCache.get(url) ?? null
+  try {
+    const { data } = await http.get<{ columns: string[] }>('/api/files/columns', { params: { url } })
+    const columns = Array.isArray(data?.columns) ? data.columns : []
+    columnsCache.set(url, columns)
+    return columns
+  } catch {
+    columnsCache.set(url, null)
+    return null
+  }
 }

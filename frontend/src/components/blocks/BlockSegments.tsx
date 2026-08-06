@@ -48,14 +48,46 @@ function fmtSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`
 }
 
+/** Live validation of a segment value against its metadata. */
+function validateSeg(seg: Segment, value: string): { ok: boolean; msg?: string } {
+  if (seg.t === 'num') {
+    if (value.trim() === '') return { ok: true }
+    const n = Number(value)
+    if (Number.isNaN(n)) return { ok: false, msg: 'Valeur numérique attendue' }
+    if (seg.min != null && n < seg.min) return { ok: false, msg: `Doit être ≥ ${seg.min}` }
+    if (seg.max != null && n > seg.max) return { ok: false, msg: `Doit être ≤ ${seg.max}` }
+    if (seg.odd && n % 2 === 0) return { ok: false, msg: 'Doit être impair' }
+    return { ok: true }
+  }
+  if (seg.t === 'list') {
+    if (value.trim() === '') return { ok: true }
+    try {
+      const arr = JSON.parse(value)
+      if (!Array.isArray(arr)) return { ok: false, msg: 'Format attendu : [1, 2, 3]' }
+      if (seg.len != null && arr.length !== seg.len) return { ok: false, msg: `${arr.length}/${seg.len} éléments` }
+      return { ok: true }
+    } catch {
+      return { ok: false, msg: 'Format attendu : [1, 2, 3]' }
+    }
+  }
+  return { ok: true }
+}
+
+function validBorder(v: { ok: boolean; msg?: string }, filled: boolean): React.CSSProperties {
+  if (!filled) return {}
+  return { border: `1.5px solid ${v.ok ? theme.color.success : theme.color.error}`, boxShadow: 'none' }
+}
+
 type BlockSegmentsProps = {
   segs: Segment[]
   fields?: Record<string, string>
   blockId?: string
   onUpdate?: (id: string, k: string, v: string) => void
+  /** Autocomplete options per param key (e.g. target_column from the source CSV). */
+  columnOptions?: Record<string, string[]>
 }
 
-export default function BlockSegments({ segs, fields, blockId, onUpdate }: BlockSegmentsProps): React.ReactNode {
+export default function BlockSegments({ segs, fields, blockId, onUpdate, columnOptions }: BlockSegmentsProps): React.ReactNode {
   const [uploadState, setUploadState] = useState<Record<string, 'uploading' | 'error'>>({})
   const [fileMetaState, setFileMetaState] = useState<Record<string, { name: string; size: number }>>({})
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({})
@@ -86,25 +118,77 @@ export default function BlockSegments({ segs, fields, blockId, onUpdate }: Block
   return segs.map((s, i) => {
     if (s.t === 'text') return <span key={i}>{s.v}</span>
     if (!onUpdate) return <span key={i} style={fieldPill}>{s.def}</span>
-    if (s.t === 'num') return (
-      <input
-        key={i}
-        type="text"
-        value={fields![s.k]}
-        onChange={e => onUpdate(blockId!, s.k, e.target.value)}
-        style={{ ...inputBase, width: (s.w || 44) + 'px' }}
-      />
-    )
+
+    const value = fields![s.k]
+    const cols = columnOptions?.[s.k]
+
+    // Suggestions (datalist) pour un champ libre — choices docstring ou colonnes CSV
+    if (cols || s.t === 'sug') {
+      const opts = cols ?? (s.t === 'sug' ? s.opts : [])
+      const dlId = `mlb-dl-${blockId}-${s.k}`
+      return (
+        <span key={i}>
+          <input
+            list={dlId}
+            type="text"
+            value={value}
+            onChange={e => onUpdate(blockId!, s.k, e.target.value)}
+            style={{ ...inputBase, width: 110 }}
+            title={s.desc}
+            placeholder={cols ? 'colonne…' : undefined}
+          />
+          <datalist id={dlId}>{opts.map(o => <option key={o} value={o} />)}</datalist>
+        </span>
+      )
+    }
+
     if (s.t === 'sel') return (
       <select
         key={i}
-        value={fields![s.k]}
+        value={value}
         onChange={e => onUpdate(blockId!, s.k, e.target.value)}
         style={selectBase}
+        title={s.desc}
       >
         {s.opts.map(o => <option key={o} value={o}>{o}</option>)}
       </select>
     )
+
+    if (s.t === 'num') {
+      const v = validateSeg(s, value)
+      const placeholder = s.min != null && s.max != null ? `entre ${s.min} et ${s.max}` : undefined
+      const isNumeric = s.min != null || s.max != null || s.step != null
+      return (
+        <input
+          key={i}
+          type={isNumeric ? 'number' : 'text'}
+          value={value}
+          onChange={e => onUpdate(blockId!, s.k, e.target.value)}
+          style={{ ...inputBase, width: (s.w || (isNumeric ? 60 : 90)) + 'px', ...validBorder(v, value.trim() !== '') }}
+          title={v.msg ?? s.desc}
+          placeholder={placeholder}
+          min={s.min}
+          max={s.max}
+          step={s.step}
+        />
+      )
+    }
+
+    if (s.t === 'list') {
+      const v = validateSeg(s, value)
+      return (
+        <input
+          key={i}
+          type="text"
+          value={value}
+          onChange={e => onUpdate(blockId!, s.k, e.target.value)}
+          style={{ ...inputBase, width: 110, ...validBorder(v, value.trim() !== '') }}
+          title={v.msg ?? s.desc}
+          placeholder={s.format ?? '[1, 2, 3]'}
+        />
+      )
+    }
+
     if (s.t === 'file') {
       const state = uploadState[s.k]
       const meta = fileMetaState[s.k]
@@ -139,7 +223,7 @@ export default function BlockSegments({ segs, fields, blockId, onUpdate }: Block
       return (
         <span key={i}>
           <input ref={el => { inputRefs.current[s.k] = el }} type="file" accept=".csv" style={{ display: 'none' }} onChange={e => handleFile(s.k, e)} />
-          <span onClick={() => inputRefs.current[s.k]?.click()} style={fileBtn}>
+          <span onClick={() => inputRefs.current[s.k]?.click()} style={fileBtn} title={s.desc}>
             📁 CSV
           </span>
         </span>

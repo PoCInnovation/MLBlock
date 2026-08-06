@@ -6,6 +6,13 @@ const paramSchema = z.object({
   default: z.unknown().optional(),
   required: z.boolean().optional(),
   options: z.array(z.string()).nullable().optional(),
+  min: z.number().nullable().optional(),
+  max: z.number().nullable().optional(),
+  step: z.number().nullable().optional(),
+  odd: z.boolean().nullable().optional(),
+  choices: z.array(z.string()).nullable().optional(),
+  format: z.string().nullable().optional(),
+  len: z.number().nullable().optional(),
 })
 
 const blockSchema = z.object({

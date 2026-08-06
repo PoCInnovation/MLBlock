@@ -8,7 +8,7 @@ def knn(in_1: "pd.DataFrame", target_column: "str", task: Literal["classificatio
         in_1: Training data.
         target_column: Target column name.
         task: Task type.
-        n_neighbors: Number of neighbors.
+        n_neighbors: Nombre de voisins. (entre: 1-100)
     """
     from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
     X = in_1.drop(columns=[target_column])

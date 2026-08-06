@@ -4,7 +4,7 @@ def logistic_regression(train_data: "pd.DataFrame", target_column: "str", max_it
     Args:
         train_data: Données d'entraînement.
         target_column: Colonne cible.
-        max_iter: Nombre maximal d'itérations.
+        max_iter: Itérations. (entre: 100-10000)
     """
     from sklearn.linear_model import LogisticRegression
     X = train_data.drop(columns=[target_column])

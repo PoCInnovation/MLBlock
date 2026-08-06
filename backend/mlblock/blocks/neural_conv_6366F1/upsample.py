@@ -9,7 +9,7 @@ def upsample(in_1: "torch.Tensor", scale_factor: "int" = None, mode: Literal["ne
     
     Args:
         in_1: Input tensor.
-        scale_factor: Parameter.
+        scale_factor: Facteur d'échelle. (entre: 1-8)
         mode: Parameter.
     """
     return nn.Upsample(scale_factor=scale_factor, mode=mode)(in_1)

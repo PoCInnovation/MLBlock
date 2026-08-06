@@ -7,8 +7,8 @@ def embedding(in_1: "torch.Tensor", num_embeddings: "int", embedding_dim: "int",
     
     Args:
         in_1: Input tensor.
-        num_embeddings: Parameter.
-        embedding_dim: Parameter.
+        num_embeddings: Taille du vocabulaire. (entre: 1-100000)
+        embedding_dim: Dimension. (entre: 1-1024)
         padding_idx: Parameter.
     """
     return nn.Embedding(num_embeddings=num_embeddings, embedding_dim=embedding_dim, padding_idx=padding_idx)(in_1)

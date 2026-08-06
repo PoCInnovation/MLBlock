@@ -15,7 +15,7 @@ def rnn(in_1: "torch.Tensor", input_size: "int", hidden_size: "int", num_layers:
         nonlinearity: Parameter.
         bias: Parameter.
         batch_first: Parameter.
-        dropout: Parameter.
+        dropout: Probabilité de dropout. (entre: 0-1)
         bidirectional: Parameter.
     """
     return nn.Rnn(input_size=input_size, hidden_size=hidden_size, num_layers=num_layers, nonlinearity=nonlinearity, bias=bias, batch_first=batch_first, dropout=dropout, bidirectional=bidirectional)(in_1)

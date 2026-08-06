@@ -7,9 +7,9 @@ def multihead_attention(in_1: "torch.Tensor", embed_dim: "int", num_heads: "int"
     
     Args:
         in_1: Input tensor.
-        embed_dim: Parameter.
-        num_heads: Parameter.
-        dropout: Parameter.
+        embed_dim: Dimension d'embedding. (entre: 1-1024)
+        num_heads: Nombre de têtes. (entre: 1-64)
+        dropout: Probabilité. (entre: 0-1)
         bias: Parameter.
         batch_first: Parameter.
     """

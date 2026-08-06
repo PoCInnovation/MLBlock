@@ -3,7 +3,7 @@ def train_test_split(dataset: "pd.DataFrame", ratio: "float" = 0.8, shuffle: "bo
 
     Args:
         dataset: DataFrame à séparer.
-        ratio: Proportion d'entraînement.
+        ratio: Proportion d'entraînement. (entre: 0.1-0.9, pas: 0.05)
         shuffle: Mélanger avant la séparation.
         seed: Graine aléatoire.
     """

@@ -18,9 +18,10 @@ type ScriptBlockProps = {
   hatBand: number | null
   blockElsRef: React.MutableRefObject<Record<string, HTMLElement>>
   startBlockDrag: (id: string, e: React.PointerEvent) => void
+  columnOptions?: Record<string, string[]>
 }
 
-export default function ScriptBlock({ block, index, n, bands, hatBand, blockElsRef, startBlockDrag }: ScriptBlockProps) {
+export default function ScriptBlock({ block, index, n, bands, hatBand, blockElsRef, startBlockDrag, columnOptions }: ScriptBlockProps) {
   const runningId   = useAppStore(s => s.runningId)
   const drag        = useAppStore(s => s.drag)
   const updateField = useAppStore(s => s.updateField)
@@ -57,7 +58,7 @@ export default function ScriptBlock({ block, index, n, bands, hatBand, blockElsR
       {index < n - 1 && (
         <div style={{ position: 'absolute', bottom: -11, left: 20, width: 24, height: 11, background: color, borderRadius: '0 0 999px 999px' }} />
       )}
-      <BlockSegments segs={d.segs} fields={block.fields} blockId={block.id} onUpdate={updateField} />
+      <BlockSegments segs={d.segs} fields={block.fields} blockId={block.id} onUpdate={updateField} columnOptions={columnOptions} />
       <button
         onClick={() => deleteBlock(block.id)}
         style={{ position: 'absolute', top: '50%', right: 8, transform: 'translateY(-50%)', width: 20, height: 20, borderRadius: '50%', border: 'none', background: 'rgba(0,0,0,.16)', color: '#2a211c', fontWeight: 900, fontSize: 13, lineHeight: 1, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}

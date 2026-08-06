@@ -7,7 +7,7 @@ def early_stopping(in_1: "float", patience: "int" = 10) -> "bool":
     
     Args:
         in_1: Current loss value.
-        patience: Number of epochs to wait for improvement.
+        patience: Patience. (entre: 1-100)
     """
     global _early_stopping_best, _early_stopping_counter
     if in_1 < _early_stopping_best:

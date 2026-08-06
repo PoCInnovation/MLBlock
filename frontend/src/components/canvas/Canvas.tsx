@@ -6,7 +6,8 @@ import DropIndicator from './DropIndicator'
 import EmptyCanvas from './EmptyCanvas'
 import ConsolePanel from '../ui/ConsolePanel'
 import DragGhost from '../ui/DragGhost'
-import { Fragment } from 'react'
+import { Fragment, useEffect, useState } from 'react'
+import { resolveColumnsForPath, resolveLinearSourcePath } from '../../utils/columns'
 
 const canvasStyle: React.CSSProperties = {
   position: 'absolute', inset: 0, overflow: 'auto', padding: 36,
@@ -25,8 +26,30 @@ type CanvasProps = {
 export default function Canvas({ canvasRef, hatRef, blockElsRef, startBlockDrag, bands, hatBand }: CanvasProps) {
   const script = useAppStore(s => s.script)
   const drag   = useAppStore(s => s.drag)
+  const catalog = useAppStore(s => s.catalog)
   const n      = script.length
   const dropEnd = drag?.active && drag?.overCanvas && drag?.moved && drag?.insertIndex >= n
+
+  // target_column autocomplete: columns of the nearest preceding load_csv
+  const [columnOptions, setColumnOptions] = useState<Record<string, Record<string, string[]>>>({})
+
+  useEffect(() => {
+    const map: Record<string, Record<string, string[]>> = {}
+    const resolvers: Promise<void>[] = []
+    script.forEach((b, idx) => {
+      const def = catalog?.blocks[b.type]
+      const hasTarget = def?.segs.some(s => 'k' in s && s.k === 'target_column')
+      if (!hasTarget) return
+      const path = resolveLinearSourcePath(script, idx)
+      if (!path) return
+      resolvers.push(
+        resolveColumnsForPath(path).then(cols => {
+          if (cols) map[b.id] = { target_column: cols }
+        })
+      )
+    })
+    Promise.all(resolvers).then(() => setColumnOptions(map))
+  }, [script, catalog])
 
   return (
     <div style={{ flex: 1, position: 'relative', minWidth: 0 }}>
@@ -43,6 +66,7 @@ export default function Canvas({ canvasRef, hatRef, blockElsRef, startBlockDrag,
                 hatBand={hatBand}
                 blockElsRef={blockElsRef}
                 startBlockDrag={startBlockDrag}
+                columnOptions={columnOptions[block.id]}
               />
               {i < n - 1 && <ChainConnector prev={block} next={script[i + 1]} insertIndex={i + 1} />}
             </Fragment>

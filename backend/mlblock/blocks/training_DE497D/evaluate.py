@@ -5,7 +5,7 @@ def evaluate(model: "Model", test_data: "pd.DataFrame", target_column: "str", me
         model: Modèle entraîné.
         test_data: Données de test.
         target_column: Colonne cible.
-        method: Métrique ('mse' ou 'accuracy').
+        method: Métrique. (choix: mse|accuracy)
         plot: Générer un graphique.
     """
     import numpy as np

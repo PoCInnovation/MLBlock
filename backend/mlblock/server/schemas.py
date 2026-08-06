@@ -12,6 +12,13 @@ class ParamInfo(BaseModel):
     default: Any = None
     required: bool = False
     options: list[str] | None = None
+    min: float | None = None
+    max: float | None = None
+    step: float | None = None
+    odd: bool | None = None
+    choices: list[str] | None = None
+    format: str | None = None
+    len: int | None = None
 
 
 class Category(BaseModel):

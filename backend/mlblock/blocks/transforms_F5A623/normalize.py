@@ -3,8 +3,8 @@ def normalize(in_1: "torch.Tensor", mean: "list", std: "list") -> "torch.Tensor"
     
     Args:
         in_1: Input tensor.
-        mean: Mean values.
-        std: Standard deviation values.
+        mean: Moyennes par canal. (longueur: 3)
+        std: Écarts-types par canal. (longueur: 3)
     """
     from torchvision import transforms
     return transforms.Normalize(mean=mean, std=std)(in_1)

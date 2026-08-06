@@ -3,7 +3,7 @@ def pca(in_1: "pd.DataFrame", n_components: "int" = 2, target_column: "str | Non
     
     Args:
         in_1: Input data.
-        n_components: Number of components.
+        n_components: Composantes. (entre: 1-100)
         target_column: Target column to exclude.
     """
     from sklearn.decomposition import PCA

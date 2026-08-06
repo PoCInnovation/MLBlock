@@ -7,6 +7,6 @@ def softmax(in_1: "torch.Tensor", dim: "int" = 1) -> "torch.Tensor":
     
     Args:
         in_1: Input tensor.
-        dim: Parameter.
+        dim: Dimension. (entre: 0-4)
     """
     return nn.Softmax(dim=dim)(in_1)
