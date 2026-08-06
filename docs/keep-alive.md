@@ -12,13 +12,13 @@ Le backend Render (`mlblock-backend`, plan free) s'endort après **15 minutes sa
 
 Le mécanisme ne fonctionne que si **un pinger tourne réellement** — l'endpoint seul ne maintient rien.
 
-### ⚠️ Constat : GitHub Actions ne fonctionne PAS (obs. 2026-08-06)
+### ⚠️ Constat : GitHub Actions ne fonctionne pas (obs. 2026-08-06)
 
-Le workflow `.github/workflows/keep-alive.yml` a été testé : **4 échecs sur 5 runs**
+Une approche GitHub Actions cron a été testée : **4 échecs sur 5 runs**
 (« The job was not acquired by Runner of type hosted even after multiple
 attempts ») et le cron `*/5` n'a tiré que ~5 fois en 3,5 h (contention des
-runners + retard du scheduler free tier). Résultat : le backend dort presque
-tout le temps. **Ne pas compter dessus** — préférer UptimeRobot.
+runners + retard du scheduler free tier). Le workflow a été **supprimé**.
+**Ne pas utiliser GitHub Actions pour le keep-alive** — préférer UptimeRobot.
 
 ### Option 1 (recommandée) — UptimeRobot (compte externe)
 
