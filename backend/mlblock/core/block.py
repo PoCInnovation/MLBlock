@@ -13,7 +13,7 @@ def _coerce_param_value(
     Empty string → None (optional param). Types come from ParamInfo
     ('int', 'float', 'bool', 'list[int]', 'int | None', 'str', 'file'…).
     """
-    if value is None or value == "":
+    if value is None or (isinstance(value, str) and value == ""):
         return None
     t = ptype.split(" | ")[0].strip()
     try:

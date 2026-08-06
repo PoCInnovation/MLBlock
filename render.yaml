@@ -4,6 +4,7 @@ services:
     plan: free
     name: mlblock-backend
     runtime: python
+    pythonVersion: 3.11
     rootDir: backend
     buildCommand: uv sync
     startCommand: .venv/bin/uvicorn mlblock.server.main:app --host 0.0.0.0 --port $PORT

@@ -1,15 +1,15 @@
-import matplotlib.pyplot as plt
-
-
 def plot_predictions(in_1: "object", in_2: "pd.DataFrame", target_column: "str", output_path: "str" = "predictions.png") -> "None":
     """Plot predictions.
-    
+
     Args:
         in_1: Trained model.
         in_2: Test data.
         target_column: Target column name.
         output_path: Output file path.
     """
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
     X = in_2.drop(columns=[target_column])
     y_true = in_2[target_column]
     y_pred = in_1.predict(X)
