@@ -70,9 +70,11 @@ function topFor(i: number, n: number): string {
 
 function BlockNode({ data, id }: NodeProps<BlockNodeData>) {
   const updateFlowParam = useAppStore(s => s.updateFlowParam)
+  const catalog = useAppStore(s => s.catalog)
   const flowNodes = useAppStore(s => s.flowNodes)
   const flowEdges = useAppStore(s => s.flowEdges)
   const [columnOptions, setColumnOptions] = useState<Record<string, string[]>>({})
+  const description = catalog?.blocks[data.type]?.description
 
   useEffect(() => {
     setColumnOptions({})
@@ -99,7 +101,7 @@ function BlockNode({ data, id }: NodeProps<BlockNodeData>) {
           title={`${p.name}: ${p.dtype}`}
         />
       ))}
-      <div style={labelStyle}>{data.label}</div>
+      <div style={labelStyle} title={description || undefined}>{data.label}</div>
       <div style={segmentsStyle}>
         <BlockSegments segs={data.segs} fields={data.fields} blockId={id} onUpdate={updateFlowParam} columnOptions={columnOptions} />
       </div>

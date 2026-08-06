@@ -4,6 +4,7 @@ from torch import nn
 
 def linear(in_1: "torch.Tensor", in_features: "int", out_features: "int", bias: "bool" = True) -> "torch.Tensor":
     """Couche linéaire (dense).
+    Couche entièrement connectée : transforme l'entrée par une matrice apprise.
     
     Args:
         in_1: Input tensor.

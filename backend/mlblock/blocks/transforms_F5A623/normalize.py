@@ -1,5 +1,6 @@
 def normalize(in_1: "torch.Tensor", mean: "list", std: "list") -> "torch.Tensor":
     """Normaliser un tenseur.
+    Normalise un tenseur image par moyenne/écart-type.
     
     Args:
         in_1: Input tensor.

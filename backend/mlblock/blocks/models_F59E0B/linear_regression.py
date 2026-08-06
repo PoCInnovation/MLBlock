@@ -1,5 +1,6 @@
 def linear_regression(train_data: "pd.DataFrame", target_column: "str", fit_intercept: "bool" = True) -> "Model":
     """Régression linéaire.
+    Régression linéaire sur un DataFrame.
 
     Args:
         train_data: Données d'entraînement.

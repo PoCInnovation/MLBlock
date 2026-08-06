@@ -4,6 +4,7 @@ _early_stopping_counter = 0
 
 def early_stopping(in_1: "float", patience: "int" = 10) -> "bool":
     """Arrêt précoce.
+    Arrête l'entraînement si la perte ne s'améliore plus.
     
     Args:
         in_1: Current loss value.

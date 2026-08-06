@@ -1,5 +1,6 @@
 def evaluate(model: "Model", test_data: "pd.DataFrame", target_column: "str", method: "str" = 'mse', plot: "bool" = False) -> "float":
     """Évaluer le modèle.
+    Évalue un modèle sur des données de test (mse ou accuracy).
 
     Args:
         model: Modèle entraîné.

@@ -3,6 +3,7 @@ from typing import Literal
 
 def decision_tree(in_1: "pd.DataFrame", target_column: "str", task: Literal["classification", "regression"] = "classification", max_depth: "int | None" = None) -> "object":
     """Arbre de décision.
+    Arbre de décision (classification ou régression).
     
     Args:
         in_1: Training data.

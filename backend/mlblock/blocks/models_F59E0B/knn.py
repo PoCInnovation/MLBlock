@@ -3,6 +3,7 @@ from typing import Literal
 
 def knn(in_1: "pd.DataFrame", target_column: "str", task: Literal["classification", "regression"] = "classification", n_neighbors: "int" = 5) -> "object":
     """K plus proches voisins.
+    K plus proches voisins (classification ou régression).
     
     Args:
         in_1: Training data.

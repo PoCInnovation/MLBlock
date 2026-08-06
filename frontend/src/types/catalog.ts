@@ -10,7 +10,7 @@ export type Segment = TextSeg | BoolSeg | NumSeg | SelSeg | SugSeg | ListSeg | F
 
 export type Port = { name: string; dtype: string }
 
-export type BlockDef = { cat: string; segs: Segment[]; inputs: Port[]; outputs: Port[] }
+export type BlockDef = { cat: string; segs: Segment[]; inputs: Port[]; outputs: Port[]; description: string }
 export type BlockDefMap = Record<string, BlockDef>
 
 export type Category = { id: string; name: string; color: string }

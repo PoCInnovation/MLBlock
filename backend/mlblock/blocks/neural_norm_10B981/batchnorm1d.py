@@ -4,6 +4,7 @@ from torch import nn
 
 def batchnorm1d(in_1: "torch.Tensor", num_features: "int") -> "torch.Tensor":
     """Normalisation par lots 1D.
+    Normalise les activations par lots (1D).
     
     Args:
         in_1: Input tensor.

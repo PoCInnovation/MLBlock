@@ -95,6 +95,14 @@ def _fr_label(block) -> str:
     return block.name.replace("_", " ").title()
 
 
+def _fr_summary(block) -> str:
+    """Description courte : 2e ligne de la docstring (après le label), sinon label."""
+    lines = [l.strip() for l in (block.description or "").splitlines() if l.strip()]
+    if len(lines) >= 2 and not lines[1].startswith(("Args", "Param")):
+        return lines[1].rstrip(".")
+    return _fr_label(block)
+
+
 @catalog_router.get("")
 def get_catalog() -> dict:
     categories: dict[str, dict] = {}
@@ -110,6 +118,7 @@ def get_catalog() -> dict:
         categories[cat]["blocks"].append({
             "type": block.name,
             "label": _fr_label(block),
+            "description": _fr_summary(block),
             "params": {k: v.model_dump() for k, v in block.params.items()},
             "inputs": block.inputs,
             "outputs": block.outputs,

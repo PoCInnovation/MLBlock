@@ -84,6 +84,7 @@ export async function fetchCatalog(): Promise<InternalCatalog> {
         segs,
         inputs: (b.inputs ?? []).map(p => ({ name: String(p.name), dtype: String(p.dtype) })),
         outputs: (b.outputs ?? []).map(p => ({ name: String(p.name), dtype: String(p.dtype) })),
+        description: b.description ? String(b.description) : '',
       }
     }
   }

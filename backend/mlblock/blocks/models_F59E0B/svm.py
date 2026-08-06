@@ -3,6 +3,7 @@ from typing import Literal
 
 def svm(in_1: "pd.DataFrame", target_column: "str", task: Literal["classification", "regression"] = "classification", kernel: Literal["rbf", "linear", "poly", "sigmoid"] = "rbf", C: "float" = 1.0) -> "object":
     """Machine à vecteurs de support.
+    Machine à vecteurs de support (classification ou régression).
     
     Args:
         in_1: Training data.

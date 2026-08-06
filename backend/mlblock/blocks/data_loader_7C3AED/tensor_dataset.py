@@ -3,6 +3,7 @@ import torch
 
 def tensor_dataset(in_1: "torch.Tensor", in_2: "torch.Tensor") -> "torch.utils.data.TensorDataset":
     """Dataset tensoriel.
+    Construit un dataset depuis des tenseurs (features, cibles).
     
     Args:
         in_1: Features tensor.

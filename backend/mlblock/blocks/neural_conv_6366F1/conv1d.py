@@ -4,6 +4,7 @@ from torch import nn
 
 def conv1d(in_1: "torch.Tensor", in_channels: "int", out_channels: "int", kernel_size: "int" = 3, stride: "int" = 1, padding: "int" = 0, dilation: "int" = 1) -> "torch.Tensor":
     """Convolution 1D.
+    Applique une convolution 1D sur le tenseur d'entrée.
     
     Args:
         in_1: Input tensor.

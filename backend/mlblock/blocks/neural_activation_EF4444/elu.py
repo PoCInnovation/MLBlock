@@ -4,6 +4,7 @@ from torch import nn
 
 def elu(in_1: "torch.Tensor", alpha: "float" = 1.0) -> "torch.Tensor":
     """ELU.
+    Active ELU : exponentiel pour les valeurs négatives.
     
     Args:
         in_1: Input tensor.

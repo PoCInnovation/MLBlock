@@ -3,6 +3,7 @@ import pandas as pd
 
 def load_csv(path: "file") -> "pd.DataFrame":
     """Charger un CSV.
+    Charge un fichier CSV en DataFrame.
     
     Args:
         path: Parameter.

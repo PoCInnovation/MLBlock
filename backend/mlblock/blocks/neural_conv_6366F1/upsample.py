@@ -6,6 +6,7 @@ from torch import nn
 
 def upsample(in_1: "torch.Tensor", scale_factor: "int" = None, mode: Literal["nearest", "bilinear", "bicubic", "trilinear"] = 'nearest') -> "torch.Tensor":
     """Sur-échantillonnage.
+    Sur-échantillonne le tenseur (agrandit la résolution).
     
     Args:
         in_1: Input tensor.

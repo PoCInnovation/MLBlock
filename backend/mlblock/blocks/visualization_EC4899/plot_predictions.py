@@ -1,5 +1,6 @@
 def plot_predictions(in_1: "object", in_2: "pd.DataFrame", target_column: "str", output_path: "str" = "predictions.png") -> "None":
     """Tracer les prédictions.
+    Trace les prédictions vs les valeurs réelles (PNG).
 
     Args:
         in_1: Trained model.

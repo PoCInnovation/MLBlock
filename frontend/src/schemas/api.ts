@@ -19,6 +19,7 @@ const paramSchema = z.object({
 const blockSchema = z.object({
   type: z.string(),
   label: z.string(),
+  description: z.string().optional(),
   params: z.record(z.string(), paramSchema),
   inputs: z.array(z.record(z.string(), z.string())),
   outputs: z.array(z.record(z.string(), z.string())),

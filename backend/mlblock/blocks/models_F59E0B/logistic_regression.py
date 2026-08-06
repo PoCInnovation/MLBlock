@@ -1,5 +1,6 @@
 def logistic_regression(train_data: "pd.DataFrame", target_column: "str", max_iter: "int" = 1000) -> "Model":
     """Régression logistique.
+    Régression logistique (classification binaire).
 
     Args:
         train_data: Données d'entraînement.

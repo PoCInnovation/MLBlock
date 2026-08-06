@@ -155,6 +155,7 @@ export default function FlowPalette({ onDragStart }: FlowPaletteProps) {
                     draggable
                     onDragStart={e => onDragStart(e, type)}
                     style={itemStyle}
+                    title={def.description || undefined}
                   >
                     <span style={dotStyle(colorFor(c.id, categories))} />
                     <span>{label}</span>

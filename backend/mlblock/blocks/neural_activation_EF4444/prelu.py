@@ -4,6 +4,7 @@ from torch import nn
 
 def prelu(in_1: "torch.Tensor", num_parameters: "int" = 1) -> "torch.Tensor":
     """PReLU.
+    Active PReLU : pente négative apprise.
     
     Args:
         in_1: Input tensor.

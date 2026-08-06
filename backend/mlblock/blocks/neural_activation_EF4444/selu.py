@@ -4,6 +4,7 @@ from torch import nn
 
 def selu(in_1: "torch.Tensor") -> "torch.Tensor":
     """SELU.
+    Active SELU : auto-normalisante.
     
     Args:
         in_1: Input tensor.

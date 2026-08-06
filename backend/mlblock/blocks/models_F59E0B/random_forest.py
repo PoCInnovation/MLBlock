@@ -1,5 +1,6 @@
 def random_forest(train_data: "pd.DataFrame", target_column: "str", n_estimators: "int" = 100, max_depth: "int" = None) -> "Model":
     """Forêt aléatoire.
+    Forêt aléatoire (classification ou régression).
 
     Args:
         train_data: Données d'entraînement.

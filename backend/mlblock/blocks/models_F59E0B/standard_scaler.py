@@ -1,5 +1,6 @@
 def standard_scaler(in_1: "pd.DataFrame", target_column: "str | None" = None) -> "dict":
     """Mise à l'échelle standard.
+    Standardise les features (moyenne 0, écart-type 1).
     
     Args:
         in_1: Input data.

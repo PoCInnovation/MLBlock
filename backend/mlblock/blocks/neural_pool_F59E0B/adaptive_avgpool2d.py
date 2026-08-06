@@ -4,6 +4,7 @@ from torch import nn
 
 def adaptive_avgpool2d(in_1: "torch.Tensor", output_size: "int" = 1) -> "torch.Tensor":
     """Pool moyen adaptatif.
+    Pooling moyen avec taille de sortie fixe.
     
     Args:
         in_1: Input tensor.

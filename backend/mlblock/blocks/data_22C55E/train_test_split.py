@@ -1,5 +1,6 @@
 def train_test_split(dataset: "pd.DataFrame", ratio: "float" = 0.8, shuffle: "bool" = True, seed: "int" = None) -> "tuple[pd.DataFrame, pd.DataFrame]":
     """Séparer train/test.
+    Sépare le DataFrame en train et test.
 
     Args:
         dataset: DataFrame à séparer.

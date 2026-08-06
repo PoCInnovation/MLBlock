@@ -268,6 +268,17 @@ def test_fr_label_fallback():
     assert _fr_label(Fake()) == "Load Csv"
 
 
+def test_fr_summary():
+    from mlblock.server.routes import _fr_summary
+    assert _fr_summary(BLOCK_REGISTRY["conv2d"]) == "Applique une convolution 2D sur le tenseur d'entrée"
+    assert _fr_summary(BLOCK_REGISTRY["linear"]) == "Couche entièrement connectée : transforme l'entrée par une matrice apprise"
+    # fallback label
+    class Fake:
+        name = "foo_bar"
+        description = "Foo Bar.\n"
+    assert _fr_summary(Fake()) == "Foo Bar"
+
+
 # ── PipelineDef validation ───────────────────────────────────────────
 
 def _validate(nodes, edges):
