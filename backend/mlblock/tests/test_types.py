@@ -279,6 +279,70 @@ def test_fr_summary():
     assert _fr_summary(Fake()) == "Foo Bar"
 
 
+# ── Dict port splitting ─────────────────────────────────────────────
+
+def test_dict_annotation_parses_named_outputs():
+    from mlblock.blocks.registry import _parse_return_annotation
+    outs = _parse_return_annotation("dict[model: Model, transformed: numpy.ndarray]")
+    assert outs == [
+        {"name": "model", "dtype": "Model"},
+        {"name": "transformed", "dtype": "numpy.ndarray"},
+    ]
+
+
+def test_dict_annotation_bare_stays_single():
+    from mlblock.blocks.registry import _parse_return_annotation
+    assert _parse_return_annotation("dict") == [{"name": "out_1", "dtype": "dict"}]
+
+
+def test_dict_blocks_expose_named_outputs():
+    assert [(p["name"], p["dtype"]) for p in BLOCK_REGISTRY["pca"].outputs] == [
+        ("model", "Model"), ("transformed", "numpy.ndarray"),
+    ]
+    assert [(p["name"], p["dtype"]) for p in BLOCK_REGISTRY["standard_scaler"].outputs] == [
+        ("scaler", "object"), ("scaled", "numpy.ndarray"),
+    ]
+    assert [(p["name"], p["dtype"]) for p in BLOCK_REGISTRY["train_model"].outputs] == [
+        ("model", "torch.nn.Module"), ("history", "list"),
+    ]
+
+
+def test_dict_port_classification():
+    from mlblock.core.types import build_conversion_graph, classify
+    graph = build_conversion_graph(BLOCK_REGISTRY)
+    # pca.transformed (ndarray) → to_tensor (ndarray) : compatible
+    assert classify("numpy.ndarray", "numpy.ndarray", graph) == "compatible"
+    # train_model.model (module) → sgd (module) : compatible
+    assert classify("torch.nn.Module", "torch.nn.Module", graph) == "compatible"
+
+
+def test_pipeline_resolves_dict_port():
+    src_spec = {
+        "label": "dictsrc",
+        "category": "test",
+        "params": {},
+        "inputs": [],
+        "outputs": [{"name": "transformed", "dtype": "numpy.ndarray"}, {"name": "model", "dtype": "Model"}],
+        "template": "",
+    }
+    dst_spec = {
+        "label": "dictdst",
+        "category": "test",
+        "params": {},
+        "inputs": [{"name": "in_1", "dtype": "numpy.ndarray"}],
+        "outputs": [{"name": "out_1", "dtype": "numpy.ndarray"}],
+        "template": "",
+    }
+    CoreRegistry.register("dictsrc", src_spec, lambda: {"transformed": "T", "model": "M"})
+    CoreRegistry.register("dictdst", dst_spec, lambda in_1: f"got:{in_1}")
+    graph = Graph({
+        "nodes": [{"id": "n1", "type": "dictsrc"}, {"id": "n2", "type": "dictdst"}],
+        "edges": [{"source": "n1", "source_port": "transformed", "target": "n2", "target_port": "in_1"}],
+    })
+    outputs = Pipeline(graph).run()
+    assert outputs["n2"] == "got:T"
+
+
 # ── PipelineDef validation ───────────────────────────────────────────
 
 def _validate(nodes, edges):

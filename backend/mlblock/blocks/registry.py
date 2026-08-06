@@ -83,6 +83,17 @@ def _parse_return_annotation(ret: Any) -> list[dict[str, str]]:
             {"name": f"out_{i + 1}", "dtype": part}
             for i, part in enumerate(_split_top_level(m.group(1)))
         ]
+    m = re.match(r"^dict\[(.+)\]$", name)
+    if m:
+        # "name: type, name: type" → ports nommés = les clés du dict retourné
+        outputs = []
+        for entry in _split_top_level(m.group(1)):
+            key, _, dtype = entry.partition(":")
+            key, dtype = key.strip(), dtype.strip()
+            if key and dtype and not any(o["name"] == key for o in outputs):
+                outputs.append({"name": key, "dtype": dtype})
+        if outputs:
+            return outputs
     return [{"name": "out_1", "dtype": name}]
 
 

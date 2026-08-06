@@ -1,4 +1,4 @@
-def pca(in_1: "pd.DataFrame", n_components: "int" = 2, target_column: "str | None" = None) -> "dict":
+def pca(in_1: "pd.DataFrame", n_components: "int" = 2, target_column: "str | None" = None) -> "dict[model: Model, transformed: numpy.ndarray]":
     """Réduction de dimensionnalité PCA.
     Réduction de dimensionnalité par composantes principales.
     
