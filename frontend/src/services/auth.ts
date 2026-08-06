@@ -15,6 +15,14 @@ export async function signInWithGoogle() {
   return { data, error }
 }
 
+export async function signInWithMicrosoft() {
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'azure',
+    options: { scopes: 'email' },
+  })
+  return { data, error }
+}
+
 export async function signUp(email: string, password: string) {
   const { data, error } = await supabase.auth.signUp({ email, password })
   return { data, error }

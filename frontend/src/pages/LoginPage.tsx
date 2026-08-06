@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { signInWithEmail, signInWithMagicLink, signInWithGoogle } from '../services/auth'
+import { signInWithEmail, signInWithMagicLink, signInWithGoogle, signInWithMicrosoft } from '../services/auth'
 import SiteLayout from '../components/landing/SiteLayout'
 import { Field, FieldError, FieldLabel } from '../components/ui/field'
 import { theme } from '../theme'
@@ -77,6 +77,19 @@ export default function LoginPage() {
     }
   }
 
+  const handleMicrosoft = async () => {
+    setError('')
+    setLoading(true)
+    try {
+      const { error: err } = await signInWithMicrosoft()
+      if (err) setError(mapSupabaseError(err.message))
+    } catch {
+      setError(mapSupabaseError('Network request failed'))
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <SiteLayout>
       <div style={s.wrapper}>
@@ -131,6 +144,7 @@ export default function LoginPage() {
               </div>
               <button type="button" disabled={loading} style={{ ...s.btn, ...s.secondaryBtn, opacity: loading ? 0.6 : 1 }} onClick={handleMagicLink}>Envoyer un lien magique</button>
               <button type="button" disabled={loading} style={{ ...s.btn, ...s.secondaryBtn, opacity: loading ? 0.6 : 1 }} onClick={handleGoogle}>Continuer avec Google</button>
+              <button type="button" disabled={loading} style={{ ...s.btn, ...s.secondaryBtn, opacity: loading ? 0.6 : 1 }} onClick={handleMicrosoft}>Continuer avec Microsoft</button>
             </form>
           )}
           <button style={{ ...s.link, background: 'none', border: 'none' }} onClick={() => navigate('/register')}>Pas encore de compte ? S'inscrire</button>
