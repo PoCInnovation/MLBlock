@@ -323,3 +323,11 @@ def test_build_pipeline_with_unbuildable_block(client: TestClient):
     pid = create["id"]
     resp = client.post(f"/api/pipelines/{pid}/build")
     assert resp.status_code == 400
+
+
+# ── Health ──────────────────────────────────────────────────────────
+
+def test_health_endpoint(client: TestClient):
+    r = client.get("/health")
+    assert r.status_code == 200
+    assert r.json() == {"status": "ok"}

@@ -38,6 +38,13 @@ pipelines_router = APIRouter(prefix="/api/pipelines")
 validation_router = APIRouter(prefix="/api/validate")
 jobs_router = APIRouter(prefix="/api/jobs")
 files_router = APIRouter(prefix="/api/files")
+health_router = APIRouter()
+
+
+@health_router.get("/health")
+def health() -> dict:
+    """Liveness probe — no DB access, cheap ping target."""
+    return {"status": "ok"}
 
 SUPABASE_STORAGE_URL = re.compile(r"^https://[^/]+/storage/v1/object/(?:public|authenticated)/([^/]+)/(.+)$")
 
