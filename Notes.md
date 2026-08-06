@@ -22,6 +22,10 @@ imaginer l'UI/UX
 Coder l'ui/ux
 
 # To fix
+
+## Todo
+
+## OK
 Les noms des outputs doivent apparaitrent directement pour meilleur ui/ux
 Les noms des params doivent apparaitrent directement pour meilleur ui/ux
 Il faux plus d'autocomplétion dans les params des blocks (trop imprécis)

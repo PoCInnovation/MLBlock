@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import useAppStore from './store/useAppStore'
 import { getSession, onAuthStateChange } from './services/auth'
@@ -8,16 +8,36 @@ import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import HowItWorksPage from './pages/HowItWorksPage'
 import AboutPage from './pages/AboutPage'
+import { theme } from './theme'
+
+const splashStyle: React.CSSProperties = {
+  height: '100vh',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  background: theme.color.bg,
+  color: theme.color.textMuted,
+  fontFamily: theme.font.heading,
+  fontSize: 18,
+}
 
 export default function App() {
   const user  = useAppStore(s => s.user)
   const setUser = useAppStore(s => s.setUser)
+  const [authReady, setAuthReady] = useState(false)
 
   useEffect(() => {
-    getSession().then(({ session }) => setUser(session?.user ?? null))
+    getSession().then(({ session }) => {
+      setUser(session?.user ?? null)
+      setAuthReady(true)
+    })
     const { data: { subscription } } = onAuthStateChange((session: any) => setUser(session?.user ?? null))
     return () => subscription.unsubscribe()
   }, [setUser])
+
+  if (!authReady) {
+    return <div style={splashStyle}>Chargement…</div>
+  }
 
   return (
     <Routes>

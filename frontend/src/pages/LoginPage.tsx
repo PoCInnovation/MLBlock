@@ -112,6 +112,7 @@ export default function LoginPage() {
                       {...field}
                       id="login-email"
                       type="email"
+                      autoComplete="email"
                       placeholder="exemple@mail.com"
                       aria-invalid={fieldState.invalid}
                       style={{ ...s.input, borderColor: fieldState.invalid ? theme.color.error : undefined }}
@@ -130,6 +131,7 @@ export default function LoginPage() {
                       {...field}
                       id="login-password"
                       type="password"
+                      autoComplete="current-password"
                       placeholder="••••••"
                       aria-invalid={fieldState.invalid}
                       style={{ ...s.input, borderColor: fieldState.invalid ? theme.color.error : undefined }}
