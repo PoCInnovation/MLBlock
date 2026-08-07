@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@base-ui/react": "^1.7.0",
     "@hookform/resolvers": "^5.7.1",
     "@supabase/supabase-js": "^2.111.0",
     "axios": "^1.7.2",

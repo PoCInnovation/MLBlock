@@ -1,5 +1,12 @@
 import { useRef, useState } from 'react'
-import { Save, Play, Loader2, Upload, Download, Square } from 'lucide-react'
+import { Save, Play, Loader2, Upload, Download, Square, MoreVertical, FolderKanban, Trash2, LogOut } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from '../ui/dropdown-menu'
 import { useNavigate } from 'react-router-dom'
 import useAppStore from '../../store/useAppStore'
 import { signOut } from '../../services/auth'
@@ -99,13 +106,8 @@ export default function EditorHeader({ onRun, onStop, onClear }: EditorHeaderPro
         <button onClick={() => setEditorMode(editorMode === 'linear' ? 'advanced' : 'linear')} style={editorMode === 'advanced' ? { ...ghostBtn, background: theme.color.auth, color: '#fff', border: '1px solid transparent' } : ghostBtn}>
           {editorMode === 'linear' ? 'Avancé' : 'Linéaire'}
         </button>
-        <button className="hover-bright" style={ghostBtn} onClick={() => fileRef.current?.click()}><Upload size={14} /> Importer</button>
-        <button className="hover-bright" style={ghostBtn} onClick={() => setExportOpen(true)}><Download size={14} /> Exporter</button>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-        <button onClick={() => navigate('/projets')} style={ghostBtn}>Mes projets</button>
-        <button onClick={async () => { await signOut(); setUser(null); navigate('/') }} style={ghostBtn}>Déconnexion</button>
-        <button onClick={onClear} style={actionBtn}>Tout effacer</button>
         <button onClick={onSave} style={{ ...actionBtn, background: 'rgba(34,197,94,.14)', color: '#8fd1a8', border: '1px solid rgba(34,197,94,.35)', fontWeight: 800, opacity: saving ? 0.6 : 1 }}>{saving ? <Loader2 size={15} style={{ animation: 'mlbSpin .8s linear infinite' }} /> : <Save size={15} />} Sauvegarder</button>
         <button onClick={onStop} style={{ ...actionBtn, background: 'rgba(224,112,95,.16)', color: theme.color.accentLight, border: '1px solid rgba(224,112,95,.4)', fontWeight: 800 }}>
           <Square size={13} fill="currentColor" /> Arrêter
@@ -113,6 +115,39 @@ export default function EditorHeader({ onRun, onStop, onClear }: EditorHeaderPro
         <button onClick={onRun} style={{ color: '#fff', border: 'none', padding: '9px 20px', borderRadius: theme.radius.md, fontWeight: 800, fontSize: 14, cursor: 'pointer', boxShadow: theme.shadow.btn, display: 'inline-flex', alignItems: 'center', gap: 8, background: theme.color.accent, opacity: running ? 0.6 : 1, transition: 'filter .15s ease, transform .15s ease' }}>
           <Play size={15} fill="currentColor" /> Lancer
         </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <button
+                className="hover-bright"
+                style={{ ...ghostBtn, padding: '9px 11px' }}
+                aria-label="Menu du projet"
+                title="Menu du projet"
+              >
+                <MoreVertical size={17} />
+              </button>
+            }
+          />
+          <DropdownMenuContent>
+            <DropdownMenuItem onClick={() => fileRef.current?.click()}>
+              <Upload size={15} /> Importer
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setExportOpen(true)}>
+              <Download size={15} /> Exporter
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => navigate('/projets')}>
+              <FolderKanban size={15} /> Mes projets
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onClear}>
+              <Trash2 size={15} /> Tout effacer
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem destructive onClick={async () => { await signOut(); setUser(null); navigate('/') }}>
+              <LogOut size={15} /> Déconnexion
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <input ref={fileRef} type="file" accept=".json,application/json" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) onImportPicked(f); e.target.value = '' }} />
