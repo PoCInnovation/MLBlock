@@ -6,7 +6,7 @@ import { toServerPayload } from '../utils/blockHelpers'
 const DEFAULT_PIPELINE_NAME = 'mon-premier-modèle'
 
 /** Suit le job jusqu'à done/error puis charge les sorties structurées. */
-function pollJob(jobId: number): void {
+function pollJob(jobId: string): void {
   let tries = 0
   const timer = setInterval(async () => {
     tries++

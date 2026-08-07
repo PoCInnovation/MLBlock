@@ -125,7 +125,7 @@ export default function ProjectsPage() {
             style={{ ...primaryBtn, opacity: atLimit ? 0.5 : 1, cursor: atLimit ? 'not-allowed' : 'pointer' }}
             disabled={atLimit}
             title={atLimit ? 'Limite de 20 projets atteinte. Supprime un projet pour en créer un nouveau.' : undefined}
-            onClick={() => { useAppStore.getState().clearAll(); useAppStore.setState({ pipelineId: null, projectName: 'mon-premier-modèle' }); navigate('/editor') }}
+            onClick={() => { useAppStore.getState().clearAll(); useAppStore.setState({ pipelineId: null, projectName: 'mon-premier-modèle', savedFingerprint: JSON.stringify({ script: [], flowNodes: [], flowEdges: [], projectName: 'mon-premier-modèle' }) }); navigate('/editor') }}
           >
             + Nouveau projet
           </button>

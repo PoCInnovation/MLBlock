@@ -113,17 +113,17 @@ export async function listPipelines(size = 100): Promise<PipelinePage> {
   return data
 }
 
-export async function getPipeline(id: number | string): Promise<PipelineDetail> {
+export async function getPipeline(id: string): Promise<PipelineDetail> {
   const { data } = await http.get<PipelineDetail>(`/api/pipelines/${id}`)
   return data
 }
 
-export async function updatePipeline(id: number, data: PipelineCreate): Promise<PipelineDetail> {
+export async function updatePipeline(id: string, data: PipelineCreate): Promise<PipelineDetail> {
   const { data: res } = await http.put<PipelineDetail>(`/api/pipelines/${id}`, data)
   return res
 }
 
-export async function deletePipeline(id: number): Promise<void> {
+export async function deletePipeline(id: string): Promise<void> {
   await http.delete(`/api/pipelines/${id}`)
 }
 
@@ -132,12 +132,12 @@ export async function validateGraph(nodes: PipelineNode[], edges: PipelineEdge[]
   return validationSchema.parse(data)
 }
 
-export async function buildPipeline(id: number): Promise<BuildResponse> {
+export async function buildPipeline(id: string): Promise<BuildResponse> {
   const { data } = await http.post<BuildResponse>(`/api/pipelines/${id}/build`)
   return data
 }
 
-export async function generatePipelineCode(id: number): Promise<GenerateResponse> {
+export async function generatePipelineCode(id: string): Promise<GenerateResponse> {
   const { data } = await http.post<GenerateResponse>(`/api/pipelines/${id}/generate`)
   return data
 }
@@ -158,22 +158,22 @@ export async function fetchFileColumns(url: string): Promise<string[] | null> {
   }
 }
 
-export async function executePipeline(id: number): Promise<Job> {
+export async function executePipeline(id: string): Promise<Job> {
   const { data } = await http.post<Job>(`/api/pipelines/${id}/execute`)
   return data
 }
 
-export async function getJob(id: number): Promise<Job> {
+export async function getJob(id: string): Promise<Job> {
   const { data } = await http.get<Job>(`/api/jobs/${id}`)
   return data
 }
 
-export async function getJobOutputs(id: number): Promise<JobOutput[]> {
+export async function getJobOutputs(id: string): Promise<JobOutput[]> {
   const { data } = await http.get<JobOutput[]>(`/api/jobs/${id}/outputs`)
   return data
 }
 
-export async function listPipelineJobs(id: number): Promise<Job[]> {
+export async function listPipelineJobs(id: string): Promise<Job[]> {
   const { data } = await http.get<Job[]>(`/api/pipelines/${id}/jobs`)
   return data
 }

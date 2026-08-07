@@ -13,6 +13,8 @@ import { signOut } from '../../services/auth'
 import { getPipeline } from '../../api/client'
 import { usePipelineImport } from '../../hooks/usePipelineImport'
 import ExportModal from '../ui/ExportModal'
+import UnsavedChangesDialog from '../ui/UnsavedChangesDialog'
+import { clearStash } from '../../utils/pending-stash'
 import { theme } from '../../theme'
 
 const ghostBtn: React.CSSProperties = { background: 'rgba(255,255,255,.06)', color: theme.color.textLight, border: '1px solid rgba(255,255,255,.1)', padding: '8px 14px', borderRadius: theme.radius.md, fontWeight: 700, fontSize: 13.5, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7, transition: 'background .15s ease, transform .15s ease' }
@@ -38,6 +40,8 @@ export default function EditorHeader({ onRun, onStop, onClear }: EditorHeaderPro
   const { importFile } = usePipelineImport()
 
   const [saving, setSaving] = useState(false)
+  const [logoutOpen, setLogoutOpen] = useState(false)
+  const [logoutBusy, setLogoutBusy] = useState(false)
   const [editingName, setEditingName] = useState(false)
   const [draftName, setDraftName] = useState('')
   const [exportOpen, setExportOpen] = useState(false)
@@ -143,7 +147,14 @@ export default function EditorHeader({ onRun, onStop, onClear }: EditorHeaderPro
               <Trash2 size={15} /> Tout effacer
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem destructive onClick={async () => { await signOut(); setUser(null); navigate('/') }}>
+            <DropdownMenuItem
+              destructive
+              onClick={() => {
+                const s = useAppStore.getState()
+                if (s.isDirty() && s.user) setLogoutOpen(true)
+                else { void signOut().then(() => { setUser(null); navigate('/') }) }
+              }}
+            >
               <LogOut size={15} /> Déconnexion
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -170,6 +181,36 @@ export default function EditorHeader({ onRun, onStop, onClear }: EditorHeaderPro
           onClose={() => setExportOpen(false)}
         />
       )}
+
+      <UnsavedChangesDialog
+        open={logoutOpen}
+        busy={logoutBusy}
+        onSave={async () => {
+          setLogoutBusy(true)
+          try {
+            const s = useAppStore.getState()
+            await s.savePipeline(s.projectName.trim() || 'mon-premier-modèle')
+            setLogoutOpen(false)
+            await signOut()
+            setUser(null)
+            navigate('/')
+          } catch {
+            useAppStore.getState().showToast({ kind: 'error', message: "Échec de la sauvegarde — la déconnexion est annulée" })
+          } finally {
+            setLogoutBusy(false)
+          }
+        }}
+        onDiscard={() => {
+          const u = useAppStore.getState().user as { id?: string } | null
+          if (u?.id) clearStash(u.id)
+          setLogoutOpen(false)
+          // setUser(null) AVANT signOut : le handler de session-expirée (main.tsx)
+          // ne doit pas re-stasher un logout intentionnel (user déjà null → skip)
+          setUser(null)
+          void signOut().then(() => navigate('/'))
+        }}
+        onCancel={() => setLogoutOpen(false)}
+      />
     </div>
   )
 }

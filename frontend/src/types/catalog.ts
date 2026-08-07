@@ -45,7 +45,7 @@ export interface PipelineCreate {
 }
 
 export interface PipelineSummary {
-  id: number
+  id: string
   name: string
   description: string
   is_draft: boolean
@@ -79,9 +79,9 @@ export interface GenerateResponse {
 export type JobStatus = 'queued' | 'dispatched' | 'running' | 'done' | 'error'
 
 export interface Job {
-  id: number
+  id: string
   user_id: string
-  pipeline_id: number
+  pipeline_id: string
   status: JobStatus
   vast_instance_id: string
   output: string

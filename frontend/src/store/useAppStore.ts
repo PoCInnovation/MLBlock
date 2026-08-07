@@ -48,11 +48,13 @@ type AppState = {
   catalog: InternalCatalog | null
   catalogError: boolean
   catalogErrorMessage: string | null
-  pipelineId: number | null
+  pipelineId: string | null
   projectName: string
-  lastJobId: number | null
+  lastJobId: string | null
   jobStatus: JobStatus | null
   results: JobOutput[]
+  savedFingerprint: string | null
+  restoredWork: boolean
   toast: Toast | null
 
   setUser: (user: unknown | null) => void
@@ -81,14 +83,16 @@ type AppState = {
   clearAll: () => void
   setCatalog: (catalog: InternalCatalog) => void
   setCatalogError: (error: boolean, message?: string) => void
-  setPipelineId: (id: number | null) => void
+  setPipelineId: (id: string | null) => void
   setProjectName: (name: string) => void
-  loadPipeline: (nodes: PipelineNode[], edges: PipelineEdge[], pipelineId: number, name: string) => void
+  isDirty: () => boolean
+  loadPipeline: (nodes: PipelineNode[], edges: PipelineEdge[], pipelineId: string, name: string) => void
   savePipeline: (name: string) => Promise<void>
-  ensureDraft: () => Promise<number>
+  ensureDraft: () => Promise<string>
   setLastJob: (job: Job) => void
   setJobStatus: (status: JobStatus | null) => void
   setResults: (outputs: JobOutput[]) => void
+  setRestoredWork: (v: boolean) => void
   showToast: (toast: Toast) => void
   clearToast: () => void
 }
@@ -115,6 +119,8 @@ const useAppStore = create<AppState>((set, get) => ({
   lastJobId: null,
   jobStatus: null,
   results: [],
+  savedFingerprint: JSON.stringify({ script: [], flowNodes: [], flowEdges: [], projectName: 'mon-premier-modèle' }),
+  restoredWork: false,
   toast: null,
 
   setCategory: (id) => set({ category: id }),
@@ -215,11 +221,14 @@ const useAppStore = create<AppState>((set, get) => ({
     const catExists = catalog.categories.some(c => c.id === s.category)
     // Pipeline chargé avant le catalogue (ouverture depuis /projets) :
     // reconversion one-shot du script vers le canvas avancé.
+    // (Aucun add n'est possible avant le catalogue — la palette ne rend pas.)
     let flowNodes = s.flowNodes
+    let savedFingerprint = s.savedFingerprint
     if (s.script.length > 0 && s.flowNodes.length === 0) {
       flowNodes = linearToFlow(s.script as FlowBlock[], catalog)
+      savedFingerprint = JSON.stringify({ script: s.script, flowNodes, flowEdges: s.flowEdges, projectName: s.projectName })
     }
-    return { catalog, category: catExists ? s.category : firstCat, flowNodes }
+    return { catalog, category: catExists ? s.category : firstCat, flowNodes, savedFingerprint }
   }),
 
   setCatalogError: (error, message) => set({
@@ -229,6 +238,13 @@ const useAppStore = create<AppState>((set, get) => ({
 
   setPipelineId: (id) => set({ pipelineId: id }),
   setProjectName: (name) => set({ projectName: name }),
+
+  isDirty: () => {
+    const s = get()
+    if (s.savedFingerprint === null) return false
+    const fp = JSON.stringify({ script: s.script, flowNodes: s.flowNodes, flowEdges: s.flowEdges, projectName: s.projectName })
+    return fp !== s.savedFingerprint
+  },
 
   loadPipeline: (nodes, edges, pipelineId, name) => set((s) => {
     const script: Block[] = nodes.map(n => ({
@@ -247,7 +263,7 @@ const useAppStore = create<AppState>((set, get) => ({
       target: e.target,
       targetHandle: e.target_port,
     }))
-    return { script, flowNodes: positioned, flowEdges, pipelineId, projectName: name }
+    return { script, flowNodes: positioned, flowEdges, pipelineId, projectName: name, savedFingerprint: JSON.stringify({ script, flowNodes: positioned, flowEdges, projectName: name }) }
   }),
 
   savePipeline: async (name) => {
@@ -257,7 +273,11 @@ const useAppStore = create<AppState>((set, get) => ({
     const detail = s.pipelineId === null
       ? await createPipeline(body)
       : await updatePipeline(s.pipelineId, body)
-    set({ pipelineId: detail.id, projectName: detail.name })
+    set({
+      pipelineId: detail.id,
+      projectName: detail.name,
+      savedFingerprint: JSON.stringify({ script: s.script, flowNodes: s.flowNodes, flowEdges: s.flowEdges, projectName: detail.name }),
+    })
   },
 
   ensureDraft: async () => {
@@ -272,6 +292,7 @@ const useAppStore = create<AppState>((set, get) => ({
   setLastJob: (job) => set({ lastJobId: job.id, jobStatus: job.status }),
   setJobStatus: (status) => set({ jobStatus: status }),
   setResults: (outputs) => set({ results: outputs }),
+  setRestoredWork: (v) => set({ restoredWork: v }),
 
   showToast: (toast) => set({ toast }),
   clearToast: () => set({ toast: null }),
