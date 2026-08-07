@@ -1,4 +1,5 @@
 import { theme } from '../../theme'
+import { Play } from 'lucide-react'
 import React from 'react'
 
 type HeroBlock = {
@@ -11,7 +12,7 @@ type HeroBlock = {
 }
 
 const BLOCKS: HeroBlock[] = [
-  { key: 0, bg: '#D97757', color: '#fff',     label: <>▶ Démarrer le projet</>, isHat: true },
+  { key: 0, bg: '#D97757', color: '#fff',     label: <><Play size={13} color="#fff" /> Démarrer le projet</>, isHat: true },
   { key: 1, bg: theme.color.accentLight, color: '#2a211c',  label: <>Charger <span style={{ background: 'rgba(255,255,255,.85)', padding: '2px 7px', borderRadius: 6 }}>Photos</span></> },
   { key: 2, bg: theme.color.status, color: '#2a211c',  label: <>Mettre à la même échelle</> },
   { key: 3, bg: '#B6A0E3', color: '#2a211c',  label: <>Réseau de <span style={{ background: 'rgba(255,255,255,.85)', padding: '2px 7px', borderRadius: 6 }}>128</span> neurones</> },

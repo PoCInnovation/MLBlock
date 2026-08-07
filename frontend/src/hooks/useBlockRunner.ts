@@ -19,8 +19,8 @@ function pollJob(jobId: number): void {
         useAppStore.getState().setResults(outputs)
         useAppStore.getState().appendConsoleLines([
           job.status === 'done'
-            ? { k: 'ok', t: `✓ Exécution terminée — ${outputs.length} sortie(s)` }
-            : { k: 'sys', t: `⚠ Exécution en erreur : ${job.error || 'inconnue'}` },
+            ? { k: 'ok', t: `Exécution terminée — ${outputs.length} sortie(s)` }
+            : { k: 'sys', t: `Exécution en erreur : ${job.error || 'inconnue'}` },
         ])
       } else if (tries > 40) {
         clearInterval(timer)
@@ -39,7 +39,7 @@ export function useBlockRunner() {
     const { nodes, edges } = toServerPayload(store)
 
     if (store.editorMode === 'linear' && nodes.length === 0) {
-      store.appendConsoleLines([{ k: 'sys', t: '⚠ Aucun bloc à exécuter.' }])
+      store.appendConsoleLines([{ k: 'sys', t: 'Aucun bloc à exécuter.' }])
       return
     }
 
@@ -49,7 +49,7 @@ export function useBlockRunner() {
       const validation = await validateGraph(nodes, edges)
       if (!validation.valid) {
         useAppStore.getState().appendConsoleLines([
-          { k: 'sys', t: '⚠ Graphe invalide :' },
+          { k: 'sys', t: 'Graphe invalide :' },
           ...validation.errors.map(e => ({ k: 'sys', t: `  • ${e}` })),
         ])
         useAppStore.getState().failRun()
@@ -66,14 +66,14 @@ export function useBlockRunner() {
         await updatePipeline(pipelineId, { name: DEFAULT_PIPELINE_NAME, description: '', nodes, edges })
       }
 
-      useAppStore.getState().appendConsoleLines([{ k: 'info', t: `📦 Pipeline #${pipelineId} sauvegardé` }])
+      useAppStore.getState().appendConsoleLines([{ k: 'info', t: `Pipeline #${pipelineId} sauvegardé` }])
 
       const build = await buildPipeline(pipelineId)
 
       if (!useAppStore.getState().running) return
 
       if (build.success) {
-        const lines = [{ k: 'ok', t: `✓ Build réussi — ${build.layer_count} couche(s)` }]
+        const lines = [{ k: 'ok', t: `Build réussi — ${build.layer_count} couche(s)` }]
         if (build.output_shape) {
           lines.push({ k: 'info', t: `  Forme de sortie : [${build.output_shape.join(', ')}]` })
         }
@@ -86,12 +86,12 @@ export function useBlockRunner() {
           useAppStore.getState().setLastJob(job)
           pollJob(job.id)
         } catch {
-          useAppStore.getState().appendConsoleLines([{ k: 'sys', t: "⚠ Échec du lancement de l'exécution." }])
+          useAppStore.getState().appendConsoleLines([{ k: 'sys', t: "Échec du lancement de l'exécution." }])
         }
         useAppStore.getState().finishRun(build)
       } else {
         useAppStore.getState().appendConsoleLines([
-          { k: 'sys', t: `⚠ Erreur de build : ${build.error ?? 'inconnue'}` },
+          { k: 'sys', t: `Erreur de build : ${build.error ?? 'inconnue'}` },
         ])
         useAppStore.getState().failRun()
       }
@@ -99,7 +99,7 @@ export function useBlockRunner() {
       console.error('Pipeline run failed:', err)
       if (useAppStore.getState().running) {
         useAppStore.getState().failRun()
-        useAppStore.getState().appendConsoleLines([{ k: 'sys', t: "⚠ Erreur lors de l'exécution." }])
+        useAppStore.getState().appendConsoleLines([{ k: 'sys', t: "Erreur lors de l'exécution." }])
       }
     }
   }, [])

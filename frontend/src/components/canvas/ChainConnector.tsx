@@ -1,4 +1,5 @@
 import useAppStore from '../../store/useAppStore'
+import { Zap, X } from 'lucide-react'
 import { theme } from '../../theme'
 import { buildConversionGraph, classifyEdge, converterFor } from '../../utils/typeCheck'
 import type { Block } from '../../utils/blockHelpers'
@@ -42,11 +43,11 @@ export default function ChainConnector({ prev, next, insertIndex }: Props) {
             padding: '3px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer',
           }}
         >
-          ⚡ Insérer convertisseur ({conv})
+          <Zap size={13} /> Insérer convertisseur ({conv})
         </button>
       )}
       {verdict === 'incompatible' && (
-        <span style={{ color, fontSize: 11, fontWeight: 700 }} title={hint}>✗ incompatible ({hint})</span>
+        <span style={{ color, fontSize: 11, fontWeight: 700 }} title={hint}><X size={13} /> incompatible ({hint})</span>
       )}
     </div>
   )

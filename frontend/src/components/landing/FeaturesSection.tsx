@@ -1,4 +1,5 @@
 import { theme } from '../../theme'
+import { Play } from 'lucide-react'
 import React from 'react';
 
 type Feature = {
@@ -59,7 +60,7 @@ const FEATURES: Feature[] = [
     },
     {
         color: '#7DAFEA',
-        icon: <span style={{ color: '#fff', fontSize: 12 }}>▶</span>,
+        icon: <Play size={14} color="#fff" />,
         title: 'Vois-le apprendre',
         desc: 'Appuie sur Lancer et regarde, tour après tour, ton modèle se tromper de moins en moins et devenir de plus en plus précis.',
     },

@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { Play } from 'lucide-react'
 import HeroBlockStack from './HeroBlockStack'
 
 export default function HeroSection() {
@@ -23,13 +24,14 @@ export default function HeroSection() {
         <div style={{ display: 'flex', gap: 14, marginTop: 34 }}>
           <button
             onClick={() => navigate('/projets')}
-            style={{ background: '#D97757', color: '#fff', border: 'none', padding: '15px 26px', borderRadius: 14, fontWeight: 800, fontSize: 16, cursor: 'pointer', boxShadow: '0 4px 0 rgba(0,0,0,.25)', display: 'inline-flex', alignItems: 'center', gap: 9 }}
+            className="hover-lift"
+            style={{ background: '#D97757', color: '#fff', border: 'none', padding: '15px 26px', borderRadius: 14, fontWeight: 800, fontSize: 16, cursor: 'pointer', boxShadow: '0 4px 0 rgba(0,0,0,.25)', display: 'inline-flex', alignItems: 'center', gap: 9, transition: 'filter .15s ease, transform .15s ease' }}
           >
-            <span style={{ fontSize: 13 }}>▶</span> Mes projets
+            <Play size={16} fill="currentColor" /> Mes projets
           </button>
           <button
             onClick={scrollToFeatures}
-            style={{ background: 'rgba(255,255,255,.06)', color: '#f0e9e3', border: '1px solid rgba(255,255,255,.14)', padding: '15px 24px', borderRadius: 14, fontWeight: 800, fontSize: 16, cursor: 'pointer' }}
+            style={{ background: 'rgba(255,255,255,.06)', color: '#f0e9e3', border: '1px solid rgba(255,255,255,.14)', padding: '15px 24px', borderRadius: 14, fontWeight: 800, fontSize: 16, cursor: 'pointer', transition: 'background .15s ease' }}
           >
             En savoir plus
           </button>

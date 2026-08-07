@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react'
 import type { Segment } from '../../types/catalog'
 import { uploadFile, supabase } from '../../services/supabase'
+import { FileUp, Loader2, TriangleAlert } from 'lucide-react'
 import { theme } from '../../theme'
 
 const inputBase: React.CSSProperties = {
@@ -252,13 +253,13 @@ export default function BlockSegments({ segs, fields, blockId, onUpdate, columnO
       if (state === 'uploading') return (
         <span key={i} style={fileCard}>
           <span style={fileNameStyle}>{meta?.name ?? 'Upload…'}</span>
-          <span style={fileMeta}>⏳…</span>
+          <span style={fileMeta}><Loader2 size={12} style={{ animation: 'mlbSpin .8s linear infinite' }} /></span>
         </span>
       )
 
       if (state === 'error') return (
         <span key={i} style={fileCard}>
-          <span style={errStyle}>⚠ Échec</span>
+          <span style={{ ...errStyle, display: 'inline-flex', alignItems: 'center', gap: 4 }}><TriangleAlert size={12} /> Échec</span>
           <span style={errStyle} onClick={() => inputRefs.current[s.k]?.click()}>Réessayer</span>
           <input ref={el => { inputRefs.current[s.k] = el }} type="file" accept=".csv" style={{ display: 'none' }} onChange={e => handleFile(s.k, e)} />
         </span>
@@ -277,7 +278,7 @@ export default function BlockSegments({ segs, fields, blockId, onUpdate, columnO
         <span key={i} style={{ display: 'flex', flexBasis: '100%' }}>
           <input ref={el => { inputRefs.current[s.k] = el }} type="file" accept=".csv" style={{ display: 'none' }} onChange={e => handleFile(s.k, e)} />
           <span onClick={() => inputRefs.current[s.k]?.click()} style={fileBtn} title={s.desc}>
-            📁 CSV
+            <FileUp size={13} /> CSV
           </span>
         </span>
       )

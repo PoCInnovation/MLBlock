@@ -19,13 +19,14 @@ export default function PaletteBlock({ type, startPaletteDrag }: PaletteBlockPro
   return (
     <div
       onPointerDown={e => startPaletteDrag(type, e)}
+      className="hover-lift"
       style={{
         position: 'relative',
         display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 6,
         color: '#2a211c', fontWeight: 800, fontSize: 14,
         background: color, padding: '14px 15px 13px', borderRadius: 12,
         marginBottom: 18, cursor: 'grab',
-        boxShadow: '0 2px 0 rgba(0,0,0,.18)', userSelect: 'none',
+        boxShadow: '0 2px 0 rgba(0,0,0,.18)', userSelect: 'none', transition: 'transform .15s ease, filter .15s ease',
       }}
     >
       <div style={{ position: 'absolute', top: 0, left: 20, width: 24, height: 11, background: '#221c19', borderRadius: '0 0 999px 999px' }} />

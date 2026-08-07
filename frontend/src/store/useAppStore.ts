@@ -12,7 +12,7 @@ import type { FlowBlock } from '../utils/flowConversion'
 export type ConsoleLine = { k: string; t: string }
 
 export type Toast = {
-  kind: 'error' | 'convert'
+  kind: 'error' | 'convert' | 'success'
   message: string
   action?: () => void
 }
@@ -187,7 +187,7 @@ const useAppStore = create<AppState>((set, get) => ({
   startRun: () => set({
     running: true,
     runningId: null,
-    consoleLines: [{ k: 'sys', t: `▶ C'est parti !` }],
+    consoleLines: [{ k: 'sys', t: "C'est parti !" }],
     result: null,
   }),
 
@@ -197,13 +197,13 @@ const useAppStore = create<AppState>((set, get) => ({
     running: false,
     runningId: null,
     result,
-    consoleLines: [...s.consoleLines, { k: 'ok', t: '✓ Terminé' }],
+    consoleLines: [...s.consoleLines, { k: 'ok', t: 'Terminé' }],
   })),
 
   stopRun: () => set((s) => ({
     running: false,
     runningId: null,
-    consoleLines: [...s.consoleLines, { k: 'sys', t: '■ Arrêté' }],
+    consoleLines: [...s.consoleLines, { k: 'sys', t: 'Arrêté' }],
   })),
 
   failRun: () => set((s) => ({ running: false, runningId: null })),

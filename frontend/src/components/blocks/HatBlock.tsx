@@ -1,4 +1,5 @@
 import { hatBorderRadius } from '../../utils/snapLogic'
+import { Play } from 'lucide-react'
 
 const ACCENT = '#D97757'
 
@@ -33,7 +34,7 @@ export default function HatBlock({ hatRef, hatBand, n, band0 }: HatBlockProps) {
         background: ACCENT,
       }}
     >
-      <span style={{ fontSize: 12 }}>▶</span>
+      <Play size={13} />
       Démarrer le projet
       <div style={{ position: 'absolute', bottom: -11, left: 20, width: 24, height: 11, background: ACCENT, borderRadius: '0 0 999px 999px' }} />
     </div>

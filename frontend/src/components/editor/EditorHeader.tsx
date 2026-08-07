@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { Save, Play, Loader2, Upload, Download, Square } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import useAppStore from '../../store/useAppStore'
 import { signOut } from '../../services/auth'
@@ -7,7 +8,7 @@ import { usePipelineImport } from '../../hooks/usePipelineImport'
 import ExportModal from '../ui/ExportModal'
 import { theme } from '../../theme'
 
-const ghostBtn: React.CSSProperties = { background: 'rgba(255,255,255,.06)', color: theme.color.textLight, border: '1px solid rgba(255,255,255,.1)', padding: '8px 14px', borderRadius: theme.radius.md, fontWeight: 700, fontSize: 13.5, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7 }
+const ghostBtn: React.CSSProperties = { background: 'rgba(255,255,255,.06)', color: theme.color.textLight, border: '1px solid rgba(255,255,255,.1)', padding: '8px 14px', borderRadius: theme.radius.md, fontWeight: 700, fontSize: 13.5, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7, transition: 'background .15s ease, transform .15s ease' }
 const actionBtn: React.CSSProperties = { ...ghostBtn, color: '#cfc6bd', padding: '9px 14px' }
 
 type EditorHeaderProps = {
@@ -47,9 +48,9 @@ export default function EditorHeader({ onRun, onStop, onClear }: EditorHeaderPro
     setSaving(true)
     try {
       await savePipeline(projectName.trim() || 'mon-premier-modèle')
-      showToast({ kind: 'convert', message: '✓ Projet sauvegardé' })
+      showToast({ kind: 'success', message: 'Projet sauvegardé' })
     } catch {
-      showToast({ kind: 'error', message: '⚠ Échec de la sauvegarde' })
+      showToast({ kind: 'error', message: 'Échec de la sauvegarde' })
     } finally {
       setSaving(false)
     }
@@ -98,19 +99,19 @@ export default function EditorHeader({ onRun, onStop, onClear }: EditorHeaderPro
         <button onClick={() => setEditorMode(editorMode === 'linear' ? 'advanced' : 'linear')} style={editorMode === 'advanced' ? { ...ghostBtn, background: theme.color.auth, color: '#fff', border: '1px solid transparent' } : ghostBtn}>
           {editorMode === 'linear' ? 'Avancé' : 'Linéaire'}
         </button>
-        <button style={ghostBtn} onClick={() => fileRef.current?.click()}>↧ Importer</button>
-        <button style={ghostBtn} onClick={() => setExportOpen(true)}>↥ Exporter</button>
+        <button className="hover-bright" style={ghostBtn} onClick={() => fileRef.current?.click()}><Upload size={14} /> Importer</button>
+        <button className="hover-bright" style={ghostBtn} onClick={() => setExportOpen(true)}><Download size={14} /> Exporter</button>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
         <button onClick={() => navigate('/projets')} style={ghostBtn}>Mes projets</button>
         <button onClick={async () => { await signOut(); setUser(null); navigate('/') }} style={ghostBtn}>Déconnexion</button>
         <button onClick={onClear} style={actionBtn}>Tout effacer</button>
-        <button onClick={onSave} style={{ ...actionBtn, background: 'rgba(34,197,94,.14)', color: '#8fd1a8', border: '1px solid rgba(34,197,94,.35)', fontWeight: 800, opacity: saving ? 0.6 : 1 }}>💾 Sauvegarder</button>
+        <button onClick={onSave} style={{ ...actionBtn, background: 'rgba(34,197,94,.14)', color: '#8fd1a8', border: '1px solid rgba(34,197,94,.35)', fontWeight: 800, opacity: saving ? 0.6 : 1 }}>{saving ? <Loader2 size={15} style={{ animation: 'mlbSpin .8s linear infinite' }} /> : <Save size={15} />} Sauvegarder</button>
         <button onClick={onStop} style={{ ...actionBtn, background: 'rgba(224,112,95,.16)', color: theme.color.accentLight, border: '1px solid rgba(224,112,95,.4)', fontWeight: 800 }}>
-          <span style={{ fontSize: 10 }}>■</span> Arrêter
+          <Square size={13} fill="currentColor" /> Arrêter
         </button>
-        <button onClick={onRun} style={{ color: '#fff', border: 'none', padding: '9px 20px', borderRadius: theme.radius.md, fontWeight: 800, fontSize: 14, cursor: 'pointer', boxShadow: theme.shadow.btn, display: 'inline-flex', alignItems: 'center', gap: 8, background: theme.color.accent, opacity: running ? 0.6 : 1 }}>
-          <span style={{ fontSize: 11 }}>▶</span> Lancer
+        <button onClick={onRun} style={{ color: '#fff', border: 'none', padding: '9px 20px', borderRadius: theme.radius.md, fontWeight: 800, fontSize: 14, cursor: 'pointer', boxShadow: theme.shadow.btn, display: 'inline-flex', alignItems: 'center', gap: 8, background: theme.color.accent, opacity: running ? 0.6 : 1, transition: 'filter .15s ease, transform .15s ease' }}>
+          <Play size={15} fill="currentColor" /> Lancer
         </button>
       </div>
 

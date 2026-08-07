@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import useAppStore from '../../store/useAppStore'
+import { CheckCircle2, XCircle, Zap } from 'lucide-react'
 import { theme } from '../../theme'
 
 const style: React.CSSProperties = {
@@ -36,7 +37,7 @@ export default function Toast() {
   const color = toast.kind === 'error' ? theme.color.error : theme.color.convert
   return (
     <div role="alert" style={{ ...style, borderColor: color }}>
-      <span style={{ color, fontSize: 15 }}>{toast.kind === 'error' ? '✗' : '⚡'}</span>
+      {toast.kind === 'error' ? <XCircle size={17} color={color} /> : toast.kind === 'success' ? <CheckCircle2 size={17} color={color} /> : <Zap size={17} color={color} />}
       <span style={{ flex: 1 }}>{toast.message}</span>
       {toast.action && (
         <button

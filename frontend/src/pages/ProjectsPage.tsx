@@ -6,6 +6,7 @@ import type { PipelineSummary } from '../types/catalog'
 import { usePipelineImport } from '../hooks/usePipelineImport'
 import ExportModal from '../components/ui/ExportModal'
 import { theme } from '../theme'
+import { Upload } from 'lucide-react'
 
 const MAX_PROJECTS = 20
 
@@ -23,23 +24,23 @@ const subStyle: React.CSSProperties = { color: theme.color.textMuted, fontSize: 
 const primaryBtn: React.CSSProperties = {
   background: theme.color.accent, color: '#fff', border: 'none', padding: '11px 18px',
   borderRadius: theme.radius.md, fontWeight: 800, fontSize: 14, cursor: 'pointer',
-  boxShadow: theme.shadow.btn, display: 'inline-flex', alignItems: 'center', gap: 8,
+  boxShadow: theme.shadow.btn, display: 'inline-flex', alignItems: 'center', gap: 8, transition: 'filter .15s ease, transform .15s ease',
 }
 const ghostBtn: React.CSSProperties = {
   background: 'rgba(255,255,255,.06)', color: theme.color.textLight, border: `1px solid ${theme.color.border}`,
-  padding: '11px 18px', borderRadius: theme.radius.md, fontWeight: 700, fontSize: 14, cursor: 'pointer',
+  padding: '11px 18px', borderRadius: theme.radius.md, fontWeight: 700, fontSize: 14, cursor: 'pointer', transition: 'background .15s ease',
 }
 const gridStyle: React.CSSProperties = {
   maxWidth: 980, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16,
 }
 const cardStyle: React.CSSProperties = {
   background: theme.color.surface2, border: `1px solid ${theme.color.border}`, borderRadius: theme.radius.lg,
-  padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 10,
+  padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 10, transition: 'border-color .15s ease, transform .15s ease',
 }
 const cardName: React.CSSProperties = { fontWeight: 800, fontSize: 16, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }
 const cardMeta: React.CSSProperties = { color: theme.color.textMuted, fontSize: 12.5, fontWeight: 600 }
 const cardActions: React.CSSProperties = { display: 'flex', gap: 8, marginTop: 4 }
-const cardBtn: React.CSSProperties = {
+const cardBtn: React.CSSProperties = { transition: 'background .15s ease',
   background: 'rgba(255,255,255,.06)', color: theme.color.textLight, border: 'none',
   padding: '6px 12px', borderRadius: theme.radius.sm, fontWeight: 700, fontSize: 12.5, cursor: 'pointer',
 }
@@ -119,7 +120,7 @@ export default function ProjectsPage() {
             style={{ display: 'none' }}
             onChange={e => { const f = e.target.files?.[0]; if (f) onImportFile(f); e.target.value = '' }}
           />
-          <button style={ghostBtn} onClick={() => fileRef.current?.click()}>↧ Importer</button>
+          <button className="hover-bright" style={ghostBtn} onClick={() => fileRef.current?.click()}><Upload size={15} /> Importer</button>
           <button
             style={{ ...primaryBtn, opacity: atLimit ? 0.5 : 1, cursor: atLimit ? 'not-allowed' : 'pointer' }}
             disabled={atLimit}
@@ -141,7 +142,7 @@ export default function ProjectsPage() {
 
       <div style={gridStyle}>
         {projects?.map(p => (
-          <div key={p.id} style={cardStyle}>
+          <div key={p.id} className="hover-card" style={cardStyle}>
             <div style={cardName} title={p.name}>{p.name}</div>
             <div style={cardMeta}>Modifié le {fmtDate(p.updated_at)} · {p.node_count} bloc{p.node_count > 1 ? 's' : ''}</div>
             <div style={cardActions}>

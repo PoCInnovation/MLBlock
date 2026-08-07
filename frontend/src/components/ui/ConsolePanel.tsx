@@ -2,6 +2,7 @@ import { useRef, useEffect, useState } from 'react'
 import { theme } from '../../theme'
 import useAppStore from '../../store/useAppStore'
 import ResultsPanel from './ResultsPanel'
+import { CheckCircle2 } from 'lucide-react'
 
 const COLORS: Record<string, string> = { sys: '#f0e9e3', info: '#9aa0c4', ok: '#8fd1a8', epoch: '#E8C77A' }
 
@@ -50,7 +51,7 @@ export default function ConsolePanel() {
         </div>
         {result !== null && (
           <div style={{ background: 'rgba(143,209,168,.16)', border: '1px solid rgba(143,209,168,.4)', color: '#8fd1a8', padding: '5px 12px', borderRadius: 999, fontWeight: 800, fontSize: 13 }}>
-            ✓ Terminé
+            <CheckCircle2 size={14} /> Terminé
           </div>
         )}
       </div>

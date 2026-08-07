@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { Play } from 'lucide-react'
 import SiteLayout from '../components/landing/SiteLayout'
 
 export default function HowItWorksPage() {
@@ -91,7 +92,7 @@ export default function HowItWorksPage() {
               onClick={() => navigate('/editor')}
               style={{ background: '#D97757', color: '#fff', border: 'none', padding: '15px 28px', borderRadius: 14, fontWeight: 800, fontSize: 16, cursor: 'pointer', boxShadow: '0 4px 0 rgba(0,0,0,.25)', display: 'inline-flex', alignItems: 'center', gap: 9, whiteSpace: 'nowrap' }}
             >
-              <span style={{ fontSize: 13 }}>▶</span> Ouvrir l'éditeur
+              <Play size={14} /> Ouvrir l'éditeur
             </button>
           </div>
         </div>

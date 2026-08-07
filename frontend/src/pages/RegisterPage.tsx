@@ -6,6 +6,7 @@ import { signUp } from '../services/auth'
 import SiteLayout from '../components/landing/SiteLayout'
 import { Field, FieldError, FieldLabel } from '../components/ui/field'
 import { theme } from '../theme'
+import { CheckCircle2, Circle } from 'lucide-react'
 import { registerSchema, type RegisterInput } from '../schemas/auth'
 import { mapSupabaseError } from '../schemas/errors'
 
@@ -114,7 +115,7 @@ export default function RegisterPage() {
               />
               <div style={{ marginTop: -8, marginBottom: 12 }}>
                 {rules.map(r => (
-                  <div key={r.label} style={ruleStyle(r.ok)}>{r.ok ? '✓' : '○'} {r.label}</div>
+                  <div key={r.label} style={ruleStyle(r.ok)}>{r.ok ? <CheckCircle2 size={14} /> : <Circle size={14} />} {r.label}</div>
                 ))}
               </div>
               <Controller

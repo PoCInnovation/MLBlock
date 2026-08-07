@@ -22,6 +22,9 @@ input, select, button { font-family: inherit; }
   0%, 100% { opacity: 1; }
   50%       { opacity: .35; }
 }
+@keyframes mlbSpin {
+  to { transform: rotate(360deg); }
+}
 
 /* PoC Innovation button — design system match */
 .poc-btn {
@@ -111,3 +114,9 @@ input, select, button { font-family: inherit; }
   .landing-section-pad { padding: 48px 20px !important; }
   .landing-features-grid { grid-template-columns: 1fr !important; }
 }
+
+/* Hover states — transitions définies inline, effet :hover ici */
+.hover-lift:hover { transform: translateY(-2px); filter: brightness(1.08); }
+.hover-bright:hover { filter: brightness(1.12); }
+.hover-card:hover { transform: translateY(-2px); border-color: rgba(217,119,87,.55) !important; }
+.hover-btn:hover { background: rgba(255,255,255,.11) !important; }
