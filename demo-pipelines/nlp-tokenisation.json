@@ -1,0 +1,60 @@
+{
+  "name": "NLP : tokenisation et vocabulaire",
+  "nodes": [
+    {
+      "id": "n1",
+      "type": "tokenize",
+      "params": {
+        "text": "Le chat dort le chat mange",
+        "sep": " "
+      },
+      "children": [],
+      "position": {
+        "x": 60,
+        "y": 120
+      }
+    },
+    {
+      "id": "n2",
+      "type": "build_vocab",
+      "params": {},
+      "children": [],
+      "position": {
+        "x": 300,
+        "y": 120
+      }
+    },
+    {
+      "id": "n3",
+      "type": "encode_text",
+      "params": {
+        "max_len": "8"
+      },
+      "children": [],
+      "position": {
+        "x": 540,
+        "y": 120
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "n1",
+      "source_port": "out_1",
+      "target": "n2",
+      "target_port": "in_1"
+    },
+    {
+      "source": "n1",
+      "source_port": "out_1",
+      "target": "n3",
+      "target_port": "in_1"
+    },
+    {
+      "source": "n2",
+      "source_port": "out_1",
+      "target": "n3",
+      "target_port": "vocab"
+    }
+  ]
+}

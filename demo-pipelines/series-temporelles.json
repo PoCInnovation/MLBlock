@@ -1,0 +1,131 @@
+{
+  "name": "Séries temporelles (RNN)",
+  "nodes": [
+    {
+      "id": "n1",
+      "type": "load_sklearn_dataset",
+      "params": {
+        "name": "iris"
+      },
+      "children": [],
+      "position": {
+        "x": 60,
+        "y": 120
+      }
+    },
+    {
+      "id": "n2",
+      "type": "sequence_dataset",
+      "params": {
+        "seq_len": "8"
+      },
+      "children": [],
+      "position": {
+        "x": 300,
+        "y": 120
+      }
+    },
+    {
+      "id": "n3",
+      "type": "rnn_layer",
+      "params": {
+        "input_size": "5",
+        "hidden_size": "8"
+      },
+      "children": [],
+      "position": {
+        "x": 540,
+        "y": 120
+      }
+    },
+    {
+      "id": "n4",
+      "type": "linear_layer",
+      "params": {
+        "in_features": "8",
+        "out_features": "1"
+      },
+      "children": [],
+      "position": {
+        "x": 780,
+        "y": 120
+      }
+    },
+    {
+      "id": "n5",
+      "type": "adam",
+      "params": {},
+      "children": [],
+      "position": {
+        "x": 1020,
+        "y": 120
+      }
+    },
+    {
+      "id": "n6",
+      "type": "mse_loss",
+      "params": {},
+      "children": [],
+      "position": {
+        "x": 1260,
+        "y": 120
+      }
+    },
+    {
+      "id": "n7",
+      "type": "train_model",
+      "params": {
+        "epochs": "2"
+      },
+      "children": [],
+      "position": {
+        "x": 1500,
+        "y": 120
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "n1",
+      "source_port": "out_1",
+      "target": "n2",
+      "target_port": "in_1"
+    },
+    {
+      "source": "n2",
+      "source_port": "out_1",
+      "target": "n7",
+      "target_port": "in_2"
+    },
+    {
+      "source": "n3",
+      "source_port": "out_1",
+      "target": "n4",
+      "target_port": "in_1"
+    },
+    {
+      "source": "n4",
+      "source_port": "out_1",
+      "target": "n7",
+      "target_port": "in_1"
+    },
+    {
+      "source": "n4",
+      "source_port": "out_1",
+      "target": "n5",
+      "target_port": "in_1"
+    },
+    {
+      "source": "n5",
+      "source_port": "out_1",
+      "target": "n7",
+      "target_port": "in_3"
+    },
+    {
+      "source": "n6",
+      "source_port": "out_1",
+      "target": "n7",
+      "target_port": "in_4"
+    }
+  ]
+}

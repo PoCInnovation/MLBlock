@@ -1,0 +1,111 @@
+{
+  "name": "MLP MNIST (entraînement)",
+  "nodes": [
+    {
+      "id": "n1",
+      "type": "load_torch_dataset",
+      "params": {
+        "name": "mnist",
+        "batch_size": "512"
+      },
+      "children": [],
+      "position": {
+        "x": 60,
+        "y": 120
+      }
+    },
+    {
+      "id": "n2",
+      "type": "flatten_layer",
+      "params": {},
+      "children": [],
+      "position": {
+        "x": 300,
+        "y": 120
+      }
+    },
+    {
+      "id": "n3",
+      "type": "linear_layer",
+      "params": {
+        "in_features": "784",
+        "out_features": "10"
+      },
+      "children": [],
+      "position": {
+        "x": 540,
+        "y": 120
+      }
+    },
+    {
+      "id": "n4",
+      "type": "adam",
+      "params": {},
+      "children": [],
+      "position": {
+        "x": 780,
+        "y": 120
+      }
+    },
+    {
+      "id": "n5",
+      "type": "cross_entropy_loss",
+      "params": {},
+      "children": [],
+      "position": {
+        "x": 1020,
+        "y": 120
+      }
+    },
+    {
+      "id": "n6",
+      "type": "train_model",
+      "params": {
+        "epochs": "1"
+      },
+      "children": [],
+      "position": {
+        "x": 1260,
+        "y": 120
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "n1",
+      "source_port": "out_1",
+      "target": "n6",
+      "target_port": "in_2"
+    },
+    {
+      "source": "n2",
+      "source_port": "out_1",
+      "target": "n3",
+      "target_port": "in_1"
+    },
+    {
+      "source": "n3",
+      "source_port": "out_1",
+      "target": "n6",
+      "target_port": "in_1"
+    },
+    {
+      "source": "n3",
+      "source_port": "out_1",
+      "target": "n4",
+      "target_port": "in_1"
+    },
+    {
+      "source": "n4",
+      "source_port": "out_1",
+      "target": "n6",
+      "target_port": "in_3"
+    },
+    {
+      "source": "n5",
+      "source_port": "out_1",
+      "target": "n6",
+      "target_port": "in_4"
+    }
+  ]
+}

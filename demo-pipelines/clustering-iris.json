@@ -1,0 +1,59 @@
+{
+  "name": "Clustering iris (k-means)",
+  "nodes": [
+    {
+      "id": "n1",
+      "type": "load_sklearn_dataset",
+      "params": {
+        "name": "iris"
+      },
+      "children": [],
+      "position": {
+        "x": 60,
+        "y": 120
+      }
+    },
+    {
+      "id": "n2",
+      "type": "kmeans",
+      "params": {
+        "n_clusters": "3"
+      },
+      "children": [],
+      "position": {
+        "x": 300,
+        "y": 120
+      }
+    },
+    {
+      "id": "n3",
+      "type": "silhouette",
+      "params": {},
+      "children": [],
+      "position": {
+        "x": 540,
+        "y": 120
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "n1",
+      "source_port": "out_1",
+      "target": "n2",
+      "target_port": "in_1"
+    },
+    {
+      "source": "n1",
+      "source_port": "out_1",
+      "target": "n3",
+      "target_port": "in_1"
+    },
+    {
+      "source": "n2",
+      "source_port": "out_1",
+      "target": "n3",
+      "target_port": "model"
+    }
+  ]
+}

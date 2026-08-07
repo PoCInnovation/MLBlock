@@ -1,0 +1,80 @@
+{
+  "name": "Classification iris (forêt aléatoire)",
+  "nodes": [
+    {
+      "id": "n1",
+      "type": "load_sklearn_dataset",
+      "params": {
+        "name": "iris"
+      },
+      "children": [],
+      "position": {
+        "x": 60,
+        "y": 120
+      }
+    },
+    {
+      "id": "n2",
+      "type": "train_test_split",
+      "params": {
+        "ratio": "0.7"
+      },
+      "children": [],
+      "position": {
+        "x": 300,
+        "y": 120
+      }
+    },
+    {
+      "id": "n3",
+      "type": "random_forest",
+      "params": {
+        "target_column": "target"
+      },
+      "children": [],
+      "position": {
+        "x": 540,
+        "y": 120
+      }
+    },
+    {
+      "id": "n4",
+      "type": "evaluate",
+      "params": {
+        "target_column": "target",
+        "method": "accuracy"
+      },
+      "children": [],
+      "position": {
+        "x": 780,
+        "y": 120
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "n1",
+      "source_port": "out_1",
+      "target": "n2",
+      "target_port": "dataset"
+    },
+    {
+      "source": "n2",
+      "source_port": "out_1",
+      "target": "n3",
+      "target_port": "train_data"
+    },
+    {
+      "source": "n2",
+      "source_port": "out_2",
+      "target": "n4",
+      "target_port": "test_data"
+    },
+    {
+      "source": "n3",
+      "source_port": "out_1",
+      "target": "n4",
+      "target_port": "model"
+    }
+  ]
+}
