@@ -6,7 +6,6 @@ import { fetchCatalog, listPipelineJobs, getJobOutputs } from '../api/client'
 import { toServerPayload } from '../utils/blockHelpers'
 import { writeStash, readStash, clearStash } from '../utils/pending-stash'
 import EditorHeader from '../components/editor/EditorHeader'
-import EditorLayout from '../components/editor/EditorLayout'
 import EditorUnavailableModal from '../components/ui/EditorUnavailableModal'
 import UnsavedChangesDialog from '../components/ui/UnsavedChangesDialog'
 import Toast from '../components/ui/Toast'
@@ -26,7 +25,6 @@ export default function EditorPage() {
   const { onRun, onStop, onClear } = useBlockRunner()
   const catalog      = useAppStore(s => s.catalog)
   const catalogError = useAppStore(s => s.catalogError)
-  const editorMode   = useAppStore(s => s.editorMode)
   const pipelineId   = useAppStore(s => s.pipelineId)
   const restoredWork = useAppStore(s => s.restoredWork)
   const setRestoredWork = useAppStore(s => s.setRestoredWork)
@@ -153,7 +151,7 @@ export default function EditorPage() {
           <button onClick={() => setRestoredWork(false)} style={{ background: 'none', border: 'none', color: theme.color.successMuted, cursor: 'pointer', fontWeight: 900, fontSize: 14 }} aria-label="Fermer">×</button>
         </div>
       )}
-      {editorMode === 'linear' ? <EditorLayout /> : <FlowCanvas />}
+      <FlowCanvas />
       <Toast />
       <UnsavedChangesDialog
         open={guardOpen}

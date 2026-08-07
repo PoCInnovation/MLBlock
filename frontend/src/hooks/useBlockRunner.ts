@@ -38,7 +38,7 @@ export function useBlockRunner() {
 
     const { nodes, edges } = toServerPayload(store)
 
-    if (store.editorMode === 'linear' && nodes.length === 0) {
+    if (nodes.length === 0) {
       store.appendConsoleLines([{ k: 'sys', t: 'Aucun bloc à exécuter.' }])
       return
     }

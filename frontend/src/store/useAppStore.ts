@@ -1,13 +1,10 @@
 import { create } from 'zustand'
-import { instantiate, toServerPayload } from '../utils/blockHelpers'
-import type { Block } from '../utils/blockHelpers'
+import { toServerPayload } from '../utils/blockHelpers'
 import type { InternalCatalog } from '../types/catalog'
 import type { PipelineNode, PipelineEdge, Job, JobOutput, JobStatus } from '../types/catalog'
 import { createPipeline, updatePipeline } from '../api/client'
 import type { Node, Edge, NodeChange, EdgeChange } from 'reactflow'
 import { applyNodeChanges, applyEdgeChanges, addEdge, type Connection } from 'reactflow'
-import { linearToFlow, flowToLinear } from '../utils/flowConversion'
-import type { FlowBlock } from '../utils/flowConversion'
 
 export type ConsoleLine = { k: string; t: string }
 
@@ -29,15 +26,11 @@ type DragBase = {
   label: string
 }
 
-export type DragState =
-  | (DragBase & { source: 'palette' })
-  | (DragBase & { source: 'script'; id: string })
+export type DragState = DragBase & { source: 'palette' }
 
 type AppState = {
-  editorMode: 'linear' | 'advanced'
   category: string
   user: unknown | null
-  script: Block[]
   flowNodes: Node[]
   flowEdges: Edge[]
   running: boolean
@@ -58,12 +51,7 @@ type AppState = {
   toast: Toast | null
 
   setUser: (user: unknown | null) => void
-  setEditorMode: (mode: 'linear' | 'advanced') => void
   setCategory: (id: string) => void
-  addBlock: (type: string, index: number | null) => void
-  deleteBlock: (id: string) => void
-  moveBlock: (id: string, index: number) => void
-  updateField: (id: string, k: string, v: string) => void
   setDrag: (drag: DragState) => void
   clearDrag: () => void
   setFlowNodes: (nodes: Node[]) => void
@@ -97,12 +85,8 @@ type AppState = {
   clearToast: () => void
 }
 
-const savedMode = typeof localStorage !== 'undefined' ? localStorage.getItem('mlblock-editor-mode') : null
-
 const useAppStore = create<AppState>((set, get) => ({
-  editorMode: savedMode === 'advanced' ? 'advanced' : 'linear',
   category: 'data',
-  script: [],
   flowNodes: [],
   flowEdges: [],
   running: false,
@@ -119,26 +103,11 @@ const useAppStore = create<AppState>((set, get) => ({
   lastJobId: null,
   jobStatus: null,
   results: [],
-  savedFingerprint: JSON.stringify({ script: [], flowNodes: [], flowEdges: [], projectName: 'mon-premier-modèle' }),
+  savedFingerprint: JSON.stringify({ flowNodes: [], flowEdges: [], projectName: 'mon-premier-modèle' }),
   restoredWork: false,
   toast: null,
 
   setCategory: (id) => set({ category: id }),
-
-  setEditorMode: (mode) => {
-    if (typeof localStorage !== 'undefined') localStorage.setItem('mlblock-editor-mode', mode)
-    set((s) => {
-    if (mode === 'advanced' && s.catalog) {
-      const flowNodes = linearToFlow(s.script as FlowBlock[], s.catalog)
-      return { editorMode: mode, flowNodes }
-    }
-    if (mode === 'linear') {
-      const script = flowToLinear(s.flowNodes)
-      return { editorMode: mode, script: script as any }
-    }
-    return { editorMode: mode }
-  })
-  },
 
   setFlowNodes: (nodes) => set({ flowNodes: nodes }),
   setFlowEdges: (edges) => set({ flowEdges: edges }),
@@ -157,32 +126,6 @@ const useAppStore = create<AppState>((set, get) => ({
   removeFlowNode: (nodeId) => set((s) => ({
     flowNodes: s.flowNodes.filter(n => n.id !== nodeId),
     flowEdges: s.flowEdges.filter(e => e.source !== nodeId && e.target !== nodeId),
-  })),
-
-  addBlock: (type, index) => set((s) => {
-    if (!s.catalog) return {}
-    const b = instantiate(type, s.catalog.blocks)
-    const sc = s.script.slice()
-    if (index == null || index < 0 || index > sc.length) sc.push(b)
-    else sc.splice(index, 0, b)
-    return { script: sc }
-  }),
-
-  deleteBlock: (id) => set((s) => ({ script: s.script.filter(b => b.id !== id) })),
-
-  moveBlock: (id, index) => set((s) => {
-    const sc = s.script.slice()
-    const from = sc.findIndex(b => b.id === id)
-    if (from < 0) return {}
-    const [b] = sc.splice(from, 1)
-    let idx = from < index ? index - 1 : index
-    idx = Math.max(0, Math.min(idx, sc.length))
-    sc.splice(idx, 0, b)
-    return { script: sc }
-  }),
-
-  updateField: (id, k, v) => set((s) => ({
-    script: s.script.map(b => b.id === id ? { ...b, fields: { ...b.fields, [k]: v } } : b)
   })),
 
   setDrag: (drag) => set({ drag }),
@@ -214,19 +157,37 @@ const useAppStore = create<AppState>((set, get) => ({
 
   failRun: () => set((s) => ({ running: false, runningId: null })),
 
-  clearAll: () => set({ script: [], flowNodes: [], flowEdges: [], consoleLines: [], result: null, running: false, runningId: null, lastJobId: null, jobStatus: null, results: [] }),
+  clearAll: () => set({ flowNodes: [], flowEdges: [], consoleLines: [], result: null, running: false, runningId: null, lastJobId: null, jobStatus: null, results: [] }),
 
   setCatalog: (catalog) => set((s) => {
     const firstCat = catalog.categories[0]?.id ?? 'data'
     const catExists = catalog.categories.some(c => c.id === s.category)
     // Pipeline chargé avant le catalogue (ouverture depuis /projets) :
-    // reconversion one-shot du script vers le canvas avancé.
-    // (Aucun add n'est possible avant le catalogue — la palette ne rend pas.)
+    // enrichit les nodes avec segs/inputs/outputs une fois le catalogue dispo.
     let flowNodes = s.flowNodes
     let savedFingerprint = s.savedFingerprint
-    if (s.script.length > 0 && s.flowNodes.length === 0) {
-      flowNodes = linearToFlow(s.script as FlowBlock[], catalog)
-      savedFingerprint = JSON.stringify({ script: s.script, flowNodes, flowEdges: s.flowEdges, projectName: s.projectName })
+    const needsBackfill = flowNodes.length > 0 && flowNodes.some(n => !(n.data as { segs?: unknown } | undefined)?.segs)
+    if (needsBackfill) {
+      flowNodes = flowNodes.map(n => {
+        const d = n.data as { type?: string; fields?: Record<string, string>; segs?: unknown } | undefined
+        if (d?.segs) return n
+        const def = d?.type ? catalog.blocks[d.type] : undefined
+        const first = def?.segs[0]
+        return {
+          ...n,
+          data: {
+            type: d?.type ?? '',
+            label: first?.t === 'text' ? first.v : (d?.type ?? ''),
+            category: def?.cat ?? 'unknown',
+            categoryColor: catalog.categories.find(c => c.id === def?.cat)?.color ?? '#888',
+            segs: def?.segs ?? [],
+            fields: d?.fields ?? {},
+            inputs: def?.inputs ?? [],
+            outputs: def?.outputs ?? [],
+          },
+        }
+      })
+      savedFingerprint = JSON.stringify({ flowNodes, flowEdges: s.flowEdges, projectName: s.projectName })
     }
     return { catalog, category: catExists ? s.category : firstCat, flowNodes, savedFingerprint }
   }),
@@ -242,20 +203,33 @@ const useAppStore = create<AppState>((set, get) => ({
   isDirty: () => {
     const s = get()
     if (s.savedFingerprint === null) return false
-    const fp = JSON.stringify({ script: s.script, flowNodes: s.flowNodes, flowEdges: s.flowEdges, projectName: s.projectName })
+    const fp = JSON.stringify({ flowNodes: s.flowNodes, flowEdges: s.flowEdges, projectName: s.projectName })
     return fp !== s.savedFingerprint
   },
 
   loadPipeline: (nodes, edges, pipelineId, name) => set((s) => {
-    const script: Block[] = nodes.map(n => ({
-      id: n.id,
-      type: n.type,
-      fields: Object.fromEntries(Object.entries(n.params ?? {}).map(([k, v]) => [k, String(v)])),
-    }))
-    const flowNodes = s.catalog ? linearToFlow(script as FlowBlock[], s.catalog) : []
-    const posMap = new Map<string, { x: number; y: number }>()
-    nodes.forEach(n => { if (n.position) posMap.set(n.id, n.position) })
-    const positioned = flowNodes.map(n => (posMap.has(n.id) ? { ...n, position: posMap.get(n.id)! } : n))
+    // Construction directe des nodes flow depuis le JSON serveur. Sans
+    // catalogue, les segs/inputs/outputs sont vides — le backfill setCatalog
+    // les enrichit à l'arrivée du catalogue.
+    const flowNodes: Node[] = nodes.map((n, i) => {
+      const def = s.catalog?.blocks[n.type]
+      const first = def?.segs[0]
+      return {
+        id: n.id,
+        type: 'block',
+        position: n.position ?? { x: 100, y: 80 + i * 120 },
+        data: {
+          type: n.type,
+          label: first?.t === 'text' ? first.v : n.type,
+          category: def?.cat ?? 'unknown',
+          categoryColor: s.catalog?.categories.find(c => c.id === def?.cat)?.color ?? '#888',
+          segs: def?.segs ?? [],
+          fields: Object.fromEntries(Object.entries(n.params ?? {}).map(([k, v]) => [k, String(v)])),
+          inputs: def?.inputs ?? [],
+          outputs: def?.outputs ?? [],
+        },
+      }
+    })
     const flowEdges: Edge[] = edges.map((e, i) => ({
       id: `e-${i}`,
       source: e.source,
@@ -263,7 +237,7 @@ const useAppStore = create<AppState>((set, get) => ({
       target: e.target,
       targetHandle: e.target_port,
     }))
-    return { script, flowNodes: positioned, flowEdges, pipelineId, projectName: name, savedFingerprint: JSON.stringify({ script, flowNodes: positioned, flowEdges, projectName: name }) }
+    return { flowNodes, flowEdges, pipelineId, projectName: name, savedFingerprint: JSON.stringify({ flowNodes, flowEdges, projectName: name }) }
   }),
 
   savePipeline: async (name) => {
@@ -276,7 +250,7 @@ const useAppStore = create<AppState>((set, get) => ({
     set({
       pipelineId: detail.id,
       projectName: detail.name,
-      savedFingerprint: JSON.stringify({ script: s.script, flowNodes: s.flowNodes, flowEdges: s.flowEdges, projectName: detail.name }),
+      savedFingerprint: JSON.stringify({ flowNodes: s.flowNodes, flowEdges: s.flowEdges, projectName: detail.name }),
     })
   },
 

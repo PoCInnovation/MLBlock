@@ -32,8 +32,6 @@ export default function EditorHeader({ onRun, onStop, onClear }: EditorHeaderPro
   const setProjectName = useAppStore(s => s.setProjectName)
   const running     = useAppStore(s => s.running)
   const setUser     = useAppStore(s => s.setUser)
-  const editorMode  = useAppStore(s => s.editorMode)
-  const setEditorMode = useAppStore(s => s.setEditorMode)
   const savePipeline = useAppStore(s => s.savePipeline)
   const ensureDraft = useAppStore(s => s.ensureDraft)
   const showToast   = useAppStore(s => s.showToast)
@@ -107,9 +105,6 @@ export default function EditorHeader({ onRun, onStop, onClear }: EditorHeaderPro
             </span>
           )}
         </div>
-        <button onClick={() => setEditorMode(editorMode === 'linear' ? 'advanced' : 'linear')} style={editorMode === 'advanced' ? { ...ghostBtn, background: theme.color.auth, color: '#fff', border: '1px solid transparent' } : ghostBtn}>
-          {editorMode === 'linear' ? 'Avancé' : 'Linéaire'}
-        </button>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
         <button onClick={onSave} style={{ ...actionBtn, background: 'rgba(34,197,94,.14)', color: '#8fd1a8', border: '1px solid rgba(34,197,94,.35)', fontWeight: 800, opacity: saving ? 0.6 : 1 }}>{saving ? <Loader2 size={15} style={{ animation: 'mlbSpin .8s linear infinite' }} /> : <Save size={15} />} Sauvegarder</button>
