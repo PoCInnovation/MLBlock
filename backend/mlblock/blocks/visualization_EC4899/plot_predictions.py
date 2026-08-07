@@ -1,12 +1,14 @@
-def plot_predictions(in_1: "object", in_2: "pd.DataFrame", target_column: "str", output_path: "str" = "predictions.png") -> "None":
+import io
+
+
+def plot_predictions(in_1: "object", in_2: "pd.DataFrame", target_column: "str") -> "bytes":
     """Tracer les prédictions.
-    Trace les prédictions vs les valeurs réelles (PNG).
+    Trace les prédictions vs les valeurs réelles et retourne le PNG (octets).
 
     Args:
         in_1: Trained model.
         in_2: Test data.
         target_column: Target column name.
-        output_path: Output file path.
     """
     import matplotlib
     matplotlib.use("Agg")
@@ -20,5 +22,7 @@ def plot_predictions(in_1: "object", in_2: "pd.DataFrame", target_column: "str",
     plt.xlabel("Actual")
     plt.ylabel("Predicted")
     plt.title("Predictions vs Actual")
-    plt.savefig(output_path)
+    buf = io.BytesIO()
+    plt.savefig(buf, format="png")
     plt.close()
+    return buf.getvalue()

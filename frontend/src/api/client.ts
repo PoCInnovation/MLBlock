@@ -9,6 +9,8 @@ import type {
   PipelineNode,
   PipelineEdge,
   PipelineSummary,
+  Job,
+  JobOutput,
   ValidationResponse,
   BuildResponse,
   GenerateResponse,
@@ -154,4 +156,24 @@ export async function fetchFileColumns(url: string): Promise<string[] | null> {
     columnsCache.set(url, null)
     return null
   }
+}
+
+export async function executePipeline(id: number): Promise<Job> {
+  const { data } = await http.post<Job>(`/api/pipelines/${id}/execute`)
+  return data
+}
+
+export async function getJob(id: number): Promise<Job> {
+  const { data } = await http.get<Job>(`/api/jobs/${id}`)
+  return data
+}
+
+export async function getJobOutputs(id: number): Promise<JobOutput[]> {
+  const { data } = await http.get<JobOutput[]>(`/api/jobs/${id}/outputs`)
+  return data
+}
+
+export async function listPipelineJobs(id: number): Promise<Job[]> {
+  const { data } = await http.get<Job[]>(`/api/pipelines/${id}/jobs`)
+  return data
 }

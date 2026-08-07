@@ -156,6 +156,35 @@ def get_file_columns(url: str) -> dict:
     return {"columns": [c.strip() for c in columns if c.strip()]}
 
 
+def _is_mock_vast() -> bool:
+    """Mode exécution locale : MLBLOCK_RUN_MODE=local, ou pas de vraie clé Vast.ai."""
+    if os.environ.get("MLBLOCK_RUN_MODE", "").lower() == "local":
+        return True
+    key = os.environ.get("VAST_API_KEY", "mock-vast-key")
+    return not key or key.startswith("mock")
+
+
+def _run_local(code: str, job_id: UUID) -> None:
+    """Exécute le code généré en subprocess local (mode mock, sans GPU)."""
+    import subprocess
+    import sys
+    import tempfile
+
+    fd, path = tempfile.mkstemp(suffix=".py", prefix="mlblock_run_")
+    with os.fdopen(fd, "w") as f:
+        f.write(code)
+    env = dict(os.environ)
+    # Le subprocess doit joindre le serveur LOCAL (le BACKEND_URL du .env pointe
+    # vers Render/prod — les callbacks du run local doivent revenir ici).
+    env.update({
+        "BACKEND_URL": "http://localhost:8000",
+        "JOB_ID": str(job_id),
+        "GPU_API_KEY": os.environ.get("GPU_API_KEY", "mock-gpu-key"),
+        "BACKEND_TIMEOUT": os.environ.get("BACKEND_TIMEOUT", "90"),
+    })
+    subprocess.Popen([sys.executable, path], env=env, start_new_session=True)
+
+
 # ── Pipelines ───────────────────────────────────────────────────────
 
 def _row_to_summary(row: PipelineTable) -> dict:
@@ -380,8 +409,13 @@ def execute_pipeline(
     session.commit()
 
     # Start instance and execute code
-    vast.start_instance(job.vast_instance_id)
-    vast.execute(job.vast_instance_id, code)
+    if _is_mock_vast():
+        # Mode mock : exécute réellement le code en local — les callbacks
+        # (status/output/error) alimentent le job comme sur un vrai GPU.
+        _run_local(code, job.id)
+    else:
+        vast.start_instance(job.vast_instance_id)
+        vast.execute(job.vast_instance_id, code)
 
     # DEV ONLY: auto-destroy instance after 60s if job hasn't completed
     # Prevents orphan GPUs during development when callbacks may not fire
@@ -435,6 +469,28 @@ def get_job(
     if not pipeline or str(pipeline.user_id) != user_id:
         raise HTTPException(status_code=404, detail="Job not found")
     return job
+
+
+@jobs_router.get("/{job_id}/outputs")
+def get_job_outputs(
+    job_id: UUID,
+    user_id: str = Depends(get_current_user),
+    session: Session = Depends(get_session),
+) -> list[dict]:
+    """Sorties structurées d'un job (métriques, courbes, images, texte)."""
+    job = session.get(Job, job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    pipeline = session.get(PipelineTable, job.pipeline_id)
+    if not pipeline or str(pipeline.user_id) != user_id:
+        raise HTTPException(status_code=404, detail="Job not found")
+    rows = session.exec(
+        select(JobOutput).where(JobOutput.job_id == job_id).order_by(JobOutput.created_at)
+    ).all()
+    return [
+        {"block_name": r.block_name, "output": r.output, "created_at": r.created_at.isoformat()}
+        for r in rows
+    ]
 
 
 @jobs_router.post("/{job_id}/status")
@@ -583,13 +639,16 @@ def build_pipeline_model(
         if node_id not in incoming and node.block and node.block.can_build():
             # String params (frontend) must be typed before shape inference
             node.block.coerce_params(node.params)
-            # Infer input shape from params or default to [1, 1, 28, 28]
-            shape = node.params.get("shape", node.params.get("in_channels", [1, 1, 28, 28]))
-            if isinstance(shape, int):
-                shape = [1, shape, 28, 28]
-            elif isinstance(shape, list):
-                shape = [1] + shape if len(shape) < 4 else shape
-            node.params["in_1"] = torch.randn(*shape)
+            # N'injecte in_1 que si le bloc attend un input (les loaders de
+            # données — load_csv — n'ont pas d'input et n'en ont pas besoin)
+            if node.block.inputs:
+                # Infer input shape from params or default to [1, 1, 28, 28]
+                shape = node.params.get("shape", node.params.get("in_channels", [1, 1, 28, 28]))
+                if isinstance(shape, int):
+                    shape = [1, shape, 28, 28]
+                elif isinstance(shape, list):
+                    shape = [1] + shape if len(shape) < 4 else shape
+                node.params["in_1"] = torch.randn(*shape)
 
     pipeline = CorePipeline(graph)
 
@@ -620,8 +679,14 @@ def build_pipeline_model(
     if isinstance(last_output, dict):
         last_output = list(last_output.values())[-1]
 
+    # Pipeline non-neural (sklearn, data) : exécutable mais sans tensor de
+    # sortie — le build reste un succès (le run se charge de l'exécution).
     if not isinstance(last_output, torch.Tensor):
-        raise HTTPException(400, detail="Pipeline did not produce a tensor output")
+        return {
+            "success": True,
+            "output_shape": None,
+            "layer_count": len(layers),
+        }
 
     return {
         "success": True,

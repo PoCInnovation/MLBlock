@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { instantiate, toServerPayload } from '../utils/blockHelpers'
 import type { Block } from '../utils/blockHelpers'
 import type { InternalCatalog } from '../types/catalog'
-import type { PipelineNode, PipelineEdge } from '../types/catalog'
+import type { PipelineNode, PipelineEdge, Job, JobOutput, JobStatus } from '../types/catalog'
 import { createPipeline, updatePipeline } from '../api/client'
 import type { Node, Edge, NodeChange, EdgeChange } from 'reactflow'
 import { applyNodeChanges, applyEdgeChanges, addEdge, type Connection } from 'reactflow'
@@ -50,6 +50,9 @@ type AppState = {
   catalogErrorMessage: string | null
   pipelineId: number | null
   projectName: string
+  lastJobId: number | null
+  jobStatus: JobStatus | null
+  results: JobOutput[]
   toast: Toast | null
 
   setUser: (user: unknown | null) => void
@@ -82,6 +85,9 @@ type AppState = {
   loadPipeline: (nodes: PipelineNode[], edges: PipelineEdge[], pipelineId: number, name: string) => void
   savePipeline: (name: string) => Promise<void>
   ensureDraft: () => Promise<number>
+  setLastJob: (job: Job) => void
+  setJobStatus: (status: JobStatus | null) => void
+  setResults: (outputs: JobOutput[]) => void
   showToast: (toast: Toast) => void
   clearToast: () => void
 }
@@ -105,6 +111,9 @@ const useAppStore = create<AppState>((set, get) => ({
   catalogErrorMessage: null,
   pipelineId: null,
   projectName: 'mon-premier-modèle',
+  lastJobId: null,
+  jobStatus: null,
+  results: [],
   toast: null,
 
   setCategory: (id) => set({ category: id }),
@@ -198,12 +207,18 @@ const useAppStore = create<AppState>((set, get) => ({
 
   failRun: () => set((s) => ({ running: false, runningId: null })),
 
-  clearAll: () => set({ script: [], flowNodes: [], flowEdges: [], consoleLines: [], result: null, running: false, runningId: null }),
+  clearAll: () => set({ script: [], flowNodes: [], flowEdges: [], consoleLines: [], result: null, running: false, runningId: null, lastJobId: null, jobStatus: null, results: [] }),
 
   setCatalog: (catalog) => set((s) => {
     const firstCat = catalog.categories[0]?.id ?? 'data'
     const catExists = catalog.categories.some(c => c.id === s.category)
-    return { catalog, category: catExists ? s.category : firstCat }
+    // Pipeline chargé avant le catalogue (ouverture depuis /projets) :
+    // reconversion one-shot du script vers le canvas avancé.
+    let flowNodes = s.flowNodes
+    if (s.script.length > 0 && s.flowNodes.length === 0) {
+      flowNodes = linearToFlow(s.script as FlowBlock[], catalog)
+    }
+    return { catalog, category: catExists ? s.category : firstCat, flowNodes }
   }),
 
   setCatalogError: (error, message) => set({
@@ -251,6 +266,10 @@ const useAppStore = create<AppState>((set, get) => ({
     set({ pipelineId: created.id })
     return created.id
   },
+
+  setLastJob: (job) => set({ lastJobId: job.id, jobStatus: job.status }),
+  setJobStatus: (status) => set({ jobStatus: status }),
+  setResults: (outputs) => set({ results: outputs }),
 
   showToast: (toast) => set({ toast }),
   clearToast: () => set({ toast: null }),

@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useBlockRunner } from '../hooks/useBlockRunner'
 import useAppStore from '../store/useAppStore'
-import { fetchCatalog } from '../api/client'
+import { fetchCatalog, listPipelineJobs, getJobOutputs } from '../api/client'
 import EditorHeader from '../components/editor/EditorHeader'
 import EditorLayout from '../components/editor/EditorLayout'
 import EditorUnavailableModal from '../components/ui/EditorUnavailableModal'
@@ -14,6 +14,27 @@ export default function EditorPage() {
   const catalog      = useAppStore(s => s.catalog)
   const catalogError = useAppStore(s => s.catalogError)
   const editorMode   = useAppStore(s => s.editorMode)
+  const pipelineId   = useAppStore(s => s.pipelineId)
+
+  // Projet ouvert : recharge les résultats du dernier run (persistés en db)
+  useEffect(() => {
+    if (!pipelineId) return
+    const store = useAppStore.getState()
+    if (store.lastJobId) return
+    let cancelled = false
+    listPipelineJobs(pipelineId)
+      .then(jobs => {
+        if (cancelled || jobs.length === 0) return
+        const last = jobs[0]
+        store.setLastJob(last)
+        return getJobOutputs(last.id)
+      })
+      .then(outputs => {
+        if (!cancelled && outputs) store.setResults(outputs)
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [pipelineId])
 
   useEffect(() => {
     let cancelled = false

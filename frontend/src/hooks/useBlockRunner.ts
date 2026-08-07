@@ -1,9 +1,35 @@
 import { useCallback } from 'react'
 import useAppStore from '../store/useAppStore'
-import { validateGraph, updatePipeline, buildPipeline } from '../api/client'
+import { validateGraph, updatePipeline, buildPipeline, executePipeline, getJob, getJobOutputs } from '../api/client'
 import { toServerPayload } from '../utils/blockHelpers'
 
 const DEFAULT_PIPELINE_NAME = 'mon-premier-modèle'
+
+/** Suit le job jusqu'à done/error puis charge les sorties structurées. */
+function pollJob(jobId: number): void {
+  let tries = 0
+  const timer = setInterval(async () => {
+    tries++
+    try {
+      const job = await getJob(jobId)
+      useAppStore.getState().setJobStatus(job.status)
+      if (job.status === 'done' || job.status === 'error') {
+        clearInterval(timer)
+        const outputs = await getJobOutputs(jobId)
+        useAppStore.getState().setResults(outputs)
+        useAppStore.getState().appendConsoleLines([
+          job.status === 'done'
+            ? { k: 'ok', t: `✓ Exécution terminée — ${outputs.length} sortie(s)` }
+            : { k: 'sys', t: `⚠ Exécution en erreur : ${job.error || 'inconnue'}` },
+        ])
+      } else if (tries > 40) {
+        clearInterval(timer)
+      }
+    } catch {
+      /* réseau : on continue de poller */
+    }
+  }, 3000)
+}
 
 export function useBlockRunner() {
   const onRun = useCallback(async () => {
@@ -52,6 +78,16 @@ export function useBlockRunner() {
           lines.push({ k: 'info', t: `  Forme de sortie : [${build.output_shape.join(', ')}]` })
         }
         useAppStore.getState().appendConsoleLines(lines)
+
+        // Exécution réelle (GPU ou subprocess local en mode mock) — les résultats
+        // remontent via callbacks vers le job.
+        try {
+          const job = await executePipeline(pipelineId)
+          useAppStore.getState().setLastJob(job)
+          pollJob(job.id)
+        } catch {
+          useAppStore.getState().appendConsoleLines([{ k: 'sys', t: "⚠ Échec du lancement de l'exécution." }])
+        }
         useAppStore.getState().finishRun(build)
       } else {
         useAppStore.getState().appendConsoleLines([

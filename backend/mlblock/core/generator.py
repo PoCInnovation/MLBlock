@@ -31,6 +31,7 @@ def generate_code(nodes: list[PipelineNode], edges: list[PipelineEdge]) -> str:
 
     lines.append("import requests")
     lines.append("import os")
+    lines.append("import json")
     lines.append("")
     lines.append("BACKEND_URL = os.environ.get('BACKEND_URL', 'http://localhost:8000')")
     lines.append("GPU_API_KEY = os.environ.get('GPU_API_KEY', 'mock-gpu-key')")
@@ -43,21 +44,42 @@ def generate_code(nodes: list[PipelineNode], edges: list[PipelineEdge]) -> str:
     lines.append("")
     lines.append("def notify_status(block, status):")
     lines.append("    try:")
-    lines.append("        requests.post(f'{BACKEND_URL}/jobs/{JOB_ID}/status',")
+    lines.append("        requests.post(f'{BACKEND_URL}/api/jobs/{JOB_ID}/status',")
     lines.append("            json={'block': block, 'status': status},")
     lines.append("            headers={'Authorization': f'Bearer {GPU_API_KEY}'}, timeout=BACKEND_TIMEOUT)")
     lines.append("    except Exception: pass")
     lines.append("")
     lines.append("def notify_output(block, output):")
     lines.append("    try:")
-    lines.append("        requests.post(f'{BACKEND_URL}/jobs/{JOB_ID}/output',")
-    lines.append("            json={'block': block, 'output': str(output)[:10000]},")
+    lines.append("        requests.post(f'{BACKEND_URL}/api/jobs/{JOB_ID}/output',")
+    lines.append("            json={'block': block, 'output': str(output)},")
     lines.append("            headers={'Authorization': f'Bearer {GPU_API_KEY}'}, timeout=BACKEND_TIMEOUT)")
     lines.append("    except Exception: pass")
     lines.append("")
+    lines.append("def _serialize_output(v):")
+    lines.append("    \"\"\"Sérialise une sortie de bloc en payload JSON typé pour la visualisation.\"\"\"")
+    lines.append("    import base64")
+    lines.append("    import json")
+    lines.append("    def is_nums(x):")
+    lines.append("        return isinstance(x, (list, tuple)) and len(x) > 0 and all(isinstance(i, (int, float)) and not isinstance(i, bool) for i in x)")
+    lines.append("    if isinstance(v, bytes):")
+    lines.append("        return {'type': 'image', 'mime': 'image/png', 'data': base64.b64encode(v).decode('ascii')}")
+    lines.append("    if is_nums(v):")
+    lines.append("        return {'type': 'curve', 'points': [float(x) for x in v]}")
+    lines.append("    if isinstance(v, dict):")
+    lines.append("        h = v.get('history')")
+    lines.append("        if is_nums(h):")
+    lines.append("            return {'type': 'curve', 'points': [float(x) for x in h]}")
+    lines.append("        scalars = {k: x for k, x in v.items() if isinstance(x, (int, float, str, bool))}")
+    lines.append("        if scalars:")
+    lines.append("            return {'type': 'metrics', 'values': {k: (float(x) if isinstance(x, (int, float)) else x) for k, x in scalars.items()}}")
+    lines.append("    if isinstance(v, (int, float)) and not isinstance(v, bool):")
+    lines.append("        return {'type': 'metric', 'value': float(v)}")
+    lines.append("    return {'type': 'text', 'text': str(v)}")
+    lines.append("")
     lines.append("def notify_error(block, error):")
     lines.append("    try:")
-    lines.append("        requests.post(f'{BACKEND_URL}/jobs/{JOB_ID}/error',")
+    lines.append("        requests.post(f'{BACKEND_URL}/api/jobs/{JOB_ID}/error',")
     lines.append("            json={'block': block, 'error': str(error)},")
     lines.append("            headers={'Authorization': f'Bearer {GPU_API_KEY}'}, timeout=BACKEND_TIMEOUT)")
     lines.append("    except Exception: pass")
@@ -91,7 +113,19 @@ def generate_code(nodes: list[PipelineNode], edges: list[PipelineEdge]) -> str:
             continue
 
         cleaned_params = {k: v for k, v in node.params.items() if not k.startswith("_")}
-        params = ", ".join(f"{k}={v!r}" for k, v in cleaned_params.items())
+        # Coerce les strings frontend vers les types Python déclarés (même
+        # logique que le build) — sinon le code généré planterait sur
+        # ratio='0.8', shuffle='true', etc.
+        from mlblock.core.block import _coerce_param_value
+
+        emitted: list[str] = []
+        for k, v in cleaned_params.items():
+            pinfo = block.params.get(k) if block else None
+            ptype = pinfo.type if pinfo is not None else None
+            if ptype:
+                v = _coerce_param_value(block.name, k, v, ptype)
+            emitted.append(f"{k}={v!r}")
+        params = ", ".join(emitted)
 
         PORT_TO_PARAM = {"in": "in_1", "input": "in_1", "x": "in_1", "in_1": "in_1"}
 
@@ -115,7 +149,7 @@ def generate_code(nodes: list[PipelineNode], edges: list[PipelineEdge]) -> str:
             output_counter += 1
             output_map[node_id] = output_counter
             lines.append(f"        out_{output_counter} = {node.type}({args})")
-            lines.append(f"        notify_output('{node.type}', out_{output_counter})")
+            lines.append(f"        notify_output('{node.type}', json.dumps(_serialize_output(out_{output_counter})))")
         else:
             targets = []
             for o in block.outputs:
@@ -123,7 +157,8 @@ def generate_code(nodes: list[PipelineNode], edges: list[PipelineEdge]) -> str:
                 output_map[(node_id, o['name'])] = output_counter
                 targets.append(f"out_{output_counter}")
             lines.append(f"        {', '.join(targets)} = {node.type}({args})")
-            lines.append(f"        notify_output('{node.type}', {', '.join(targets)})")
+            for t in targets:
+                lines.append(f"        notify_output('{node.type}', json.dumps(_serialize_output({t})))")
         lines.append(f"        notify_status('{node.type}', 'done')")
     lines.append("        notify_status('pipeline', 'done')")
     lines.append("    except Exception as e:")

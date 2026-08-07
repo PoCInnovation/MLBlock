@@ -6,12 +6,12 @@ Ajouter des types de données (images, ...)
 Ajouter des blocks et revoir l'implémentation actuelle pour maximiser les possibilitées (pour proceder il faut regarder les exercices de base d'apprentissage de l'ia et vérifier un par un si on peux les réaliser)
 
 # Implémentation
-Le save des pipelines
-L'import et l'export 
 Visualisation des resultats 
 Run de pipelines
 
 ## OK
+Le save des pipelines
+L'import et l'export 
 L'authentification perdue au refresh (revoir l'implémentation de supabase auth)
 
 # Delete

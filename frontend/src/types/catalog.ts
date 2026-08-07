@@ -75,3 +75,24 @@ export interface BuildResponse {
 export interface GenerateResponse {
   code: string
 }
+
+export type JobStatus = 'queued' | 'dispatched' | 'running' | 'done' | 'error'
+
+export interface Job {
+  id: number
+  user_id: string
+  pipeline_id: number
+  status: JobStatus
+  vast_instance_id: string
+  output: string
+  error: string
+  started_at: string | null
+  completed_at: string | null
+  created_at: string
+}
+
+export interface JobOutput {
+  block_name: string
+  output: string
+  created_at: string
+}

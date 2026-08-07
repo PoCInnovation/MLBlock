@@ -384,3 +384,47 @@ def test_position_roundtrip(client: TestClient):
     ).json()
     fetched = client.get(f"/api/pipelines/{created['id']}").json()
     assert fetched["nodes"][0]["position"] == {"x": 120.5, "y": 45}
+
+
+# ── Résultats (visualisation) ───────────────────────────────────────
+
+def test_serialize_output_typed():
+    """Le helper émis par le générateur produit des payloads typés."""
+    from mlblock.core.generator import generate_code
+    from mlblock.server.schemas import PipelineNode
+    code = generate_code(
+        [PipelineNode(id="n1", type="train_model", params={"epochs": "5"})],
+        [],
+    )
+    gl: dict = {}
+    src = code.replace('if __name__ == "__main__":\n    main()', "")
+    exec(compile(src, "<gen>", "exec"), gl)
+    s = gl["_serialize_output"]
+    assert s(b"\x89PNG\r\n") == {"type": "image", "mime": "image/png", "data": "iVBORw0K"}
+    assert s([0.9, 0.5]) == {"type": "curve", "points": [0.9, 0.5]}
+    assert s({"model": object(), "history": [1.2, 0.8]}) == {"type": "curve", "points": [1.2, 0.8]}
+    assert s({"mse": 0.02, "note": "ok"}) == {"type": "metrics", "values": {"mse": 0.02, "note": "ok"}}
+    assert s(0.5) == {"type": "metric", "value": 0.5}
+    assert s("hello") == {"type": "text", "text": "hello"}
+
+
+def test_job_outputs_endpoint(client: TestClient, monkeypatch):
+    monkeypatch.setenv("BACKEND_TIMEOUT", "2")  # subprocess mock : callbacks échouent vite
+    created = client.post(
+        "/api/pipelines",
+        json={"name": "viz", "nodes": [], "edges": []},
+    ).json()
+    job = client.post(f"/api/pipelines/{created['id']}/execute").json()
+    job_id = job["id"]
+    # Sortie structurée stockée telle quelle (pas de troncature backend)
+    push = client.post(
+        f"/api/jobs/{job_id}/output",
+        json={"block": "train_model", "output": '{"type":"curve","points":[1.2,0.8,0.4]}'},
+    )
+    assert push.status_code == 200
+    out = client.get(f"/api/jobs/{job_id}/outputs")
+    assert out.status_code == 200
+    rows = out.json()
+    assert len(rows) == 1
+    assert rows[0]["block_name"] == "train_model"
+    assert rows[0]["output"] == '{"type":"curve","points":[1.2,0.8,0.4]}'

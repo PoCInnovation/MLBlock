@@ -124,7 +124,7 @@ export default function BlockSegments({ segs, fields, blockId, onUpdate, columnO
     if (s.t === 'text') return <span key={i}>{s.v}</span>
     if (!onUpdate) return <span key={i} style={fieldPill}>{s.def}</span>
 
-    const value = fields![s.k]
+    const value = fields![s.k] ?? s.def ?? ''
     const cols = columnOptions?.[s.k]
 
     // Suggestions (datalist) pour un champ libre — choices docstring ou colonnes CSV

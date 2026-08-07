@@ -1,6 +1,7 @@
+import { useRef, useEffect, useState } from 'react'
 import { theme } from '../../theme'
-import { useRef, useEffect } from 'react'
 import useAppStore from '../../store/useAppStore'
+import ResultsPanel from './ResultsPanel'
 
 const COLORS: Record<string, string> = { sys: '#f0e9e3', info: '#9aa0c4', ok: '#8fd1a8', epoch: '#E8C77A' }
 
@@ -8,6 +9,7 @@ export default function ConsolePanel() {
   const consoleLines = useAppStore(s => s.consoleLines)
   const running      = useAppStore(s => s.running)
   const result       = useAppStore(s => s.result)
+  const [tab, setTab] = useState<'console' | 'results'>('console')
   const scrollRef    = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -30,20 +32,40 @@ export default function ConsolePanel() {
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: running ? theme.color.warning : theme.color.status, animation: running ? 'mlbBlink 1s ease-in-out infinite' : 'none', display: 'inline-block' }} />
           <span style={{ fontWeight: 800, fontSize: 13.5, letterSpacing: '.02em' }}>Ce qui se passe</span>
         </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.08)', padding: 3, borderRadius: 999 }}>
+          {(['console', 'results'] as const).map(t => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              style={{
+                background: tab === t ? theme.color.surface3 : 'transparent',
+                color: tab === t ? theme.color.text : theme.color.textMuted,
+                border: 'none', padding: '4px 12px', borderRadius: 999,
+                fontWeight: 800, fontSize: 12.5, cursor: 'pointer',
+              }}
+            >
+              {t === 'console' ? 'Console' : 'Résultats'}
+            </button>
+          ))}
+        </div>
         {result !== null && (
           <div style={{ background: 'rgba(143,209,168,.16)', border: '1px solid rgba(143,209,168,.4)', color: '#8fd1a8', padding: '5px 12px', borderRadius: 999, fontWeight: 800, fontSize: 13 }}>
             ✓ Terminé
           </div>
         )}
       </div>
-      <div
-        ref={scrollRef}
-        style={{ flex: 1, overflowY: 'auto', padding: '12px 16px', fontFamily: 'ui-monospace, monospace', fontSize: 13, lineHeight: 1.7 }}
-      >
-        {consoleLines.map((line, i) => (
-          <div key={i} style={{ color: COLORS[line.k] || '#a89f97' }}>{line.t}</div>
-        ))}
-      </div>
+      {tab === 'results' ? (
+        <ResultsPanel />
+      ) : (
+        <div
+          ref={scrollRef}
+          style={{ flex: 1, overflowY: 'auto', padding: '12px 16px', fontFamily: 'ui-monospace, monospace', fontSize: 13, lineHeight: 1.7 }}
+        >
+          {consoleLines.map((line, i) => (
+            <div key={i} style={{ color: COLORS[line.k] || '#a89f97' }}>{line.t}</div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
