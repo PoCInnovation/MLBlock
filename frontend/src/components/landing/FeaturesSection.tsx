@@ -1,3 +1,4 @@
+import { theme } from '../../theme'
 import React from 'react';
 
 type Feature = {
@@ -9,7 +10,7 @@ type Feature = {
 
 const FEATURES: Feature[] = [
     {
-        color: '#E59060',
+        color: theme.color.accentLight,
         icon: (
             <div
                 style={{
@@ -147,7 +148,7 @@ export default function FeaturesSection() {
                             </h3>
                             <p
                                 style={{
-                                    color: '#aba29a',
+                                    color: theme.color.textMuted,
                                     fontSize: 15,
                                     lineHeight: 1.55,
                                     fontWeight: 600,

@@ -45,7 +45,7 @@ export default function EditorPage() {
 
   if (!catalog) {
     return (
-      <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: theme.color.bg, color: '#9a9088', fontFamily: theme.font.heading, fontSize: 18 }}>
+      <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: theme.color.bg, color: theme.color.textMuted, fontFamily: theme.font.heading, fontSize: 18 }}>
         Chargement…
       </div>
     )

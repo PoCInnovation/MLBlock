@@ -1,3 +1,4 @@
+import { theme } from '../../theme'
 import { useRef, useEffect } from 'react'
 import useAppStore from '../../store/useAppStore'
 
@@ -26,7 +27,7 @@ export default function ConsolePanel() {
     }}>
       <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 16px', borderBottom: '1px solid rgba(255,255,255,.07)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-          <span style={{ width: 8, height: 8, borderRadius: '50%', background: running ? '#E8C77A' : '#66C7B0', animation: running ? 'mlbBlink 1s ease-in-out infinite' : 'none', display: 'inline-block' }} />
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: running ? theme.color.warning : theme.color.status, animation: running ? 'mlbBlink 1s ease-in-out infinite' : 'none', display: 'inline-block' }} />
           <span style={{ fontWeight: 800, fontSize: 13.5, letterSpacing: '.02em' }}>Ce qui se passe</span>
         </div>
         {result !== null && (

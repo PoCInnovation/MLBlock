@@ -1,3 +1,4 @@
+import { theme } from '../../theme'
 import React from 'react'
 
 type HeroBlock = {
@@ -11,8 +12,8 @@ type HeroBlock = {
 
 const BLOCKS: HeroBlock[] = [
   { key: 0, bg: '#D97757', color: '#fff',     label: <>▶ Démarrer le projet</>, isHat: true },
-  { key: 1, bg: '#E59060', color: '#2a211c',  label: <>Charger <span style={{ background: 'rgba(255,255,255,.85)', padding: '2px 7px', borderRadius: 6 }}>Photos</span></> },
-  { key: 2, bg: '#66C7B0', color: '#2a211c',  label: <>Mettre à la même échelle</> },
+  { key: 1, bg: theme.color.accentLight, color: '#2a211c',  label: <>Charger <span style={{ background: 'rgba(255,255,255,.85)', padding: '2px 7px', borderRadius: 6 }}>Photos</span></> },
+  { key: 2, bg: theme.color.status, color: '#2a211c',  label: <>Mettre à la même échelle</> },
   { key: 3, bg: '#B6A0E3', color: '#2a211c',  label: <>Réseau de <span style={{ background: 'rgba(255,255,255,.85)', padding: '2px 7px', borderRadius: 6 }}>128</span> neurones</> },
   { key: 4, bg: '#7DAFEA', color: '#2a211c',  label: <>Apprendre <span style={{ background: 'rgba(255,255,255,.85)', padding: '2px 7px', borderRadius: 6 }}>10</span> tours</>, isLast: true },
 ]
@@ -31,7 +32,7 @@ export default function HeroBlockStack() {
         <div style={{ display: 'flex', gap: 6, marginBottom: 18 }}>
           <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#E0705F' }} />
           <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#E6C766' }} />
-          <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#66C7B0' }} />
+          <span style={{ width: 10, height: 10, borderRadius: '50%', background: theme.color.status }} />
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
           {BLOCKS.map(({ key, bg, color, label, isHat, isLast }) => (

@@ -31,7 +31,7 @@ export default function EditorHeader({ onRun, onStop, onClear }: EditorHeaderPro
         </div>
         <div style={{ width: 1, height: 26, background: 'rgba(255,255,255,.1)' }} />
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.08)', padding: '6px 12px', borderRadius: theme.radius.md }}>
-          <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#66C7B0', display: 'inline-block' }} />
+          <span style={{ width: 7, height: 7, borderRadius: '50%', background: theme.color.status, display: 'inline-block' }} />
           <span style={{ fontWeight: 800, fontSize: 14 }}>{projectName}</span>
         </div>
         <button onClick={() => setEditorMode(editorMode === 'linear' ? 'advanced' : 'linear')} style={editorMode === 'advanced' ? { ...ghostBtn, background: theme.color.auth, color: '#fff', border: '1px solid transparent' } : ghostBtn}>

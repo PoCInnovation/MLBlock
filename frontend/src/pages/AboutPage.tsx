@@ -1,3 +1,4 @@
+import { theme } from '../theme'
 import { useState, useRef, useEffect, CSSProperties } from 'react';
 import SiteLayout from '../components/landing/SiteLayout';
 
@@ -38,7 +39,7 @@ const TEAM: TeamMember[] = [
         name: 'Sacha',
         role: 'Responsable',
         tagline: '[A REMPLIR PAR Sacha]',
-        color: '#66C7B0',
+        color: theme.color.status,
         linkedin:
             'https://www.linkedin.com/in/sacha-henneveux-084052304/?skipRedirect=true',
     },

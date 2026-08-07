@@ -1,3 +1,4 @@
+import { theme } from '../../theme'
 import useAppStore from '../../store/useAppStore'
 import CategoryIcon from './CategoryIcon'
 
@@ -10,7 +11,7 @@ export default function CategoryBar() {
 
   return (
     <div style={{
-      width: 92, flexShrink: 0, background: '#1c1714',
+      width: 92, flexShrink: 0, background: theme.color.rail,
       borderRight: '1px solid rgba(255,255,255,.06)',
       padding: '12px 8px', display: 'flex', flexDirection: 'column',
       gap: 6, overflowY: 'auto',

@@ -1,3 +1,4 @@
+import { theme } from '../../theme'
 import { useNavigate } from 'react-router-dom'
 import useAppStore from '../../store/useAppStore'
 
@@ -12,7 +13,7 @@ export default function EditorUnavailableModal() {
         <div style={{ fontFamily: "'Fredoka', sans-serif", fontWeight: 700, fontSize: 22, marginBottom: 10, color: '#f0e9e3' }}>
           Éditeur non disponible
         </div>
-        <div style={{ fontSize: 14, color: '#9a9088', marginBottom: 28, lineHeight: 1.6 }}>
+        <div style={{ fontSize: 14, color: theme.color.textMuted, marginBottom: 28, lineHeight: 1.6 }}>
           {message ?? 'Impossible de joindre le serveur. Vérifie que le backend est lancé et réessaie.'}
         </div>
         <button
