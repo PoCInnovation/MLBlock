@@ -20,7 +20,7 @@ const labelStyle: React.CSSProperties = {
   fontSize: 11, fontWeight: 700, opacity: 0.85, whiteSpace: 'nowrap',
 }
 const fileCard: React.CSSProperties = {
-  display: 'inline-flex', alignItems: 'center', gap: 6,
+  display: 'flex', alignItems: 'center', gap: 6, flexBasis: '100%',
   background: 'rgba(99,102,241,.15)', borderRadius: 8,
   padding: '4px 8px', fontSize: 12, fontWeight: 700,
 }
@@ -132,7 +132,7 @@ export default function BlockSegments({ segs, fields, blockId, onUpdate, columnO
       const opts = cols ?? (s.t === 'sug' ? s.opts : [])
       const dlId = `mlb-dl-${blockId}-${s.k}`
       return (
-        <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+        <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 4, flexBasis: '100%' }}>
           <span style={labelStyle}>{s.k}:</span>
           <input
             list={dlId}
@@ -149,7 +149,7 @@ export default function BlockSegments({ segs, fields, blockId, onUpdate, columnO
     }
 
     if (s.t === 'sel') return (
-      <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+      <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 4, flexBasis: '100%' }}>
         <span style={labelStyle}>{s.k}:</span>
         <select
           value={value}
@@ -165,7 +165,7 @@ export default function BlockSegments({ segs, fields, blockId, onUpdate, columnO
     if (s.t === 'bool') {
       const checked = value === 'true'
       return (
-        <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+        <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 4, flexBasis: '100%' }}>
           <span style={labelStyle}>{s.k}:</span>
           <input
             type="checkbox"
@@ -187,7 +187,7 @@ export default function BlockSegments({ segs, fields, blockId, onUpdate, columnO
       if (useText) {
         const dlId = `mlb-dl-${blockId}-${s.k}`
         return (
-          <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+          <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 4, flexBasis: '100%' }}>
             <span style={labelStyle}>{s.k}:</span>
             <input
               list={dlId}
@@ -203,7 +203,7 @@ export default function BlockSegments({ segs, fields, blockId, onUpdate, columnO
         )
       }
       return (
-        <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+        <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 4, flexBasis: '100%' }}>
           <span style={labelStyle}>{s.k}:</span>
           <input
             type={isNumeric ? 'number' : 'text'}
@@ -224,7 +224,7 @@ export default function BlockSegments({ segs, fields, blockId, onUpdate, columnO
       const v = validateSeg(s, value)
       const dlId = `mlb-dl-${blockId}-${s.k}`
       return (
-        <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+        <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 4, flexBasis: '100%' }}>
           <span style={labelStyle}>{s.k}:</span>
           <input
             list={s.opts && s.opts.length > 0 ? dlId : undefined}
@@ -274,7 +274,7 @@ export default function BlockSegments({ segs, fields, blockId, onUpdate, columnO
       )
 
       return (
-        <span key={i}>
+        <span key={i} style={{ display: 'flex', flexBasis: '100%' }}>
           <input ref={el => { inputRefs.current[s.k] = el }} type="file" accept=".csv" style={{ display: 'none' }} onChange={e => handleFile(s.k, e)} />
           <span onClick={() => inputRefs.current[s.k]?.click()} style={fileBtn} title={s.desc}>
             📁 CSV

@@ -10,9 +10,13 @@ Le save des pipelines
 L'import et l'export 
 Visualisation des resultats 
 Run de pipelines
+
+## OK
 L'authentification perdue au refresh (revoir l'implémentation de supabase auth)
 
 # Delete
+
+## OK
 Supprimer le pas à pas 
 
 # Les tutos
@@ -22,8 +26,6 @@ imaginer l'UI/UX
 Coder l'ui/ux
 
 # To fix
-
-## Todo
 
 ## OK
 Les noms des outputs doivent apparaitrent directement pour meilleur ui/ux
