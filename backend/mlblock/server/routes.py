@@ -157,8 +157,13 @@ def get_file_columns(url: str) -> dict:
 
 
 def _is_mock_vast() -> bool:
-    """Mode exécution locale : MLBLOCK_RUN_MODE=local, ou pas de vraie clé Vast.ai."""
-    if os.environ.get("MLBLOCK_RUN_MODE", "").lower() == "local":
+    """Mode d'exécution : MLBLOCK_RUN_MODE (défaut 'local' — le dev exécute
+    réellement le pipeline en subprocess local). 'gpu' (Render, render.yaml)
+    active le dispatch Vast.ai. Une clé mock/absente force toujours le local."""
+    mode = os.environ.get("MLBLOCK_RUN_MODE", "local").lower()
+    if mode == "gpu":
+        return False
+    if mode == "local":
         return True
     key = os.environ.get("VAST_API_KEY", "mock-vast-key")
     return not key or key.startswith("mock")
@@ -431,9 +436,13 @@ def execute_pipeline(
         vast.execute(job.vast_instance_id, code)
 
     # DEV ONLY: auto-destroy instance after 60s if job hasn't completed
-    # Prevents orphan GPUs during development when callbacks may not fire
+    # Prevents orphan GPUs during development when callbacks may not fire.
+    # Mode local : pas de coût GPU — le subprocess termine seul, pas de timeout.
     job_id = job.id
     instance_id = job.vast_instance_id
+
+    if _is_mock_vast():
+        return job
 
     def _timeout_cleanup():
         from mlblock.server.database import _get_engine

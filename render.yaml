@@ -30,6 +30,9 @@ services:
       # GPU (Vast.ai)
       - key: VAST_API_KEY
         sync: false
+      # Mode d'exécution : gpu explicite en prod (défaut local en dev)
+      - key: MLBLOCK_RUN_MODE
+        value: gpu
       # CORS — restrict to frontend
       - key: CORS_ORIGINS
         value: https://mlblock-frontend.onrender.com
