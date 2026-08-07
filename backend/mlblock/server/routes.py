@@ -405,20 +405,7 @@ def execute_pipeline(
     session.commit()
     session.refresh(job)
 
-    # Launch on Vast.ai (or mock)
-    vast = VastAI(api_key=os.environ.get("VAST_API_KEY", "mock-vast-key"))
-    instance = vast.launch_instance(
-        gpu_name="RTX 3090",
-        num_gpus=1,
-        image="pytorch/pytorch:latest",
-        disk=50,
-    )
-    job.vast_instance_id = instance.get("id", "")
-    job.status = "dispatched"
-    session.add(job)
-    session.commit()
-
-    # Generate code and push to GPU
+    # Generate code (avant la location : l'onstart l'embarque)
     nodes = [PipelineNode(**n) if isinstance(n, dict) else n for n in row.nodes]
     edges = [PipelineEdge(**e) if isinstance(e, dict) else e for e in row.edges]
     code = generate_code(nodes, edges)
@@ -426,21 +413,42 @@ def execute_pipeline(
     session.add(row)
     session.commit()
 
-    # Start instance and execute code
     if _is_mock_vast():
-        # Mode mock : exécute réellement le code en local — les callbacks
+        # Mode local : exécute réellement le code en subprocess — les callbacks
         # (status/output/error) alimentent le job comme sur un vrai GPU.
         _run_local(code, job.id)
+        job.vast_instance_id = "mock-instance-id"
+        job.status = "dispatched"
+        session.add(job)
+        session.commit()
     else:
-        vast.start_instance(job.vast_instance_id)
         # Le GPU doit joindre le backend pour les callbacks : BACKEND_URL
         # public (Render ou tunnel), GPU_API_KEY partagée, JOB_ID du job.
-        vast.execute(job.vast_instance_id, code, env={
+        env = {
             "BACKEND_URL": os.environ.get("BACKEND_URL", "http://localhost:8000"),
             "GPU_API_KEY": os.environ.get("GPU_API_KEY", ""),
             "JOB_ID": str(job.id),
             "BACKEND_TIMEOUT": os.environ.get("BACKEND_TIMEOUT", "90"),
-        })
+        }
+        env_str = " ".join(f"{k}='{v}'" for k, v in env.items())
+        deps = "pip install -q --disable-pip-version-check scikit-learn gymnasium torchvision pandas requests"
+        # Script exécuté au boot de l'instance (onstart) — pas de SSH requis.
+        # Concaténation (le code généré contient des accolades).
+        onstart = deps + " && " + env_str + " python - << 'MLBLOCK_EOF'\n" + code + "\nMLBLOCK_EOF"
+
+        vast = VastAI(api_key=os.environ.get("VAST_API_KEY", "mock-vast-key"))
+        instance = vast.launch_instance(
+            gpu_name="RTX 3090",
+            num_gpus=1,
+            image="pytorch/pytorch:latest",
+            disk=50,
+            onstart=onstart,
+        )
+        job.vast_instance_id = instance.get("id", "")
+        job.status = "dispatched"
+        session.add(job)
+        session.commit()
+        vast.start_instance(job.vast_instance_id)
 
     # DEV ONLY: auto-destroy instance after 60s if job hasn't completed
     # Prevents orphan GPUs during development when callbacks may not fire.

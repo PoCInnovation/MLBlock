@@ -1,5 +1,4 @@
 import os
-import subprocess
 import requests
 from typing import Any
 
@@ -9,7 +8,7 @@ class VastAI:
         self.api_key = api_key
         self.base_url = "https://console.vast.ai/api/v0"
 
-    def launch_instance(self, gpu_name: str, num_gpus: int, image: str, disk: int) -> dict[str, Any]:
+    def launch_instance(self, gpu_name: str, num_gpus: int, image: str, disk: int, onstart: str | None = None) -> dict[str, Any]:
         if not self.api_key or self.api_key.startswith("mock"):
             return {"id": "mock-instance-id"}
 
@@ -23,7 +22,11 @@ class VastAI:
             # Rent the first available offer
             offer_id = offers[0]["id"]
             rent_url = f"{self.base_url}/asks/{offer_id}/?api_key={self.api_key}"
-            res = requests.post(rent_url, json={"image": image, "disk": disk}, timeout=10)
+            payload: dict[str, Any] = {"image": image, "disk": disk}
+            if onstart:
+                # Script exécuté au boot de l'instance — évite le SSH pour lancer le code
+                payload["onstart"] = onstart
+            res = requests.post(rent_url, json=payload, timeout=10)
             res.raise_for_status()
             instance_id = res.json().get("id") or res.json().get("new_contract")
             return {"id": str(instance_id)}
@@ -40,40 +43,6 @@ class VastAI:
             r.raise_for_status()
         except Exception as e:
             print(f"Error starting Vast.ai instance: {e}")
-
-    def execute(self, instance_id: str, code: str, env: dict[str, str] | None = None) -> None:
-        if not self.api_key or self.api_key.startswith("mock") or instance_id == "dummy-instance-id":
-            print(f"[MOCK GPU EXECUTE] {code[:80]}…")
-            return
-
-        url = f"{self.base_url}/instances/{instance_id}/?api_key={self.api_key}"
-        try:
-            r = requests.get(url, timeout=10)
-            r.raise_for_status()
-            data = r.json()
-            ssh_host = data.get("ssh_host")
-            ssh_port = data.get("ssh_port")
-            if not ssh_host or not ssh_port:
-                print("Vast.ai instance SSH details not ready yet.")
-                return
-
-            # Dépendances absentes de l'image pytorch/pytorch (sklearn, gymnasium,
-            # torchvision, pandas) + exécution du code avec les env du job.
-            env_str = " ".join(f"{k}='{v}'" for k, v in (env or {}).items())
-            deps = "pip install -q --disable-pip-version-check scikit-learn gymnasium torchvision pandas requests"
-            remote = (
-                f"{deps} && {env_str} python - << 'MLBLOCK_EOF'\n{code}\nMLBLOCK_EOF"
-            )
-            ssh_cmd = [
-                "ssh", "-p", str(ssh_port),
-                "-o", "StrictHostKeyChecking=no",
-                "-o", "UserKnownHostsFile=/dev/null",
-                f"root@{ssh_host}",
-                remote,
-            ]
-            subprocess.Popen(ssh_cmd)
-        except Exception as e:
-            print(f"Error executing command on Vast.ai: {e}")
 
     def destroy_instance(self, instance_id: str) -> None:
         if not self.api_key or self.api_key.startswith("mock") or instance_id == "dummy-instance-id":
