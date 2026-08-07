@@ -373,7 +373,7 @@ def generate_pipeline_code(
     if not row or str(row.user_id) != user_id:
         raise HTTPException(status_code=404, detail="Pipeline not found")
     if not row.nodes:
-        raise HTTPException(status_code=400, detail="Pipeline has no nodes")
+        raise HTTPException(status_code=400, detail="Le pipeline ne contient aucun bloc")
     nodes = [PipelineNode(**n) if isinstance(n, dict) else n for n in row.nodes]
     edges = [PipelineEdge(**e) if isinstance(e, dict) else e for e in row.edges]
     code = generate_code(nodes, edges)

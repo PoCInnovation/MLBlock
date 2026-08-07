@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import axios from 'axios'
 import { theme } from '../../theme'
 import type { PipelineDetail } from '../../types/catalog'
 import { generatePipelineCode } from '../../api/client'
@@ -38,6 +39,10 @@ export default function ExportModal({ title, resolve, onClose }: ExportProps) {
     try {
       const detail = await resolve()
       const base = slugify(detail.name)
+      if (kind === 'code' && detail.nodes.length === 0) {
+        setError('Ajoute des blocs au pipeline avant d’exporter le code.')
+        return
+      }
       if (kind === 'json') {
         downloadFile(`${base}.json`, pipelineToJson(detail.name, detail.nodes, detail.edges), 'application/json')
       } else {
@@ -46,6 +51,10 @@ export default function ExportModal({ title, resolve, onClose }: ExportProps) {
       }
       onClose()
     } catch (e) {
+      if (axios.isAxiosError(e)) {
+        const detail = (e.response?.data as { detail?: string } | undefined)?.detail
+        if (detail) { setError(detail); return }
+      }
       setError(e instanceof Error ? e.message : "Échec de l'export.")
     } finally {
       setBusy(null)
