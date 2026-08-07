@@ -41,9 +41,9 @@ class VastAI:
         except Exception as e:
             print(f"Error starting Vast.ai instance: {e}")
 
-    def execute(self, instance_id: str, command: str) -> None:
+    def execute(self, instance_id: str, code: str, env: dict[str, str] | None = None) -> None:
         if not self.api_key or self.api_key.startswith("mock") or instance_id == "dummy-instance-id":
-            print(f"[MOCK GPU EXECUTE] {command}")
+            print(f"[MOCK GPU EXECUTE] {code[:80]}…")
             return
 
         url = f"{self.base_url}/instances/{instance_id}/?api_key={self.api_key}"
@@ -57,12 +57,19 @@ class VastAI:
                 print("Vast.ai instance SSH details not ready yet.")
                 return
 
+            # Dépendances absentes de l'image pytorch/pytorch (sklearn, gymnasium,
+            # torchvision, pandas) + exécution du code avec les env du job.
+            env_str = " ".join(f"{k}='{v}'" for k, v in (env or {}).items())
+            deps = "pip install -q --disable-pip-version-check scikit-learn gymnasium torchvision pandas requests"
+            remote = (
+                f"{deps} && {env_str} python - << 'MLBLOCK_EOF'\n{code}\nMLBLOCK_EOF"
+            )
             ssh_cmd = [
                 "ssh", "-p", str(ssh_port),
                 "-o", "StrictHostKeyChecking=no",
                 "-o", "UserKnownHostsFile=/dev/null",
                 f"root@{ssh_host}",
-                command
+                remote,
             ]
             subprocess.Popen(ssh_cmd)
         except Exception as e:

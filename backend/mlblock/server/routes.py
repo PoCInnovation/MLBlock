@@ -433,7 +433,14 @@ def execute_pipeline(
         _run_local(code, job.id)
     else:
         vast.start_instance(job.vast_instance_id)
-        vast.execute(job.vast_instance_id, code)
+        # Le GPU doit joindre le backend pour les callbacks : BACKEND_URL
+        # public (Render ou tunnel), GPU_API_KEY partagée, JOB_ID du job.
+        vast.execute(job.vast_instance_id, code, env={
+            "BACKEND_URL": os.environ.get("BACKEND_URL", "http://localhost:8000"),
+            "GPU_API_KEY": os.environ.get("GPU_API_KEY", ""),
+            "JOB_ID": str(job.id),
+            "BACKEND_TIMEOUT": os.environ.get("BACKEND_TIMEOUT", "90"),
+        })
 
     # DEV ONLY: auto-destroy instance after 60s if job hasn't completed
     # Prevents orphan GPUs during development when callbacks may not fire.
@@ -444,6 +451,8 @@ def execute_pipeline(
     if _is_mock_vast():
         return job
 
+    gpu_timeout = int(os.environ.get("MLBLOCK_GPU_TIMEOUT", "1800"))  # 30 min par défaut
+
     def _timeout_cleanup():
         from mlblock.server.database import _get_engine
         from sqlmodel import Session as SqlSession
@@ -451,14 +460,14 @@ def execute_pipeline(
             j = s.get(Job, job_id)
             if j and j.status not in ("done", "error"):
                 j.status = "error"
-                j.error = "DEV TIMEOUT: job did not complete within 60s"
+                j.error = f"GPU TIMEOUT: job did not complete within {gpu_timeout}s"
                 j.completed_at = datetime.now(timezone.utc)
                 s.add(j)
                 s.commit()
                 VastAI(api_key=os.environ.get("VAST_API_KEY", "mock-vast-key")).destroy_instance(instance_id)
                 _cleanup_pipeline_files(j.pipeline_id)
 
-    threading.Timer(60.0, _timeout_cleanup).start()
+    threading.Timer(gpu_timeout, _timeout_cleanup).start()
 
     return job
 
