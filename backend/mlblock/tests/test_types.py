@@ -235,7 +235,7 @@ def test_param_meta_tolerates_plain_description():
 def test_param_meta_from_discovered_blocks():
     p = BLOCK_REGISTRY["dropout"].params["p"]
     assert p.min == 0.0 and p.max == 1.0 and p.step == 0.05
-    assert BLOCK_REGISTRY["evaluate"].params["method"].choices == ["mse", "accuracy"]
+    assert BLOCK_REGISTRY["evaluate"].params["method"].choices == ["mse", "accuracy", "f1", "precision", "recall"]
     assert BLOCK_REGISTRY["conv2d"].params["kernel_size"].odd is True
     assert BLOCK_REGISTRY["input"].params["shape"].format == "[C,H,W] | [N,C,H,W]"
     assert BLOCK_REGISTRY["normalize"].params["mean"].len == 3

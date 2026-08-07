@@ -35,7 +35,7 @@ class Pipeline(SQLModel, table=True):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
-    jobs: list["Job"] = Relationship(back_populates="pipeline")
+    jobs: list["Job"] = Relationship(back_populates="pipeline", passive_deletes=True)
 
 
 class Job(SQLModel, table=True):
@@ -59,7 +59,7 @@ class Job(SQLModel, table=True):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     pipeline: "Pipeline" = Relationship(back_populates="jobs")
-    outputs: list["JobOutput"] = Relationship(back_populates="job")
+    outputs: list["JobOutput"] = Relationship(back_populates="job", passive_deletes=True)
 
 
 class JobOutput(SQLModel, table=True):

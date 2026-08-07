@@ -19,6 +19,8 @@ def family_of(dtype: str) -> str:
         return "df"
     if d == "Model":
         return "model"
+    if d == "PIL.Image.Image":
+        return "image"
     if d == "dict":
         return "dict"
     if d == "numpy.ndarray":
@@ -27,6 +29,12 @@ def family_of(dtype: str) -> str:
         return "scalar"
     if d == "str":
         return "str"
+    if d.startswith("list["):
+        return "list"
+    if d == "Env":
+        return "env"
+    if d == "Policy":
+        return "policy"
     if d.startswith("torch.Tensor"):
         return "tensor"
     if d.startswith("torch.utils.data."):
@@ -54,10 +62,10 @@ def build_conversion_graph(registry: dict[str, Any]) -> dict[str, set[str]]:
     graph: dict[str, set[str]] = {}
     for block in registry.values():
         cat = getattr(block.category, "name", None) or str(block.category)
-        if cat != "transforms":
+        if cat != "transformations":
             continue
-        out_families = {family_of(p["dtype"]) for p in block.outputs}
-        in_families = {family_of(p["dtype"]) for p in block.inputs}
+        out_families = {f for p in block.outputs for f in map(family_of, _split_union(p["dtype"]))}
+        in_families = {f for p in block.inputs for f in map(family_of, _split_union(p["dtype"]))}
         # Edge direction: the converter transforms input family → output family
         for src in in_families:
             for dst in out_families:
@@ -66,19 +74,33 @@ def build_conversion_graph(registry: dict[str, Any]) -> dict[str, set[str]]:
     return graph
 
 
-def classify(src_dtype: str, tgt_dtype: str, graph: dict[str, set[str]]) -> str:
-    """4-way verdict for a connection A.out → B.in.
+def _split_union(dtype: str) -> list[str]:
+    """Members of a `A | B` union dtype (falls back to the raw dtype)."""
+    parts = [p.strip() for p in dtype.split(" | ")]
+    return parts if len(parts) > 1 else [dtype]
 
-    - compatible: identical dtype, wildcard target (object/Any), or same family
+
+def classify(src_dtype: str, tgt_dtype: str, graph: dict[str, set[str]]) -> str:
+    """4-way verdict for a connection A.out → B.in (union-aware).
+
+    - compatible: identical dtype, wildcard target (object/Any), same family
+      on any union member
     - convertible: a conversion path exists in the graph
     - incompatible: otherwise
     """
-    if tgt_dtype in _WILDCARD_TYPES or src_dtype == tgt_dtype:
-        return VERDICT_COMPATIBLE
-    if family_of(src_dtype) == family_of(tgt_dtype):
-        return VERDICT_COMPATIBLE
-    if _reachable(family_of(src_dtype), family_of(tgt_dtype), graph):
-        return VERDICT_CONVERTIBLE
+    srcs = _split_union(src_dtype)
+    tgts = _split_union(tgt_dtype)
+    for t in tgts:
+        if t in _WILDCARD_TYPES:
+            return VERDICT_COMPATIBLE
+    for s in srcs:
+        for t in tgts:
+            if s == t or family_of(s) == family_of(t):
+                return VERDICT_COMPATIBLE
+    for s in srcs:
+        for t in tgts:
+            if _reachable(family_of(s), family_of(t), graph):
+                return VERDICT_CONVERTIBLE
     return VERDICT_INCOMPATIBLE
 
 

@@ -655,6 +655,12 @@ def build_pipeline_model(
             # N'injecte in_1 que si le bloc attend un input (les loaders de
             # données — load_csv — n'ont pas d'input et n'en ont pas besoin)
             if node.block.inputs:
+                # Racine image (resize/normalize sans source) : tenseur CHW factice
+                from mlblock.core.types import family_of
+                first_in = node.block.inputs[0].get("dtype", "")
+                if family_of(first_in) == "image":
+                    node.params["in_1"] = torch.randn(3, 224, 224)
+                    continue
                 # Infer input shape from params or default to [1, 1, 28, 28]
                 shape = node.params.get("shape", node.params.get("in_channels", [1, 1, 28, 28]))
                 if isinstance(shape, int):

@@ -11,8 +11,8 @@ BLOCK_SOURCES: dict[str, str] = {}
 
 
 def _color_from_folder(name: str) -> str | None:
-    """Extract hex color from folder name like 'neural_6366F1'."""
-    m = re.match(r"^.*_([0-9A-Fa-f]{6})$", name)
+    """Extract hex color from folder name like 'convolution-6366F1'."""
+    m = re.match(r"^.*[-_]?([0-9A-Fa-f]{6})$", name)
     return f"#{m.group(1).upper()}" if m else None
 
 
@@ -131,7 +131,7 @@ def _normalize_type(t: str) -> str:
 def _is_data_port_type(ptype: str) -> bool:
     """Data-flow types (input/output ports) vs hyperparams."""
     p = _normalize_type(ptype)
-    if p in ("pd.DataFrame", "Model", "object", "Tensor", "DataFrame", "Dataset", "DataLoader", "Module", "Optimizer"):
+    if p in ("pd.DataFrame", "Model", "object", "Tensor", "DataFrame", "Dataset", "DataLoader", "Module", "Optimizer", "PIL.Image.Image", "Env", "Policy", "dict"):
         return True
     return p.startswith(("torch.", "numpy.", "tuple["))
 
@@ -201,7 +201,7 @@ def _discover():
         if not category_dir.is_dir() or category_dir.name.startswith("_"):
             continue
         cat_color = _color_from_folder(category_dir.name)
-        cat_name = category_dir.name.rsplit("_", 1)[0] if "_" in category_dir.name else category_dir.name
+        cat_name = re.sub(r"[-_][0-9A-Fa-f]{6}$", "", category_dir.name)
         category = Category(name=cat_name, color=cat_color or "#888888")
 
         for py_file in sorted(category_dir.glob("*.py")):
@@ -209,7 +209,13 @@ def _discover():
                 continue
             module_name = f"mlblock.blocks.{category_dir.name}.{py_file.stem}"
             try:
-                module = importlib.import_module(module_name)
+                # spec_from_file_location : les dossiers français ont des tirets
+                # (invalides pour importlib.import_module)
+                spec = importlib.util.spec_from_file_location(module_name, py_file)
+                if spec is None or spec.loader is None:
+                    continue
+                module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(module)
                 for obj_name in dir(module):
                     obj = getattr(module, obj_name)
                     if callable(obj) and not obj_name.startswith("_") and obj.__module__ == module_name:

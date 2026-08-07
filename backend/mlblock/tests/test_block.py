@@ -31,7 +31,7 @@ def test_block_registry_list():
 
 
 def test_block_registry_by_category():
-    neural_blocks = BlockRegistry.by_category("neural_conv")
+    neural_blocks = BlockRegistry.by_category("convolution")
     assert len(neural_blocks) > 0
     names = [b.name for b in neural_blocks]
     assert "conv2d" in names
