@@ -241,6 +241,19 @@ def create_pipeline(
     user_id: str = Depends(get_current_user),
     session: Session = Depends(get_session),
 ) -> PipelineDetail:
+    # Valide les types de blocs, arêtes et compatibilité de dtype (même gate
+    # que /api/validate et /build) — protège l'import d'un JSON invalide.
+    try:
+        from mlblock.blocks.registry import BLOCK_REGISTRY
+        from mlblock.models.pipeline import PipelineDef
+
+        PipelineDef.model_validate(
+            {"nodes": body.nodes, "edges": body.edges},
+            context={"registry": BLOCK_REGISTRY},
+        )
+    except ValueError as e:
+        raise HTTPException(400, detail=str(e))
+
     # Enforce topological cycle check
     graph_data = {
         "nodes": [n.model_dump() for n in body.nodes],

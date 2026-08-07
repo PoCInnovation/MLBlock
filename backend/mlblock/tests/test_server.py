@@ -428,3 +428,13 @@ def test_job_outputs_endpoint(client: TestClient, monkeypatch):
     assert len(rows) == 1
     assert rows[0]["block_name"] == "train_model"
     assert rows[0]["output"] == '{"type":"curve","points":[1.2,0.8,0.4]}'
+
+
+def test_create_rejects_unknown_block_type(client: TestClient):
+    resp = client.post(
+        "/api/pipelines",
+        json={"name": "x", "nodes": [{"id": "n1", "type": "bloc_bidon", "params": {}}], "edges": []},
+    )
+    assert resp.status_code == 400
+    assert "bloc_bidon" in resp.json()["detail"]
+    assert client.get("/api/pipelines").json()["total"] == 0
