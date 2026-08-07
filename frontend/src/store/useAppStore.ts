@@ -82,6 +82,7 @@ type AppState = {
   setCatalog: (catalog: InternalCatalog) => void
   setCatalogError: (error: boolean, message?: string) => void
   setPipelineId: (id: number | null) => void
+  setProjectName: (name: string) => void
   loadPipeline: (nodes: PipelineNode[], edges: PipelineEdge[], pipelineId: number, name: string) => void
   savePipeline: (name: string) => Promise<void>
   ensureDraft: () => Promise<number>
@@ -227,6 +228,7 @@ const useAppStore = create<AppState>((set, get) => ({
   }),
 
   setPipelineId: (id) => set({ pipelineId: id }),
+  setProjectName: (name) => set({ projectName: name }),
 
   loadPipeline: (nodes, edges, pipelineId, name) => set((s) => {
     const script: Block[] = nodes.map(n => ({
