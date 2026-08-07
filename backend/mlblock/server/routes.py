@@ -44,7 +44,8 @@ health_router = APIRouter()
 @health_router.get("/health")
 def health() -> dict:
     """Liveness probe — no DB access, cheap ping target."""
-    return {"status": "ok"}
+    mode = os.environ.get("MLBLOCK_RUN_MODE", "local").lower()
+    return {"status": "ok", "run_mode": mode if mode in ("local", "gpu") else "local"}
 
 SUPABASE_STORAGE_URL = re.compile(r"^https://[^/]+/storage/v1/object/(?:public|authenticated)/([^/]+)/(.+)$")
 
