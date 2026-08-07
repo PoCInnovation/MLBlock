@@ -43,7 +43,6 @@ export default function EditorHeader({ onRun, onStop, onClear }: EditorHeaderPro
       <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
         <button onClick={async () => { await signOut(); setUser(null); navigate('/') }} style={ghostBtn}>Déconnexion</button>
         <button onClick={onClear} style={actionBtn}>Tout effacer</button>
-        <button style={{ ...actionBtn, display: 'inline-flex', alignItems: 'center', gap: 7 }}><span style={{ fontSize: 11 }}>⏭</span> Pas à pas</button>
         <button onClick={onStop} style={{ ...actionBtn, background: 'rgba(224,112,95,.16)', color: theme.color.accentLight, border: '1px solid rgba(224,112,95,.4)', fontWeight: 800 }}>
           <span style={{ fontSize: 10 }}>■</span> Arrêter
         </button>
