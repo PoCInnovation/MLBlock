@@ -80,8 +80,10 @@ type AppState = {
   clearToast: () => void
 }
 
+const savedMode = typeof localStorage !== 'undefined' ? localStorage.getItem('mlblock-editor-mode') : null
+
 const useAppStore = create<AppState>((set) => ({
-  editorMode: 'linear',
+  editorMode: savedMode === 'advanced' ? 'advanced' : 'linear',
   category: 'data',
   script: [],
   flowNodes: [],
@@ -100,7 +102,9 @@ const useAppStore = create<AppState>((set) => ({
 
   setCategory: (id) => set({ category: id }),
 
-  setEditorMode: (mode) => set((s) => {
+  setEditorMode: (mode) => {
+    if (typeof localStorage !== 'undefined') localStorage.setItem('mlblock-editor-mode', mode)
+    set((s) => {
     if (mode === 'advanced' && s.catalog) {
       const flowNodes = linearToFlow(s.script as FlowBlock[], s.catalog)
       return { editorMode: mode, flowNodes }
@@ -110,7 +114,8 @@ const useAppStore = create<AppState>((set) => ({
       return { editorMode: mode, script: script as any }
     }
     return { editorMode: mode }
-  }),
+  })
+  },
 
   setFlowNodes: (nodes) => set({ flowNodes: nodes }),
   setFlowEdges: (edges) => set({ flowEdges: edges }),
