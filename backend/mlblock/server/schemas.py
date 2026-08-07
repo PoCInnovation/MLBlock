@@ -54,6 +54,7 @@ class Page(BaseModel, Generic[T]):
 class PipelineCreate(BaseModel):
     name: str
     description: str = ""
+    is_draft: bool = False
     nodes: list[PipelineNode]
     edges: list[PipelineEdge]
 
@@ -61,6 +62,7 @@ class PipelineCreate(BaseModel):
 class PipelineUpdate(BaseModel):
     name: str | None = None
     description: str | None = None
+    is_draft: bool | None = None
     nodes: list[PipelineNode] | None = None
     edges: list[PipelineEdge] | None = None
 
@@ -69,6 +71,7 @@ class PipelineDetail(BaseModel):
     id: UUID
     name: str
     description: str
+    is_draft: bool
     nodes: list[PipelineNode]
     edges: list[PipelineEdge]
     code: str

@@ -26,6 +26,7 @@ export interface PipelineNode {
   type: string
   params: Record<string, unknown>
   children: PipelineNode[]
+  position?: { x: number; y: number } | null
 }
 
 export interface PipelineEdge {
@@ -38,6 +39,7 @@ export interface PipelineEdge {
 export interface PipelineCreate {
   name: string
   description: string
+  is_draft?: boolean
   nodes: PipelineNode[]
   edges: PipelineEdge[]
 }
@@ -46,6 +48,7 @@ export interface PipelineSummary {
   id: number
   name: string
   description: string
+  is_draft: boolean
   created_at: string
   updated_at: string
   node_count: number

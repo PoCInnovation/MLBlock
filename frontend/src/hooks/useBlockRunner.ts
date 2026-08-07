@@ -1,47 +1,20 @@
 import { useCallback } from 'react'
 import useAppStore from '../store/useAppStore'
-import { validateGraph, createPipeline, updatePipeline, buildPipeline } from '../api/client'
-import type { PipelineNode, PipelineEdge } from '../types/catalog'
+import { validateGraph, updatePipeline, buildPipeline } from '../api/client'
+import { toServerPayload } from '../utils/blockHelpers'
 
 const DEFAULT_PIPELINE_NAME = 'mon-premier-modèle'
-
-function buildNodes(script: { id: string; type: string; fields: Record<string, string> }[]): PipelineNode[] {
-  return script.map(b => ({
-    id: b.id,
-    type: b.type,
-    params: b.fields as Record<string, unknown>,
-    children: [],
-  }))
-}
 
 export function useBlockRunner() {
   const onRun = useCallback(async () => {
     const store = useAppStore.getState()
     if (store.running) return
 
-    let nodes: PipelineNode[]
-    let edges: PipelineEdge[]
+    const { nodes, edges } = toServerPayload(store)
 
-    if (store.editorMode === 'advanced') {
-      nodes = store.flowNodes.map(n => ({
-        id: n.id,
-        type: (n.data as any)?.type ?? n.id,
-        params: (n.data as any)?.fields ?? {},
-        children: [],
-      }))
-      edges = store.flowEdges.map(e => ({
-        source: e.source,
-        source_port: e.sourceHandle ?? 'out_1',
-        target: e.target,
-        target_port: e.targetHandle ?? 'in_1',
-      }))
-    } else {
-      if (store.script.length === 0) {
-        store.appendConsoleLines([{ k: 'sys', t: '⚠ Aucun bloc à exécuter.' }])
-        return
-      }
-      nodes = buildNodes(store.script)
-      edges = []
+    if (store.editorMode === 'linear' && nodes.length === 0) {
+      store.appendConsoleLines([{ k: 'sys', t: '⚠ Aucun bloc à exécuter.' }])
+      return
     }
 
     store.startRun()
@@ -58,14 +31,13 @@ export function useBlockRunner() {
       }
 
       let pipelineId = useAppStore.getState().pipelineId
-      const payload = { name: DEFAULT_PIPELINE_NAME, description: '', nodes, edges }
 
       if (pipelineId === null) {
-        const created = await createPipeline(payload)
-        pipelineId = created.id
-        useAppStore.getState().setPipelineId(pipelineId)
+        // Run sans projet : brouillon invisible (1 seul par user, nettoyé côté serveur)
+        pipelineId = await useAppStore.getState().ensureDraft()
       } else {
-        await updatePipeline(pipelineId, payload)
+        // Ré-exécution : on préserve le statut (draft reste draft, projet reste projet)
+        await updatePipeline(pipelineId, { name: DEFAULT_PIPELINE_NAME, description: '', nodes, edges })
       }
 
       useAppStore.getState().appendConsoleLines([{ k: 'info', t: `📦 Pipeline #${pipelineId} sauvegardé` }])

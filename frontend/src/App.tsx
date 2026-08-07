@@ -4,6 +4,7 @@ import useAppStore from './store/useAppStore'
 import { getSession, onAuthStateChange } from './services/auth'
 import HomePage from './pages/HomePage'
 import EditorPage from './pages/EditorPage'
+import ProjectsPage from './pages/ProjectsPage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import HowItWorksPage from './pages/HowItWorksPage'
@@ -43,6 +44,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<HomePage />} />
       <Route path="/editor" element={user ? <EditorPage /> : <Navigate to="/login" replace />} />
+      <Route path="/projets" element={user ? <ProjectsPage /> : <Navigate to="/login" replace />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/how-it-works" element={<HowItWorksPage />} />

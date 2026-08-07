@@ -1,18 +1,15 @@
 import os
-from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+# Charger l'env AVANT les imports internes : auth.py lit SUPABASE_JWKS_URL /
+# SUPABASE_JWT_SECRET au module-level — un load_dotenv dans le lifespan
+# arriverait trop tard et le serveur local ne pourrait authentifier personne.
+load_dotenv()
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    load_dotenv()
-    yield
-
-
-app = FastAPI(title="MLBlock Server", lifespan=lifespan)
+app = FastAPI(title="MLBlock Server")
 
 cors_origins = os.environ.get("CORS_ORIGINS", "*").split(",")
 app.add_middleware(

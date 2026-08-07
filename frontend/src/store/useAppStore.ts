@@ -1,7 +1,9 @@
 import { create } from 'zustand'
-import { instantiate } from '../utils/blockHelpers'
+import { instantiate, toServerPayload } from '../utils/blockHelpers'
 import type { Block } from '../utils/blockHelpers'
 import type { InternalCatalog } from '../types/catalog'
+import type { PipelineNode, PipelineEdge } from '../types/catalog'
+import { createPipeline, updatePipeline } from '../api/client'
 import type { Node, Edge, NodeChange, EdgeChange } from 'reactflow'
 import { applyNodeChanges, applyEdgeChanges, addEdge, type Connection } from 'reactflow'
 import { linearToFlow, flowToLinear } from '../utils/flowConversion'
@@ -47,6 +49,7 @@ type AppState = {
   catalogError: boolean
   catalogErrorMessage: string | null
   pipelineId: number | null
+  projectName: string
   toast: Toast | null
 
   setUser: (user: unknown | null) => void
@@ -76,13 +79,16 @@ type AppState = {
   setCatalog: (catalog: InternalCatalog) => void
   setCatalogError: (error: boolean, message?: string) => void
   setPipelineId: (id: number | null) => void
+  loadPipeline: (nodes: PipelineNode[], edges: PipelineEdge[], pipelineId: number, name: string) => void
+  savePipeline: (name: string) => Promise<void>
+  ensureDraft: () => Promise<number>
   showToast: (toast: Toast) => void
   clearToast: () => void
 }
 
 const savedMode = typeof localStorage !== 'undefined' ? localStorage.getItem('mlblock-editor-mode') : null
 
-const useAppStore = create<AppState>((set) => ({
+const useAppStore = create<AppState>((set, get) => ({
   editorMode: savedMode === 'advanced' ? 'advanced' : 'linear',
   category: 'data',
   script: [],
@@ -98,6 +104,7 @@ const useAppStore = create<AppState>((set) => ({
   catalogError: false,
   catalogErrorMessage: null,
   pipelineId: null,
+  projectName: 'mon-premier-modèle',
   toast: null,
 
   setCategory: (id) => set({ category: id }),
@@ -205,6 +212,46 @@ const useAppStore = create<AppState>((set) => ({
   }),
 
   setPipelineId: (id) => set({ pipelineId: id }),
+
+  loadPipeline: (nodes, edges, pipelineId, name) => set((s) => {
+    const script: Block[] = nodes.map(n => ({
+      id: n.id,
+      type: n.type,
+      fields: Object.fromEntries(Object.entries(n.params ?? {}).map(([k, v]) => [k, String(v)])),
+    }))
+    const flowNodes = s.catalog ? linearToFlow(script as FlowBlock[], s.catalog) : []
+    const posMap = new Map<string, { x: number; y: number }>()
+    nodes.forEach(n => { if (n.position) posMap.set(n.id, n.position) })
+    const positioned = flowNodes.map(n => (posMap.has(n.id) ? { ...n, position: posMap.get(n.id)! } : n))
+    const flowEdges: Edge[] = edges.map((e, i) => ({
+      id: `e-${i}`,
+      source: e.source,
+      sourceHandle: e.source_port,
+      target: e.target,
+      targetHandle: e.target_port,
+    }))
+    return { script, flowNodes: positioned, flowEdges, pipelineId, projectName: name }
+  }),
+
+  savePipeline: async (name) => {
+    const s = get()
+    const payload = toServerPayload(s)
+    const body = { name, description: '', is_draft: false, ...payload }
+    const detail = s.pipelineId === null
+      ? await createPipeline(body)
+      : await updatePipeline(s.pipelineId, body)
+    set({ pipelineId: detail.id, projectName: detail.name })
+  },
+
+  ensureDraft: async () => {
+    const s = get()
+    if (s.pipelineId !== null) return s.pipelineId
+    const { nodes, edges } = toServerPayload(s)
+    const created = await createPipeline({ name: 'mon-premier-modèle', description: '', is_draft: true, nodes, edges })
+    set({ pipelineId: created.id })
+    return created.id
+  },
+
   showToast: (toast) => set({ toast }),
   clearToast: () => set({ toast: null }),
   setUser: (user) => set({ user }),

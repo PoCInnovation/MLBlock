@@ -9,6 +9,7 @@ class PipelineNode(BaseModel):
     type: str
     params: dict[str, Any] = {}
     children: list[PipelineNode] = []
+    position: dict[str, float] | None = None
 
 
 class PipelineEdge(BaseModel):

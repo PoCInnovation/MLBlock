@@ -163,6 +163,7 @@ def _row_to_summary(row: PipelineTable) -> dict:
         "id": row.id,
         "name": row.name,
         "description": row.description,
+        "is_draft": row.is_draft,
         "updated_at": row.updated_at.isoformat(),
     }
 
@@ -174,6 +175,7 @@ def _row_to_detail(row: PipelineTable, nodes, edges) -> PipelineDetail:
         id=row.id,
         name=row.name,
         description=row.description,
+        is_draft=row.is_draft,
         nodes=node_schemas,
         edges=edge_schemas,
         code=row.code,
@@ -190,7 +192,10 @@ def list_pipelines(
     user_id: str = Depends(get_current_user),
     session: Session = Depends(get_session),
 ) -> Page[dict]:
-    query = select(PipelineTable).where(PipelineTable.user_id == UUID(user_id))
+    query = select(PipelineTable).where(
+        PipelineTable.user_id == UUID(user_id),
+        PipelineTable.is_draft == False,  # noqa: E712
+    )
     if search:
         query = query.where(PipelineTable.name.ilike(f"%{search}%"))
     query = query.order_by(PipelineTable.updated_at.desc())
@@ -214,10 +219,39 @@ def create_pipeline(
     }
     graph = Graph(graph_data)  # raises ValueError on cycle
 
+    user_uuid = UUID(user_id)
+
+    if not body.is_draft:
+        # Limite de 20 projets sauvegardés par utilisateur (les brouillons ne comptent pas)
+        saved_count = len(
+            session.exec(
+                select(PipelineTable).where(
+                    PipelineTable.user_id == user_uuid,
+                    PipelineTable.is_draft == False,  # noqa: E712
+                )
+            ).all()
+        )
+        if saved_count >= 20:
+            raise HTTPException(
+                status_code=409,
+                detail="Limite de 20 projets atteinte. Supprime un projet pour en créer un nouveau.",
+            )
+    else:
+        # Un seul brouillon par utilisateur : on nettoie les précédents
+        for old in session.exec(
+            select(PipelineTable).where(
+                PipelineTable.user_id == user_uuid,
+                PipelineTable.is_draft == True,  # noqa: E712
+            )
+        ).all():
+            session.delete(old)
+        session.commit()
+
     row = PipelineTable(
-        user_id=UUID(user_id),
+        user_id=user_uuid,
         name=body.name,
         description=body.description,
+        is_draft=body.is_draft,
         nodes=[n.model_dump() for n in body.nodes],
         edges=[e.model_dump() for e in body.edges],
     )
@@ -256,6 +290,8 @@ def update_pipeline(
         row.name = body.name
     if body.description is not None:
         row.description = body.description
+    if body.is_draft is not None:
+        row.is_draft = body.is_draft
     if body.nodes is not None:
         row.nodes = [n.model_dump() for n in body.nodes]
     if body.edges is not None:

@@ -21,13 +21,14 @@ class Profile(SQLModel, table=True):
 class Pipeline(SQLModel, table=True):
     __tablename__ = "pipelines"
     __table_args__ = (
-        ForeignKeyConstraint(["user_id"], ["profiles.id"]),
+        ForeignKeyConstraint(["user_id"], ["profiles.id"], ondelete="CASCADE"),
     )
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     user_id: uuid.UUID = Field(index=True)
     name: str = Field(index=True)
     description: str = ""
+    is_draft: bool = Field(default=True)
     nodes: list[dict] = Field(default=[], sa_column=Column(JSON))
     edges: list[dict] = Field(default=[], sa_column=Column(JSON))
     code: str = ""

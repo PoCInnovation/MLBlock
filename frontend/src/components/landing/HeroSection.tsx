@@ -22,10 +22,10 @@ export default function HeroSection() {
         </p>
         <div style={{ display: 'flex', gap: 14, marginTop: 34 }}>
           <button
-            onClick={() => navigate('/editor')}
+            onClick={() => navigate('/projets')}
             style={{ background: '#D97757', color: '#fff', border: 'none', padding: '15px 26px', borderRadius: 14, fontWeight: 800, fontSize: 16, cursor: 'pointer', boxShadow: '0 4px 0 rgba(0,0,0,.25)', display: 'inline-flex', alignItems: 'center', gap: 9 }}
           >
-            <span style={{ fontSize: 13 }}>▶</span> Commencer à construire
+            <span style={{ fontSize: 13 }}>▶</span> Mes projets
           </button>
           <button
             onClick={scrollToFeatures}

@@ -2,47 +2,14 @@ from __future__ import annotations
 
 import os
 import uuid
-from datetime import datetime, timezone
 
 import pytest
 from dotenv import load_dotenv
 from fastapi.testclient import TestClient
-from sqlmodel import Session, SQLModel, create_engine
-from sqlmodel.pool import StaticPool
 
 load_dotenv()
 
 from mlblock.server.main import app
-from mlblock.server.database import get_session
-from mlblock.server.auth import get_current_user
-from mlblock.server.gpu_auth import verify_gpu_key
-
-
-@pytest.fixture(name="client")
-def client_fixture():
-    database_url = os.environ.get("DATABASE_URL")
-    if not database_url:
-        pytest.skip("DATABASE_URL not set")
-
-    engine = create_engine(
-        database_url,
-        poolclass=StaticPool,
-        connect_args={"options": "-c statement_timeout=10000"},
-    )
-
-    def override_get_session():
-        with Session(engine) as session:
-            yield session
-
-    test_user_id = str(uuid.uuid4())
-    app.dependency_overrides[get_session] = override_get_session
-    app.dependency_overrides[get_current_user] = lambda: test_user_id
-    app.dependency_overrides[verify_gpu_key] = lambda: "gpu"
-
-    with TestClient(app) as c:
-        yield c
-
-    app.dependency_overrides.clear()
 
 
 # ── Blocks ──────────────────────────────────────────────────────────
@@ -331,3 +298,89 @@ def test_health_endpoint(client: TestClient):
     r = client.get("/health")
     assert r.status_code == 200
     assert r.json() == {"status": "ok"}
+
+
+# ── Projets (persistance) ───────────────────────────────────────────
+
+def test_create_draft_not_listed(client: TestClient):
+    resp = client.post(
+        "/api/pipelines",
+        json={"name": "brouillon", "is_draft": True, "nodes": [], "edges": []},
+    )
+    assert resp.status_code == 201
+    assert resp.json()["is_draft"] is True
+    listing = client.get("/api/pipelines").json()
+    assert listing["total"] == 0
+
+
+def test_save_formalizes_draft(client: TestClient):
+    created = client.post(
+        "/api/pipelines",
+        json={"name": "brouillon", "is_draft": True, "nodes": [], "edges": []},
+    ).json()
+    resp = client.put(
+        f"/api/pipelines/{created['id']}",
+        json={"name": "Mon projet", "is_draft": False},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["is_draft"] is False
+    listing = client.get("/api/pipelines").json()
+    assert listing["total"] == 1
+    assert listing["items"][0]["name"] == "Mon projet"
+
+
+def test_only_one_draft_per_user(client: TestClient):
+    first = client.post(
+        "/api/pipelines",
+        json={"name": "brouillon", "is_draft": True, "nodes": [], "edges": []},
+    ).json()
+    second = client.post(
+        "/api/pipelines",
+        json={"name": "brouillon", "is_draft": True, "nodes": [], "edges": []},
+    ).json()
+    assert second["id"] != first["id"]
+    assert client.get(f"/api/pipelines/{first['id']}").status_code == 404
+    assert client.get(f"/api/pipelines/{second['id']}").status_code == 200
+
+
+def test_20_projects_limit_returns_409(client: TestClient):
+    for i in range(20):
+        resp = client.post(
+            "/api/pipelines",
+            json={"name": f"projet_{i}", "nodes": [], "edges": []},
+        )
+        assert resp.status_code == 201
+    resp = client.post(
+        "/api/pipelines",
+        json={"name": "trop", "nodes": [], "edges": []},
+    )
+    assert resp.status_code == 409
+    assert "20 projets" in resp.json()["detail"]
+    # Un brouillon reste permis au-delà du plafond
+    draft = client.post(
+        "/api/pipelines",
+        json={"name": "brouillon", "is_draft": True, "nodes": [], "edges": []},
+    )
+    assert draft.status_code == 201
+
+
+def test_drafts_not_counted_toward_limit(client: TestClient):
+    for i in range(20):
+        client.post("/api/pipelines", json={"name": f"p{i}", "nodes": [], "edges": []})
+    client.post("/api/pipelines", json={"name": "b", "is_draft": True, "nodes": [], "edges": []})
+    # 20 projets + 1 brouillon : le brouillon suivant est accepté (cleanup du précédent)
+    resp = client.post(
+        "/api/pipelines",
+        json={"name": "b2", "is_draft": True, "nodes": [], "edges": []},
+    )
+    assert resp.status_code == 201
+
+
+def test_position_roundtrip(client: TestClient):
+    nodes = [{"id": "n1", "type": "load_csv", "params": {}, "position": {"x": 120.5, "y": 45}}]
+    created = client.post(
+        "/api/pipelines",
+        json={"name": "pos", "nodes": nodes, "edges": []},
+    ).json()
+    fetched = client.get(f"/api/pipelines/{created['id']}").json()
+    assert fetched["nodes"][0]["position"] == {"x": 120.5, "y": 45}

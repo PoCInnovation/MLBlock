@@ -8,6 +8,7 @@ import type {
   PipelineDetail,
   PipelineNode,
   PipelineEdge,
+  PipelineSummary,
   ValidationResponse,
   BuildResponse,
   GenerateResponse,
@@ -95,6 +96,24 @@ export async function fetchCatalog(): Promise<InternalCatalog> {
 export async function createPipeline(data: PipelineCreate): Promise<PipelineDetail> {
   const { data: res } = await http.post<PipelineDetail>('/api/pipelines', data)
   return res
+}
+
+export interface PipelinePage {
+  items: PipelineSummary[]
+  total: number
+  page: number
+  size: number
+  pages: number
+}
+
+export async function listPipelines(size = 100): Promise<PipelinePage> {
+  const { data } = await http.get<PipelinePage>('/api/pipelines', { params: { page: 1, size } })
+  return data
+}
+
+export async function getPipeline(id: number | string): Promise<PipelineDetail> {
+  const { data } = await http.get<PipelineDetail>(`/api/pipelines/${id}`)
+  return data
 }
 
 export async function updatePipeline(id: number, data: PipelineCreate): Promise<PipelineDetail> {
