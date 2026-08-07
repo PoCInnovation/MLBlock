@@ -51,10 +51,10 @@ export default function HomeNav() {
         <button onClick={() => navigate('/how-it-works')} style={{ ...linkStyle(location.pathname === '/how-it-works'), background: 'none', border: 'none' }}>Comment ça marche</button>
         <button onClick={() => navigate('/about')} style={{ ...linkStyle(location.pathname === '/about'), background: 'none', border: 'none' }}>Qui sommes nous</button>
         <button
-          onClick={() => navigate('/editor')}
+          onClick={() => navigate('/projets')}
           style={{ background: theme.color.accent, color: '#fff', border: 'none', padding: '11px 20px', borderRadius: 12, fontWeight: 800, fontSize: 15, cursor: 'pointer', boxShadow: theme.shadow.btn }}
         >
-          Ouvrir l'éditeur
+          Mes projets
         </button>
         {user ? (
           <button onClick={async () => { try { await signOut() } catch {} setUser(null); navigate('/') }} style={{ background: theme.color.border, color: theme.color.textMuted, border: 'none', padding: '11px 20px', borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>

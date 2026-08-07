@@ -88,6 +88,7 @@ export default function EditorHeader({ onRun, onStop, onClear }: EditorHeaderPro
         <button style={ghostBtn} onClick={() => setExportOpen(true)}>↥ Exporter</button>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+        <button onClick={() => navigate('/projets')} style={ghostBtn}>Mes projets</button>
         <button onClick={async () => { await signOut(); setUser(null); navigate('/') }} style={ghostBtn}>Déconnexion</button>
         <button onClick={onClear} style={actionBtn}>Tout effacer</button>
         <button onClick={() => { setSaveName(projectName); setSaving(false) }} style={{ ...actionBtn, background: 'rgba(34,197,94,.14)', color: '#8fd1a8', border: '1px solid rgba(34,197,94,.35)', fontWeight: 800 }}>💾 Sauvegarder</button>
