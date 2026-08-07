@@ -297,7 +297,8 @@ def test_build_pipeline_with_unbuildable_block(client: TestClient):
 def test_health_endpoint(client: TestClient):
     r = client.get("/health")
     assert r.status_code == 200
-    assert r.json() == {"status": "ok"}
+    assert r.json()["status"] == "ok"
+    assert r.json()["run_mode"] in ("local", "gpu")
 
 
 # ── Projets (persistance) ───────────────────────────────────────────
