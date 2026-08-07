@@ -120,3 +120,13 @@ input, select, button { font-family: inherit; }
 .hover-bright:hover { filter: brightness(1.12); }
 .hover-card:hover { transform: translateY(-2px); border-color: rgba(217,119,87,.55) !important; }
 .hover-btn:hover { background: rgba(255,255,255,.11) !important; }
+
+/* Accessibilité : neutralise animations et transitions quand l'utilisateur
+   demande moins de mouvement (WCAG 2.3.3). */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

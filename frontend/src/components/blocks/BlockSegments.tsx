@@ -260,7 +260,7 @@ export default function BlockSegments({ segs, fields, blockId, onUpdate, columnO
       if (state === 'error') return (
         <span key={i} style={fileCard}>
           <span style={{ ...errStyle, display: 'inline-flex', alignItems: 'center', gap: 4 }}><TriangleAlert size={12} /> Échec</span>
-          <span style={errStyle} onClick={() => inputRefs.current[s.k]?.click()}>Réessayer</span>
+          <button type="button" style={{ ...errStyle, background: 'none', border: 'none', padding: 0, fontFamily: 'inherit' }} onClick={() => inputRefs.current[s.k]?.click()}>Réessayer</button>
           <input ref={el => { inputRefs.current[s.k] = el }} type="file" accept=".csv" style={{ display: 'none' }} onChange={e => handleFile(s.k, e)} />
         </span>
       )
@@ -277,9 +277,9 @@ export default function BlockSegments({ segs, fields, blockId, onUpdate, columnO
       return (
         <span key={i} style={{ display: 'flex', flexBasis: '100%' }}>
           <input ref={el => { inputRefs.current[s.k] = el }} type="file" accept=".csv" style={{ display: 'none' }} onChange={e => handleFile(s.k, e)} />
-          <span onClick={() => inputRefs.current[s.k]?.click()} style={fileBtn} title={s.desc}>
+          <button type="button" onClick={() => inputRefs.current[s.k]?.click()} style={{ ...fileBtn, fontFamily: 'inherit' }} title={s.desc}>
             <FileUp size={13} /> CSV
-          </span>
+          </button>
         </span>
       )
     }

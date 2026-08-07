@@ -12,7 +12,7 @@ export const theme = {
     text: '#f0e9e3',
     textLight: '#e8e0d8',
     textMuted: '#b7ada3',
-    textDim: '#6f665e',
+    textDim: '#8a8178',
     textInput: '#2a211c',
     inputBg: '#2a2724',
     status: '#66C7B0',

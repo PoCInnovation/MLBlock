@@ -122,6 +122,8 @@ export default function FlowPalette({ onDragStart }: FlowPaletteProps) {
     return matchQuery && matchCat
   }
 
+  const hasAnyMatch = Object.keys(catalog.blocks).some(matches)
+
   return (
     <div style={paletteStyle}>
       <div style={headerStyle}>
@@ -140,6 +142,11 @@ export default function FlowPalette({ onDragStart }: FlowPaletteProps) {
         </div>
       </div>
       <div style={scrollStyle}>
+        {!hasAnyMatch && (
+          <div style={{ color: theme.color.textMuted, fontSize: 13, fontWeight: 600, padding: '18px 6px', textAlign: 'center' }}>
+            Aucun bloc ne correspond
+          </div>
+        )}
         {categories.map(c => {
           const types = Object.keys(catalog.blocks).filter(t => catalog.blocks[t].cat === c.id && matches(t))
           if (types.length === 0) return null
