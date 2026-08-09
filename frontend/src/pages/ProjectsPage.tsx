@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import useAppStore from '../store/useAppStore'
+import useAppStore, { fingerprintOf } from '../store/useAppStore'
 import { listPipelines, getPipeline, deletePipeline } from '../api/client'
 import type { PipelineSummary } from '../types/catalog'
 import { usePipelineImport } from '../hooks/usePipelineImport'
@@ -125,7 +125,7 @@ export default function ProjectsPage() {
             style={{ ...primaryBtn, opacity: atLimit ? 0.5 : 1, cursor: atLimit ? 'not-allowed' : 'pointer' }}
             disabled={atLimit}
             title={atLimit ? 'Limite de 20 projets atteinte. Supprime un projet pour en créer un nouveau.' : undefined}
-            onClick={() => { useAppStore.getState().clearAll(); useAppStore.setState({ pipelineId: null, projectName: 'mon-premier-modèle', savedFingerprint: JSON.stringify({ flowNodes: [], flowEdges: [], projectName: 'mon-premier-modèle' }) }); navigate('/editor') }}
+            onClick={() => { useAppStore.getState().clearAll(); useAppStore.setState({ pipelineId: null, projectName: 'mon-premier-modèle', savedFingerprint: fingerprintOf({ flowNodes: [], flowEdges: [], projectName: 'mon-premier-modèle' }) }); navigate('/editor') }}
           >
             + Nouveau projet
           </button>

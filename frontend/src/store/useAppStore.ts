@@ -85,6 +85,29 @@ type AppState = {
   clearToast: () => void
 }
 
+
+/** Empreinte du canvas : données sémantiques uniquement — les métadonnées
+    ReactFlow (measured, selected, dragging…) sont volatiles et ne doivent pas
+    rendre le projet "modifié". */
+export function fingerprintOf(s: { flowNodes: Node[]; flowEdges: Edge[]; projectName: string }): string {
+  return JSON.stringify({
+    nodes: s.flowNodes.map(n => ({
+      id: n.id,
+      type: (n.data as { type?: string } | undefined)?.type,
+      fields: (n.data as { fields?: Record<string, string> } | undefined)?.fields,
+      segs: (n.data as { segs?: unknown } | undefined)?.segs,
+      position: n.position,
+    })),
+    edges: s.flowEdges.map(e => ({
+      source: e.source,
+      target: e.target,
+      sourceHandle: e.sourceHandle,
+      targetHandle: e.targetHandle,
+    })),
+    projectName: s.projectName,
+  })
+}
+
 const useAppStore = create<AppState>((set, get) => ({
   category: 'data',
   flowNodes: [],
@@ -103,7 +126,7 @@ const useAppStore = create<AppState>((set, get) => ({
   lastJobId: null,
   jobStatus: null,
   results: [],
-  savedFingerprint: JSON.stringify({ flowNodes: [], flowEdges: [], projectName: 'mon-premier-modèle' }),
+  savedFingerprint: fingerprintOf({ flowNodes: [], flowEdges: [], projectName: 'mon-premier-modèle' }),
   restoredWork: false,
   toast: null,
 
@@ -187,7 +210,7 @@ const useAppStore = create<AppState>((set, get) => ({
           },
         }
       })
-      savedFingerprint = JSON.stringify({ flowNodes, flowEdges: s.flowEdges, projectName: s.projectName })
+      savedFingerprint = fingerprintOf({ flowNodes, flowEdges: s.flowEdges, projectName: s.projectName })
     }
     return { catalog, category: catExists ? s.category : firstCat, flowNodes, savedFingerprint }
   }),
@@ -203,8 +226,7 @@ const useAppStore = create<AppState>((set, get) => ({
   isDirty: () => {
     const s = get()
     if (s.savedFingerprint === null) return false
-    const fp = JSON.stringify({ flowNodes: s.flowNodes, flowEdges: s.flowEdges, projectName: s.projectName })
-    return fp !== s.savedFingerprint
+    return fingerprintOf(s) !== s.savedFingerprint
   },
 
   loadPipeline: (nodes, edges, pipelineId, name) => set((s) => {
@@ -237,7 +259,7 @@ const useAppStore = create<AppState>((set, get) => ({
       target: e.target,
       targetHandle: e.target_port,
     }))
-    return { flowNodes, flowEdges, pipelineId, projectName: name, savedFingerprint: JSON.stringify({ flowNodes, flowEdges, projectName: name }) }
+    return { flowNodes, flowEdges, pipelineId, projectName: name, savedFingerprint: fingerprintOf({ flowNodes, flowEdges, projectName: name }) }
   }),
 
   savePipeline: async (name) => {
@@ -250,7 +272,7 @@ const useAppStore = create<AppState>((set, get) => ({
     set({
       pipelineId: detail.id,
       projectName: detail.name,
-      savedFingerprint: JSON.stringify({ flowNodes: s.flowNodes, flowEdges: s.flowEdges, projectName: detail.name }),
+      savedFingerprint: fingerprintOf({ flowNodes: s.flowNodes, flowEdges: s.flowEdges, projectName: detail.name }),
     })
   },
 
