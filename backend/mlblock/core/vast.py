@@ -12,7 +12,11 @@ class VastAI:
         if not self.api_key or self.api_key.startswith("mock"):
             return {"id": "mock-instance-id"}
 
-        search_url = f"{self.base_url}/asks/?q=gpu_name={gpu_name}&api_key={self.api_key}"
+        # q doit être un JSON stringifié et URL-encodé (format API Vast)
+        import json as _json
+        import urllib.parse
+        q = _json.dumps({"type": "on-demand", "gpu_name": gpu_name, "verified": True, "external": False})
+        search_url = f"{self.base_url}/asks/?q={urllib.parse.quote(q)}&api_key={self.api_key}"
         try:
             r = requests.get(search_url, timeout=10)
             r.raise_for_status()

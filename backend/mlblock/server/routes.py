@@ -446,6 +446,14 @@ def execute_pipeline(
             onstart=onstart,
         )
         job.vast_instance_id = instance.get("id", "")
+        if instance.get("id") == "dummy-instance-id":
+            # Le rent a échoué (clé, crédit, offre introuvable) : erreur immédiate
+            job.status = "error"
+            job.error = "Location GPU Vast.ai impossible — vérifie la clé, le crédit et l'offre RTX 3090"
+            job.completed_at = datetime.now(timezone.utc)
+            session.add(job)
+            session.commit()
+            return job
         job.status = "dispatched"
         session.add(job)
         session.commit()
