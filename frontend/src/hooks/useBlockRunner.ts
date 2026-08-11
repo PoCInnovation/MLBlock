@@ -2,6 +2,7 @@ import { useCallback } from 'react'
 import useAppStore from '../store/useAppStore'
 import { validateGraph, updatePipeline, buildPipeline, executePipeline, getJob, getJobOutputs } from '../api/client'
 import { toServerPayload } from '../utils/blockHelpers'
+import axios from 'axios'
 
 const DEFAULT_PIPELINE_NAME = 'mon-premier-modèle'
 
@@ -99,7 +100,13 @@ export function useBlockRunner() {
       console.error('Pipeline run failed:', err)
       if (useAppStore.getState().running) {
         useAppStore.getState().failRun()
-        useAppStore.getState().appendConsoleLines([{ k: 'sys', t: "Erreur lors de l'exécution." }])
+        // Affiche le détail serveur (400 build/validate…) au lieu d'un message générique
+        let detail = "Erreur lors de l'exécution."
+        if (axios.isAxiosError(err)) {
+          const d = (err.response?.data as { detail?: string } | undefined)?.detail
+          if (d) detail = `Erreur : ${d}`
+        }
+        useAppStore.getState().appendConsoleLines([{ k: 'sys', t: detail }])
       }
     }
   }, [])
