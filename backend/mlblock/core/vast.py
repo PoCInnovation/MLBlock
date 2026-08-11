@@ -27,7 +27,7 @@ class VastAI:
         r = requests.post(
             f"{self.base_url}/bundles",
             json={
-                "type": "ondemand",
+                "type": "on-demand",
                 "gpu_name": {"eq": gpu_name},
                 "verified": {"eq": True},
                 "rentable": {"eq": True},
