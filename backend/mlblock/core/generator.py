@@ -34,7 +34,10 @@ def generate_code(nodes: list[PipelineNode], edges: list[PipelineEdge]) -> str:
     lines.append("import json")
     lines.append("")
     lines.append("BACKEND_URL = os.environ.get('BACKEND_URL', 'http://localhost:8000')")
-    lines.append("GPU_API_KEY = os.environ.get('GPU_API_KEY', 'mock-gpu-key')")
+    # gpu-instance-auth : sur une instance Vast, Vast injecte CONTAINER_API_KEY
+    # (clé restreinte de l'instance) — elle authentifie les callbacks de ce job.
+    # En local (subprocess) seul GPU_API_KEY existe (mock par défaut).
+    lines.append("GPU_API_KEY = os.environ.get('GPU_API_KEY') or os.environ.get('CONTAINER_API_KEY', 'mock-gpu-key')")
     lines.append("JOB_ID = os.environ.get('JOB_ID', 'mock-job-id')")
     lines.append("")
     # ponytail: 90s timeout — Render free tier spins down after 15min idle,
@@ -84,6 +87,29 @@ def generate_code(nodes: list[PipelineNode], edges: list[PipelineEdge]) -> str:
     lines.append("            headers={'Authorization': f'Bearer {GPU_API_KEY}'}, timeout=BACKEND_TIMEOUT)")
     lines.append("    except Exception: pass")
     lines.append("")
+    lines.append("INSTANCE_ID = None")
+    lines.append("")
+    lines.append("def _fetch_instance_id():")
+    lines.append("    \"\"\"GPU uniquement : id Vast de cette instance, via le backend.\"\"\"")
+    lines.append("    global INSTANCE_ID")
+    lines.append("    if not os.environ.get('CONTAINER_API_KEY'):")
+    lines.append("        return")
+    lines.append("    try:")
+    lines.append("        r = requests.get(f'{BACKEND_URL}/api/jobs/{JOB_ID}/instance',")
+    lines.append("            headers={'Authorization': f'Bearer {GPU_API_KEY}'}, timeout=BACKEND_TIMEOUT)")
+    lines.append("        INSTANCE_ID = r.json().get('instance_id')")
+    lines.append("    except Exception: pass")
+    lines.append("")
+    lines.append("def _self_destroy():")
+    lines.append("    \"\"\"GPU uniquement : détruit l'instance en fin de run (filet anti-orpheline).\"\"\"")
+    lines.append("    key = os.environ.get('CONTAINER_API_KEY')")
+    lines.append("    if not key or not INSTANCE_ID:")
+    lines.append("        return")
+    lines.append("    try:")
+    lines.append("        requests.delete(f'https://console.vast.ai/api/v0/instances/{INSTANCE_ID}',")
+    lines.append("            headers={'Authorization': f'Bearer {key}'}, timeout=10)")
+    lines.append("    except Exception: pass")
+    lines.append("")
 
     seen = set()
     for node in nodes:
@@ -97,6 +123,7 @@ def generate_code(nodes: list[PipelineNode], edges: list[PipelineEdge]) -> str:
             lines.append("")
 
     lines.append("def main():")
+    lines.append("    _fetch_instance_id()")
     lines.append("    try:")
 
     order = _topological_sort(nodes, edges)
@@ -164,6 +191,8 @@ def generate_code(nodes: list[PipelineNode], edges: list[PipelineEdge]) -> str:
     lines.append("    except Exception as e:")
     lines.append("        notify_error('pipeline', e)")
     lines.append("        raise")
+    lines.append("    finally:")
+    lines.append("        _self_destroy()")
     lines.append("")
     lines.append('if __name__ == "__main__":')
     lines.append("    main()")

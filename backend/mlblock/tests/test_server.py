@@ -439,3 +439,106 @@ def test_create_rejects_unknown_block_type(client: TestClient):
     assert resp.status_code == 400
     assert "bloc_bidon" in resp.json()["detail"]
     assert client.get("/api/pipelines").json()["total"] == 0
+
+
+# ── GPU instance auth (gpu-instance-auth) ──────────────────────────
+
+
+def test_gpu_callback_auth_per_instance(client: TestClient):
+    """La clé d'instance du job authentifie les callbacks ; une clé étrangère
+    est rejetée 403 ; sans clé d'instance, repli sur le GPU_API_KEY global."""
+    from mlblock.server.gpu_auth import GPU_API_KEY as GLOBAL_KEY
+    from mlblock.server.gpu_auth import verify_gpu_key
+    from mlblock.server.models import Job
+    from mlblock.server.database import _get_engine
+    from sqlmodel import Session
+
+    app.dependency_overrides.pop(verify_gpu_key, None)  # teste la vraie logique
+
+    created = client.post(
+        "/api/pipelines", json={"name": "auth-gpu", "nodes": [], "edges": []}
+    ).json()
+    job = client.post(f"/api/pipelines/{created['id']}/execute").json()
+    job_id = job["id"]
+
+    # Pas encore de clé d'instance (mode local) → GPU_API_KEY global accepté
+    r = client.post(
+        f"/api/jobs/{job_id}/status",
+        json={"block": "b", "status": "running"},
+        headers={"Authorization": f"Bearer {GLOBAL_KEY}"},
+    )
+    assert r.status_code == 200
+
+    # Clé d'instance posée sur le job → seule cette clé passe
+    with Session(_get_engine()) as s:
+        j = s.get(Job, uuid.UUID(job_id))
+        j.instance_api_key = "key-instance-A"
+        s.add(j)
+        s.commit()
+
+    ok = client.post(
+        f"/api/jobs/{job_id}/status",
+        json={"block": "b", "status": "running"},
+        headers={"Authorization": "Bearer key-instance-A"},
+    )
+    assert ok.status_code == 200
+
+    bad = client.post(
+        f"/api/jobs/{job_id}/status",
+        json={"block": "b", "status": "running"},
+        headers={"Authorization": "Bearer autre-cle"},
+    )
+    assert bad.status_code == 403
+
+    # La clé globale ne passe plus une fois l'instance clé posée
+    old = client.post(
+        f"/api/jobs/{job_id}/status",
+        json={"block": "b", "status": "running"},
+        headers={"Authorization": f"Bearer {GLOBAL_KEY}"},
+    )
+    assert old.status_code == 403
+
+
+def test_gpu_job_instance_endpoint(client: TestClient):
+    """GET /api/jobs/{id}/instance retourne l'id Vast ; 404 si job absent."""
+    from mlblock.server.gpu_auth import GPU_API_KEY as GLOBAL_KEY
+    from mlblock.server.gpu_auth import verify_gpu_key
+
+    app.dependency_overrides.pop(verify_gpu_key, None)
+
+    created = client.post(
+        "/api/pipelines", json={"name": "auth-gpu-2", "nodes": [], "edges": []}
+    ).json()
+    job = client.post(f"/api/pipelines/{created['id']}/execute").json()
+
+    r = client.get(
+        f"/api/jobs/{job['id']}/instance",
+        headers={"Authorization": f"Bearer {GLOBAL_KEY}"},
+    )
+    assert r.status_code == 200
+    assert r.json() == {"instance_id": "mock-instance-id"}
+
+    # Job inexistant : Bearer global (pas de clé d'instance à vérifier) → 404
+    r404 = client.get(
+        "/api/jobs/00000000-0000-0000-0000-000000000000/instance",
+        headers={"Authorization": f"Bearer {GLOBAL_KEY}"},
+    )
+    assert r404.status_code == 404
+
+
+def test_generated_code_instance_auth_and_self_destroy():
+    """Le code généré préfère CONTAINER_API_KEY et embarque l'auto-destroy."""
+    from mlblock.core.generator import generate_code
+    from mlblock.server.schemas import PipelineNode
+
+    code = generate_code(
+        [PipelineNode(id="n1", type="train_model", params={"epochs": "5"})],
+        [],
+    )
+    assert "os.environ.get('GPU_API_KEY') or os.environ.get('CONTAINER_API_KEY'" in code
+    assert "def _fetch_instance_id():" in code
+    assert "def _self_destroy():" in code
+    # le finally (destroy) est dans le corps de main(), après les callbacks
+    main_body = code.split("def main():")[1]
+    assert "finally:" in main_body
+    assert "_self_destroy()" in main_body

@@ -63,9 +63,13 @@ class VastAI:
             # OpenAPI officiel : PUT /asks/{id} (vérifié en réel sur l'API)
             res = requests.put(f"{self.base_url}/asks/{offer_id}", json=payload, headers=self._headers(), timeout=15)
             res.raise_for_status()
-            # Key quirk : le create retourne `new_contract` comme ID d'instance (pas `id`)
-            instance_id = res.json().get("id") or res.json().get("new_contract")
-            return {"id": str(instance_id)}
+            # Key quirk : le create retourne `new_contract` comme ID d'instance (pas `id`).
+            # `instance_api_key` : clé restreinte de l'instance (start/stop/destroy de
+            # CETTE instance) — injectée par Vast dans le container comme
+            # CONTAINER_API_KEY ; elle authentifie les callbacks GPU de ce job.
+            data = res.json()
+            instance_id = data.get("id") or data.get("new_contract")
+            return {"id": str(instance_id), "api_key": data.get("instance_api_key", "")}
         except Exception as e:
             print(f"Error launching Vast.ai instance: {e}")
             return {"id": "dummy-instance-id"}

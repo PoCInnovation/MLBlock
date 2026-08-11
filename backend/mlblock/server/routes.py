@@ -446,6 +446,9 @@ def execute_pipeline(
             onstart=onstart,
         )
         job.vast_instance_id = instance.get("id", "")
+        # Clé Vast restreinte de l'instance : authentifie les callbacks GPU de
+        # ce job (le container la reçoit aussi via CONTAINER_API_KEY).
+        job.instance_api_key = instance.get("api_key", "")
         if instance.get("id") == "dummy-instance-id":
             # Le rent a échoué (clé, crédit, offre introuvable) : erreur immédiate
             job.status = "error"
@@ -539,6 +542,20 @@ def get_job_outputs(
         {"block_name": r.block_name, "output": r.output, "created_at": r.created_at.isoformat()}
         for r in rows
     ]
+
+
+@jobs_router.get("/{job_id}/instance")
+def get_job_instance(
+    job_id: UUID,
+    _: str = Depends(verify_gpu_key),
+    session: Session = Depends(get_session),
+) -> dict:
+    """Identité Vast de l'instance d'un job — consommée par le code généré au
+    boot GPU (auto-destroy anti-orpheline). Auth identique aux callbacks."""
+    job = session.get(Job, job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return {"instance_id": job.vast_instance_id}
 
 
 @jobs_router.post("/{job_id}/status")

@@ -50,6 +50,9 @@ class Job(SQLModel, table=True):
     pipeline_id: uuid.UUID = Field(index=True)
     status: str = Field(default="queued", index=True)
     vast_instance_id: str = ""
+    # Clé Vast restreinte de l'instance (create response) — authentifie les
+    # callbacks GPU de CE job. Vide = fallback sur le GPU_API_KEY global.
+    instance_api_key: str = ""
     # DEPRECATED: output is always empty string. Actual outputs live in JobOutput.
     # Kept for backward compatibility with API consumers. Remove after migration.
     output: str = ""
