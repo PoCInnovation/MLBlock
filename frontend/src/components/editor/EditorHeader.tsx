@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Save, Play, Loader2, Upload, Download, Square, MoreVertical, FolderKanban, Trash2, LogOut } from 'lucide-react'
+import { Save, Play, Loader2, Upload, Download, Square, MoreVertical, FolderKanban, Trash2, LogOut, Check } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -35,6 +35,8 @@ export default function EditorHeader({ onRun, onStop, onClear }: EditorHeaderPro
   const savePipeline = useAppStore(s => s.savePipeline)
   const ensureDraft = useAppStore(s => s.ensureDraft)
   const showToast   = useAppStore(s => s.showToast)
+  // Sélecteur dérivé : re-render uniquement quand l'état dirty change
+  const dirty = useAppStore(s => s.isDirty())
   const { importFile } = usePipelineImport()
 
   const [saving, setSaving] = useState(false)
@@ -107,7 +109,23 @@ export default function EditorHeader({ onRun, onStop, onClear }: EditorHeaderPro
         </div>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-        <button onClick={onSave} style={{ ...actionBtn, background: 'rgba(34,197,94,.14)', color: '#8fd1a8', border: '1px solid rgba(34,197,94,.35)', fontWeight: 800, opacity: saving ? 0.6 : 1 }}>{saving ? <Loader2 size={15} style={{ animation: 'mlbSpin .8s linear infinite' }} /> : <Save size={15} />} Sauvegarder</button>
+        <button
+          onClick={onSave}
+          disabled={!dirty || saving}
+          title={dirty ? 'Sauvegarder les modifications' : 'Aucune modification à sauvegarder'}
+          style={{
+            ...actionBtn,
+            background: dirty ? 'rgba(34,197,94,.14)' : 'rgba(255,255,255,.05)',
+            color: dirty ? '#8fd1a8' : theme.color.textDim,
+            border: dirty ? '1px solid rgba(34,197,94,.35)' : '1px solid rgba(255,255,255,.1)',
+            fontWeight: 800,
+            opacity: saving ? 0.6 : 1,
+            cursor: dirty && !saving ? 'pointer' : 'default',
+          }}
+        >
+          {saving ? <Loader2 size={15} style={{ animation: 'mlbSpin .8s linear infinite' }} /> : dirty ? <Save size={15} /> : <Check size={15} />}
+          {dirty ? 'Sauvegarder' : 'Sauvegardé'}
+        </button>
         <button onClick={onStop} style={{ ...actionBtn, background: 'rgba(224,112,95,.16)', color: theme.color.accentLight, border: '1px solid rgba(224,112,95,.4)', fontWeight: 800 }}>
           <Square size={13} fill="currentColor" /> Arrêter
         </button>
