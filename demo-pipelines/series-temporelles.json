@@ -17,7 +17,8 @@
       "id": "n2",
       "type": "sequence_dataset",
       "params": {
-        "seq_len": "8"
+        "seq_len": "8",
+        "target_column": "petal width (cm)"
       },
       "children": [],
       "position": {

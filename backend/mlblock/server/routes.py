@@ -679,9 +679,12 @@ def build_pipeline_model(
         if node_id not in incoming and node.block and node.block.can_build():
             # String params (frontend) must be typed before shape inference
             node.block.coerce_params(node.params)
-            # N'injecte in_1 que si le bloc attend un input (les loaders de
-            # données — load_csv — n'ont pas d'input et n'en ont pas besoin)
-            if node.block.inputs:
+            # N'injecte in_1 que si le bloc attend un input REQUIS. Les
+            # constructeurs de couches (*_layer) ont in_1 optionnel : le build
+            # les exécute sans source (nn.Sequential(tensor, ...) crasherait).
+            first_name = node.block.inputs[0].get("name", "in_1") if node.block.inputs else None
+            first_param = node.block.params.get(first_name, {}) if first_name else {}
+            if node.block.inputs and first_param.get("required", True):
                 # Racine image (resize/normalize sans source) : tenseur CHW factice
                 from mlblock.core.types import family_of
                 first_in = node.block.inputs[0].get("dtype", "")
