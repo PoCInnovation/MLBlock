@@ -542,3 +542,29 @@ def test_generated_code_instance_auth_and_self_destroy():
     main_body = code.split("def main():")[1]
     assert "finally:" in main_body
     assert "_self_destroy()" in main_body
+
+
+def test_execute_gpu_rent_failure_returns_full_job(client: TestClient, monkeypatch):
+    """Régression expire_on_commit : le rent GPU échoué retourne un job
+    sérialisé COMPLET (id + status error), pas un objet vide {}."""
+    class FakeVast:
+        def __init__(self, api_key): pass
+        def launch_instance(self, *a, **kw):
+            return {"id": "dummy-instance-id", "api_key": ""}
+        def start_instance(self, *a, **kw): pass
+        def destroy_instance(self, *a, **kw): pass
+
+    monkeypatch.setenv("MLBLOCK_RUN_MODE", "gpu")
+    monkeypatch.setenv("VAST_API_KEY", "real-key-for-test")
+    monkeypatch.setenv("MLBLOCK_GPU_TIMEOUT", "1")
+    monkeypatch.setattr("mlblock.server.routes.VastAI", FakeVast)
+
+    created = client.post(
+        "/api/pipelines", json={"name": "gpu-fail", "nodes": [], "edges": []}
+    ).json()
+    resp = client.post(f"/api/pipelines/{created['id']}/execute")
+    assert resp.status_code == 200
+    job = resp.json()
+    assert job.get("id"), f"job.id manquant dans la réponse : {job}"
+    assert job["status"] == "error"
+    assert "Location GPU" in job["error"]

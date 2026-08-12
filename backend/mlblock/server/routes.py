@@ -456,6 +456,7 @@ def execute_pipeline(
             job.completed_at = datetime.now(timezone.utc)
             session.add(job)
             session.commit()
+            session.refresh(job)  # expire_on_commit vide le __dict__ — sinon la réponse est {}
             return job
         job.status = "dispatched"
         session.add(job)
@@ -469,6 +470,7 @@ def execute_pipeline(
     instance_id = job.vast_instance_id
 
     if _is_mock_vast():
+        session.refresh(job)  # expire_on_commit vide le __dict__ — sinon la réponse est {}
         return job
 
     gpu_timeout = int(os.environ.get("MLBLOCK_GPU_TIMEOUT", "1800"))  # 30 min par défaut
@@ -489,6 +491,7 @@ def execute_pipeline(
 
     threading.Timer(gpu_timeout, _timeout_cleanup).start()
 
+    session.refresh(job)  # expire_on_commit vide le __dict__ — sinon la réponse est {}
     return job
 
 

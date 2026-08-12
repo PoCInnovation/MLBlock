@@ -26,8 +26,14 @@ function pollJob(jobId: string): void {
       } else if (tries > 40) {
         clearInterval(timer)
       }
-    } catch {
-      /* réseau : on continue de poller */
+    } catch (err) {
+      // 4xx (hors 429) : erreur permanente (job invalide/inexistant) — jamais
+      // résolue, on arrête. Réseau/5xx (backend Render en réveil) : on continue.
+      const status = (err as { response?: { status?: number } } | undefined)?.response?.status
+      if (status && status >= 400 && status < 500 && status !== 429) {
+        clearInterval(timer)
+        useAppStore.getState().appendConsoleLines([{ k: 'sys', t: 'Statut du job indisponible — suivi arrêté.' }])
+      }
     }
   }, 3000)
 }
@@ -84,7 +90,19 @@ export function useBlockRunner() {
         // remontent via callbacks vers le job.
         try {
           const job = await executePipeline(pipelineId)
+          if (!job?.id) {
+            // Job non sérialisé (régression) : ne pas poller un id fantôme
+            useAppStore.getState().appendConsoleLines([{ k: 'sys', t: 'Exécution lancée sans identifiant de job — statut indisponible.' }])
+            useAppStore.getState().failRun()
+            return
+          }
           useAppStore.getState().setLastJob(job)
+          if (job.status === 'error') {
+            // Échec immédiat (ex. location GPU refusée) : message backend, pas de polling
+            useAppStore.getState().appendConsoleLines([{ k: 'sys', t: `Exécution en erreur : ${job.error || 'inconnue'}` }])
+            useAppStore.getState().failRun()
+            return
+          }
           pollJob(job.id)
         } catch {
           useAppStore.getState().appendConsoleLines([{ k: 'sys', t: "Échec du lancement de l'exécution." }])
