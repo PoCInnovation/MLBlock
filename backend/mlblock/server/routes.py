@@ -34,6 +34,7 @@ from mlblock.server.schemas import (
 from mlblock.core.generator import generate_code
 
 catalog_router = APIRouter(prefix="/api/catalog")
+samples_router = APIRouter(prefix="/api/samples")
 pipelines_router = APIRouter(prefix="/api/pipelines")
 validation_router = APIRouter(prefix="/api/validate")
 jobs_router = APIRouter(prefix="/api/jobs")
@@ -127,6 +128,29 @@ def get_catalog() -> dict:
             "outputs": block.outputs,
         })
     return {"categories": list(categories.values())}
+
+
+@samples_router.get("")
+def get_samples(category: str | None = None) -> list[dict]:
+    """Bibliothèque de données d'exemple — manifest du bucket `sample-data`."""
+    secret = os.environ.get("SUPABASE_SECRET_KEY", "")
+    project = os.environ.get("SUPABASE_URL", "").replace("https://", "").split(".")[0]
+    if not secret or not project:
+        raise HTTPException(400, detail="Stockage non configuré")
+    try:
+        r = requests.get(
+            f"https://{project}.supabase.co/storage/v1/object/sample-data/manifest.json",
+            headers={"apikey": secret, "Authorization": f"Bearer {secret}"},
+            timeout=10,
+        )
+    except Exception:
+        raise HTTPException(502, detail="Manifest des données d'exemple indisponible")
+    if r.status_code != 200:
+        raise HTTPException(502, detail="Manifest des données d'exemple indisponible")
+    items = r.json()
+    if category:
+        items = [i for i in items if i.get("category") == category]
+    return items
 
 
 # ── Files ───────────────────────────────────────────────────────────

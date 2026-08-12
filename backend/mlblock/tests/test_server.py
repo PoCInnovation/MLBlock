@@ -568,3 +568,20 @@ def test_execute_gpu_rent_failure_returns_full_job(client: TestClient, monkeypat
     assert job.get("id"), f"job.id manquant dans la réponse : {job}"
     assert job["status"] == "error"
     assert "Location GPU" in job["error"]
+
+
+def test_load_text_block_registered():
+    """Le bloc load_text est découvert par le registry (bibliothèque texte)."""
+    from mlblock.server.routes import get_catalog
+    blocks = {b["type"] for c in get_catalog()["categories"] for b in c["blocks"]}
+    assert "load_text" in blocks
+
+
+def test_samples_endpoint_returns_manifest():
+    """GET /api/samples sert le manifest du bucket sample-data (avec urls)."""
+    from mlblock.server.routes import get_samples
+    items = get_samples()
+    assert len(items) >= 5
+    assert all(i.get("url", "").startswith("https://") for i in items)
+    tab = get_samples("tabular")
+    assert tab and all(i["category"] == "tabular" for i in tab)

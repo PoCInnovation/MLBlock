@@ -4,6 +4,8 @@ import { uploadFile, supabase } from '../../services/supabase'
 import { FileUp, Loader2, TriangleAlert } from 'lucide-react'
 import useAppStore from '../../store/useAppStore'
 import { theme } from '../../theme'
+import { ACCEPT_BY_BLOCK, DEFAULT_ACCEPT, SAMPLE_CATEGORY_BY_BLOCK } from '../../utils/samples'
+import SampleDataModal from '../ui/SampleDataModal'
 
 const inputBase: React.CSSProperties = {
   background: 'rgba(255,255,255,.9)', border: 'none', borderRadius: theme.radius.sm,
@@ -89,14 +91,16 @@ type BlockSegmentsProps = {
   segs: Segment[]
   fields?: Record<string, string>
   blockId?: string
+  blockType?: string
   onUpdate?: (id: string, k: string, v: string) => void
   /** Autocomplete options per param key (e.g. target_column from the source CSV). */
   columnOptions?: Record<string, string[]>
 }
 
-export default function BlockSegments({ segs, fields, blockId, onUpdate, columnOptions }: BlockSegmentsProps): React.ReactNode {
+export default function BlockSegments({ segs, fields, blockId, blockType, onUpdate, columnOptions }: BlockSegmentsProps): React.ReactNode {
   const [uploadState, setUploadState] = useState<Record<string, 'uploading' | 'error'>>({})
   const [fileMetaState, setFileMetaState] = useState<Record<string, { name: string; size: number }>>({})
+  const [sampleOpen, setSampleOpen] = useState<string | null>(null)
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({})
 
   const handleFile = async (k: string, e: React.ChangeEvent<HTMLInputElement>) => {
@@ -122,7 +126,11 @@ export default function BlockSegments({ segs, fields, blockId, onUpdate, columnO
     }
   }
 
-  return segs.map((s, i) => {
+  const activeSampleCat = blockType ? SAMPLE_CATEGORY_BY_BLOCK[blockType] : undefined
+
+  return (
+    <>
+      {segs.map((s, i) => {
     if (s.t === 'text') return <span key={i}>{s.v}</span>
     if (!onUpdate) return <span key={i} style={fieldPill}>{s.def}</span>
 
@@ -250,6 +258,8 @@ export default function BlockSegments({ segs, fields, blockId, onUpdate, columnO
     }
 
     if (s.t === 'file') {
+      const sampleCat = blockType ? SAMPLE_CATEGORY_BY_BLOCK[blockType] : undefined
+      const fileAccept = (blockType ? ACCEPT_BY_BLOCK[blockType] : undefined) ?? DEFAULT_ACCEPT
       const state = uploadState[s.k]
       const meta = fileMetaState[s.k]
       const hasUrl = fields?.[s.k]?.startsWith('https://')
@@ -267,7 +277,7 @@ export default function BlockSegments({ segs, fields, blockId, onUpdate, columnO
         <span key={i} style={fileCard}>
           <span style={{ ...errStyle, display: 'inline-flex', alignItems: 'center', gap: 4 }}><TriangleAlert size={12} /> Échec</span>
           <button type="button" style={{ ...errStyle, background: 'none', border: 'none', padding: 0, fontFamily: 'inherit' }} onClick={() => inputRefs.current[s.k]?.click()}>Réessayer</button>
-          <input ref={el => { inputRefs.current[s.k] = el }} type="file" accept=".csv" style={{ display: 'none' }} onChange={e => handleFile(s.k, e)} />
+          <input ref={el => { inputRefs.current[s.k] = el }} type="file" accept={fileAccept} style={{ display: 'none' }} onChange={e => handleFile(s.k, e)} />
         </span>
       )
 
@@ -276,19 +286,29 @@ export default function BlockSegments({ segs, fields, blockId, onUpdate, columnO
           <span style={fileNameStyle}>{fname}</span>
           {fsize && <span style={fileMeta}>{fmtSize(fsize)}</span>}
           <button style={removeBtn} onClick={() => { onUpdate(blockId!, s.k, ''); setFileMetaState(m => { const n = { ...m }; delete n[s.k]; return n }) }}>×</button>
-          <input ref={el => { inputRefs.current[s.k] = el }} type="file" accept=".csv" style={{ display: 'none' }} onChange={e => handleFile(s.k, e)} />
+          <input ref={el => { inputRefs.current[s.k] = el }} type="file" accept={fileAccept} style={{ display: 'none' }} onChange={e => handleFile(s.k, e)} />
         </span>
       )
 
       return (
         <span key={i} style={{ display: 'flex', flexBasis: '100%' }}>
-          <input ref={el => { inputRefs.current[s.k] = el }} type="file" accept=".csv" style={{ display: 'none' }} onChange={e => handleFile(s.k, e)} />
-          <button type="button" onClick={() => inputRefs.current[s.k]?.click()} style={{ ...fileBtn, fontFamily: 'inherit' }} title={s.desc}>
-            <FileUp size={13} /> CSV
+          <input ref={el => { inputRefs.current[s.k] = el }} type="file" accept={fileAccept} style={{ display: 'none' }} onChange={e => handleFile(s.k, e)} />
+          <button type="button" onClick={() => sampleCat ? setSampleOpen(s.k) : inputRefs.current[s.k]?.click()} style={{ ...fileBtn, fontFamily: 'inherit' }} title={s.desc}>
+            <FileUp size={13} /> {sampleCat ? 'Données' : 'CSV'}
           </button>
         </span>
       )
     }
-    return null
-  })
+      return null
+      })}
+      {sampleOpen && activeSampleCat && (
+        <SampleDataModal
+          category={activeSampleCat}
+          onPick={(url) => { onUpdate?.(blockId!, sampleOpen, url); setSampleOpen(null) }}
+          onChooseFile={() => { setSampleOpen(null); setTimeout(() => inputRefs.current[sampleOpen]?.click(), 0) }}
+          onClose={() => setSampleOpen(null)}
+        />
+      )}
+    </>
+  )
 }

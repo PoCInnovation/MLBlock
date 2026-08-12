@@ -203,7 +203,9 @@ const useAppStore = create<AppState>((set, get) => ({
     // enrichit les nodes avec segs/inputs/outputs une fois le catalogue dispo.
     let flowNodes = s.flowNodes
     let savedFingerprint = s.savedFingerprint
-    const needsBackfill = flowNodes.length > 0 && flowNodes.some(n => !(n.data as { segs?: unknown } | undefined)?.segs)
+    // ![] est false en JS : vérifier la LONGUEUR (un nœud chargé sans catalogue
+    // a segs=[] — il DOIT être backfillé, sinon le bloc reste sans champs).
+    const needsBackfill = flowNodes.length > 0 && flowNodes.some(n => !((n.data as { segs?: unknown[] } | undefined)?.segs?.length))
     if (needsBackfill) {
       flowNodes = flowNodes.map(n => {
         const d = n.data as { type?: string; fields?: Record<string, string>; segs?: unknown } | undefined

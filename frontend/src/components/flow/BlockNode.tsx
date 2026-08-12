@@ -125,7 +125,7 @@ function BlockNode({ data, id }: NodeProps<BlockNodeData>) {
       ))}
       <div style={labelStyle} title={description || undefined}>{data.label}</div>
       <div style={segmentsStyle}>
-        <BlockSegments segs={data.segs} fields={data.fields} blockId={id} onUpdate={updateFlowParam} columnOptions={columnOptions} />
+        <BlockSegments segs={data.segs} fields={data.fields} blockId={id} blockType={data.type} onUpdate={updateFlowParam} columnOptions={columnOptions} />
       </div>
       {data.outputs.length > 0 && (
         <div style={outputStyle}>
