@@ -208,8 +208,10 @@ const useAppStore = create<AppState>((set, get) => ({
     const needsBackfill = flowNodes.length > 0 && flowNodes.some(n => !((n.data as { segs?: unknown[] } | undefined)?.segs?.length))
     if (needsBackfill) {
       flowNodes = flowNodes.map(n => {
-        const d = n.data as { type?: string; fields?: Record<string, string>; segs?: unknown } | undefined
-        if (d?.segs) return n
+        const d = n.data as { type?: string; fields?: Record<string, string>; segs?: unknown[] } | undefined
+        // Piège ![] : un array VIDE est truthy en JS — vérifier la LONGUEUR,
+        // sinon les nœuds chargés sans catalogue (segs=[]) ne sont jamais backfillés.
+        if (d?.segs?.length) return n
         const def = d?.type ? catalog.blocks[d.type] : undefined
         const first = def?.segs[0]
         return {
