@@ -110,9 +110,11 @@ def get_catalog() -> dict:
     for block in BLOCK_REGISTRY.values():
         cat = block.category.name
         if cat not in categories:
+            # id = slug brut (filtrage stable) ; name = première lettre en
+            # majuscule pour l'affichage (palette)
             categories[cat] = {
                 "id": cat,
-                "name": cat,
+                "name": cat[:1].upper() + cat[1:],
                 "color": block.category.color,
                 "blocks": [],
             }
