@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Save, Play, Loader2, Upload, Download, Square, MoreVertical, FolderKanban, Trash2, LogOut, Check } from 'lucide-react'
+import { Save, Play, Loader2, Upload, Download, Square, MoreVertical, FolderKanban, Trash2, LogOut, Check, Undo2, Redo2 } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -37,6 +37,10 @@ export default function EditorHeader({ onRun, onStop, onClear }: EditorHeaderPro
   const showToast   = useAppStore(s => s.showToast)
   // Sélecteur dérivé : re-render uniquement quand l'état dirty change
   const dirty = useAppStore(s => s.isDirty())
+  const canUndo = useAppStore(s => s.canUndo())
+  const canRedo = useAppStore(s => s.canRedo())
+  const undo = useAppStore(s => s.undo)
+  const redo = useAppStore(s => s.redo)
   const { importFile } = usePipelineImport()
 
   const [saving, setSaving] = useState(false)
@@ -50,7 +54,9 @@ export default function EditorHeader({ onRun, onStop, onClear }: EditorHeaderPro
 
   const commitName = () => {
     const name = draftName.trim()
-    if (name) setProjectName(name)
+    if (!name) return
+    useAppStore.getState().commitUndoPoint()
+    setProjectName(name)
     setEditingName(false)
   }
 
@@ -109,6 +115,24 @@ export default function EditorHeader({ onRun, onStop, onClear }: EditorHeaderPro
         </div>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+        <button
+          onClick={undo}
+          disabled={!canUndo}
+          title="Annuler (Ctrl+Z)"
+          aria-label="Annuler"
+          style={{ ...ghostBtn, padding: '9px 10px', opacity: canUndo ? 1 : 0.35, cursor: canUndo ? 'pointer' : 'default' }}
+        >
+          <Undo2 size={16} />
+        </button>
+        <button
+          onClick={redo}
+          disabled={!canRedo}
+          title="Rétablir (Ctrl+Shift+Z)"
+          aria-label="Rétablir"
+          style={{ ...ghostBtn, padding: '9px 10px', opacity: canRedo ? 1 : 0.35, cursor: canRedo ? 'pointer' : 'default' }}
+        >
+          <Redo2 size={16} />
+        </button>
         <button
           onClick={onSave}
           disabled={!dirty || saving}

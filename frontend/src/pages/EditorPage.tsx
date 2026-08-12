@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useBlocker } from 'react-router-dom'
 import { useBlockRunner } from '../hooks/useBlockRunner'
+import { useUndoRedo } from '../hooks/useUndoRedo'
 import useAppStore from '../store/useAppStore'
 import { fetchCatalog, listPipelineJobs, getJobOutputs } from '../api/client'
 import { toServerPayload } from '../utils/blockHelpers'
@@ -23,6 +24,7 @@ function stashIfDirty(): void {
 
 export default function EditorPage() {
   const { onRun, onStop, onClear } = useBlockRunner()
+  useUndoRedo()
   const catalog      = useAppStore(s => s.catalog)
   const catalogError = useAppStore(s => s.catalogError)
   const pipelineId   = useAppStore(s => s.pipelineId)

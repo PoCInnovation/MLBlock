@@ -28,6 +28,10 @@ type DragBase = {
 
 export type DragState = DragBase & { source: 'palette' }
 
+/** Snapshot d'undo/redo : état sémantique du pipeline (ReactFlow direct —
+    les métadonnées temporaires sont recalculées au restore). */
+export type UndoSnapshot = { nodes: Node[]; edges: Edge[]; name: string }
+
 type AppState = {
   category: string
   user: unknown | null
@@ -49,6 +53,9 @@ type AppState = {
   savedFingerprint: string | null
   restoredWork: boolean
   toast: Toast | null
+
+  undoStack: UndoSnapshot[]
+  redoStack: UndoSnapshot[]
 
   setUser: (user: unknown | null) => void
   setCategory: (id: string) => void
@@ -73,6 +80,11 @@ type AppState = {
   setCatalogError: (error: boolean, message?: string) => void
   setPipelineId: (id: string | null) => void
   setProjectName: (name: string) => void
+  commitUndoPoint: () => void
+  undo: () => void
+  redo: () => void
+  canUndo: () => boolean
+  canRedo: () => boolean
   isDirty: () => boolean
   loadPipeline: (nodes: PipelineNode[], edges: PipelineEdge[], pipelineId: string, name: string) => void
   savePipeline: (name: string) => Promise<void>
@@ -129,6 +141,8 @@ const useAppStore = create<AppState>((set, get) => ({
   savedFingerprint: fingerprintOf({ flowNodes: [], flowEdges: [], projectName: 'mon-premier-modèle' }),
   restoredWork: false,
   toast: null,
+  undoStack: [],
+  redoStack: [],
 
   setCategory: (id) => set({ category: id }),
 
@@ -223,6 +237,40 @@ const useAppStore = create<AppState>((set, get) => ({
   setPipelineId: (id) => set({ pipelineId: id }),
   setProjectName: (name) => set({ projectName: name }),
 
+  // Undo/redo : snapshot de l'état AVANT chaque geste (commit explicite aux
+  // points de capture). Pile max 50, évincement du plus ancien ; un nouveau
+  // commit après undo tronque la pile de redo (comportement standard).
+  commitUndoPoint: () => set((s) => ({
+    undoStack: [...s.undoStack.slice(-49), { nodes: s.flowNodes, edges: s.flowEdges, name: s.projectName }],
+    redoStack: [],
+  })),
+  undo: () => {
+    const s = get()
+    if (!s.undoStack.length) return
+    const snap = s.undoStack[s.undoStack.length - 1]
+    set({
+      undoStack: s.undoStack.slice(0, -1),
+      redoStack: [...s.redoStack, { nodes: s.flowNodes, edges: s.flowEdges, name: s.projectName }],
+      flowNodes: snap.nodes,
+      flowEdges: snap.edges,
+      projectName: snap.name,
+    })
+  },
+  redo: () => {
+    const s = get()
+    if (!s.redoStack.length) return
+    const snap = s.redoStack[s.redoStack.length - 1]
+    set({
+      redoStack: s.redoStack.slice(0, -1),
+      undoStack: [...s.undoStack, { nodes: s.flowNodes, edges: s.flowEdges, name: s.projectName }],
+      flowNodes: snap.nodes,
+      flowEdges: snap.edges,
+      projectName: snap.name,
+    })
+  },
+  canUndo: () => get().undoStack.length > 0,
+  canRedo: () => get().redoStack.length > 0,
+
   isDirty: () => {
     const s = get()
     if (s.savedFingerprint === null) return false
@@ -259,7 +307,7 @@ const useAppStore = create<AppState>((set, get) => ({
       target: e.target,
       targetHandle: e.target_port,
     }))
-    return { flowNodes, flowEdges, pipelineId, projectName: name, savedFingerprint: fingerprintOf({ flowNodes, flowEdges, projectName: name }) }
+    return { flowNodes, flowEdges, pipelineId, projectName: name, savedFingerprint: fingerprintOf({ flowNodes, flowEdges, projectName: name }), undoStack: [], redoStack: [] }
   }),
 
   savePipeline: async (name) => {

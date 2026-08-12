@@ -10,6 +10,8 @@ import ReactFlow, {
   type Connection,
   type Edge,
   type Node,
+  type NodeChange,
+  type EdgeChange,
 } from 'reactflow'
 import 'reactflow/dist/style.css'
 import useAppStore from '../../store/useAppStore'
@@ -71,6 +73,7 @@ function FlowCanvasInner() {
   )
 
   const insertConverter = useCallback((conn: Connection, convType: string) => {
+    useAppStore.getState().commitUndoPoint()
     if (!catalog) return
     const def = catalog.blocks[convType]
     if (!def) return
@@ -116,7 +119,21 @@ function FlowCanvasInner() {
     addFlowEdges(flowEdges.filter(ed => !(ed.source === conn.source && ed.target === conn.target)).concat([edgeA, edgeB]))
   }, [catalog, flowNodes, flowEdges, addFlowNode, addFlowEdges])
 
+  // Undo/redo : snapshot avant toute suppression (rafale = un seul appel
+  // ReactFlow — le `some` évite de pousser plusieurs points par sélection).
+  const onNodesChange = useCallback((changes: NodeChange[]) => {
+    const s = useAppStore.getState()
+    if (changes.some(c => c.type === 'remove')) s.commitUndoPoint()
+    s.applyFlowNodeChanges(changes)
+  }, [])
+  const onEdgesChange = useCallback((changes: EdgeChange[]) => {
+    const s = useAppStore.getState()
+    if (changes.some(c => c.type === 'remove')) s.commitUndoPoint()
+    s.applyFlowEdgeChanges(changes)
+  }, [])
+
   const onConnect = useCallback((params: Connection) => {
+    useAppStore.getState().commitUndoPoint()
     if (!catalog) {
       addFlowEdges(addEdge(params, []))
       return
@@ -164,6 +181,7 @@ function FlowCanvasInner() {
       if (!catalog) return
       const type = e.dataTransfer.getData('application/mlblock-type')
       if (!type || !catalog.blocks[type]) return
+      useAppStore.getState().commitUndoPoint()
 
       const position = screenToFlowPosition({ x: e.clientX, y: e.clientY })
       const def = catalog.blocks[type]
@@ -205,9 +223,10 @@ function FlowCanvasInner() {
         <ReactFlow
           nodes={flowNodes}
           edges={renderEdges}
-          onNodesChange={applyFlowNodeChanges}
-          onEdgesChange={applyFlowEdgeChanges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
           onConnect={onConnect}
+          onNodeDragStart={() => useAppStore.getState().commitUndoPoint()}
           onDragOver={onDragOver}
           onDrop={onDrop}
           nodeTypes={nodeTypes}

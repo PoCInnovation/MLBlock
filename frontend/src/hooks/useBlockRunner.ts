@@ -117,7 +117,9 @@ export function useBlockRunner() {
   }, [])
 
   const onClear = useCallback(() => {
-    useAppStore.getState().clearAll()
+    const s = useAppStore.getState()
+    s.commitUndoPoint()
+    s.clearAll()
   }, [])
 
   return { onRun, onStop, onClear }

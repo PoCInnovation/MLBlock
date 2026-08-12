@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react'
 import type { Segment } from '../../types/catalog'
 import { uploadFile, supabase } from '../../services/supabase'
 import { FileUp, Loader2, TriangleAlert } from 'lucide-react'
+import useAppStore from '../../store/useAppStore'
 import { theme } from '../../theme'
 
 const inputBase: React.CSSProperties = {
@@ -140,6 +141,7 @@ export default function BlockSegments({ segs, fields, blockId, onUpdate, columnO
             type="text"
             value={value}
             onChange={e => onUpdate(blockId!, s.k, e.target.value)}
+            onFocus={() => useAppStore.getState().commitUndoPoint()}
             style={{ ...inputBase, width: 110 }}
             title={s.desc}
             placeholder={cols ? 'colonne…' : undefined}
@@ -155,6 +157,7 @@ export default function BlockSegments({ segs, fields, blockId, onUpdate, columnO
         <select
           value={value}
           onChange={e => onUpdate(blockId!, s.k, e.target.value)}
+          onFocus={() => useAppStore.getState().commitUndoPoint()}
           style={selectBase}
           title={s.desc}
         >
@@ -172,6 +175,7 @@ export default function BlockSegments({ segs, fields, blockId, onUpdate, columnO
             type="checkbox"
             checked={checked}
             onChange={e => onUpdate(blockId!, s.k, e.target.checked ? 'true' : 'false')}
+            onFocus={() => useAppStore.getState().commitUndoPoint()}
             title={s.desc}
             style={{ cursor: 'pointer', accentColor: '#2a211c' }}
           />
@@ -195,6 +199,7 @@ export default function BlockSegments({ segs, fields, blockId, onUpdate, columnO
               type="text"
               value={value}
               onChange={e => onUpdate(blockId!, s.k, e.target.value)}
+              onFocus={() => useAppStore.getState().commitUndoPoint()}
               style={{ ...inputBase, width: (s.w || 60) + 'px', ...validBorder(v, value.trim() !== '') }}
               title={v.msg ?? s.desc}
               placeholder={placeholder}
@@ -208,6 +213,7 @@ export default function BlockSegments({ segs, fields, blockId, onUpdate, columnO
           <span style={labelStyle}>{s.k}:</span>
           <input
             type={isNumeric ? 'number' : 'text'}
+            onFocus={() => useAppStore.getState().commitUndoPoint()}
             value={value}
             onChange={e => onUpdate(blockId!, s.k, e.target.value)}
             style={{ ...inputBase, width: (s.w || (isNumeric ? 60 : 90)) + 'px', ...validBorder(v, value.trim() !== '') }}
