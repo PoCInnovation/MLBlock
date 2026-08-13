@@ -227,6 +227,8 @@ const useAppStore = create<AppState>((set, get) => ({
     const s = get()
     const idx = s.columns.findIndex(c => c.id === id)
     if (idx < 0) return false
+    // La colonne 0 est structurelle (première étape du flux) : non supprimable.
+    if (idx === 0) return false
     // Refus si la colonne contient des blocs (message côté UI).
     if (s.flowNodes.some(n => colOf(n) === idx)) return false
     const columns = s.columns.filter(c => c.id !== id)
@@ -266,6 +268,10 @@ const useAppStore = create<AppState>((set, get) => ({
     const s = get()
     const node = s.flowNodes.find(n => n.id === nodeId)
     if (!node) return
+    // Un dépôt/drag ne peut pas placer un bloc avant la colonne 0 (ni au-dessus
+    // de la rangée 0) — la grille commence à (0, 0).
+    col = Math.max(0, col)
+    row = Math.max(0, row)
     const cur = colOf(node)
     const curRow = rowOf(node)
     if (cur === col && curRow === row) {

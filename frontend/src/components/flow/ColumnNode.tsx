@@ -45,8 +45,12 @@ function ColumnNode({ data, id }: NodeProps<ColumnNodeData>) {
   }
 
   const handleRemove = () => {
+    const isFirst = columns[0]?.id === id
     if (!removeColumn(id)) {
-      showToast({ kind: 'error', message: 'Impossible : déplace d’abord les blocs de cette colonne' })
+      showToast({
+        kind: 'error',
+        message: isFirst ? 'La première colonne ne peut pas être supprimée' : 'Impossible : déplace d’abord les blocs de cette colonne',
+      })
     }
   }
 
@@ -147,8 +151,8 @@ function ColumnNode({ data, id }: NodeProps<ColumnNodeData>) {
                 title="Gérer la colonne"
                 // Le useClick de Base UI (eventOption 'mousedown') ignore le
                 // click quand un pointerdown a précédé : on contrôle le menu
-                // nous-mêmes (open) et on ouvre au click natif.
-                onClick={e => { e.stopPropagation(); setMoveOpen(true) }}
+                // nous-mêmes (open) et on bascule au click natif.
+                onClick={e => { e.stopPropagation(); setMoveOpen(o => !o) }}
                 style={{
                   border: 'none',
                   background: 'rgba(255,255,255,.07)',
