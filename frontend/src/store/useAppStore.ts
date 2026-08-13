@@ -171,16 +171,25 @@ const useAppStore = create<AppState>((set, get) => ({
 
   setCategory: (id) => set({ category: id }),
 
-  setViewMode: (mode) => set((s) => {
+  setViewMode: (mode) => {
     try { localStorage.setItem('mlb-view-mode', mode) } catch { /* privé — ignoré */ }
-    if (s.viewMode === mode) return {}
+    const s = get()
+    if (s.viewMode === mode) return
     if (mode === 'grid') {
       const flowNodes = migrateToGrid(s.flowNodes, s.flowEdges)
-      if (s.columns.length > 0) return { viewMode: mode, flowNodes }
-      return { viewMode: mode, flowNodes, columns: [{ id: 'c0', label: '0' }], columnCounter: 1 }
+      if (s.columns.length > 0) {
+        set({ viewMode: mode, flowNodes })
+      } else {
+        set({ viewMode: mode, flowNodes, columns: [{ id: 'c0', label: '0' }], columnCounter: 1 })
+      }
+      // Génère les colonnes nécessaires (0..maxCol) et empile les blocs
+      // (packing par hauteurs mesurées) — sans ça, les projets existants
+      // ouverts en vue libre restaient sur une seule colonne au switch.
+      get().reflow()
+      return
     }
-    return { viewMode: mode }
-  }),
+    set({ viewMode: mode })
+  },
   setSelectedCol: (id) => set({ selectedCol: id }),
 
   addColumn: () => set((s) => ({

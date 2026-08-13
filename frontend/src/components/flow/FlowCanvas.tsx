@@ -22,7 +22,7 @@ import FlowPalette from './FlowPalette'
 import ConsolePanel from '../ui/ConsolePanel'
 import { segsToFields } from '../../utils/flowConversion'
 import { buildConversionGraph, classifyEdge, converterFor, portDtype } from '../../utils/typeCheck'
-import { COL_W, COL_PAD, BLOCK_W, HEADER_H, colHeight, colOf, isEdgeValid, maxRowInCol, posFor, snapPosition } from '../../utils/gridLayout'
+import { COL_W, COL_PAD, BLOCK_W, HEADER_H, colHeight, colOf, isEdgeValid, maxRowInCol, posFor, rowOf, snapPosition } from '../../utils/gridLayout'
 import type { InternalCatalog, Port } from '../../types/catalog'
 
 const nodeTypes = { block: BlockNode, column: ColumnNode }
@@ -264,11 +264,18 @@ function FlowCanvasInner() {
 
   // Vue grille : snap à la fin du geste (1 commit par geste, uniquement si la
   // cellule change). Le commit est géré dans moveNodeTo (position rétablie).
+  // La rangée = position d'insertion réelle : les blocs de la colonne cible
+  // sont packés (hauteurs mesurées) — on compte ceux au-dessus du point de
+  // drop, plus d'approximation par pas fixe.
   const onNodeDragStop = useCallback((_: React.MouseEvent, node: Node) => {
     if (viewMode !== 'grid') return
     const snapped = snapPosition(node.position)
-    moveNodeTo(node.id, snapped.col, snapped.row)
-  }, [viewMode, moveNodeTo])
+    const col = snapped.col
+    const above = flowNodes
+      .filter(n => n.id !== node.id && colOf(n) === col && n.position.y < node.position.y)
+      .reduce((m, n) => Math.max(m, rowOf(n)), -1)
+    moveNodeTo(node.id, col, above + 1)
+  }, [viewMode, moveNodeTo, flowNodes])
 
   const renderEdges = useMemo(
     () => flowEdges.map(e => {

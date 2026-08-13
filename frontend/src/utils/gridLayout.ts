@@ -134,5 +134,6 @@ export function colHeight(nodes: Node[], col: number): number {
     .sort((a, b) => rowOf(a) - rowOf(b))
   let h = HEADER_H + COL_PAD
   for (const n of inCol) h += ((n.height as number) ?? FALLBACK_H) + COL_PAD
-  return Math.max(220, h + FOOTER_H)
+  // Min calculé (colonne vide = header + pied + gaps), jamais de valeur fixe.
+  return Math.max(HEADER_H + FOOTER_H + 2 * COL_PAD, h + FOOTER_H)
 }
