@@ -6,6 +6,7 @@ import useAppStore from '../../store/useAppStore'
 import { theme } from '../../theme'
 import { ACCEPT_BY_BLOCK, DEFAULT_ACCEPT, SAMPLE_CATEGORY_BY_BLOCK } from '../../utils/samples'
 import SampleDataModal from '../ui/SampleDataModal'
+import { HoverCard, HoverCardTrigger, HoverCardContent } from '../ui/hover-card'
 
 const inputBase: React.CSSProperties = {
   background: 'rgba(255,255,255,.9)', border: 'none', borderRadius: theme.radius.sm,
@@ -53,6 +54,46 @@ function fmtSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} o`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} Ko`
   return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`
+}
+
+/** HoverCard d'un paramètre : description + métadonnées (type, défaut, bornes). */
+function ParamInfo({ seg, children }: { seg: Exclude<Segment, { t: 'text' }>; children: React.ReactNode }) {
+  // Union de segments : lecture normalisée des métadonnées optionnelles.
+  const p = seg as unknown as {
+    k: string
+    t: string
+    desc?: string
+    def?: string
+    min?: number
+    max?: number
+    step?: number
+    odd?: boolean
+    opts?: string[]
+    format?: string
+  }
+  return (
+    <HoverCard>
+      <HoverCardTrigger render={<span style={{ display: 'contents' }}>{children}</span>} />
+      <HoverCardContent>
+        <div style={{ fontWeight: 800, fontSize: 13, marginBottom: 2, color: theme.color.textLight }}>
+          {p.k}
+        </div>
+        {p.desc && (
+          <div style={{ fontSize: 12, color: theme.color.textMuted, marginBottom: 8 }}>{p.desc}</div>
+        )}
+        <div style={{ fontSize: 11, color: theme.color.textDim, display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <span>Type : {p.t}</span>
+          {p.def !== undefined && p.def !== '' && <span>Défaut : {p.def}</span>}
+          {p.min != null && <span>Min : {p.min}</span>}
+          {p.max != null && <span>Max : {p.max}</span>}
+          {p.step != null && <span>Pas : {p.step}</span>}
+          {p.odd === true && <span>Valeurs impaires uniquement</span>}
+          {p.opts && p.opts.length > 0 && <span>Choix : {p.opts.join(', ')}</span>}
+          {p.format && <span>Format : {p.format}</span>}
+        </div>
+      </HoverCardContent>
+    </HoverCard>
+  )
 }
 
 /** Live validation of a segment value against its metadata. */
@@ -142,7 +183,7 @@ export default function BlockSegments({ segs, fields, blockId, blockType, onUpda
       const opts = cols ?? (s.t === 'sug' ? s.opts : [])
       const dlId = `mlb-dl-${blockId}-${s.k}`
       return (
-        <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 4, flexBasis: '100%' }}>
+        <ParamInfo key={i} seg={s}><span style={{ display: 'flex', alignItems: 'center', gap: 4, flexBasis: '100%' }}>
           <span style={labelStyle}>{s.k}:</span>
           <input
             list={dlId}
@@ -151,44 +192,44 @@ export default function BlockSegments({ segs, fields, blockId, blockType, onUpda
             onChange={e => onUpdate(blockId!, s.k, e.target.value)}
             onFocus={() => useAppStore.getState().commitUndoPoint()}
             style={{ ...inputBase, width: 110 }}
-            title={s.desc}
-            placeholder={cols ? 'colonne…' : undefined}
+                        placeholder={cols ? 'colonne…' : undefined}
           />
           <datalist id={dlId}>{opts.map(o => <option key={o} value={o} />)}</datalist>
         </span>
-      )
+      </ParamInfo>
+    )
     }
 
     if (s.t === 'sel') return (
-      <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 4, flexBasis: '100%' }}>
+      <ParamInfo key={i} seg={s}><span style={{ display: 'flex', alignItems: 'center', gap: 4, flexBasis: '100%' }}>
         <span style={labelStyle}>{s.k}:</span>
         <select
           value={value}
           onChange={e => onUpdate(blockId!, s.k, e.target.value)}
           onFocus={() => useAppStore.getState().commitUndoPoint()}
           style={selectBase}
-          title={s.desc}
-        >
+                  >
           {s.opts.map(o => <option key={o} value={o}>{o}</option>)}
         </select>
       </span>
+      </ParamInfo>
     )
 
     if (s.t === 'bool') {
       const checked = value === 'true'
       return (
-        <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 4, flexBasis: '100%' }}>
+        <ParamInfo key={i} seg={s}><span style={{ display: 'flex', alignItems: 'center', gap: 4, flexBasis: '100%' }}>
           <span style={labelStyle}>{s.k}:</span>
           <input
             type="checkbox"
             checked={checked}
             onChange={e => onUpdate(blockId!, s.k, e.target.checked ? 'true' : 'false')}
             onFocus={() => useAppStore.getState().commitUndoPoint()}
-            title={s.desc}
-            style={{ cursor: 'pointer', accentColor: '#2a211c' }}
+                        style={{ cursor: 'pointer', accentColor: '#2a211c' }}
           />
         </span>
-      )
+      </ParamInfo>
+    )
     }
 
     if (s.t === 'num') {
@@ -200,7 +241,7 @@ export default function BlockSegments({ segs, fields, blockId, blockType, onUpda
       if (useText) {
         const dlId = `mlb-dl-${blockId}-${s.k}`
         return (
-          <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 4, flexBasis: '100%' }}>
+          <ParamInfo key={i} seg={s}><span style={{ display: 'flex', alignItems: 'center', gap: 4, flexBasis: '100%' }}>
             <span style={labelStyle}>{s.k}:</span>
             <input
               list={dlId}
@@ -209,15 +250,16 @@ export default function BlockSegments({ segs, fields, blockId, blockType, onUpda
               onChange={e => onUpdate(blockId!, s.k, e.target.value)}
               onFocus={() => useAppStore.getState().commitUndoPoint()}
               style={{ ...inputBase, width: (s.w || 60) + 'px', ...validBorder(v, value.trim() !== '') }}
-              title={v.msg ?? s.desc}
+              title={v.msg}
               placeholder={placeholder}
             />
             <datalist id={dlId}>{s.opts!.map(o => <option key={o} value={o} />)}</datalist>
           </span>
+        </ParamInfo>
         )
       }
       return (
-        <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 4, flexBasis: '100%' }}>
+        <ParamInfo key={i} seg={s}><span style={{ display: 'flex', alignItems: 'center', gap: 4, flexBasis: '100%' }}>
           <span style={labelStyle}>{s.k}:</span>
           <input
             type={isNumeric ? 'number' : 'text'}
@@ -225,21 +267,22 @@ export default function BlockSegments({ segs, fields, blockId, blockType, onUpda
             value={value}
             onChange={e => onUpdate(blockId!, s.k, e.target.value)}
             style={{ ...inputBase, width: (s.w || (isNumeric ? 60 : 90)) + 'px', ...validBorder(v, value.trim() !== '') }}
-            title={v.msg ?? s.desc}
+            title={v.msg}
             placeholder={placeholder}
             min={s.min}
             max={s.max}
             step={s.step}
           />
         </span>
-      )
+      </ParamInfo>
+    )
     }
 
     if (s.t === 'list') {
       const v = validateSeg(s, value)
       const dlId = `mlb-dl-${blockId}-${s.k}`
       return (
-        <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 4, flexBasis: '100%' }}>
+        <ParamInfo key={i} seg={s}><span style={{ display: 'flex', alignItems: 'center', gap: 4, flexBasis: '100%' }}>
           <span style={labelStyle}>{s.k}:</span>
           <input
             list={s.opts && s.opts.length > 0 ? dlId : undefined}
@@ -247,14 +290,15 @@ export default function BlockSegments({ segs, fields, blockId, blockType, onUpda
             value={value}
             onChange={e => onUpdate(blockId!, s.k, e.target.value)}
             style={{ ...inputBase, width: 110, ...validBorder(v, value.trim() !== '') }}
-            title={v.msg ?? s.desc}
+            title={v.msg}
             placeholder={s.format ?? '[1, 2, 3]'}
           />
           {s.opts && s.opts.length > 0 && (
             <datalist id={dlId}>{s.opts.map(o => <option key={o} value={o} />)}</datalist>
           )}
         </span>
-      )
+      </ParamInfo>
+    )
     }
 
     if (s.t === 'file') {
