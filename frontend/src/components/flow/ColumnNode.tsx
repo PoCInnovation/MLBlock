@@ -87,7 +87,7 @@ function ColumnNode({ data, id }: NodeProps<ColumnNodeData>) {
       <CardHeader
         onClick={e => e.stopPropagation()}
         style={{
-          margin: '0 -10px',
+          margin: '0 -12px',
           padding: '10px 12px',
           minHeight: HEADER_H,
           alignItems: 'center',
@@ -240,7 +240,7 @@ function ColumnNode({ data, id }: NodeProps<ColumnNodeData>) {
       {/* CardFooter : compteur de blocs */}
       <CardFooter
         onClick={e => e.stopPropagation()}
-        style={{ margin: '0 -10px', padding: '6px 12px', letterSpacing: '.03em' }}
+        style={{ margin: '0 -12px', padding: '6px 12px', letterSpacing: '.03em' }}
       >
         {blockCount} bloc{blockCount > 1 ? 's' : ''}
       </CardFooter>

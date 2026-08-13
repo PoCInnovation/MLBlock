@@ -1,4 +1,5 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
+import { useEffect } from 'react'
 import type { ReactNode } from 'react'
 import useAppStore from './store/useAppStore'
 import HomePage from './pages/HomePage'
@@ -11,7 +12,15 @@ import AboutPage from './pages/AboutPage'
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const user = useAppStore(s => s.user)
-  if (!user) return <Navigate to="/login" replace />
+  // Mode dev local (supabase dummy) : session factice pour valider le rendu
+  // sans connexion réelle. Le backend accepte aussi (MLBLOCK_DEV_AUTH).
+  const isDevDummy = import.meta.env.DEV && (import.meta.env.VITE_SUPABASE_URL ?? '').includes('dummy')
+  useEffect(() => {
+    if (!user && isDevDummy) {
+      useAppStore.setState({ user: { id: 'd70e922c-8d40-464d-a5bf-f1b066c6b687', email: 'dev@poc.local' } })
+    }
+  }, [user, isDevDummy])
+  if (!user && !isDevDummy) return <Navigate to="/login" replace />
   return <>{children}</>
 }
 

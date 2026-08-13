@@ -24,9 +24,14 @@ const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000'
 export const http = axios.create({ baseURL: BASE, timeout: 60_000 })
 
 http.interceptors.request.use(async (config) => {
-  const { data: { session } } = await supabase.auth.getSession()
-  if (session?.access_token) {
-    config.headers.Authorization = `Bearer ${session.access_token}`
+  try {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (session?.access_token) {
+      config.headers.Authorization = `Bearer ${session.access_token}`
+    }
+  } catch {
+    // Session illisible (localStorage corrompu) : la requête part sans header —
+    // le mode dev (MLBLOCK_DEV_AUTH) accepte, sinon le serveur répond 401.
   }
   return config
 })

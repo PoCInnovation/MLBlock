@@ -5,7 +5,7 @@ export const COL_W = 340 // largeur d'une colonne (avec gap)
 export const ROW_H = 190 // hauteur d'une rangée
 export const COL_PAD = 12 // padding interne d'une colonne
 export const HEADER_H = 42 // hauteur du CardHeader des colonnes
-export const TOP_PAD = 24 // espace sous le titre avant le premier bloc
+export const TOP_PAD = 32 // espace sous le titre avant le premier bloc
 export const BLOCK_W = 244 // largeur des blocs en vue grille (alignée sur la carte)
 
 export type GridPos = { col: number; row: number }

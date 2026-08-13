@@ -6,10 +6,14 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import jwt, JWTError, jwk
 
-security = HTTPBearer()
+security = HTTPBearer(auto_error=False)
 
 SUPABASE_JWKS_URL = os.environ.get("SUPABASE_JWKS_URL", "")
 SUPABASE_JWT_SECRET = os.environ.get("SUPABASE_JWT_SECRET", "")
+
+# Mode dev local uniquement : MLBLOCK_DEV_AUTH définit un user_id fixe pour
+# valider le rendu sans JWT réel (jamais défini en prod).
+DEV_USER_ID = os.environ.get("MLBLOCK_DEV_AUTH", "")
 
 _jwks_cache: dict = {}
 _jwks_cache_ts: float = 0.0
@@ -59,8 +63,15 @@ def _get_signing_key(token: str):
 
 
 def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    credentials: HTTPAuthorizationCredentials | None = Depends(security),
 ) -> str:
+    if DEV_USER_ID:
+        return DEV_USER_ID
+    if credentials is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+        )
     try:
         signing_key = _get_signing_key(credentials.credentials)
         payload = jwt.decode(

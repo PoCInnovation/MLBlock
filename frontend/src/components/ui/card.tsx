@@ -8,7 +8,7 @@ import { theme } from '../../theme'
  * + CardContent + CardFooter.
  */
 export function Card({ size = 'default', style, ...props }: React.ComponentProps<'div'> & { size?: 'default' | 'sm'; style?: CSSProperties }) {
-  const gap = size === 'sm' ? 10 : 14
+  const gap = size === 'sm' ? 12 : 16
   return (
     <div
       data-slot="card"
@@ -98,7 +98,7 @@ export function CardFooter({ style, ...props }: React.ComponentProps<'div'> & { 
       style={{
         display: 'flex',
         alignItems: 'center',
-        margin: '0 -14px',
+        margin: '0 -16px',
         borderTop: `1px solid ${theme.color.border}`,
         background: 'rgba(255,255,255,.03)',
         borderRadius: `0 0 ${theme.radius.lg} ${theme.radius.lg}`,
