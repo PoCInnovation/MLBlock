@@ -5,7 +5,7 @@ import type { PipelineNode, PipelineEdge, Job, JobOutput, JobStatus } from '../t
 import { createPipeline, updatePipeline } from '../api/client'
 import type { Node, Edge, NodeChange, EdgeChange } from 'reactflow'
 import { applyNodeChanges, applyEdgeChanges, addEdge, type Connection } from 'reactflow'
-import { COL_W, COL_PAD, ROW_H, FALLBACK_H, HEADER_H, TOP_PAD, hasGridPos, posFor, pruneInvalidEdges, snapPosition, colOf, rowOf, migrateToGrid, type GridColumn } from '../utils/gridLayout'
+import { COL_W, COL_PAD, ROW_H, FALLBACK_H, HEADER_H, TOP_PAD, FOOTER_H, hasGridPos, posFor, pruneInvalidEdges, snapPosition, colOf, rowOf, migrateToGrid, colHeight, type GridColumn } from '../utils/gridLayout'
 
 export type ConsoleLine = { k: string; t: string }
 
@@ -272,6 +272,22 @@ const useAppStore = create<AppState>((set, get) => ({
     // de la rangée 0) — la grille commence à (0, 0).
     col = Math.max(0, col)
     row = Math.max(0, row)
+    // Le bloc doit rester dans le CONTENT de la colonne (au-dessus du footer) :
+    // on borne le row pour que sa position packée ne déborde pas dans le footer.
+    const colBlocks = s.flowNodes
+      .filter(n => n.id !== nodeId && colOf(n) === col)
+      .sort((a, b) => rowOf(a) - rowOf(b))
+    const contentLimit = colHeight(s.flowNodes, col) - FOOTER_H - COL_PAD
+    const blockH = (node.height as number | undefined) ?? FALLBACK_H
+    let usedY = HEADER_H + TOP_PAD
+    let maxFit = 0
+    for (const n of colBlocks) {
+      if (rowOf(n) >= row) break
+      usedY += ((n.height as number | undefined) ?? FALLBACK_H) + COL_PAD
+      if (usedY + blockH > contentLimit) break
+      maxFit = rowOf(n) + 1
+    }
+    if (usedY + blockH > contentLimit) row = Math.max(0, maxFit)
     const cur = colOf(node)
     const curRow = rowOf(node)
     if (cur === col && curRow === row) {
