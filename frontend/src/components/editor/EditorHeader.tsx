@@ -196,7 +196,7 @@ export default function EditorHeader({ onRun, onStop, onClear }: EditorHeaderPro
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              destructive
+              variant="destructive"
               onClick={() => {
                 const s = useAppStore.getState()
                 if (s.isDirty() && s.user) setLogoutOpen(true)
