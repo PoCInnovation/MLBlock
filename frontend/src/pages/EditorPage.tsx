@@ -19,7 +19,7 @@ function stashIfDirty(): void {
   const u = s.user as { id?: string } | null
   if (!u?.id || !s.isDirty()) return
   const { nodes, edges } = toServerPayload(s)
-  writeStash(u.id, { name: s.projectName, nodes, edges, pipelineId: s.pipelineId, savedAt: new Date().toISOString() })
+  writeStash(u.id, { name: s.projectName, nodes, edges, pipelineId: s.pipelineId, savedAt: new Date().toISOString(), columns: s.columns })
 }
 
 export default function EditorPage() {
@@ -80,7 +80,7 @@ export default function EditorPage() {
     const stash = readStash(u.id)
     if (!stash) return
     clearStash(u.id)
-    s.loadPipeline(stash.nodes, stash.edges, stash.pipelineId ?? '', stash.name)
+    s.loadPipeline(stash.nodes, stash.edges, stash.pipelineId ?? '', stash.name, stash.columns)
     if (!stash.pipelineId) useAppStore.setState({ pipelineId: null })
     // Le toast sera montré par l'effet catalogue, une fois le rendu final en place
     useAppStore.getState().setRestoredWork(true)

@@ -17,13 +17,15 @@ import 'reactflow/dist/style.css'
 import useAppStore from '../../store/useAppStore'
 import { theme } from '../../theme'
 import BlockNode from './BlockNode'
+import ColumnNode from './ColumnNode'
 import FlowPalette from './FlowPalette'
 import ConsolePanel from '../ui/ConsolePanel'
 import { segsToFields } from '../../utils/flowConversion'
 import { buildConversionGraph, classifyEdge, converterFor, portDtype } from '../../utils/typeCheck'
+import { COL_W, COL_PAD, ROW_H, colOf, isEdgeValid, maxRowInCol, posFor, snapPosition } from '../../utils/gridLayout'
 import type { InternalCatalog, Port } from '../../types/catalog'
 
-const nodeTypes = { block: BlockNode }
+const nodeTypes = { block: BlockNode, column: ColumnNode }
 
 const reactFlowStyle: React.CSSProperties = {
   background: theme.color.canvas,
@@ -63,6 +65,12 @@ function FlowCanvasInner() {
   const addFlowEdges = useAppStore(s => s.addFlowEdges)
   const catalog = useAppStore(s => s.catalog)
   const showToast = useAppStore(s => s.showToast)
+  const viewMode = useAppStore(s => s.viewMode)
+  const columns = useAppStore(s => s.columns)
+  const selectedCol = useAppStore(s => s.selectedCol)
+  const setSelectedCol = useAppStore(s => s.setSelectedCol)
+  const moveNodeTo = useAppStore(s => s.moveNodeTo)
+  const addColumn = useAppStore(s => s.addColumn)
 
   const { screenToFlowPosition, fitView } = useReactFlow()
   const wrapperRef = useRef<HTMLDivElement>(null)
@@ -71,6 +79,27 @@ function FlowCanvasInner() {
     () => (catalog ? buildConversionGraph(catalog.blocks) : new Map<string, Set<string>>()),
     [catalog]
   )
+
+  // Colonnes en arrière-plan (nœuds ReactFlow non interactifs, zIndex -1).
+  const columnNodes = useMemo(() => {
+    if (viewMode !== 'grid') return []
+    return columns.map((c, i) => {
+      const maxRow = maxRowInCol(flowNodes, i)
+      const height = Math.max(420, (maxRow + 2) * ROW_H)
+      return {
+        id: c.id,
+        type: 'column' as const,
+        position: { x: i * COL_W + COL_PAD, y: 0 },
+        data: { column: c, index: i, height },
+        width: COL_W - 2 * COL_PAD,
+        height,
+        draggable: false,
+        selectable: false,
+        focusable: false,
+        style: { zIndex: -1 },
+      }
+    })
+  }, [viewMode, columns, flowNodes])
 
   const insertConverter = useCallback((conn: Connection, convType: string) => {
     useAppStore.getState().commitUndoPoint()
@@ -134,6 +163,16 @@ function FlowCanvasInner() {
 
   const onConnect = useCallback((params: Connection) => {
     useAppStore.getState().commitUndoPoint()
+    // Règle gauche→droite de la vue grille : le lien doit viser une colonne
+    // strictement supérieure (acyclicité + indépendance intra-colonne).
+    if (viewMode === 'grid') {
+      const src = flowNodes.find(n => n.id === params.source)
+      const tgt = flowNodes.find(n => n.id === params.target)
+      if (src && tgt && colOf(tgt) <= colOf(src)) {
+        showToast({ kind: 'error', message: 'Impossible : le lien doit aller vers une colonne à droite' })
+        return
+      }
+    }
     if (!catalog) {
       addFlowEdges(addEdge(params, []))
       return
@@ -163,7 +202,7 @@ function FlowCanvasInner() {
     } else {
       showToast({ kind: 'error', message: `${srcDtype} → ${tgtDtype} : aucune conversion possible` })
     }
-  }, [catalog, flowNodes, flowEdges, graph, addFlowEdges, showToast, insertConverter])
+  }, [catalog, flowNodes, flowEdges, graph, addFlowEdges, showToast, insertConverter, viewMode])
 
   const onDragStart = useCallback((e: React.DragEvent, type: string) => {
     e.dataTransfer.setData('application/mlblock-type', type)
@@ -183,7 +222,16 @@ function FlowCanvasInner() {
       if (!type || !catalog.blocks[type]) return
       useAppStore.getState().commitUndoPoint()
 
-      const position = screenToFlowPosition({ x: e.clientX, y: e.clientY })
+      let position = screenToFlowPosition({ x: e.clientX, y: e.clientY })
+      if (viewMode === 'grid') {
+        // Dépôt dans la colonne sélectionnée (sinon celle sous la souris),
+        // en fin de pile.
+        const col = selectedCol
+          ? columns.findIndex(c => c.id === selectedCol)
+          : Math.round((position.x - COL_PAD) / COL_W)
+        const colIdx = Math.max(0, col)
+        position = posFor(colIdx, maxRowInCol(flowNodes, colIdx) + 1)
+      }
       const def = catalog.blocks[type]
       const cat = catalog.categories.find(c => c.id === def.cat)
       const label = def.segs.find(s => s.t === 'text')?.v ?? type
@@ -208,12 +256,28 @@ function FlowCanvasInner() {
       // on an empty canvas (fitView scale ~0.1) yields enormous flow coords
       setTimeout(() => fitView({ padding: 0.2, duration: 300 }), 50)
     },
-    [catalog, screenToFlowPosition, addFlowNode, fitView]
+    [catalog, screenToFlowPosition, addFlowNode, fitView, viewMode, selectedCol, columns, flowNodes]
   )
 
+  // Vue grille : snap à la fin du geste (1 commit par geste, uniquement si la
+  // cellule change). Le commit est géré dans moveNodeTo (position rétablie).
+  const onNodeDragStop = useCallback((_: React.MouseEvent, node: Node) => {
+    if (viewMode !== 'grid') return
+    const snapped = snapPosition(node.position)
+    moveNodeTo(node.id, snapped.col, snapped.row)
+  }, [viewMode, moveNodeTo])
+
   const renderEdges = useMemo(
-    () => flowEdges.map(e => ({ ...e, style: edgeStyleFor(e, flowNodes, graph) })),
-    [flowEdges, flowNodes, graph]
+    () => flowEdges.map(e => {
+      const base = edgeStyleFor(e, flowNodes, graph)
+      if (viewMode === 'grid' && !isEdgeValid(e, flowNodes)) {
+        // Liens hérités qui violent la règle gauche→droite : signalés sans
+        // bloquer (l'exécution reste possible, le topo sort s'en charge).
+        return { ...e, style: { ...base, stroke: theme.color.warning, strokeDasharray: '8 4' } }
+      }
+      return { ...e, style: base }
+    }),
+    [flowEdges, flowNodes, graph, viewMode]
   )
 
   return (
@@ -221,12 +285,12 @@ function FlowCanvasInner() {
       <FlowPalette onDragStart={onDragStart} />
       <div ref={wrapperRef} style={{ flex: 1, height: '100%' }}>
         <ReactFlow
-          nodes={flowNodes}
+          nodes={viewMode === 'grid' ? [...columnNodes, ...flowNodes] : flowNodes}
           edges={renderEdges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
-          onNodeDragStart={() => useAppStore.getState().commitUndoPoint()}
+          onNodeDragStop={onNodeDragStop}
           onDragOver={onDragOver}
           onDrop={onDrop}
           nodeTypes={nodeTypes}
@@ -237,6 +301,28 @@ function FlowCanvasInner() {
           <MiniMap />
           <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
         </ReactFlow>
+        {viewMode === 'grid' && (
+          <button
+            onClick={addColumn}
+            title="Ajouter une colonne"
+            style={{
+              position: 'absolute',
+              top: 14,
+              right: 14,
+              zIndex: 10,
+              background: 'rgba(217,119,87,.16)',
+              color: theme.color.accentLight,
+              border: '1px solid rgba(217,119,87,.45)',
+              padding: '7px 13px',
+              borderRadius: theme.radius.md,
+              fontWeight: 800,
+              fontSize: 12.5,
+              cursor: 'pointer',
+            }}
+          >
+            + Colonne
+          </button>
+        )}
       </div>
       <ConsolePanel />
     </div>

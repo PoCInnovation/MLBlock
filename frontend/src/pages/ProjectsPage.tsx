@@ -77,7 +77,7 @@ export default function ProjectsPage() {
   const openProject = async (p: PipelineSummary) => {
     try {
       const detail = await getPipeline(p.id)
-      useAppStore.getState().loadPipeline(detail.nodes, detail.edges, detail.id, detail.name)
+      useAppStore.getState().loadPipeline(detail.nodes, detail.edges, detail.id, detail.name, detail.columns)
       navigate('/editor')
     } catch {
       setError('Impossible d’ouvrir ce projet.')

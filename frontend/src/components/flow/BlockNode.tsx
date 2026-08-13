@@ -94,6 +94,7 @@ function BlockNode({ data, id }: NodeProps<BlockNodeData>) {
   const catalog = useAppStore(s => s.catalog)
   const flowNodes = useAppStore(s => s.flowNodes)
   const flowEdges = useAppStore(s => s.flowEdges)
+  const viewMode = useAppStore(s => s.viewMode)
   const [columnOptions, setColumnOptions] = useState<Record<string, string[]>>({})
   const description = catalog?.blocks[data.type]?.description
 
@@ -111,7 +112,7 @@ function BlockNode({ data, id }: NodeProps<BlockNodeData>) {
   }, [id, data.segs, flowNodes, flowEdges])
 
   return (
-    <div style={{ ...nodeStyle, borderTop: `3px solid ${data.categoryColor}` }}>
+    <div style={{ ...nodeStyle, borderTop: `3px solid ${data.categoryColor}`, width: viewMode === 'grid' ? 244 : undefined }}>
       <button style={deleteBtnStyle} onClick={() => removeFlowNode(id)} title="Supprimer le bloc">×</button>
       {data.inputs.map((p, i, arr) => (
         <Handle

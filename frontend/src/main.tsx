@@ -36,7 +36,7 @@ function Root() {
       const prev = s.user as { id?: string } | null
       if (!session && prev?.id && s.isDirty()) {
         const { nodes, edges } = toServerPayload(s)
-        writeStash(prev.id, { name: s.projectName, nodes, edges, pipelineId: s.pipelineId, savedAt: new Date().toISOString() })
+        writeStash(prev.id, { name: s.projectName, nodes, edges, pipelineId: s.pipelineId, savedAt: new Date().toISOString(), columns: s.columns })
       }
       setUser(session?.user ?? null)
     })

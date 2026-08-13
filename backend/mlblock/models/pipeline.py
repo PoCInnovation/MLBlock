@@ -22,6 +22,8 @@ class PipelineEdge(BaseModel):
 class PipelineDef(BaseModel):
     nodes: list[PipelineNode]
     edges: list[PipelineEdge]
+    # Colonnes de la vue grille (mode kanban) — liste ordonnée, index = position.
+    columns: list[dict[str, str]] | None = None
 
     @model_validator(mode="after")
     def validate_types_in_registry(self, info: Any) -> Self:

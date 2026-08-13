@@ -387,6 +387,33 @@ def test_position_roundtrip(client: TestClient):
     assert fetched["nodes"][0]["position"] == {"x": 120.5, "y": 45}
 
 
+def test_columns_roundtrip(client: TestClient):
+    """Les colonnes de la vue grille sont persistées avec le pipeline."""
+    nodes = [
+        {"id": "n1", "type": "load_csv", "params": {}, "position": {"x": 16, "y": 16, "col": 0, "row": 0}},
+        {"id": "n2", "type": "train_test_split", "params": {}, "position": {"x": 316, "y": 16, "col": 1, "row": 0}},
+    ]
+    columns = [{"id": "c0", "label": "Données"}, {"id": "c1", "label": "Préparation"}]
+    created = client.post(
+        "/api/pipelines",
+        json={"name": "cols", "nodes": nodes, "edges": [], "columns": columns},
+    ).json()
+    fetched = client.get(f"/api/pipelines/{created['id']}").json()
+    assert fetched["columns"] == columns
+    assert fetched["nodes"][0]["position"]["col"] == 0
+    assert fetched["nodes"][1]["position"]["row"] == 0
+
+
+def test_columns_absent_defaults_empty(client: TestClient):
+    """Un pipeline sans colonnes renvoie une liste vide (rétrocompat)."""
+    created = client.post(
+        "/api/pipelines",
+        json={"name": "no-cols", "nodes": [], "edges": []},
+    ).json()
+    fetched = client.get(f"/api/pipelines/{created['id']}").json()
+    assert fetched["columns"] == []
+
+
 # ── Résultats (visualisation) ───────────────────────────────────────
 
 def test_serialize_output_typed():
