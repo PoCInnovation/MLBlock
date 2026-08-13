@@ -3,7 +3,7 @@ import type { NodeProps } from 'reactflow'
 import { ArrowLeft, Copy, MoreVertical, MoveRight, Trash2, Pencil } from 'lucide-react'
 import useAppStore from '../../store/useAppStore'
 import { theme } from '../../theme'
-import { COL_PAD } from '../../utils/gridLayout'
+import { COL_PAD, colOf } from '../../utils/gridLayout'
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -18,9 +18,10 @@ type ColumnNodeData = {
   height: number
 }
 
-/** Colonne de la vue grille (nœud ReactFlow non draggable en arrière-plan). */
+/** Colonne de la vue grille : grande carte (Card) en arrière-plan du canvas. */
 function ColumnNode({ data, id }: NodeProps<ColumnNodeData>) {
   const columns = useAppStore(s => s.columns)
+  const flowNodes = useAppStore(s => s.flowNodes)
   const selectedCol = useAppStore(s => s.selectedCol)
   const setSelectedCol = useAppStore(s => s.setSelectedCol)
   const renameColumn = useAppStore(s => s.renameColumn)
@@ -34,6 +35,7 @@ function ColumnNode({ data, id }: NodeProps<ColumnNodeData>) {
   const [moveMode, setMoveMode] = useState(false)
 
   const selected = selectedCol === id
+  const blockCount = flowNodes.filter(n => colOf(n) === data.index).length
 
   const commitLabel = () => {
     const label = draftLabel.trim()
@@ -58,16 +60,18 @@ function ColumnNode({ data, id }: NodeProps<ColumnNodeData>) {
       style={{
         width: '100%',
         height: '100%',
-        background: selected ? 'rgba(217,119,87,.10)' : 'rgba(255,255,255,.028)',
-        border: `1px solid ${selected ? 'rgba(217,119,87,.55)' : 'rgba(255,255,255,.07)'}`,
-        borderRadius: theme.radius.lg,
-        boxSizing: 'border-box',
         display: 'flex',
         flexDirection: 'column',
-        cursor: 'pointer',
+        background: selected ? 'rgba(217,119,87,.07)' : theme.color.surface3,
+        border: `2px solid ${selected ? 'rgba(217,119,87,.65)' : theme.color.border}`,
+        borderRadius: theme.radius.lg,
+        boxShadow: selected ? `0 0 0 3px rgba(217,119,87,.22), ${theme.shadow.block}` : theme.shadow.block,
+        boxSizing: 'border-box',
         overflow: 'hidden',
+        cursor: 'pointer',
       }}
     >
+      {/* CardHeader : titre (renommable) + actions */}
       <div
         onClick={e => e.stopPropagation()}
         style={{
@@ -75,9 +79,10 @@ function ColumnNode({ data, id }: NodeProps<ColumnNodeData>) {
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: 6,
-          padding: '8px 10px',
-          borderBottom: `1px solid ${selected ? 'rgba(217,119,87,.35)' : 'rgba(255,255,255,.06)'}`,
-          background: selected ? 'rgba(217,119,87,.14)' : 'rgba(255,255,255,.03)',
+          padding: '10px 12px',
+          background: selected ? 'rgba(217,119,87,.16)' : theme.color.surface2,
+          borderBottom: `2px solid ${theme.color.border}`,
+          flexShrink: 0,
         }}
       >
         {editing ? (
@@ -193,7 +198,24 @@ function ColumnNode({ data, id }: NodeProps<ColumnNodeData>) {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+      {/* CardContent : zone des blocs */}
       <div style={{ flex: 1, minHeight: 0, paddingTop: COL_PAD }} />
+      {/* CardFooter : compteur de blocs */}
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          flexShrink: 0,
+          padding: '6px 12px',
+          background: theme.color.surface2,
+          borderTop: `2px solid ${theme.color.border}`,
+          fontSize: 11,
+          fontWeight: 800,
+          color: theme.color.textMuted,
+          letterSpacing: '.03em',
+        }}
+      >
+        {blockCount} bloc{blockCount > 1 ? 's' : ''}
+      </div>
     </div>
   )
 }

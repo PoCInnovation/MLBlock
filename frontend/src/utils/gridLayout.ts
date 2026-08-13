@@ -1,7 +1,7 @@
 import type { Edge, Node } from 'reactflow'
 
 /** Layout de la vue grille (kanban) : colonnes verticales, rangées empilées. */
-export const COL_W = 300 // largeur d'une colonne (avec gap)
+export const COL_W = 340 // largeur d'une colonne (avec gap)
 export const ROW_H = 190 // hauteur d'une rangée
 export const COL_PAD = 12 // padding interne d'une colonne
 

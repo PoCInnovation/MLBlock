@@ -85,7 +85,7 @@ function FlowCanvasInner() {
     if (viewMode !== 'grid') return []
     return columns.map((c, i) => {
       const maxRow = maxRowInCol(flowNodes, i)
-      const height = Math.max(420, (maxRow + 2) * ROW_H)
+      const height = Math.max(480, (maxRow + 2) * ROW_H)
       return {
         id: c.id,
         type: 'column' as const,
@@ -96,7 +96,7 @@ function FlowCanvasInner() {
         draggable: false,
         selectable: false,
         focusable: false,
-        style: { zIndex: -1 },
+        style: { zIndex: -1, width: COL_W - 2 * COL_PAD, height },
       }
     })
   }, [viewMode, columns, flowNodes])
@@ -254,7 +254,7 @@ function FlowCanvasInner() {
       addFlowNode(node)
       // ponytail: fitView recenters on the dropped node — screenToFlowPosition
       // on an empty canvas (fitView scale ~0.1) yields enormous flow coords
-      setTimeout(() => fitView({ padding: 0.2, duration: 300 }), 50)
+      setTimeout(() => fitView(viewMode === 'grid' ? { padding: 0.2, duration: 300, maxZoom: 1 } : { padding: 0.2, duration: 300 }), 50)
     },
     [catalog, screenToFlowPosition, addFlowNode, fitView, viewMode, selectedCol, columns, flowNodes]
   )
@@ -296,6 +296,7 @@ function FlowCanvasInner() {
           nodeTypes={nodeTypes}
           style={reactFlowStyle}
           fitView
+          fitViewOptions={viewMode === 'grid' ? { maxZoom: 1 } : undefined}
         >
           <Controls />
           <MiniMap />
