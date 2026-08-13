@@ -1,3 +1,4 @@
+import { forwardRef } from 'react'
 import type { CSSProperties } from 'react'
 import { theme } from '../../theme'
 
@@ -49,15 +50,16 @@ export function CardHeader({ style, ...props }: React.ComponentProps<'div'> & { 
   )
 }
 
-export function CardTitle({ style, ...props }: React.ComponentProps<'div'> & { style?: CSSProperties }) {
+export const CardTitle = forwardRef<HTMLDivElement, React.ComponentProps<'div'> & { style?: CSSProperties }>(function CardTitle({ style, ...props }, ref) {
   return (
     <div
+      ref={ref}
       data-slot="card-title"
       style={{ fontWeight: 800, fontSize: 13.5, lineHeight: 1.3, color: theme.color.textLight, ...style }}
       {...props}
     />
   )
-}
+})
 
 export function CardDescription({ style, ...props }: React.ComponentProps<'div'> & { style?: CSSProperties }) {
   return (

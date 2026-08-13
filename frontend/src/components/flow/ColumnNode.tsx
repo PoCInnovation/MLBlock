@@ -3,8 +3,9 @@ import type { NodeProps } from 'reactflow'
 import { Copy, MoreVertical, MoveRight, Trash2, Pencil } from 'lucide-react'
 import useAppStore from '../../store/useAppStore'
 import { theme } from '../../theme'
-import { COL_PAD, HEADER_H, colOf } from '../../utils/gridLayout'
+import { COL_PAD, HEADER_H, colOf, rowOf } from '../../utils/gridLayout'
 import { Card, CardHeader, CardTitle, CardAction, CardContent, CardFooter } from '../ui/card'
+import { HoverCard, HoverCardTrigger, HoverCardContent } from '../ui/hover-card'
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -40,6 +41,9 @@ function ColumnNode({ data, id }: NodeProps<ColumnNodeData>) {
 
   const selected = selectedCol === id
   const blockCount = flowNodes.filter(n => colOf(n) === data.index).length
+  const colBlocks = flowNodes
+    .filter(n => colOf(n) === data.index)
+    .sort((a, b) => rowOf(a) - rowOf(b))
 
   const commitLabel = () => {
     const label = draftLabel.trim()
@@ -115,21 +119,58 @@ function ColumnNode({ data, id }: NodeProps<ColumnNodeData>) {
             }}
           />
         ) : (
-          <CardTitle
-            onClick={() => { setDraftLabel(data.column.label); setEditing(true) }}
-            title="Cliquer pour renommer"
-            style={{
-              minWidth: 0,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              cursor: 'text',
-              borderBottom: '1px dashed rgba(255,255,255,.22)',
-              padding: '2px 0',
-            }}
-          >
-            {data.column.label}
-          </CardTitle>
+          <HoverCard>
+            <HoverCardTrigger
+              render={
+                <CardTitle
+                  onClick={() => { setDraftLabel(data.column.label); setEditing(true) }}
+                  title="Cliquer pour renommer"
+                  style={{
+                    minWidth: 0,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    cursor: 'text',
+                    borderBottom: '1px dashed rgba(255,255,255,.22)',
+                    padding: '2px 0',
+                  }}
+                >
+                  {data.column.label}
+                </CardTitle>
+              }
+            />
+            <HoverCardContent>
+              <div style={{ fontWeight: 800, fontSize: 13, marginBottom: 2 }}>{data.column.label}</div>
+              <div style={{ fontSize: 12, color: theme.color.textMuted, marginBottom: colBlocks.length ? 8 : 0 }}>
+                {blockCount} bloc{blockCount > 1 ? 's' : ''}
+              </div>
+              {colBlocks.map(n => (
+                <div
+                  key={n.id}
+                  style={{
+                    fontSize: 12,
+                    color: theme.color.textLight,
+                    padding: '4px 0',
+                    borderTop: `1px solid ${theme.color.border}`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 7,
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: '50%',
+                      background: (n.data as { categoryColor?: string } | undefined)?.categoryColor ?? theme.color.accent,
+                      flexShrink: 0,
+                    }}
+                  />
+                  {(n.data as { label?: string } | undefined)?.label ?? n.id}
+                </div>
+              ))}
+            </HoverCardContent>
+          </HoverCard>
         )}
         <CardAction>
           <DropdownMenu open={moveOpen} onOpenChange={open => setMoveOpen(open)}>
