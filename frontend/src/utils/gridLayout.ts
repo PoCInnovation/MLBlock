@@ -5,6 +5,7 @@ export const COL_W = 340 // largeur d'une colonne (avec gap)
 export const ROW_H = 190 // hauteur d'une rangée
 export const COL_PAD = 12 // padding interne d'une colonne
 export const HEADER_H = 42 // hauteur du CardHeader des colonnes
+export const TOP_PAD = 24 // espace sous le titre avant le premier bloc
 export const BLOCK_W = 244 // largeur des blocs en vue grille (alignée sur la carte)
 
 export type GridPos = { col: number; row: number }
@@ -28,7 +29,7 @@ export function colOf(n: Node): number {
 export function rowOf(n: Node): number {
   const p = n.position as GridPosition
   if (p.row !== undefined) return p.row
-  return Math.max(0, Math.round((n.position.y - HEADER_H - COL_PAD) / ROW_H))
+  return Math.max(0, Math.round((n.position.y - HEADER_H - TOP_PAD) / ROW_H))
 }
 
 export function hasGridPos(n: Node): boolean {
@@ -41,7 +42,7 @@ export function hasGridPos(n: Node): boolean {
 export function posFor(col: number, row: number): { x: number; y: number; col: number; row: number } {
   return {
     x: col * COL_W + (COL_W - BLOCK_W) / 2,
-    y: HEADER_H + row * ROW_H + COL_PAD,
+    y: HEADER_H + TOP_PAD + row * ROW_H,
     col,
     row,
   }
@@ -51,7 +52,7 @@ export function posFor(col: number, row: number): { x: number; y: number; col: n
 export function snapPosition(pos: { x: number; y: number }): { x: number; y: number; col: number; row: number } {
   return posFor(
     Math.round((pos.x - (COL_W - BLOCK_W) / 2) / COL_W),
-    Math.round((pos.y - HEADER_H - COL_PAD) / ROW_H)
+    Math.round((pos.y - HEADER_H - TOP_PAD) / ROW_H)
   )
 }
 
@@ -132,8 +133,8 @@ export function colHeight(nodes: Node[], col: number): number {
   const inCol = nodes
     .filter(n => colOf(n) === col)
     .sort((a, b) => rowOf(a) - rowOf(b))
-  let h = HEADER_H + COL_PAD
+  let h = HEADER_H + TOP_PAD
   for (const n of inCol) h += ((n.height as number) ?? FALLBACK_H) + COL_PAD
   // Min calculé (colonne vide = header + pied + gaps), jamais de valeur fixe.
-  return Math.max(HEADER_H + FOOTER_H + 2 * COL_PAD, h + FOOTER_H)
+  return Math.max(HEADER_H + TOP_PAD + FOOTER_H + COL_PAD, h + FOOTER_H)
 }

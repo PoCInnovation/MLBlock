@@ -5,7 +5,7 @@ import type { PipelineNode, PipelineEdge, Job, JobOutput, JobStatus } from '../t
 import { createPipeline, updatePipeline } from '../api/client'
 import type { Node, Edge, NodeChange, EdgeChange } from 'reactflow'
 import { applyNodeChanges, applyEdgeChanges, addEdge, type Connection } from 'reactflow'
-import { COL_W, COL_PAD, ROW_H, FALLBACK_H, HEADER_H, hasGridPos, posFor, pruneInvalidEdges, snapPosition, colOf, rowOf, migrateToGrid, type GridColumn } from '../utils/gridLayout'
+import { COL_W, COL_PAD, ROW_H, FALLBACK_H, HEADER_H, TOP_PAD, hasGridPos, posFor, pruneInvalidEdges, snapPosition, colOf, rowOf, migrateToGrid, type GridColumn } from '../utils/gridLayout'
 
 export type ConsoleLine = { k: string; t: string }
 
@@ -325,7 +325,7 @@ const useAppStore = create<AppState>((set, get) => ({
     const out: Node[] = []
     for (const [c, list] of groups) {
       const sorted = [...list].sort((a, b) => rowOf(a) - rowOf(b))
-      let y = HEADER_H + COL_PAD
+      let y = HEADER_H + TOP_PAD
       for (const n of sorted) {
         const h = (n.height as number | undefined) ?? FALLBACK_H
         out.push({ ...n, position: { ...posFor(c, rowOf(n)), y } })
