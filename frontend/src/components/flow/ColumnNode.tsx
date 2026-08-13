@@ -33,6 +33,7 @@ function ColumnNode({ data, id }: NodeProps<ColumnNodeData>) {
   const [editing, setEditing] = useState(false)
   const [draftLabel, setDraftLabel] = useState('')
   const [moveMode, setMoveMode] = useState(false)
+  const [moveOpen, setMoveOpen] = useState(false)
 
   const selected = selectedCol === id
   const blockCount = flowNodes.filter(n => colOf(n) === data.index).length
@@ -56,11 +57,10 @@ function ColumnNode({ data, id }: NodeProps<ColumnNodeData>) {
   return (
     <div
       onClick={() => setSelectedCol(selected ? null : id)}
-      // ReactFlow consomme le pointerdown des nœuds non-draggable (gesture de
-      // pan → preventDefault → le click natif n'arrive jamais : boutons et
-      // renommage inaccessibles). On stoppe la propagation au niveau de la
-      // colonne pour laisser le click natif se produire.
-      onPointerDown={e => e.stopPropagation()}
+      // Classe officielle ReactFlow 'nodrag' : le pan/drag ignore les events
+      // dont le target est dans un élément nodrag (isWrappedWithClass) — les
+      // clics passent naturellement, sans stopPropagation qui interfère.
+      className="nodrag"
       title={selected ? 'Colonne cible du dépôt' : 'Sélectionner comme colonne cible'}
       style={{
         width: '100%',
@@ -84,7 +84,6 @@ function ColumnNode({ data, id }: NodeProps<ColumnNodeData>) {
       {/* CardHeader : titre (renommable) + actions */}
       <div
         onClick={e => e.stopPropagation()}
-        onPointerDown={e => e.stopPropagation()}
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -140,12 +139,16 @@ function ColumnNode({ data, id }: NodeProps<ColumnNodeData>) {
             {data.column.label}
           </span>
         )}
-        <DropdownMenu onOpenChange={open => { if (!open) setMoveMode(false) }}>
+        <DropdownMenu open={moveOpen} onOpenChange={open => { setMoveOpen(open); if (!open) setMoveMode(false) }}>
           <DropdownMenuTrigger
             render={
               <button
                 aria-label="Menu de la colonne"
                 title="Gérer la colonne"
+                // Le useClick de Base UI (eventOption 'mousedown') ignore le
+                // click quand un pointerdown a précédé : on contrôle le menu
+                // nous-mêmes (open) et on ouvre au click natif.
+                onClick={e => { e.stopPropagation(); setMoveOpen(true) }}
                 style={{
                   border: 'none',
                   background: 'rgba(255,255,255,.07)',
