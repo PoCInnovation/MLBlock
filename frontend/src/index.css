@@ -131,6 +131,8 @@ input, select, button { font-family: inherit; }
   }
 }
 
-/* Vue grille : les liens passent AU-DESSUS des cartes de colonnes (sous les
-   blocs, zIndex 1) — le routage par couloirs les rend visibles. */
-.grid-mode .react-flow__edges { z-index: 1; }
+/* Vue grille : les liens passent AU-DESSUS de tout (cartes ET blocs) pour
+   etre visibles jusqu'au handle ; pointer-events none pour ne pas casser
+   le drag des blocs et le connect. */
+.grid-mode .react-flow__edges { z-index: 2; pointer-events: none; }
+.grid-mode .react-flow__edge { pointer-events: none; }

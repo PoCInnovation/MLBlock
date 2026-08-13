@@ -36,6 +36,7 @@ function roundedPath(points: [number, number][]): string {
 function FlowLink({ id, source, target, sourceX, sourceY, targetX, targetY, style }: EdgeProps) {
   const viewMode = useAppStore(s => s.viewMode)
   const flowNodes = useAppStore(s => s.flowNodes)
+  const flowEdges = useAppStore(s => s.flowEdges)
 
   let d: string
   const src = flowNodes.find(n => n.id === source)
@@ -43,22 +44,32 @@ function FlowLink({ id, source, target, sourceX, sourceY, targetX, targetY, styl
   if (viewMode === 'grid' && src && tgt) {
     const sc = colOf(src)
     const tc = colOf(tgt)
+    // Lane : position parmi les liens de la même paire de colonnes — chaque
+    // lien a son couloir (décalage vertical) pour rester différenciable.
+    const pair = flowEdges.filter(e => {
+      const s = flowNodes.find(n => n.id === e.source)
+      const t = flowNodes.find(n => n.id === e.target)
+      return !!s && !!t && colOf(s) === sc && colOf(t) === tc
+    })
+    const lane = Math.max(0, pair.findIndex(e => e.id === id))
+    const laneOffset = lane * 9
+    const topY = TOP_Y - laneOffset
     if (tc === sc + 1) {
       // Colonne suivante : couloir horizontal au-dessus des deux cartes.
-      d = roundedPath([[sourceX, sourceY], [sourceX, TOP_Y], [targetX, TOP_Y], [targetX, targetY]])
+      d = roundedPath([[sourceX, sourceY], [sourceX, topY], [targetX, topY], [targetX, targetY]])
     } else if (tc > sc + 1) {
       // Saut de colonnes : au-dessus de la colonne source, en dessous des
       // cartes traversées (couloir inférieur), puis remontée à la cible.
-      let bottomY = TOP_Y
+      let bottomY = topY
       for (let i = sc + 1; i < tc; i++) {
-        bottomY = Math.max(bottomY, colHeight(flowNodes, i) + 28)
+        bottomY = Math.max(bottomY, colHeight(flowNodes, i) + 28 + laneOffset)
       }
       const rightA = sc * COL_W + COL_W - COL_PAD
       const leftB = tc * COL_W + COL_PAD
       d = roundedPath([
         [sourceX, sourceY],
-        [sourceX, TOP_Y],
-        [rightA, TOP_Y],
+        [sourceX, topY],
+        [rightA, topY],
         [rightA, bottomY],
         [leftB, bottomY],
         [leftB, targetY],
