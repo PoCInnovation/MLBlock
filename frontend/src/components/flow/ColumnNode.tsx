@@ -56,10 +56,20 @@ function ColumnNode({ data, id }: NodeProps<ColumnNodeData>) {
   return (
     <div
       onClick={() => setSelectedCol(selected ? null : id)}
+      // ReactFlow consomme le pointerdown des nœuds non-draggable (gesture de
+      // pan → preventDefault → le click natif n'arrive jamais : boutons et
+      // renommage inaccessibles). On stoppe la propagation au niveau de la
+      // colonne pour laisser le click natif se produire.
+      onPointerDown={e => e.stopPropagation()}
       title={selected ? 'Colonne cible du dépôt' : 'Sélectionner comme colonne cible'}
       style={{
         width: '100%',
         height: '100%',
+        // ReactFlow met pointer-events:none sur les wrappers des nœuds non
+        // interactifs (draggable/selectable/focusable false) — hérité par
+        // tout le contenu : sans ce 'all', le dropdown, le renommage et la
+        // sélection de colonne ne reçoivent aucun clic.
+        pointerEvents: 'all',
         display: 'flex',
         flexDirection: 'column',
         background: selected ? 'rgba(217,119,87,.07)' : theme.color.surface3,
@@ -74,6 +84,7 @@ function ColumnNode({ data, id }: NodeProps<ColumnNodeData>) {
       {/* CardHeader : titre (renommable) + actions */}
       <div
         onClick={e => e.stopPropagation()}
+        onPointerDown={e => e.stopPropagation()}
         style={{
           display: 'flex',
           alignItems: 'center',
