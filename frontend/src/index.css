@@ -134,5 +134,12 @@ input, select, button { font-family: inherit; }
 /* Vue grille : les liens passent AU-DESSUS de tout (cartes ET blocs) pour
    etre visibles jusqu'au handle ; pointer-events none pour ne pas casser
    le drag des blocs et le connect. */
-.grid-mode .react-flow__edges { z-index: 2; pointer-events: none; }
+.grid-mode .react-flow__edges {
+  /* z-index sur un <g> SVG : ignoré sans position — le câble passe
+     au-dessus des blocs ET des colonnes. */
+  position: relative;
+  /* ReactFlow force z-index:0 en inline — !important pour passer au-dessus */
+  z-index: 999 !important;
+  pointer-events: none;
+}
 .grid-mode .react-flow__edge { pointer-events: none; }
