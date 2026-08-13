@@ -22,7 +22,7 @@ import FlowPalette from './FlowPalette'
 import ConsolePanel from '../ui/ConsolePanel'
 import { segsToFields } from '../../utils/flowConversion'
 import { buildConversionGraph, classifyEdge, converterFor, portDtype } from '../../utils/typeCheck'
-import { COL_W, COL_PAD, ROW_H, colOf, isEdgeValid, maxRowInCol, posFor, snapPosition } from '../../utils/gridLayout'
+import { COL_W, COL_PAD, BLOCK_W, HEADER_H, colHeight, colOf, isEdgeValid, maxRowInCol, posFor, snapPosition } from '../../utils/gridLayout'
 import type { InternalCatalog, Port } from '../../types/catalog'
 
 const nodeTypes = { block: BlockNode, column: ColumnNode }
@@ -84,8 +84,7 @@ function FlowCanvasInner() {
   const columnNodes = useMemo(() => {
     if (viewMode !== 'grid') return []
     return columns.map((c, i) => {
-      const maxRow = maxRowInCol(flowNodes, i)
-      const height = Math.max(480, (maxRow + 2) * ROW_H)
+      const height = colHeight(flowNodes, i)
       return {
         id: c.id,
         type: 'column' as const,
@@ -154,6 +153,8 @@ function FlowCanvasInner() {
     const s = useAppStore.getState()
     if (changes.some(c => c.type === 'remove')) s.commitUndoPoint()
     s.applyFlowNodeChanges(changes)
+    // Les hauteurs mesurées arrivent par ici : re-packe les colonnes (auto-size)
+    if (changes.some(c => c.type === 'dimensions') && s.viewMode === 'grid') s.reflow()
   }, [])
   const onEdgesChange = useCallback((changes: EdgeChange[]) => {
     const s = useAppStore.getState()
@@ -228,7 +229,7 @@ function FlowCanvasInner() {
         // en fin de pile.
         const col = selectedCol
           ? columns.findIndex(c => c.id === selectedCol)
-          : Math.round((position.x - COL_PAD) / COL_W)
+          : Math.round((position.x - (COL_W - BLOCK_W) / 2) / COL_W)
         const colIdx = Math.max(0, col)
         position = posFor(colIdx, maxRowInCol(flowNodes, colIdx) + 1)
       }
@@ -252,6 +253,8 @@ function FlowCanvasInner() {
         },
       }
       addFlowNode(node)
+      // Le reflow génère les colonnes manquantes et empile le nouveau bloc.
+      useAppStore.getState().reflow()
       // ponytail: fitView recenters on the dropped node — screenToFlowPosition
       // on an empty canvas (fitView scale ~0.1) yields enormous flow coords
       setTimeout(() => fitView(viewMode === 'grid' ? { padding: 0.2, duration: 300, maxZoom: 1 } : { padding: 0.2, duration: 300 }), 50)

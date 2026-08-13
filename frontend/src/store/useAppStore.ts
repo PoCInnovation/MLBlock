@@ -5,7 +5,7 @@ import type { PipelineNode, PipelineEdge, Job, JobOutput, JobStatus } from '../t
 import { createPipeline, updatePipeline } from '../api/client'
 import type { Node, Edge, NodeChange, EdgeChange } from 'reactflow'
 import { applyNodeChanges, applyEdgeChanges, addEdge, type Connection } from 'reactflow'
-import { COL_W, COL_PAD, ROW_H, hasGridPos, posFor, pruneInvalidEdges, snapPosition, colOf, rowOf, type GridColumn } from '../utils/gridLayout'
+import { COL_W, COL_PAD, ROW_H, FALLBACK_H, HEADER_H, hasGridPos, posFor, pruneInvalidEdges, snapPosition, colOf, rowOf, migrateToGrid, type GridColumn } from '../utils/gridLayout'
 
 export type ConsoleLine = { k: string; t: string }
 
@@ -73,6 +73,7 @@ type AppState = {
   removeColumn: (id: string) => boolean
   moveColumnTo: (id: string, targetIndex: number) => void
   moveNodeTo: (nodeId: string, col: number, row: number) => void
+  reflow: () => void
   setDrag: (drag: DragState) => void
   clearDrag: () => void
   setFlowNodes: (nodes: Node[]) => void
@@ -115,7 +116,7 @@ type AppState = {
 /** Empreinte du canvas : données sémantiques uniquement — les métadonnées
     ReactFlow (measured, selected, dragging…) sont volatiles et ne doivent pas
     rendre le projet "modifié". */
-export function fingerprintOf(s: { flowNodes: Node[]; flowEdges: Edge[]; projectName: string }): string {
+export function fingerprintOf(s: { flowNodes: Node[]; flowEdges: Edge[]; projectName: string; columns: GridColumn[] }): string {
   return JSON.stringify({
     nodes: s.flowNodes.map(n => {
       const p = n.position as { col?: number; row?: number }
@@ -135,13 +136,9 @@ export function fingerprintOf(s: { flowNodes: Node[]; flowEdges: Edge[]; project
       sourceHandle: e.sourceHandle,
       targetHandle: e.targetHandle,
     })),
+    columns: s.columns,
     projectName: s.projectName,
   })
-}
-
-/** Migration à la volée : donne une position de grille aux nœuds qui n'en ont pas. */
-function toGridNodes(nodes: Node[]): Node[] {
-  return nodes.map(n => (hasGridPos(n) ? n : { ...n, position: snapPosition(n.position) }))
 }
 
 const useAppStore = create<AppState>((set, get) => ({
@@ -162,7 +159,7 @@ const useAppStore = create<AppState>((set, get) => ({
   lastJobId: null,
   jobStatus: null,
   results: [],
-  savedFingerprint: fingerprintOf({ flowNodes: [], flowEdges: [], projectName: 'mon-premier-modèle' }),
+  savedFingerprint: fingerprintOf({ flowNodes: [], flowEdges: [], projectName: 'mon-premier-modèle', columns: [] }),
   restoredWork: false,
   toast: null,
   undoStack: [],
@@ -178,7 +175,7 @@ const useAppStore = create<AppState>((set, get) => ({
     try { localStorage.setItem('mlb-view-mode', mode) } catch { /* privé — ignoré */ }
     if (s.viewMode === mode) return {}
     if (mode === 'grid') {
-      const flowNodes = toGridNodes(s.flowNodes)
+      const flowNodes = migrateToGrid(s.flowNodes, s.flowEdges)
       if (s.columns.length > 0) return { viewMode: mode, flowNodes }
       return { viewMode: mode, flowNodes, columns: [{ id: 'c0', label: '0' }], columnCounter: 1 }
     }
@@ -195,9 +192,10 @@ const useAppStore = create<AppState>((set, get) => ({
     columns: s.columns.map(c => (c.id === id ? { ...c, label } : c)),
   })),
 
-  duplicateColumn: (id) => set((s) => {
+  duplicateColumn: (id) => {
+    const s = get()
     const idx = s.columns.findIndex(c => c.id === id)
-    if (idx < 0) return {}
+    if (idx < 0) return
     const col = s.columns[idx]
     const newId = `c${Date.now()}`
     // Copie des blocs de la colonne : ids neufs, params copiés, AUCUN lien.
@@ -209,11 +207,12 @@ const useAppStore = create<AppState>((set, get) => ({
         id: `${n.id}_${Date.now()}`,
         position: posFor(idx + 1, rowOf(n)),
       }))
-    return {
+    set({
       columns: [...s.columns.slice(0, idx + 1), { id: newId, label: `${col.label} (copie)` }, ...s.columns.slice(idx + 1)],
       flowNodes: [...s.flowNodes, ...clones],
-    }
-  }),
+    })
+    if (get().viewMode === 'grid') get().reflow()
+  },
 
   removeColumn: (id) => {
     const s = get()
@@ -251,6 +250,7 @@ const useAppStore = create<AppState>((set, get) => ({
     const [flowEdges, removed] = pruneInvalidEdges(flowNodes, s.flowEdges)
     set({ columns, flowNodes, flowEdges })
     if (removed > 0) get().showToast({ kind: 'error', message: `${removed} lien(s) retiré(s) — Ctrl+Z pour annuler` })
+    if (get().viewMode === 'grid') get().reflow()
   },
 
   moveNodeTo: (nodeId, col, row) => {
@@ -278,7 +278,47 @@ const useAppStore = create<AppState>((set, get) => ({
     const [flowEdges, removed] = pruneInvalidEdges(flowNodes, s.flowEdges)
     set({ flowNodes, flowEdges })
     if (removed > 0) get().showToast({ kind: 'error', message: `${removed} lien(s) retiré(s) — Ctrl+Z pour annuler` })
+    if (get().viewMode === 'grid') get().reflow()
   },
+
+  reflow: () => set((s) => {
+    if (s.viewMode !== 'grid') return {}
+    // 1. Génère les colonnes nécessaires aux blocs (0..maxCol) — labels auto.
+    let maxCol = -1
+    for (const n of s.flowNodes) {
+      const c = colOf(n)
+      if (c > maxCol) maxCol = c
+    }
+    let columns = s.columns
+    let columnCounter = s.columnCounter
+    if (maxCol >= columns.length) {
+      const add: GridColumn[] = []
+      for (let i = columns.length; i <= maxCol; i++) {
+        add.push({ id: `c${Date.now()}_${i}`, label: String(columnCounter++) })
+      }
+      columns = [...columns, ...add]
+    }
+    // 2. Packing vertical : blocs empilés selon leur hauteur mesurée (les
+    //    colonnes épousent leur contenu).
+    const groups = new Map<number, Node[]>()
+    for (const n of s.flowNodes) {
+      const c = colOf(n)
+      const list = groups.get(c) ?? []
+      list.push(n)
+      groups.set(c, list)
+    }
+    const out: Node[] = []
+    for (const [c, list] of groups) {
+      const sorted = [...list].sort((a, b) => rowOf(a) - rowOf(b))
+      let y = HEADER_H + COL_PAD
+      for (const n of sorted) {
+        const h = (n.height as number | undefined) ?? FALLBACK_H
+        out.push({ ...n, position: { ...posFor(c, rowOf(n)), y } })
+        y += h + COL_PAD
+      }
+    }
+    return { flowNodes: out, columns, columnCounter }
+  }),
 
   setFlowNodes: (nodes) => set({ flowNodes: nodes }),
   setFlowEdges: (edges) => set({ flowEdges: edges }),
@@ -294,10 +334,14 @@ const useAppStore = create<AppState>((set, get) => ({
       ? { ...n, data: { ...(n.data as { fields?: Record<string, string> }), fields: { ...(n.data as { fields?: Record<string, string> })?.fields, [k]: v } } }
       : n),
   })),
-  removeFlowNode: (nodeId) => set((s) => ({
-    flowNodes: s.flowNodes.filter(n => n.id !== nodeId),
-    flowEdges: s.flowEdges.filter(e => e.source !== nodeId && e.target !== nodeId),
-  })),
+  removeFlowNode: (nodeId) => {
+    const s = get()
+    set({
+      flowNodes: s.flowNodes.filter(n => n.id !== nodeId),
+      flowEdges: s.flowEdges.filter(e => e.source !== nodeId && e.target !== nodeId),
+    })
+    if (get().viewMode === 'grid') get().reflow()
+  },
 
   setDrag: (drag) => set({ drag }),
   clearDrag: () => set({ drag: null }),
@@ -362,7 +406,7 @@ const useAppStore = create<AppState>((set, get) => ({
           },
         }
       })
-      savedFingerprint = fingerprintOf({ flowNodes, flowEdges: s.flowEdges, projectName: s.projectName })
+      savedFingerprint = fingerprintOf({ flowNodes, flowEdges: s.flowEdges, projectName: s.projectName, columns: s.columns })
     }
     return { catalog, category: catExists ? s.category : firstCat, flowNodes, savedFingerprint }
   }),
@@ -417,7 +461,8 @@ const useAppStore = create<AppState>((set, get) => ({
     return fingerprintOf(s) !== s.savedFingerprint
   },
 
-  loadPipeline: (nodes, edges, pipelineId, name, columns) => set((s) => {
+  loadPipeline: (nodes, edges, pipelineId, name, columns) => {
+    const s = get()
     // Construction directe des nodes flow depuis le JSON serveur. Sans
     // catalogue, les segs/inputs/outputs sont vides — le backfill setCatalog
     // les enrichit à l'arrivée du catalogue.
@@ -452,9 +497,10 @@ const useAppStore = create<AppState>((set, get) => ({
       const n = Number.parseInt(c.label, 10)
       return Number.isFinite(n) && n + 1 > m ? n + 1 : m
     }, 0)
-    // Si la vue grille est la préférence active, migre les positions à la volée.
-    const finalNodes = s.viewMode === 'grid' ? toGridNodes(flowNodes) : flowNodes
-    return {
+    // Si la vue grille est la préférence active, migre les positions à la volée
+    // (col = niveau topologique, row = rang) et génère les colonnes via reflow.
+    const finalNodes = s.viewMode === 'grid' ? migrateToGrid(flowNodes, flowEdges) : flowNodes
+    set({
       flowNodes: finalNodes,
       flowEdges,
       pipelineId,
@@ -462,11 +508,12 @@ const useAppStore = create<AppState>((set, get) => ({
       columns: cols,
       columnCounter: counter,
       selectedCol: null,
-      savedFingerprint: fingerprintOf({ flowNodes: finalNodes, flowEdges, projectName: name }),
+      savedFingerprint: fingerprintOf({ flowNodes: finalNodes, flowEdges, projectName: name, columns: cols }),
       undoStack: [],
       redoStack: [],
-    }
-  }),
+    })
+    if (s.viewMode === 'grid') get().reflow()
+  },
 
   savePipeline: async (name) => {
     const s = get()
@@ -478,7 +525,7 @@ const useAppStore = create<AppState>((set, get) => ({
     set({
       pipelineId: detail.id,
       projectName: detail.name,
-      savedFingerprint: fingerprintOf({ flowNodes: s.flowNodes, flowEdges: s.flowEdges, projectName: detail.name }),
+      savedFingerprint: fingerprintOf({ flowNodes: s.flowNodes, flowEdges: s.flowEdges, projectName: detail.name, columns: s.columns }),
     })
   },
 
