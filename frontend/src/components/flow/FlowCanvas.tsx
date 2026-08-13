@@ -95,7 +95,11 @@ function FlowCanvasInner() {
         draggable: false,
         selectable: false,
         focusable: false,
-        style: { zIndex: -1, width: COL_W - 2 * COL_PAD, height },
+        // PAS de zIndex négatif : il peint les colonnes SOUS le pane de
+        // ReactFlow (z-index 1) — les clics (dropdown, renommage, sélection)
+        // atterrissaient sur le pan. L'ordre DOM (colonnes puis blocs) garde
+        // les blocs au-dessus.
+        style: { width: COL_W - 2 * COL_PAD, height },
       }
     })
   }, [viewMode, columns, flowNodes])
