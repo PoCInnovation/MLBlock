@@ -67,8 +67,6 @@ function FlowCanvasInner() {
   const showToast = useAppStore(s => s.showToast)
   const viewMode = useAppStore(s => s.viewMode)
   const columns = useAppStore(s => s.columns)
-  const selectedCol = useAppStore(s => s.selectedCol)
-  const setSelectedCol = useAppStore(s => s.setSelectedCol)
   const moveNodeTo = useAppStore(s => s.moveNodeTo)
   const addColumn = useAppStore(s => s.addColumn)
 
@@ -231,10 +229,8 @@ function FlowCanvasInner() {
       if (viewMode === 'grid') {
         // Dépôt dans la colonne sélectionnée (sinon celle sous la souris),
         // en fin de pile.
-        const col = selectedCol
-          ? columns.findIndex(c => c.id === selectedCol)
-          : Math.round((position.x - (COL_W - BLOCK_W) / 2) / COL_W)
-        const colIdx = Math.max(0, col)
+        // Le bloc va dans la colonne sous la souris (plus de sélection préalable).
+        const colIdx = Math.max(0, Math.round((position.x - (COL_W - BLOCK_W) / 2) / COL_W))
         position = posFor(colIdx, maxRowInCol(flowNodes, colIdx) + 1)
       }
       const def = catalog.blocks[type]
@@ -263,7 +259,7 @@ function FlowCanvasInner() {
       // on an empty canvas (fitView scale ~0.1) yields enormous flow coords
       setTimeout(() => fitView(viewMode === 'grid' ? { padding: 0.2, duration: 300, maxZoom: 1 } : { padding: 0.2, duration: 300 }), 50)
     },
-    [catalog, screenToFlowPosition, addFlowNode, fitView, viewMode, selectedCol, columns, flowNodes]
+    [catalog, screenToFlowPosition, addFlowNode, fitView, viewMode, columns, flowNodes]
   )
 
   // Vue grille : snap à la fin du geste (1 commit par geste, uniquement si la

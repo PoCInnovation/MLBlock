@@ -59,14 +59,12 @@ type AppState = {
   redoStack: UndoSnapshot[]
 
   viewMode: 'free' | 'grid'
-  selectedCol: string | null
   columns: GridColumn[]
   columnCounter: number
 
   setUser: (user: unknown | null) => void
   setCategory: (id: string) => void
   setViewMode: (mode: 'free' | 'grid') => void
-  setSelectedCol: (id: string | null) => void
   addColumn: () => void
   renameColumn: (id: string, label: string) => void
   duplicateColumn: (id: string) => void
@@ -165,7 +163,6 @@ const useAppStore = create<AppState>((set, get) => ({
   undoStack: [],
   redoStack: [],
   viewMode: (typeof localStorage !== 'undefined' && localStorage.getItem('mlb-view-mode') === 'grid') ? 'grid' : 'free',
-  selectedCol: null,
   columns: [],
   columnCounter: 0,
 
@@ -190,7 +187,6 @@ const useAppStore = create<AppState>((set, get) => ({
     }
     set({ viewMode: mode })
   },
-  setSelectedCol: (id) => set({ selectedCol: id }),
 
   addColumn: () => set((s) => ({
     columns: [...s.columns, { id: `c${Date.now()}`, label: String(s.columnCounter) }],
@@ -237,7 +233,7 @@ const useAppStore = create<AppState>((set, get) => ({
       if (c <= idx) return n
       return { ...n, position: posFor(c - 1, rowOf(n)) }
     })
-    set({ columns, flowNodes, selectedCol: s.selectedCol === id ? null : s.selectedCol })
+    set({ columns, flowNodes })
     return true
   },
 
@@ -403,7 +399,7 @@ const useAppStore = create<AppState>((set, get) => ({
 
   failRun: () => set((s) => ({ running: false, runningId: null })),
 
-  clearAll: () => set({ flowNodes: [], flowEdges: [], consoleLines: [], result: null, running: false, runningId: null, lastJobId: null, jobStatus: null, results: [], columns: [], selectedCol: null, columnCounter: 0 }),
+  clearAll: () => set({ flowNodes: [], flowEdges: [], consoleLines: [], result: null, running: false, runningId: null, lastJobId: null, jobStatus: null, results: [], columns: [], columnCounter: 0 }),
 
   setCatalog: (catalog) => set((s) => {
     const firstCat = catalog.categories[0]?.id ?? 'data'
@@ -538,8 +534,7 @@ const useAppStore = create<AppState>((set, get) => ({
       projectName: name,
       columns: cols,
       columnCounter: counter,
-      selectedCol: null,
-      savedFingerprint: fingerprintOf({ flowNodes: finalNodes, flowEdges, projectName: name, columns: cols }),
+          savedFingerprint: fingerprintOf({ flowNodes: finalNodes, flowEdges, projectName: name, columns: cols }),
       undoStack: [],
       redoStack: [],
     })

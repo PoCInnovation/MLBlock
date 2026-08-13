@@ -27,8 +27,6 @@ type ColumnNodeData = {
 function ColumnNode({ data, id }: NodeProps<ColumnNodeData>) {
   const columns = useAppStore(s => s.columns)
   const flowNodes = useAppStore(s => s.flowNodes)
-  const selectedCol = useAppStore(s => s.selectedCol)
-  const setSelectedCol = useAppStore(s => s.setSelectedCol)
   const renameColumn = useAppStore(s => s.renameColumn)
   const duplicateColumn = useAppStore(s => s.duplicateColumn)
   const removeColumn = useAppStore(s => s.removeColumn)
@@ -39,7 +37,6 @@ function ColumnNode({ data, id }: NodeProps<ColumnNodeData>) {
   const [draftLabel, setDraftLabel] = useState('')
   const [moveOpen, setMoveOpen] = useState(false)
 
-  const selected = selectedCol === id
   const blockCount = flowNodes.filter(n => colOf(n) === data.index).length
   const colBlocks = flowNodes
     .filter(n => colOf(n) === data.index)
@@ -69,18 +66,15 @@ function ColumnNode({ data, id }: NodeProps<ColumnNodeData>) {
     <Card
       size="sm"
       className="nodrag"
-      onClick={() => setSelectedCol(selected ? null : id)}
-      title={selected ? 'Colonne cible du dépôt' : 'Sélectionner comme colonne cible'}
       style={{
         width: '100%',
         height: '100%',
         // ReactFlow met pointer-events:none sur les nœuds non interactifs —
-        // sans 'all', le dropdown/renommage/sélection ne reçoivent aucun clic.
+        // sans 'all', le dropdown/renommage ne reçoivent aucun clic.
         pointerEvents: 'all',
-        cursor: 'pointer',
-        background: selected ? 'rgba(217,119,87,.07)' : theme.color.surface3,
-        border: `2px solid ${selected ? 'rgba(217,119,87,.65)' : theme.color.border}`,
-        boxShadow: selected ? `0 0 0 3px rgba(217,119,87,.22), ${theme.shadow.block}` : theme.shadow.block,
+        background: theme.color.surface3,
+        border: `2px solid ${theme.color.border}`,
+        boxShadow: theme.shadow.block,
       }}
     >
       {/* CardHeader : titre (renommable) + actions */}
@@ -92,7 +86,7 @@ function ColumnNode({ data, id }: NodeProps<ColumnNodeData>) {
           minHeight: HEADER_H,
           alignItems: 'center',
           gap: 8,
-          background: selected ? 'rgba(217,119,87,.16)' : theme.color.surface2,
+          background: theme.color.surface2,
           borderBottom: `2px solid ${theme.color.border}`,
         }}
       >
