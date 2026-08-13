@@ -130,3 +130,7 @@ input, select, button { font-family: inherit; }
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Vue grille : les liens passent AU-DESSUS des cartes de colonnes (sous les
+   blocs, zIndex 1) — le routage par couloirs les rend visibles. */
+.grid-mode .react-flow__edges { z-index: 1; }

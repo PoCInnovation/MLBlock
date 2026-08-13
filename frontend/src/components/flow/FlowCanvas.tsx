@@ -18,6 +18,7 @@ import useAppStore from '../../store/useAppStore'
 import { theme } from '../../theme'
 import BlockNode from './BlockNode'
 import ColumnNode from './ColumnNode'
+import FlowLink from './FlowLink'
 import FlowPalette from './FlowPalette'
 import ConsolePanel from '../ui/ConsolePanel'
 import { segsToFields } from '../../utils/flowConversion'
@@ -26,6 +27,7 @@ import { COL_W, COL_PAD, BLOCK_W, HEADER_H, colHeight, colOf, isEdgeValid, maxRo
 import type { InternalCatalog, Port } from '../../types/catalog'
 
 const nodeTypes = { block: BlockNode, column: ColumnNode }
+const edgeTypes = { flow: FlowLink }
 
 const reactFlowStyle: React.CSSProperties = {
   background: theme.color.canvas,
@@ -97,7 +99,7 @@ function FlowCanvasInner() {
         // ReactFlow (z-index 1) — les clics (dropdown, renommage, sélection)
         // atterrissaient sur le pan. L'ordre DOM (colonnes puis blocs) garde
         // les blocs au-dessus.
-        style: { width: COL_W - 2 * COL_PAD, height },
+        style: { width: COL_W - 2 * COL_PAD, height, zIndex: 0 },
       }
     })
   }, [viewMode, columns, flowNodes])
@@ -280,12 +282,13 @@ function FlowCanvasInner() {
   const renderEdges = useMemo(
     () => flowEdges.map(e => {
       const base = edgeStyleFor(e, flowNodes, graph)
+      const withType = { ...e, type: 'flow' as const }
       if (viewMode === 'grid' && !isEdgeValid(e, flowNodes)) {
         // Liens hérités qui violent la règle gauche→droite : signalés sans
         // bloquer (l'exécution reste possible, le topo sort s'en charge).
-        return { ...e, style: { ...base, stroke: theme.color.warning, strokeDasharray: '8 4' } }
+        return { ...withType, style: { ...base, stroke: theme.color.warning, strokeDasharray: '8 4' } }
       }
-      return { ...e, style: base }
+      return { ...withType, style: base }
     }),
     [flowEdges, flowNodes, graph, viewMode]
   )
@@ -295,7 +298,7 @@ function FlowCanvasInner() {
       <FlowPalette onDragStart={onDragStart} />
       <div ref={wrapperRef} style={{ flex: 1, height: '100%' }}>
         <ReactFlow
-          nodes={viewMode === 'grid' ? [...columnNodes, ...flowNodes] : flowNodes}
+          nodes={viewMode === 'grid' ? [...columnNodes, ...flowNodes.map(n => ({ ...n, style: { ...n.style, zIndex: 1 } }))] : flowNodes}
           edges={renderEdges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
@@ -304,6 +307,8 @@ function FlowCanvasInner() {
           onDragOver={onDragOver}
           onDrop={onDrop}
           nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
+          className={viewMode === 'grid' ? 'grid-mode' : undefined}
           style={reactFlowStyle}
           fitView
           fitViewOptions={viewMode === 'grid' ? { maxZoom: 1 } : undefined}
