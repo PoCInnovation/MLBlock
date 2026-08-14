@@ -1,20 +1,4 @@
-import type { CSSProperties, ReactNode } from 'react'
-import { theme } from '../../theme'
-
-const labelStyle: CSSProperties = {
-  display: 'block',
-  marginBottom: 6,
-  fontSize: 13,
-  fontWeight: 700,
-  color: theme.color.textMuted,
-}
-
-const errorStyle: CSSProperties = {
-  color: theme.color.error,
-  fontSize: 12,
-  marginTop: -12,
-  marginBottom: 12,
-}
+import type { ReactNode } from 'react'
 
 export function Field({ dataInvalid, children }: { dataInvalid?: boolean; children: ReactNode }) {
   return <div data-invalid={dataInvalid}>{children}</div>
@@ -22,7 +6,7 @@ export function Field({ dataInvalid, children }: { dataInvalid?: boolean; childr
 
 export function FieldLabel({ htmlFor, children }: { htmlFor?: string; children: ReactNode }) {
   return (
-    <label htmlFor={htmlFor} style={labelStyle}>
+    <label htmlFor={htmlFor} className="block mb-1.5 text-[13px] font-bold text-text-muted">
       {children}
     </label>
   )
@@ -32,7 +16,7 @@ export function FieldError({ errors }: { errors?: Array<{ message?: string } | u
   const message = errors?.[0]?.message
   if (!message) return null
   return (
-    <div role="alert" style={errorStyle}>
+    <div role="alert" className="text-error text-xs -mt-3 mb-3">
       {message}
     </div>
   )

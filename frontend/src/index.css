@@ -1,14 +1,77 @@
-* { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; }
-body {
-  font-family: 'Nunito', system-ui, sans-serif;
-  background: #171311;
-  color: #f0e9e3;
-  -webkit-font-smoothing: antialiased;
-}
-input, select, button { font-family: inherit; }
+@import "tailwindcss";
 
-:focus-visible { outline: 2px solid #6366F1; outline-offset: 2px; }
+/* Tokens du design system (src/theme.ts) exposés en variables CSS.
+   Génère les classes utilitaires (bg-surface2, text-text-muted…) et
+   reste accessible via var(--color-*) pour les styles dynamiques. */
+@theme {
+  --color-bg: #171311;
+  --color-surface: #1f1916;
+  --color-surface2: #221c19;
+  --color-surface3: #251e1a;
+  --color-surface4: #1e1c19;
+  --color-canvas: #1b1613;
+  --color-console: #120f0d;
+  --color-accent: #D97757;
+  --color-accent-light: #E8915F;
+  --color-text: #f0e9e3;
+  --color-text-light: #e8e0d8;
+  --color-text-muted: #b7ada3;
+  --color-text-dim: #8a8178;
+  --color-text-input: #2a211c;
+  --color-input-bg: #2a2724;
+  --color-status: #66C7B0;
+  --color-rail: #1c1714;
+  --color-error: #ef4444;
+  --color-error-light: #fca5a5;
+  --color-success: #22c55e;
+  --color-success-muted: #8fd1a8;
+  --color-warning: #E8C77A;
+  --color-convert: #F59E0B;
+  --color-info: #9aa0c4;
+  --color-auth: #6366F1;
+  --color-file: #c7d2fe;
+  --color-file-meta: #818cf8;
+  --color-file-btn: #a5b4fc;
+  --color-border: #3a3531;
+  --color-divider: #6b6560;
+
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
+  --spacing-xl: 24px;
+  --spacing-xxl: 48px;
+
+  --radius-sm: 7px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-xxl: 24px;
+
+  --font-heading: 'Fredoka', sans-serif;
+  --font-body: 'Nunito', system-ui, sans-serif;
+  --font-mono: ui-monospace, monospace;
+
+  --shadow-block: 0 2px 0 rgba(0,0,0,.18);
+  --shadow-btn: 0 3px 0 rgba(0,0,0,.25);
+  --shadow-btn-heavy: 0 4px 0 rgba(0,0,0,.25);
+}
+
+@layer base {
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Nunito', system-ui, sans-serif;
+    background: #171311;
+    color: #f0e9e3;
+    -webkit-font-smoothing: antialiased;
+  }
+  input, select, button { font-family: inherit; }
+
+  :focus-visible { outline: 2px solid #6366F1; outline-offset: 2px; }
+}
+
+@layer components {
 
 @keyframes mlbGlow {
   0%, 100% { box-shadow: 0 2px 0 rgba(0,0,0,.18), 0 0 0 0 rgba(255,255,255,0); }
@@ -130,10 +193,13 @@ input, select, button { font-family: inherit; }
     transition-duration: 0.01ms !important;
   }
 }
+}
 
 /* Vue grille : les liens passent AU-DESSUS de tout (cartes ET blocs) pour
    etre visibles jusqu'au handle ; pointer-events none pour ne pas casser
-   le drag des blocs et le connect. */
+   le drag des blocs et le connect.
+   NB : ces overrides ReactFlow restent HORS layers — ils dépendent de la
+   cascade du CSS ReactFlow (non-layé), un layer les ferait perdre. */
 .grid-mode .react-flow__edges {
   /* z-index sur un <g> SVG : ignoré sans position — le câble passe
      au-dessus des blocs ET des colonnes. */
@@ -156,4 +222,4 @@ input, select, button { font-family: inherit; }
 
 /* Bloc : seul la poignée du header draggue (dragHandle) — curseur
    par défaut partout ailleurs. */
-.react-flow__node-block { cursor: default; }
+.react-flow__node-block { cursor: default !important; }

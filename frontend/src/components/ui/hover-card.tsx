@@ -1,8 +1,7 @@
 import { PreviewCard } from '@base-ui/react/preview-card'
-import { theme } from '../../theme'
 
 /**
- * HoverCard (portage shadcn/ui — style base-nova, sans Tailwind).
+ * HoverCard (portage shadcn/ui — style base-nova).
  * Composition : HoverCard > HoverCardTrigger + HoverCardContent.
  */
 export const HoverCard = PreviewCard.Root
@@ -14,6 +13,7 @@ export function HoverCardContent({
   align = 'center',
   alignOffset = 4,
   style,
+  className,
   ...props
 }: React.ComponentProps<typeof PreviewCard.Popup> & {
   align?: 'start' | 'center' | 'end'
@@ -26,19 +26,8 @@ export function HoverCardContent({
       <PreviewCard.Positioner align={align} alignOffset={alignOffset} side={side} sideOffset={sideOffset}>
         <PreviewCard.Popup
           data-slot="hover-card-content"
-          style={{
-            background: theme.color.surface2,
-            border: `1px solid ${theme.color.border}`,
-            borderRadius: theme.radius.md,
-            boxShadow: '0 14px 36px rgba(0,0,0,.5)',
-            padding: 12,
-            minWidth: 200,
-            fontSize: 13,
-            color: theme.color.text,
-            outline: 'none',
-            zIndex: 200,
-            ...style,
-          }}
+          className={`bg-surface2 border border-border rounded-md shadow-[0_14px_36px_rgba(0,0,0,.5)] p-md min-w-[200px] text-[13px] text-text outline-none z-[200] ${className ?? ''}`}
+          style={style}
           {...props}
         />
       </PreviewCard.Positioner>

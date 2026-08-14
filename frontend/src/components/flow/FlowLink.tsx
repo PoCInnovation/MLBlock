@@ -94,11 +94,9 @@ function FlowLink({ id, source, target, sourceX, sourceY, targetX, targetY, styl
       </defs>
       <path
         d={d}
-        fill="none"
-        strokeWidth={2.5}
+        className="react-flow__edge-path fill-none stroke-[2.5]"
         style={style}
         markerEnd={`url(#${markerId})`}
-        className="react-flow__edge-path"
       />
     </g>
   )

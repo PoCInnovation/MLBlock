@@ -5,22 +5,21 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { signInWithEmail, signInWithMagicLink, signInWithGoogle, signInWithMicrosoft } from '../services/auth'
 import SiteLayout from '../components/landing/SiteLayout'
 import { Field, FieldError, FieldLabel } from '../components/ui/field'
-import { theme } from '../theme'
 import { loginSchema, type LoginInput } from '../schemas/auth'
 import { mapSupabaseError } from '../schemas/errors'
 
-const s: Record<string, React.CSSProperties> = {
-  wrapper: { display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh', padding: '40px 20px' },
-  card: { background: theme.color.surface4, borderRadius: theme.radius.md, padding: 40, width: '100%', maxWidth: 400 },
-  title: { fontSize: 24, fontWeight: 700, marginBottom: 24, textAlign: 'center', color: theme.color.text },
-  input: { width: '100%', padding: '10px 14px', marginBottom: 16, borderRadius: 8, border: `1px solid ${theme.color.border}`, background: theme.color.inputBg, color: theme.color.text, fontSize: 14 },
-  btn: { width: '100%', padding: '10px 14px', borderRadius: 8, border: 'none', fontSize: 14, fontWeight: 600, cursor: 'pointer', marginBottom: 12 },
-  primaryBtn: { background: theme.color.auth, color: '#fff' },
-  secondaryBtn: { background: theme.color.border, color: theme.color.text },
-  divider: { display: 'flex', alignItems: 'center', gap: 12, margin: '16px 0', color: theme.color.divider, fontSize: 13 },
-  line: { flex: 1, height: 1, background: theme.color.border },
-  error: { color: theme.color.error, fontSize: 13, marginBottom: 12, textAlign: 'center' },
-  link: { color: theme.color.auth, cursor: 'pointer', textAlign: 'center', marginTop: 12, fontSize: 14 },
+const s: Record<string, string> = {
+  wrapper: 'flex items-center justify-center min-h-[60vh] px-5 py-10',
+  card: 'bg-surface4 rounded-md p-10 w-full max-w-[400px]',
+  title: 'text-2xl font-bold mb-6 text-center text-text',
+  input: 'w-full px-3.5 py-2.5 mb-4 rounded-[8px] border border-border bg-input-bg text-text text-sm',
+  btn: 'w-full px-3.5 py-2.5 rounded-[8px] border-none text-sm font-semibold cursor-pointer mb-3',
+  primaryBtn: 'bg-auth text-white',
+  secondaryBtn: 'bg-border text-text',
+  divider: 'flex items-center gap-3 my-4 text-divider text-[13px]',
+  line: 'flex-1 h-px bg-border',
+  error: 'text-error text-[13px] mb-3 text-center',
+  link: 'text-auth cursor-pointer text-center mt-3 text-sm',
 }
 
 export default function LoginPage() {
@@ -92,12 +91,12 @@ export default function LoginPage() {
 
   return (
     <SiteLayout>
-      <div style={s.wrapper}>
-        <div style={s.card}>
-          <div style={s.title}>Connexion</div>
-          {error && <div style={s.error}>{error}</div>}
+      <div className={s.wrapper}>
+        <div className={s.card}>
+          <div className={s.title}>Connexion</div>
+          {error && <div className={s.error}>{error}</div>}
           {magicSent ? (
-            <div style={{ ...s.title, fontSize: 16, color: theme.color.textMuted }}>
+            <div className="text-base font-bold mb-6 text-center text-text-muted">
               Un lien magique t'a été envoyé par email.
             </div>
           ) : (
@@ -115,7 +114,8 @@ export default function LoginPage() {
                       autoComplete="email"
                       placeholder="exemple@mail.com"
                       aria-invalid={fieldState.invalid}
-                      style={{ ...s.input, borderColor: fieldState.invalid ? theme.color.error : undefined }}
+                      className={s.input}
+                      style={{ borderColor: fieldState.invalid ? 'var(--color-error)' : undefined }}
                     />
                     {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                   </Field>
@@ -134,22 +134,23 @@ export default function LoginPage() {
                       autoComplete="current-password"
                       placeholder="••••••"
                       aria-invalid={fieldState.invalid}
-                      style={{ ...s.input, borderColor: fieldState.invalid ? theme.color.error : undefined }}
+                      className={s.input}
+                      style={{ borderColor: fieldState.invalid ? 'var(--color-error)' : undefined }}
                     />
                     {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                   </Field>
                 )}
               />
-              <button type="submit" disabled={loading} style={{ ...s.btn, ...s.primaryBtn, opacity: loading ? 0.6 : 1 }}>{loading ? 'Connexion…' : 'Se connecter'}</button>
-              <div style={s.divider}>
-                <div style={s.line} /><span>ou</span><div style={s.line} />
+              <button type="submit" disabled={loading} className={`${s.btn} ${s.primaryBtn}`} style={{ opacity: loading ? 0.6 : 1 }}>{loading ? 'Connexion…' : 'Se connecter'}</button>
+              <div className={s.divider}>
+                <div className={s.line} /><span>ou</span><div className={s.line} />
               </div>
-              <button type="button" disabled={loading} style={{ ...s.btn, ...s.secondaryBtn, opacity: loading ? 0.6 : 1 }} onClick={handleMagicLink}>Envoyer un lien magique</button>
-              <button type="button" disabled={loading} style={{ ...s.btn, ...s.secondaryBtn, opacity: loading ? 0.6 : 1 }} onClick={handleGoogle}>Continuer avec Google</button>
-              <button type="button" disabled={loading} style={{ ...s.btn, ...s.secondaryBtn, opacity: loading ? 0.6 : 1 }} onClick={handleMicrosoft}>Continuer avec Microsoft</button>
+              <button type="button" disabled={loading} className={`${s.btn} ${s.secondaryBtn}`} style={{ opacity: loading ? 0.6 : 1 }} onClick={handleMagicLink}>Envoyer un lien magique</button>
+              <button type="button" disabled={loading} className={`${s.btn} ${s.secondaryBtn}`} style={{ opacity: loading ? 0.6 : 1 }} onClick={handleGoogle}>Continuer avec Google</button>
+              <button type="button" disabled={loading} className={`${s.btn} ${s.secondaryBtn}`} style={{ opacity: loading ? 0.6 : 1 }} onClick={handleMicrosoft}>Continuer avec Microsoft</button>
             </form>
           )}
-          <button style={{ ...s.link, background: 'none', border: 'none' }} onClick={() => navigate('/register')}>Pas encore de compte ? S'inscrire</button>
+          <button className={`${s.link} bg-none border-none`} onClick={() => navigate('/register')}>Pas encore de compte ? S'inscrire</button>
         </div>
       </div>
     </SiteLayout>

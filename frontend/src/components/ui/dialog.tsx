@@ -1,31 +1,14 @@
 import { Dialog as BaseDialog } from '@base-ui/react/dialog'
 import type { ReactNode } from 'react'
-import { theme } from '../../theme'
 
 /** Dialog accessible (Base UI) stylé avec les tokens du thème. */
 export function Dialog({ open, onOpenChange, children }: { open: boolean; onOpenChange: (open: boolean) => void; children: ReactNode }) {
   return (
     <BaseDialog.Root open={open} onOpenChange={onOpenChange}>
       <BaseDialog.Portal>
-        <BaseDialog.Backdrop
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)', zIndex: 150 }}
-        />
+        <BaseDialog.Backdrop className="fixed inset-0 bg-black/55 z-[150]" />
         <BaseDialog.Popup
-          style={{
-            position: 'fixed',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            background: theme.color.surface2,
-            border: `1px solid ${theme.color.border}`,
-            borderRadius: theme.radius.lg,
-            boxShadow: '0 20px 60px rgba(0,0,0,.55)',
-            padding: 26,
-            width: 400,
-            maxWidth: 'calc(100vw - 32px)',
-            outline: 'none',
-            zIndex: 160,
-          }}
+          className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface2 border border-border rounded-lg shadow-[0_20px_60px_rgba(0,0,0,.55)] p-[26px] w-[400px] max-w-[calc(100vw_-_32px)] outline-none z-[160]"
         >
           {children}
         </BaseDialog.Popup>
@@ -36,7 +19,7 @@ export function Dialog({ open, onOpenChange, children }: { open: boolean; onOpen
 
 export function DialogTitle({ children }: { children: ReactNode }) {
   return (
-    <BaseDialog.Title style={{ fontSize: 17, fontWeight: 800, margin: 0 }}>
+    <BaseDialog.Title className="text-[17px] font-extrabold m-0">
       {children}
     </BaseDialog.Title>
   )
@@ -44,12 +27,12 @@ export function DialogTitle({ children }: { children: ReactNode }) {
 
 export function DialogDescription({ children }: { children: ReactNode }) {
   return (
-    <BaseDialog.Description style={{ color: theme.color.textMuted, fontSize: 13.5, fontWeight: 600, lineHeight: 1.55, margin: '10px 0 20px' }}>
+    <BaseDialog.Description className="text-text-muted text-[13.5px] font-semibold leading-[1.55] mt-[10px] mb-5">
       {children}
     </BaseDialog.Description>
   )
 }
 
 export function DialogFooter({ children }: { children: ReactNode }) {
-  return <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', flexWrap: 'wrap' }}>{children}</div>
+  return <div className="flex gap-2.5 justify-end flex-wrap">{children}</div>
 }

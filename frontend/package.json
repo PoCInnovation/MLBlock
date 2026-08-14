@@ -13,6 +13,7 @@
     "@hookform/resolvers": "^5.7.1",
     "@radix-ui/react-separator": "^1.1.15",
     "@supabase/supabase-js": "^2.111.0",
+    "@tailwindcss/vite": "^4.3.3",
     "axios": "^1.7.2",
     "lucide-react": "^1.30.0",
     "react": "^18.3.1",
@@ -20,6 +21,7 @@
     "react-hook-form": "^7.84.0",
     "react-router-dom": "^7.18.2",
     "reactflow": "^11.11.4",
+    "tailwindcss": "^4.3.3",
     "zod": "^4.4.3",
     "zustand": "^4.5.4"
   },

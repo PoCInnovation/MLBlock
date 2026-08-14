@@ -2,7 +2,6 @@ import { memo, useState } from 'react'
 import type { NodeProps } from 'reactflow'
 import { Copy, MoreVertical, MoveRight, Trash2, Pencil } from 'lucide-react'
 import useAppStore from '../../store/useAppStore'
-import { theme } from '../../theme'
 import { COL_PAD, HEADER_H, colOf, rowOf } from '../../utils/gridLayout'
 import { Card, CardHeader, CardTitle, CardAction, CardContent, CardFooter } from '../ui/card'
 import { HoverCard, HoverCardTrigger, HoverCardContent } from '../ui/hover-card'
@@ -63,32 +62,17 @@ function ColumnNode({ data, id }: NodeProps<ColumnNodeData>) {
     .filter(c => c.id !== id)
 
   return (
+    // ReactFlow met pointer-events:none sur les nœuds non interactifs — sans
+    // pointer-events-auto, le dropdown/renommage ne reçoivent aucun clic.
     <Card
       size="sm"
-      className="nodrag"
-      style={{
-        width: '100%',
-        height: '100%',
-        // ReactFlow met pointer-events:none sur les nœuds non interactifs —
-        // sans 'all', le dropdown/renommage ne reçoivent aucun clic.
-        pointerEvents: 'all',
-        background: theme.color.surface3,
-        border: `2px solid ${theme.color.border}`,
-        boxShadow: theme.shadow.block,
-      }}
+      className="nodrag w-full h-full bg-surface3 border-2! border-border shadow-block pointer-events-auto"
     >
       {/* CardHeader : titre (renommable) + actions */}
       <CardHeader
         onClick={e => e.stopPropagation()}
-        style={{
-          margin: '0 -12px',
-          padding: '10px 12px',
-          minHeight: HEADER_H,
-          alignItems: 'center',
-          gap: 8,
-          background: theme.color.surface2,
-          borderBottom: `2px solid ${theme.color.border}`,
-        }}
+        className="-mx-3 items-center! gap-2! bg-surface2 border-b-2 border-border px-3! py-2.5!"
+        style={{ minHeight: HEADER_H }}
       >
         {editing ? (
           <input
@@ -100,17 +84,7 @@ function ColumnNode({ data, id }: NodeProps<ColumnNodeData>) {
               if (e.key === 'Enter') commitLabel()
               if (e.key === 'Escape') setEditing(false)
             }}
-            style={{
-              minWidth: 0,
-              background: theme.color.inputBg,
-              border: `1px solid ${theme.color.auth}`,
-              borderRadius: theme.radius.sm,
-              outline: 'none',
-              color: theme.color.text,
-              fontWeight: 800,
-              fontSize: 12.5,
-              padding: '3px 6px',
-            }}
+            className="min-w-0 bg-input-bg border border-auth rounded-sm outline-none! text-text font-extrabold text-[12.5px] px-1.5 py-[3px]"
           />
         ) : (
           <HoverCard>
@@ -119,46 +93,25 @@ function ColumnNode({ data, id }: NodeProps<ColumnNodeData>) {
                 <CardTitle
                   onClick={() => { setDraftLabel(data.column.label); setEditing(true) }}
                   title="Cliquer pour renommer"
-                  style={{
-                    minWidth: 0,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                    cursor: 'text',
-                    borderBottom: '1px dashed rgba(255,255,255,.22)',
-                    padding: '2px 0',
-                  }}
+                  className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap cursor-text border-b border-dashed border-white/[.22] py-0.5"
                 >
                   {data.column.label}
                 </CardTitle>
               }
             />
             <HoverCardContent>
-              <div style={{ fontWeight: 800, fontSize: 13, marginBottom: 2 }}>{data.column.label}</div>
-              <div style={{ fontSize: 12, color: theme.color.textMuted, marginBottom: colBlocks.length ? 8 : 0 }}>
+              <div className="font-extrabold text-[13px] mb-0.5">{data.column.label}</div>
+              <div className="text-xs text-text-muted" style={{ marginBottom: colBlocks.length ? 8 : 0 }}>
                 {blockCount} bloc{blockCount > 1 ? 's' : ''}
               </div>
               {colBlocks.map(n => (
                 <div
                   key={n.id}
-                  style={{
-                    fontSize: 12,
-                    color: theme.color.textLight,
-                    padding: '4px 0',
-                    borderTop: `1px solid ${theme.color.border}`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 7,
-                  }}
+                  className="text-xs text-text-light py-1 border-t border-border flex items-center gap-[7px]"
                 >
                   <span
-                    style={{
-                      width: 6,
-                      height: 6,
-                      borderRadius: '50%',
-                      background: (n.data as { categoryColor?: string } | undefined)?.categoryColor ?? theme.color.accent,
-                      flexShrink: 0,
-                    }}
+                    className="w-1.5 h-1.5 rounded-full flex-none"
+                    style={{ background: (n.data as { categoryColor?: string } | undefined)?.categoryColor ?? 'var(--color-accent)' }}
                   />
                   {(n.data as { label?: string } | undefined)?.label ?? n.id}
                 </div>
@@ -177,20 +130,7 @@ function ColumnNode({ data, id }: NodeProps<ColumnNodeData>) {
                   // click quand un pointerdown a précédé : on contrôle le menu
                   // nous-mêmes (open) et on bascule au click natif.
                   onClick={e => { e.stopPropagation(); setMoveOpen(o => !o) }}
-                  style={{
-                    border: 'none',
-                    background: 'rgba(255,255,255,.07)',
-                    borderRadius: theme.radius.sm,
-                    color: theme.color.textMuted,
-                    width: 24,
-                    height: 24,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    flexShrink: 0,
-                    padding: 0,
-                  }}
+                  className="border-none bg-white/[.07] rounded-sm text-text-muted w-6 h-6 flex items-center justify-center cursor-pointer flex-none p-0"
                 >
                   <MoreVertical size={14} />
                 </button>
@@ -210,7 +150,7 @@ function ColumnNode({ data, id }: NodeProps<ColumnNodeData>) {
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent>
                   {otherColumns.length === 0 && (
-                    <div style={{ padding: '8px 12px', fontSize: 12.5, color: theme.color.textDim }}>
+                    <div className="px-3 py-2 text-[12.5px] text-text-dim">
                       Aucune autre colonne
                     </div>
                   )}
@@ -234,7 +174,7 @@ function ColumnNode({ data, id }: NodeProps<ColumnNodeData>) {
       {/* CardFooter : compteur de blocs */}
       <CardFooter
         onClick={e => e.stopPropagation()}
-        style={{ margin: '0 -12px', padding: '6px 12px', letterSpacing: '.03em' }}
+        className="-mx-3! px-3! py-1.5! tracking-[.03em]"
       >
         {blockCount} bloc{blockCount > 1 ? 's' : ''}
       </CardFooter>

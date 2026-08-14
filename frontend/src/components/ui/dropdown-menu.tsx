@@ -1,10 +1,9 @@
 import { Menu } from '@base-ui/react/menu'
 import type { ReactNode } from 'react'
 import { Check, ChevronRight } from 'lucide-react'
-import { theme } from '../../theme'
 
 /**
- * DropdownMenu (portage shadcn/ui — style base-nova, sans Tailwind).
+ * DropdownMenu (portage shadcn/ui — style base-nova).
  * Composition : Root > Trigger + Content (Group > Label/Item/Checkbox/Radio,
  * Sub > SubTrigger + SubContent, Separator, Shortcut).
  */
@@ -13,16 +12,8 @@ export const DropdownMenuPortal = Menu.Portal
 export const DropdownMenuTrigger = Menu.Trigger
 export const DropdownMenuGroup = Menu.Group
 
-const contentBase: React.CSSProperties = {
-  background: theme.color.surface2,
-  border: `1px solid ${theme.color.border}`,
-  borderRadius: theme.radius.md,
-  boxShadow: '0 14px 36px rgba(0,0,0,.5)',
-  padding: 6,
-  minWidth: 210,
-  outline: 'none',
-  zIndex: 200,
-}
+const contentBase =
+  'bg-surface2 border border-border rounded-md shadow-[0_14px_36px_rgba(0,0,0,.5)] p-1.5 min-w-[210px] outline-none z-[200]'
 
 export function DropdownMenuContent({
   align = 'start',
@@ -30,6 +21,7 @@ export function DropdownMenuContent({
   side = 'bottom',
   sideOffset = 6,
   style,
+  className,
   ...props
 }: React.ComponentProps<typeof Menu.Popup> & {
   align?: 'start' | 'center' | 'end'
@@ -40,7 +32,7 @@ export function DropdownMenuContent({
   return (
     <Menu.Portal>
       <Menu.Positioner align={align} alignOffset={alignOffset} side={side} sideOffset={sideOffset}>
-        <Menu.Popup style={{ ...contentBase, ...style }} {...props} />
+        <Menu.Popup className={`${contentBase} ${className ?? ''}`} style={style} {...props} />
       </Menu.Positioner>
     </Menu.Portal>
   )
@@ -50,37 +42,15 @@ export function DropdownMenuLabel({ inset = false, style, ...props }: React.Comp
   return (
     <Menu.GroupLabel
       data-inset={inset}
-      style={{
-        padding: '6px 12px 4px',
-        paddingLeft: inset ? 24 : 12,
-        fontSize: 11,
-        fontWeight: 800,
-        color: theme.color.textMuted,
-        letterSpacing: '.04em',
-        textTransform: 'uppercase',
-        ...style,
-      }}
+      className={`px-3 pt-1.5 pb-1 text-[11px] font-extrabold text-text-muted tracking-[.04em] uppercase ${inset ? 'pl-6' : 'pl-3'}`}
+      style={style}
       {...props}
     />
   )
 }
 
-const itemBase: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: 9,
-  width: '100%',
-  boxSizing: 'border-box',
-  padding: '8px 12px',
-  borderRadius: theme.radius.sm,
-  border: 'none',
-  background: 'transparent',
-  fontSize: 13.5,
-  fontWeight: 700,
-  fontFamily: 'inherit',
-  cursor: 'pointer',
-  textAlign: 'left',
-}
+const itemBase =
+  'flex items-center gap-[9px] w-full box-border py-2 px-3 rounded-sm border-none bg-transparent text-[13.5px] font-bold font-[inherit] cursor-pointer text-left'
 
 export function DropdownMenuItem({
   variant = 'default',
@@ -92,14 +62,15 @@ export function DropdownMenuItem({
     <Menu.Item
       data-variant={variant}
       data-inset={inset}
+      className={`${itemBase} ${inset ? 'pl-6' : 'pl-3'}`}
       style={(state) => ({
-        ...itemBase,
-        paddingLeft: inset ? 24 : 12,
         color: variant === 'destructive'
-          ? theme.color.errorLight
+          ? state.highlighted
+            ? 'var(--color-error-light)'
+            : 'var(--color-text)'
           : state.highlighted
-            ? theme.color.accentLight
-            : theme.color.text,
+            ? 'var(--color-accent-light)'
+            : 'var(--color-text)',
         background: state.highlighted
           ? variant === 'destructive' ? 'rgba(239,68,68,.14)' : 'rgba(255,255,255,.06)'
           : 'transparent',
@@ -114,17 +85,15 @@ export function DropdownMenuCheckboxItem({ inset = false, style, ...props }: Rea
   return (
     <Menu.CheckboxItem
       data-inset={inset}
+      className={`${itemBase} ${inset ? 'pl-6' : 'pl-3'} pr-[30px]`}
       style={(state) => ({
-        ...itemBase,
-        paddingLeft: inset ? 24 : 12,
-        paddingRight: 30,
-        color: state.highlighted ? theme.color.accentLight : theme.color.text,
+        color: state.highlighted ? 'var(--color-accent-light)' : 'var(--color-text)',
         background: state.highlighted ? 'rgba(255,255,255,.06)' : 'transparent',
         ...(typeof style === 'function' ? style(state) : style),
       })}
       {...props}
     >
-      <span style={{ position: 'absolute', right: 10, display: 'flex', alignItems: 'center' }}>
+      <span className="absolute right-2.5 flex items-center">
         <Menu.CheckboxItemIndicator>
           <Check size={14} />
         </Menu.CheckboxItemIndicator>
@@ -142,17 +111,15 @@ export function DropdownMenuRadioItem({ inset = false, style, ...props }: React.
   return (
     <Menu.RadioItem
       data-inset={inset}
+      className={`${itemBase} ${inset ? 'pl-6' : 'pl-3'} pr-[30px]`}
       style={(state) => ({
-        ...itemBase,
-        paddingLeft: inset ? 24 : 12,
-        paddingRight: 30,
-        color: state.highlighted ? theme.color.accentLight : theme.color.text,
+        color: state.highlighted ? 'var(--color-accent-light)' : 'var(--color-text)',
         background: state.highlighted ? 'rgba(255,255,255,.06)' : 'transparent',
         ...(typeof style === 'function' ? style(state) : style),
       })}
       {...props}
     >
-      <span style={{ position: 'absolute', right: 10, display: 'flex', alignItems: 'center' }}>
+      <span className="absolute right-2.5 flex items-center">
         <Menu.RadioItemIndicator>
           <Check size={14} />
         </Menu.RadioItemIndicator>
@@ -165,7 +132,8 @@ export function DropdownMenuRadioItem({ inset = false, style, ...props }: React.
 export function DropdownMenuSeparator({ style, ...props }: React.ComponentProps<typeof Menu.Separator>) {
   return (
     <Menu.Separator
-      style={{ height: 1, background: theme.color.border, margin: '5px 6px', ...style }}
+      className="h-px bg-border my-[5px] mx-1.5"
+      style={style}
       {...props}
     />
   )
@@ -174,13 +142,8 @@ export function DropdownMenuSeparator({ style, ...props }: React.ComponentProps<
 export function DropdownMenuShortcut({ children, style }: { children: ReactNode; style?: React.CSSProperties }) {
   return (
     <span
-      style={{
-        marginLeft: 'auto',
-        fontSize: 11,
-        letterSpacing: '.05em',
-        color: theme.color.textDim,
-        ...style,
-      }}
+      className="ml-auto text-[11px] tracking-[.05em] text-text-dim"
+      style={style}
     >
       {children}
     </span>
@@ -195,17 +158,16 @@ export function DropdownMenuSubTrigger({ inset = false, children, style, ...prop
   return (
     <Menu.SubmenuTrigger
       data-inset={inset}
+      className={`${itemBase} ${inset ? 'pl-6' : 'pl-3'}`}
       style={(state) => ({
-        ...itemBase,
-        paddingLeft: inset ? 24 : 12,
-        color: state.highlighted || state.open ? theme.color.accentLight : theme.color.text,
+        color: state.highlighted || state.open ? 'var(--color-accent-light)' : 'var(--color-text)',
         background: state.highlighted || state.open ? 'rgba(255,255,255,.06)' : 'transparent',
         ...(typeof style === 'function' ? style(state) : style),
       })}
       {...props}
     >
       {children}
-      <ChevronRight size={14} style={{ marginLeft: 'auto', opacity: 0.7 }} />
+      <ChevronRight size={14} className="ml-auto opacity-70" />
     </Menu.SubmenuTrigger>
   )
 }

@@ -12,7 +12,6 @@ import UnsavedChangesDialog from '../components/ui/UnsavedChangesDialog'
 import Toast from '../components/ui/Toast'
 import { CheckCircle2 } from 'lucide-react'
 import FlowCanvas from '../components/flow/FlowCanvas'
-import { theme } from '../theme'
 
 function stashIfDirty(): void {
   const s = useAppStore.getState()
@@ -138,19 +137,19 @@ export default function EditorPage() {
 
   if (!catalog) {
     return (
-      <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: theme.color.bg, color: theme.color.textMuted, fontFamily: theme.font.heading, fontSize: 18 }}>
+      <div className="h-screen flex items-center justify-center bg-bg text-text-muted font-heading text-lg">
         Chargement…
       </div>
     )
   }
 
   return (
-    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: theme.color.bg, color: theme.color.text, overflow: 'hidden' }}>
+    <div className="h-screen flex flex-col bg-bg text-text overflow-hidden">
       <EditorHeader onRun={onRun} onStop={onStop} onClear={onClear} />
       {restoredWork && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '9px 16px', background: 'rgba(143,209,168,.13)', borderBottom: '1px solid rgba(143,209,168,.35)', color: theme.color.successMuted, fontSize: 13, fontWeight: 700, flexShrink: 0 }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><CheckCircle2 size={15} /> Travail récupéré — clique sur Sauvegarder pour conserver</span>
-          <button onClick={() => setRestoredWork(false)} style={{ background: 'none', border: 'none', color: theme.color.successMuted, cursor: 'pointer', fontWeight: 900, fontSize: 14 }} aria-label="Fermer">×</button>
+        <div className="flex items-center justify-between gap-3 px-4 py-[9px] bg-[rgba(143,209,168,.13)] border-b border-[rgba(143,209,168,.35)] text-success-muted text-[13px] font-bold shrink-0">
+          <span className="inline-flex items-center gap-2"><CheckCircle2 size={15} /> Travail récupéré — clique sur Sauvegarder pour conserver</span>
+          <button onClick={() => setRestoredWork(false)} className="bg-none border-none text-success-muted cursor-pointer font-black text-sm" aria-label="Fermer">×</button>
         </div>
       )}
       <FlowCanvas />

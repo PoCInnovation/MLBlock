@@ -5,28 +5,23 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { signUp } from '../services/auth'
 import SiteLayout from '../components/landing/SiteLayout'
 import { Field, FieldError, FieldLabel } from '../components/ui/field'
-import { theme } from '../theme'
 import { CheckCircle2, Circle } from 'lucide-react'
 import { registerSchema, type RegisterInput } from '../schemas/auth'
 import { mapSupabaseError } from '../schemas/errors'
 
-const s: Record<string, React.CSSProperties> = {
-  wrapper: { display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh', padding: '40px 20px' },
-  card: { background: theme.color.surface4, borderRadius: theme.radius.md, padding: 40, width: '100%', maxWidth: 400 },
-  title: { fontSize: 24, fontWeight: 700, marginBottom: 24, textAlign: 'center', color: theme.color.text },
-  input: { width: '100%', padding: '10px 14px', marginBottom: 16, borderRadius: 8, border: `1px solid ${theme.color.border}`, background: theme.color.inputBg, color: theme.color.text, fontSize: 14 },
-  btn: { width: '100%', padding: '10px 14px', borderRadius: 8, border: 'none', fontSize: 14, fontWeight: 600, cursor: 'pointer', marginBottom: 12 },
-  primaryBtn: { background: theme.color.auth, color: '#fff' },
-  error: { color: theme.color.error, fontSize: 13, marginBottom: 12, textAlign: 'center' },
-  link: { color: theme.color.auth, cursor: 'pointer', textAlign: 'center', marginTop: 12, fontSize: 14 },
+const s: Record<string, string> = {
+  wrapper: 'flex items-center justify-center min-h-[60vh] px-5 py-10',
+  card: 'bg-surface4 rounded-md p-10 w-full max-w-[400px]',
+  title: 'text-2xl font-bold mb-6 text-center text-text',
+  input: 'w-full px-3.5 py-2.5 mb-4 rounded-[8px] border border-border bg-input-bg text-text text-sm',
+  btn: 'w-full px-3.5 py-2.5 rounded-[8px] border-none text-sm font-semibold cursor-pointer mb-3',
+  primaryBtn: 'bg-auth text-white',
+  error: 'text-error text-[13px] mb-3 text-center',
+  link: 'text-auth cursor-pointer text-center mt-3 text-sm',
 }
 
-const ruleStyle = (ok: boolean): React.CSSProperties => ({
-  color: ok ? theme.color.success : theme.color.textDim,
-  fontSize: 12,
-  fontWeight: 700,
-  marginBottom: 4,
-})
+const ruleStyle = (ok: boolean): string =>
+  `${ok ? 'text-success' : 'text-text-dim'} text-xs font-bold mb-1`
 
 export default function RegisterPage() {
   const [error, setError] = useState('')
@@ -65,12 +60,12 @@ export default function RegisterPage() {
 
   return (
     <SiteLayout>
-      <div style={s.wrapper}>
-        <div style={s.card}>
-          <div style={s.title}>Inscription</div>
-          {error && <div style={s.error}>{error}</div>}
+      <div className={s.wrapper}>
+        <div className={s.card}>
+          <div className={s.title}>Inscription</div>
+          {error && <div className={s.error}>{error}</div>}
           {done ? (
-            <div style={{ ...s.title, fontSize: 16, color: theme.color.textMuted }}>
+            <div className="text-base font-bold mb-6 text-center text-text-muted">
               Compte créé ! Vérifie tes emails pour confirmer.
             </div>
           ) : (
@@ -88,7 +83,8 @@ export default function RegisterPage() {
                       autoComplete="email"
                       placeholder="exemple@mail.com"
                       aria-invalid={fieldState.invalid}
-                      style={{ ...s.input, borderColor: fieldState.invalid ? theme.color.error : undefined }}
+                      className={s.input}
+                      style={{ borderColor: fieldState.invalid ? 'var(--color-error)' : undefined }}
                     />
                     {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                   </Field>
@@ -107,15 +103,16 @@ export default function RegisterPage() {
                       autoComplete="new-password"
                       placeholder="••••••"
                       aria-invalid={fieldState.invalid}
-                      style={{ ...s.input, borderColor: fieldState.invalid ? theme.color.error : undefined }}
+                      className={s.input}
+                      style={{ borderColor: fieldState.invalid ? 'var(--color-error)' : undefined }}
                     />
                     {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                   </Field>
                 )}
               />
-              <div style={{ marginTop: -8, marginBottom: 12 }}>
+              <div className="-mt-2 mb-3">
                 {rules.map(r => (
-                  <div key={r.label} style={ruleStyle(r.ok)}>{r.ok ? <CheckCircle2 size={14} /> : <Circle size={14} />} {r.label}</div>
+                  <div key={r.label} className={ruleStyle(r.ok)}>{r.ok ? <CheckCircle2 size={14} /> : <Circle size={14} />} {r.label}</div>
                 ))}
               </div>
               <Controller
@@ -131,16 +128,17 @@ export default function RegisterPage() {
                       autoComplete="new-password"
                       placeholder="••••••"
                       aria-invalid={fieldState.invalid}
-                      style={{ ...s.input, borderColor: fieldState.invalid ? theme.color.error : undefined }}
+                      className={s.input}
+                      style={{ borderColor: fieldState.invalid ? 'var(--color-error)' : undefined }}
                     />
                     {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                   </Field>
                 )}
               />
-              <button type="submit" disabled={loading} style={{ ...s.btn, ...s.primaryBtn, opacity: loading ? 0.6 : 1 }}>{loading ? 'Création…' : 'Créer un compte'}</button>
+              <button type="submit" disabled={loading} className={`${s.btn} ${s.primaryBtn}`} style={{ opacity: loading ? 0.6 : 1 }}>{loading ? 'Création…' : 'Créer un compte'}</button>
             </form>
           )}
-          <button style={{ ...s.link, background: 'none', border: 'none' }} onClick={() => navigate('/login')}>Déjà un compte ? Se connecter</button>
+          <button className={`${s.link} bg-none border-none`} onClick={() => navigate('/login')}>Déjà un compte ? Se connecter</button>
         </div>
       </div>
     </SiteLayout>
