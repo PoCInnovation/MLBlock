@@ -58,6 +58,13 @@ function fmtSize(bytes: number): string {
 
 /** HoverCard d'un paramètre : description + métadonnées (type, défaut, bornes). */
 function ParamInfo({ seg, children }: { seg: Exclude<Segment, { t: 'text' }>; children: React.ReactNode }) {
+  // Le middleware inline du PreviewCard ancre sur la LIGNE du champ (large) —
+  // on suit le X du pointeur pour aligner le popup dessus (alignOffset).
+  const [pointerX, setPointerX] = useState<number | null>(null)
+  const triggerRef = useRef<HTMLSpanElement | null>(null)
+  const alignOffset = pointerX != null && triggerRef.current
+    ? pointerX - (triggerRef.current.getBoundingClientRect().left + triggerRef.current.getBoundingClientRect().width / 2)
+    : 0
   // Union de segments : lecture normalisée des métadonnées optionnelles.
   const p = seg as unknown as {
     k: string
@@ -75,8 +82,18 @@ function ParamInfo({ seg, children }: { seg: Exclude<Segment, { t: 'text' }>; ch
     <HoverCard>
       {/* display:contents n'a PAS de boîte (rect 0) — le popup retombait en
           haut à gauche. inline garde la boîte pour le positionnement. */}
-      <HoverCardTrigger render={<span style={{ display: 'inline' }}>{children}</span>} />
-      <HoverCardContent>
+      <HoverCardTrigger
+        render={
+          <span
+            ref={triggerRef}
+            onMouseMove={e => setPointerX(e.clientX)}
+            style={{ display: 'inline' }}
+          >
+            {children}
+          </span>
+        }
+      />
+      <HoverCardContent align="center" alignOffset={alignOffset}>
         <div style={{ fontWeight: 800, fontSize: 13, marginBottom: 2, color: theme.color.textLight }}>
           {p.k}
         </div>
