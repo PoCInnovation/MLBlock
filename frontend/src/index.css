@@ -153,3 +153,7 @@ input, select, button { font-family: inherit; }
 
 /* Bouton supprimer du bloc (footer de la card) : rouge au survol. */
 .block-delete-btn:hover { color: #ef4444; }
+
+/* Bloc : seul la poignée du header draggue (dragHandle) — curseur
+   par défaut partout ailleurs. */
+.react-flow__node-block { cursor: default; }

@@ -103,11 +103,27 @@ function BlockNode({ data, id }: NodeProps<BlockNodeData>) {
         overflow: 'visible', // les Handles dépassent des bords
       }}
     >
-      <CardHeader className="block-drag-handle" style={{ cursor: 'grab' }}>
+      <CardHeader>
         <div>
           <CardTitle>{data.label}</CardTitle>
           {description && <CardDescription>{description}</CardDescription>}
         </div>
+        <CardAction>
+          <svg
+            className="block-drag-handle"
+            width={12}
+            height={16}
+            viewBox="0 0 12 16"
+            style={{ cursor: 'grab' }}
+            aria-label="Déplacer le bloc"
+          >
+            <g fill={theme.color.textMuted}>
+              <circle cx={3} cy={2} r={1.3} /><circle cx={9} cy={2} r={1.3} />
+              <circle cx={3} cy={8} r={1.3} /><circle cx={9} cy={8} r={1.3} />
+              <circle cx={3} cy={14} r={1.3} /><circle cx={9} cy={14} r={1.3} />
+            </g>
+          </svg>
+        </CardAction>
       </CardHeader>
       <div style={{ display: 'flex', gap: 12 }}>
         <CardContent style={{ flex: 1, minWidth: 0, padding: 0 }}>

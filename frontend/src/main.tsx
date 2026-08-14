@@ -25,10 +25,17 @@ function Root() {
   const [authReady, setAuthReady] = useState(false)
 
   useEffect(() => {
-    getSession().then(({ session }) => {
-      setUser(session?.user ?? null)
-      setAuthReady(true)
-    })
+    getSession()
+      .then(({ session }) => {
+        setUser(session?.user ?? null)
+        setAuthReady(true)
+      })
+      .catch(() => {
+        // Session illisible (refresh réseau, localStorage corrompu) : on rend
+        // quand même (landing/login) — jamais de splash infini.
+        setUser(null)
+        setAuthReady(true)
+      })
     const { data: { subscription } } = onAuthStateChange((session: any) => {
       // Session perdue (expiration, logout externe) avec travail non sauvegardé :
       // stash le pipeline pour récupération après reconnexion.
