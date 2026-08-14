@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
-import { useBlocker } from 'react-router-dom'
+import { useBlocker, useSearchParams } from 'react-router-dom'
 import { useBlockRunner } from '../hooks/useBlockRunner'
 import { useUndoRedo } from '../hooks/useUndoRedo'
 import useAppStore from '../store/useAppStore'
-import { fetchCatalog, listPipelineJobs, getJobOutputs } from '../api/client'
+import { fetchCatalog, listPipelineJobs, getJobOutputs, getPipeline } from '../api/client'
 import { toServerPayload } from '../utils/blockHelpers'
+import { parseEditorParams } from '../utils/editorParams'
 import { writeStash, readStash, clearStash } from '../utils/pending-stash'
 import EditorHeader from '../components/editor/EditorHeader'
 import EditorUnavailableModal from '../components/ui/EditorUnavailableModal'
@@ -24,9 +25,11 @@ function stashIfDirty(): void {
 export default function EditorPage() {
   const { onRun, onStop, onClear } = useBlockRunner()
   useUndoRedo()
+  const [searchParams, setSearchParams] = useSearchParams()
   const catalog      = useAppStore(s => s.catalog)
   const catalogError = useAppStore(s => s.catalogError)
   const pipelineId   = useAppStore(s => s.pipelineId)
+  const viewMode     = useAppStore(s => s.viewMode)
   const restoredWork = useAppStore(s => s.restoredWork)
   const setRestoredWork = useAppStore(s => s.setRestoredWork)
 
@@ -84,6 +87,29 @@ export default function EditorPage() {
     // Le toast sera montré par l'effet catalogue, une fois le rendu final en place
     useAppStore.getState().setRestoredWork(true)
   }, [])
+
+  // État de l'éditeur depuis l'URL : /editor?pipeline=<uuid>&view=free|grid
+  // (le stash de récupération a priorité : si du travail non sauvegardé
+  // existe, on ne l'écrase pas avec le pipeline de l'URL).
+  useEffect(() => {
+    const s = useAppStore.getState()
+    const params = parseEditorParams(searchParams)
+    if (params.view !== s.viewMode) s.setViewMode(params.view)
+    if (params.pipeline && params.pipeline !== s.pipelineId && s.flowNodes.length === 0 && !s.restoredWork) {
+      getPipeline(params.pipeline)
+        .then(d => s.loadPipeline(d.nodes, d.edges, d.id, d.name, d.columns))
+        .catch(() => { /* pipeline supprimé : défauts */ })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Miroir zustand → URL : le pipeline ouvert et la vue sont partageables
+  useEffect(() => {
+    setSearchParams(
+      { view: viewMode, ...(pipelineId ? { pipeline: pipelineId } : {}) },
+      { replace: true }
+    )
+  }, [viewMode, pipelineId, setSearchParams])
 
   // Projet ouvert : recharge les résultats du dernier run (persistés en db)
   useEffect(() => {

@@ -162,14 +162,13 @@ const useAppStore = create<AppState>((set, get) => ({
   toast: null,
   undoStack: [],
   redoStack: [],
-  viewMode: (typeof localStorage !== 'undefined' && localStorage.getItem('mlb-view-mode') === 'grid') ? 'grid' : 'free',
+  viewMode: 'free',
   columns: [],
   columnCounter: 0,
 
   setCategory: (id) => set({ category: id }),
 
   setViewMode: (mode) => {
-    try { localStorage.setItem('mlb-view-mode', mode) } catch { /* privé — ignoré */ }
     const s = get()
     if (s.viewMode === mode) return
     if (mode === 'grid') {

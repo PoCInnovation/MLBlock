@@ -12,11 +12,11 @@
 
 ## 2. Phase 2 — Search params + zod (état de l'éditeur dans l'URL)
 
-- [ ] 2.1 Créer `src/utils/editorParams.ts` : schéma zod `editorParams` (`pipeline: z.string().uuid().optional()`, `view: z.enum(['free','grid']).default('free')`) avec `safeParse` uniquement et fallback sur les défauts en cas d'URL invalide
-- [ ] 2.2 Au chargement de l'éditeur : lire les search params — `loadPipeline` si `pipeline` est présent ; initialiser `viewMode` depuis `view`
-- [ ] 2.3 Brancher l'écriture : tout changement de `viewMode` → `setSearchParams` ; le pipeline ouvert → `pipeline` dans l'URL (le stash `mlb-pending-<userId>` reste inchangé)
-- [ ] 2.4 Retirer le localStorage `mlb-view-mode` (lecture et écriture) ; le défaut reste `free`
-- [ ] 2.5 Smoke navigateur : refresh conserve pipeline et vue ; une URL `/editor?pipeline=<uuid>&view=grid` partagée restaure l'état ; une URL invalide retombe sur les défauts
+- [x] 2.1 Créer `src/utils/editorParams.ts` : schéma zod `editorParams` (`pipeline: z.string().uuid().optional()`, `view: z.enum(['free','grid']).default('free')`) avec `safeParse` uniquement et fallback sur les défauts en cas d'URL invalide
+- [x] 2.2 Au chargement de l'éditeur : lire les search params — `loadPipeline` si `pipeline` est présent ; initialiser `viewMode` depuis `view`
+- [x] 2.3 Brancher l'écriture : tout changement de `viewMode` → `setSearchParams` ; le pipeline ouvert → `pipeline` dans l'URL (le stash `mlb-pending-<userId>` reste inchangé)
+- [x] 2.4 Retirer le localStorage `mlb-view-mode` (lecture et écriture) ; le défaut reste `free`
+- [x] 2.5 Smoke navigateur : refresh conserve pipeline et vue ; une URL `/editor?pipeline=<uuid>&view=grid` partagée restaure l'état ; une URL invalide retombe sur les défauts
 
 ## 3. Phase 3 — TanStack Query (état serveur)
 
