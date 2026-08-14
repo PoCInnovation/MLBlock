@@ -73,7 +73,9 @@ function ParamInfo({ seg, children }: { seg: Exclude<Segment, { t: 'text' }>; ch
   }
   return (
     <HoverCard>
-      <HoverCardTrigger render={<span style={{ display: 'contents' }}>{children}</span>} />
+      {/* display:contents n'a PAS de boîte (rect 0) — le popup retombait en
+          haut à gauche. inline garde la boîte pour le positionnement. */}
+      <HoverCardTrigger render={<span style={{ display: 'inline' }}>{children}</span>} />
       <HoverCardContent>
         <div style={{ fontWeight: 800, fontSize: 13, marginBottom: 2, color: theme.color.textLight }}>
           {p.k}
