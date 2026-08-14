@@ -146,3 +146,7 @@ input, select, button { font-family: inherit; }
 
 /* Connect : handles plus grands au survol (zone d'attrapage élargie). */
 .react-flow__handle:hover { transform: scale(1.6); }
+
+/* La ligne de connexion (fantôme) doit rester visible en vue grille,
+   au-dessus des cartes/blocs. */
+.grid-mode .react-flow__connectionline { z-index: 1002 !important; pointer-events: none; }
