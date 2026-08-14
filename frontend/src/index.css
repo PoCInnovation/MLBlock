@@ -143,3 +143,6 @@ input, select, button { font-family: inherit; }
   pointer-events: none;
 }
 .grid-mode .react-flow__edge { pointer-events: none; }
+
+/* Connect : handles plus grands au survol (zone d'attrapage élargie). */
+.react-flow__handle:hover { transform: scale(1.6); }

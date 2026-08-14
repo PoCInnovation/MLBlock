@@ -307,6 +307,7 @@ function FlowCanvasInner() {
           onDragOver={onDragOver}
           onDrop={onDrop}
           nodeTypes={nodeTypes}
+          connectionRadius={40}
           edgeTypes={edgeTypes}
           className={viewMode === 'grid' ? 'grid-mode' : undefined}
           style={reactFlowStyle}

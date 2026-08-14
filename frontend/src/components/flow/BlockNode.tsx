@@ -20,11 +20,12 @@ const nodeStyle: React.CSSProperties = {
 }
 
 const handleStyle: React.CSSProperties = {
-  width: 10,
-  height: 10,
+  width: 14,
+  height: 14,
   borderRadius: '50%',
   background: theme.color.accent,
   border: `2px solid ${theme.color.surface2}`,
+  // Le hover agrandit le handle (le CSS) — zone d'attrapage plus large.
 }
 
 const labelStyle: React.CSSProperties = {
@@ -50,6 +51,12 @@ const outputStyle: React.CSSProperties = {
   fontSize: 11,
   fontWeight: 700,
   color: theme.color.textMuted,
+}
+
+const inputStyle: React.CSSProperties = {
+  ...outputStyle,
+  marginTop: 0,
+  marginBottom: 8,
 }
 
 const deleteBtnStyle: React.CSSProperties = {
@@ -114,6 +121,11 @@ function BlockNode({ data, id }: NodeProps<BlockNodeData>) {
   return (
     <div style={{ ...nodeStyle, borderTop: `3px solid ${data.categoryColor}`, width: viewMode === 'grid' ? 244 : undefined }}>
       <button style={deleteBtnStyle} onClick={() => removeFlowNode(id)} title="Supprimer le bloc">×</button>
+      {data.inputs.length > 0 && (
+        <div style={inputStyle}>
+          {data.inputs.map(p => <div key={p.name}>{p.name} · {p.dtype}</div>)}
+        </div>
+      )}
       {data.inputs.map((p, i, arr) => (
         <Handle
           key={p.name}
