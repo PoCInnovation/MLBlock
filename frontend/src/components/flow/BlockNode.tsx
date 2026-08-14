@@ -2,22 +2,11 @@ import { memo, useEffect, useState } from 'react'
 import { Handle, Position, type NodeProps } from 'reactflow'
 import useAppStore from '../../store/useAppStore'
 import BlockSegments from '../blocks/BlockSegments'
+import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card'
+import { Separator } from '../ui/separator'
 import { theme } from '../../theme'
 import { resolveColumnsForPath, resolveFlowSourcePath } from '../../utils/columns'
 import type { Port, Segment } from '../../types/catalog'
-
-const nodeStyle: React.CSSProperties = {
-  background: theme.color.surface2,
-  borderRadius: theme.radius.md,
-  padding: '10px 14px',
-  minWidth: 180,
-  maxWidth: 260,
-  boxShadow: theme.shadow.block,
-  border: `1px solid rgba(255,255,255,.08)`,
-  fontFamily: theme.font.body,
-  fontSize: 13,
-  color: theme.color.text,
-}
 
 const handleStyle: React.CSSProperties = {
   width: 14,
@@ -28,10 +17,18 @@ const handleStyle: React.CSSProperties = {
   // Le hover agrandit le handle (le CSS) — zone d'attrapage plus large.
 }
 
-const labelStyle: React.CSSProperties = {
+const outputsStyle: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 2,
+  fontSize: 11,
   fontWeight: 700,
-  marginBottom: 6,
-  fontSize: 14,
+  color: theme.color.textMuted,
+}
+
+const inputsStyle: React.CSSProperties = {
+  ...outputsStyle,
+  marginBottom: 8,
 }
 
 const segmentsStyle: React.CSSProperties = {
@@ -43,40 +40,15 @@ const segmentsStyle: React.CSSProperties = {
   fontSize: 12,
 }
 
-const outputStyle: React.CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 2,
-  marginTop: 8,
-  fontSize: 11,
-  fontWeight: 700,
-  color: theme.color.textMuted,
-}
-
-const inputStyle: React.CSSProperties = {
-  ...outputStyle,
-  marginTop: 0,
-  marginBottom: 8,
-}
-
 const deleteBtnStyle: React.CSSProperties = {
-  position: 'absolute',
-  top: 6,
-  right: 6,
-  width: 18,
-  height: 18,
-  borderRadius: '50%',
   border: 'none',
-  background: 'rgba(255,255,255,.1)',
+  background: 'none',
   color: theme.color.textMuted,
-  fontWeight: 900,
+  fontWeight: 800,
   fontSize: 11,
-  lineHeight: 1,
   cursor: 'pointer',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
   padding: 0,
+  fontFamily: theme.font.body,
 }
 
 type BlockNodeData = {
@@ -119,13 +91,51 @@ function BlockNode({ data, id }: NodeProps<BlockNodeData>) {
   }, [id, data.segs, flowNodes, flowEdges])
 
   return (
-    <div style={{ ...nodeStyle, borderTop: `3px solid ${data.categoryColor}`, width: viewMode === 'grid' ? 244 : undefined }}>
-      <button style={deleteBtnStyle} onClick={() => removeFlowNode(id)} title="Supprimer le bloc">×</button>
-      {data.inputs.length > 0 && (
-        <div style={inputStyle}>
-          {data.inputs.map(p => <div key={p.name}>{p.name} · {p.dtype}</div>)}
+    <Card
+      size="sm"
+      style={{
+        background: theme.color.surface2,
+        borderTop: `3px solid ${data.categoryColor}`,
+        boxShadow: theme.shadow.block,
+        minWidth: 180,
+        maxWidth: 260,
+        width: viewMode === 'grid' ? 244 : undefined,
+        overflow: 'visible', // les Handles dépassent des bords
+      }}
+    >
+      <CardHeader className="block-drag-handle" style={{ cursor: 'grab' }}>
+        <div>
+          <CardTitle>{data.label}</CardTitle>
+          {description && <CardDescription>{description}</CardDescription>}
         </div>
-      )}
+      </CardHeader>
+      <div style={{ display: 'flex', gap: 12 }}>
+        <CardContent style={{ flex: 1, minWidth: 0, padding: 0 }}>
+          {data.inputs.length > 0 && (
+            <div style={inputsStyle}>
+              {data.inputs.map(p => <div key={p.name}>{p.name} · {p.dtype}</div>)}
+            </div>
+          )}
+          <div style={segmentsStyle}>
+            <BlockSegments segs={data.segs} fields={data.fields} blockId={id} blockType={data.type} onUpdate={updateFlowParam} columnOptions={columnOptions} />
+          </div>
+        </CardContent>
+        {data.outputs.length > 0 && (
+          <>
+            <Separator orientation="vertical" />
+            <CardContent style={{ flex: '0 0 auto', padding: 0 }}>
+              <div style={outputsStyle}>
+                {data.outputs.map(p => <div key={p.name}>{p.name} · {p.dtype}</div>)}
+              </div>
+            </CardContent>
+          </>
+        )}
+      </div>
+      <CardFooter style={{ margin: '0 -12px' }}>
+        <CardAction style={{ marginLeft: 'auto' }}>
+          <button className="block-delete-btn" style={deleteBtnStyle} onClick={() => removeFlowNode(id)}>Supprimer</button>
+        </CardAction>
+      </CardFooter>
       {data.inputs.map((p, i, arr) => (
         <Handle
           key={p.name}
@@ -136,17 +146,6 @@ function BlockNode({ data, id }: NodeProps<BlockNodeData>) {
           title={`${p.name}: ${p.dtype}`}
         />
       ))}
-      <div style={labelStyle} title={description || undefined}>{data.label}</div>
-      <div style={segmentsStyle}>
-        <BlockSegments segs={data.segs} fields={data.fields} blockId={id} blockType={data.type} onUpdate={updateFlowParam} columnOptions={columnOptions} />
-      </div>
-      {data.outputs.length > 0 && (
-        <div style={outputStyle}>
-          {data.outputs.map(p => (
-            <div key={p.name}>{p.name} · {p.dtype}</div>
-          ))}
-        </div>
-      )}
       {data.outputs.map((p, i, arr) => (
         <Handle
           key={p.name}
@@ -157,7 +156,7 @@ function BlockNode({ data, id }: NodeProps<BlockNodeData>) {
           title={`${p.name}: ${p.dtype}`}
         />
       ))}
-    </div>
+    </Card>
   )
 }
 

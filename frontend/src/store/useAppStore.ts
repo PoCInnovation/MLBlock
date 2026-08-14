@@ -499,6 +499,7 @@ const useAppStore = create<AppState>((set, get) => ({
       return {
         id: n.id,
         type: 'block',
+        dragHandle: '.block-drag-handle',
         position: n.position ?? { x: 100, y: 80 + i * 120 },
         data: {
           type: n.type,

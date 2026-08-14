@@ -121,6 +121,7 @@ function FlowCanvasInner() {
     const node: Node = {
       id: convId,
       type: 'block',
+      dragHandle: '.block-drag-handle',
       position,
       data: {
         type: convType,
@@ -242,6 +243,7 @@ function FlowCanvasInner() {
       const node: Node = {
         id: `${type}_${Date.now()}`,
         type: 'block',
+        dragHandle: '.block-drag-handle',
         position,
         data: {
           type,
