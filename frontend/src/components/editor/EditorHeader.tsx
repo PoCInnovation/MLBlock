@@ -12,6 +12,7 @@ import useAppStore from '../../store/useAppStore'
 import { signOut } from '../../services/auth'
 import { getPipeline } from '../../api/client'
 import { usePipelineImport } from '../../hooks/usePipelineImport'
+import { useBlockRunner } from '../../hooks/useBlockRunner'
 import ExportModal from '../ui/ExportModal'
 import UnsavedChangesDialog from '../ui/UnsavedChangesDialog'
 import { clearStash } from '../../utils/pending-stash'
@@ -21,20 +22,27 @@ const ghostBtn: React.CSSProperties = { background: 'rgba(255,255,255,.06)', col
 const actionBtn: React.CSSProperties = { ...ghostBtn, color: '#cfc6bd', padding: '9px 14px' }
 
 type EditorHeaderProps = {
+  // Le header gère sa propre instance de useBlockRunner (mutation + suivi) pour
+  // lire isPending — ces props restent pour la compatibilité avec EditorPage
+  // (ancien contrat) et sont ignorées.
   onRun: () => void
   onStop: () => void
   onClear: () => void
 }
 
-export default function EditorHeader({ onRun, onStop, onClear }: EditorHeaderProps) {
+export default function EditorHeader(_props: EditorHeaderProps) {
   const navigate    = useNavigate()
   const projectName = useAppStore(s => s.projectName)
   const setProjectName = useAppStore(s => s.setProjectName)
-  const running     = useAppStore(s => s.running)
   const setUser     = useAppStore(s => s.setUser)
   const savePipeline = useAppStore(s => s.savePipeline)
   const ensureDraft = useAppStore(s => s.ensureDraft)
   const showToast   = useAppStore(s => s.showToast)
+  // Run : isPending de la mutation = source de vérité (l'état serveur ne
+  // vit plus dans le store zustand).
+  const { onRun, onStop, onClear, isPending, jobId } = useBlockRunner()
+  // Un run est annulable pendant la mutation OU pendant le suivi du job.
+  const stopActive = isPending || jobId !== null
   // Sélecteur dérivé : re-render uniquement quand l'état dirty change
   const dirty = useAppStore(s => s.isDirty())
   const canUndo = useAppStore(s => s.canUndo())
@@ -161,11 +169,12 @@ export default function EditorHeader({ onRun, onStop, onClear }: EditorHeaderPro
           {saving ? <Loader2 size={15} style={{ animation: 'mlbSpin .8s linear infinite' }} /> : dirty ? <Save size={15} /> : <Check size={15} />}
           {dirty ? 'Sauvegarder' : 'Sauvegardé'}
         </button>
-        <button onClick={onStop} style={{ ...actionBtn, background: 'rgba(224,112,95,.16)', color: theme.color.accentLight, border: '1px solid rgba(224,112,95,.4)', fontWeight: 800 }}>
+        <button onClick={onStop} disabled={!stopActive} style={{ ...actionBtn, background: 'rgba(224,112,95,.16)', color: theme.color.accentLight, border: '1px solid rgba(224,112,95,.4)', fontWeight: 800, opacity: stopActive ? 1 : 0.35, cursor: stopActive ? 'pointer' : 'default' }}>
           <Square size={13} fill="currentColor" /> Arrêter
         </button>
-        <button onClick={onRun} style={{ color: '#fff', border: 'none', padding: '9px 20px', borderRadius: theme.radius.md, fontWeight: 800, fontSize: 14, cursor: 'pointer', boxShadow: theme.shadow.btn, display: 'inline-flex', alignItems: 'center', gap: 8, background: theme.color.accent, opacity: running ? 0.6 : 1, transition: 'filter .15s ease, transform .15s ease' }}>
-          <Play size={15} fill="currentColor" /> Lancer
+        <button onClick={onRun} disabled={isPending} style={{ color: '#fff', border: 'none', padding: '9px 20px', borderRadius: theme.radius.md, fontWeight: 800, fontSize: 14, cursor: isPending ? 'default' : 'pointer', boxShadow: theme.shadow.btn, display: 'inline-flex', alignItems: 'center', gap: 8, background: theme.color.accent, opacity: isPending ? 0.6 : 1, transition: 'filter .15s ease, transform .15s ease' }}>
+          {isPending ? <Loader2 size={15} style={{ animation: 'mlbSpin .8s linear infinite' }} /> : <Play size={15} fill="currentColor" />}
+          {isPending ? 'Exécution…' : 'Lancer'}
         </button>
         <DropdownMenu>
           <DropdownMenuTrigger

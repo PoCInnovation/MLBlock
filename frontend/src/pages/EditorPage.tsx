@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useBlocker, useSearchParams } from 'react-router-dom'
 import { useBlockRunner } from '../hooks/useBlockRunner'
 import { useUndoRedo } from '../hooks/useUndoRedo'
@@ -32,6 +33,19 @@ export default function EditorPage() {
   const viewMode     = useAppStore(s => s.viewMode)
   const restoredWork = useAppStore(s => s.restoredWork)
   const setRestoredWork = useAppStore(s => s.setRestoredWork)
+
+  // Lectures serveur via TanStack Query (le store reste consommateur du catalogue)
+  const urlPipelineId = parseEditorParams(searchParams).pipeline ?? null
+  const catalogQuery = useQuery({
+    queryKey: ['catalog'],
+    queryFn: fetchCatalog,
+    staleTime: 5 * 60_000,
+  })
+  const pipelineQuery = useQuery({
+    queryKey: ['pipeline', urlPipelineId],
+    queryFn: () => getPipeline(urlPipelineId!),
+    enabled: !!urlPipelineId,
+  })
 
   // Garde de navigation : bloque toute sortie avec modifications non sauvegardées
   const blocker = useBlocker(() => useAppStore.getState().isDirty())
@@ -95,13 +109,19 @@ export default function EditorPage() {
     const s = useAppStore.getState()
     const params = parseEditorParams(searchParams)
     if (params.view !== s.viewMode) s.setViewMode(params.view)
-    if (params.pipeline && params.pipeline !== s.pipelineId && s.flowNodes.length === 0 && !s.restoredWork) {
-      getPipeline(params.pipeline)
-        .then(d => s.loadPipeline(d.nodes, d.edges, d.id, d.name, d.columns))
-        .catch(() => { /* pipeline supprimé : défauts */ })
-    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Pipeline de l'URL : chargé via Query, appliqué seulement si le canvas
+  // est vide et qu'aucun travail restauré n'a la priorité.
+  useEffect(() => {
+    const d = pipelineQuery.data
+    if (!d) return
+    const s = useAppStore.getState()
+    if (s.flowNodes.length === 0 && !s.restoredWork) {
+      s.loadPipeline(d.nodes, d.edges, d.id, d.name, d.columns)
+    }
+  }, [pipelineQuery.data])
 
   // Miroir zustand → URL : le pipeline ouvert et la vue sont partageables
   useEffect(() => {
@@ -131,33 +151,19 @@ export default function EditorPage() {
     return () => { cancelled = true }
   }, [pipelineId])
 
+  // Catalogue : synchronisation Query → store (le store reste la source du rendu)
   useEffect(() => {
-    let cancelled = false
-    let retries = 0
-    const MAX_RETRIES = 5
+    if (catalogQuery.data) useAppStore.getState().setCatalog(catalogQuery.data)
+  }, [catalogQuery.data])
 
-    async function tryLoad() {
-      try {
-        const data = await fetchCatalog()
-        if (!cancelled) {
-          useAppStore.getState().setCatalog(data)
-        }
-      } catch {
-        retries++
-        if (!cancelled && retries < MAX_RETRIES) {
-          setTimeout(tryLoad, 15_000)
-        } else if (!cancelled) {
-          useAppStore.getState().setCatalogError(
-            true,
-            'Impossible de joindre le serveur. Le backend est peut-être en veille, réessaie dans quelques minutes.'
-          )
-        }
-      }
+  useEffect(() => {
+    if (catalogQuery.error) {
+      useAppStore.getState().setCatalogError(
+        true,
+        'Impossible de joindre le serveur. Le backend est peut-être en veille, réessaie dans quelques minutes.'
+      )
     }
-
-    tryLoad()
-    return () => { cancelled = true }
-  }, [])
+  }, [catalogQuery.error])
 
   if (catalogError) return <EditorUnavailableModal />
 

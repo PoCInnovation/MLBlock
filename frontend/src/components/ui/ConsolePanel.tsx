@@ -8,16 +8,21 @@ const COLORS: Record<string, string> = { sys: '#f0e9e3', info: '#9aa0c4', ok: '#
 
 export default function ConsolePanel() {
   const consoleLines = useAppStore(s => s.consoleLines)
-  const running      = useAppStore(s => s.running)
-  const result       = useAppStore(s => s.result)
+  // Sélecteur minimal : le statut du run est synchronisé dans le store par le
+  // suivi du job (useBlockRunner) — plus de flag d'exécution côté store.
+  const jobStatus    = useAppStore(s => s.jobStatus)
   const [tab, setTab] = useState<'console' | 'results'>('console')
   const scrollRef    = useRef<HTMLDivElement>(null)
 
+  // Job en cours d'exécution (suivi actif) : indicateur + autoscroll.
+  const active = jobStatus === 'queued' || jobStatus === 'dispatched' || jobStatus === 'running'
+  const done   = jobStatus === 'done'
+
   useEffect(() => {
-    if (running && scrollRef.current) {
+    if (active && scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight
     }
-  }, [consoleLines, running])
+  }, [consoleLines, active])
 
   if (consoleLines.length === 0) return null
 
@@ -30,7 +35,7 @@ export default function ConsolePanel() {
     }}>
       <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 16px', borderBottom: '1px solid rgba(255,255,255,.07)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-          <span style={{ width: 8, height: 8, borderRadius: '50%', background: running ? theme.color.warning : theme.color.status, animation: running ? 'mlbBlink 1s ease-in-out infinite' : 'none', display: 'inline-block' }} />
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: active ? theme.color.warning : theme.color.status, animation: active ? 'mlbBlink 1s ease-in-out infinite' : 'none', display: 'inline-block' }} />
           <span style={{ fontWeight: 800, fontSize: 13.5, letterSpacing: '.02em' }}>Ce qui se passe</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.08)', padding: 3, borderRadius: 999 }}>
@@ -49,7 +54,7 @@ export default function ConsolePanel() {
             </button>
           ))}
         </div>
-        {result !== null && (
+        {done && (
           <div style={{ background: 'rgba(143,209,168,.16)', border: '1px solid rgba(143,209,168,.4)', color: '#8fd1a8', padding: '5px 12px', borderRadius: 999, fontWeight: 800, fontSize: 13 }}>
             <CheckCircle2 size={14} /> Terminé
           </div>

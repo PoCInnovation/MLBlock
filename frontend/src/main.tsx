@@ -1,24 +1,13 @@
 import React, { useEffect, useState } from 'react'
 import ReactDOM from 'react-dom/client'
 import { RouterProvider } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import useAppStore from './store/useAppStore'
 import { getSession, onAuthStateChange } from './services/auth'
 import { toServerPayload } from './utils/blockHelpers'
 import { writeStash } from './utils/pending-stash'
 import { router } from './router'
-import { theme } from './theme'
 import './index.css'
-
-const splashStyle: React.CSSProperties = {
-  height: '100vh',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  background: theme.color.bg,
-  color: theme.color.textMuted,
-  fontFamily: theme.font.heading,
-  fontSize: 18,
-}
 
 function Root() {
   const setUser = useAppStore(s => s.setUser)
@@ -51,14 +40,28 @@ function Root() {
   }, [setUser])
 
   if (!authReady) {
-    return <div style={splashStyle}>Chargement…</div>
+    return (
+      <div className="h-screen flex items-center justify-center bg-bg text-text-muted font-heading text-lg">
+        Chargement…
+      </div>
+    )
   }
 
   return <RouterProvider router={router} />
 }
 
+function App() {
+  // Client Query singleton (état serveur) — recréé une seule fois.
+  const [queryClient] = useState(() => new QueryClient())
+  return (
+    <QueryClientProvider client={queryClient}>
+      <Root />
+    </QueryClientProvider>
+  )
+}
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <Root />
+    <App />
   </React.StrictMode>
 )

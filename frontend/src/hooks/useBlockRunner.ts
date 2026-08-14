@@ -1,138 +1,189 @@
-import { useCallback } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import useAppStore from '../store/useAppStore'
 import { validateGraph, updatePipeline, buildPipeline, executePipeline, getJob, getJobOutputs } from '../api/client'
 import { toServerPayload } from '../utils/blockHelpers'
 import axios from 'axios'
+import type { Job, JobStatus } from '../types/catalog'
 
 const DEFAULT_PIPELINE_NAME = 'mon-premier-modèle'
 
-/** Suit le job jusqu'à done/error puis charge les sorties structurées. */
-function pollJob(jobId: string): void {
-  let tries = 0
-  const timer = setInterval(async () => {
-    tries++
-    try {
-      const job = await getJob(jobId)
-      useAppStore.getState().setJobStatus(job.status)
-      if (job.status === 'done' || job.status === 'error') {
-        clearInterval(timer)
-        const outputs = await getJobOutputs(jobId)
-        useAppStore.getState().setResults(outputs)
-        useAppStore.getState().appendConsoleLines([
-          job.status === 'done'
-            ? { k: 'ok', t: `Exécution terminée — ${outputs.length} sortie(s)` }
-            : { k: 'sys', t: `Exécution en erreur : ${job.error || 'inconnue'}` },
-        ])
-      } else if (tries > 40) {
-        clearInterval(timer)
-      }
-    } catch (err) {
-      // 4xx (hors 429) : erreur permanente (job invalide/inexistant) — jamais
-      // résolue, on arrête. Réseau/5xx (backend Render en réveil) : on continue.
-      const status = (err as { response?: { status?: number } } | undefined)?.response?.status
-      if (status && status >= 400 && status < 500 && status !== 429) {
-        clearInterval(timer)
-        useAppStore.getState().appendConsoleLines([{ k: 'sys', t: 'Statut du job indisponible — suivi arrêté.' }])
-      }
-    }
-  }, 3000)
+/** Erreur 4xx (hors 429) : permanente (job invalide/inexistant) — jamais
+    résolue, on arrête le suivi. Réseau/5xx (backend Render en réveil) : on continue. */
+function isPermanentJobError(err: unknown): boolean {
+  const status = (err as { response?: { status?: number } } | undefined)?.response?.status
+  return !!status && status >= 400 && status < 500 && status !== 429
 }
 
 export function useBlockRunner() {
-  const onRun = useCallback(async () => {
-    const store = useAppStore.getState()
-    if (store.running) return
+  // Job lancé par CE hook (un seul à la fois) — la source du suivi. Tant qu'il
+  // est null, les queries de suivi sont désactivées (enabled: false).
+  const [jobId, setJobId] = useState<string | null>(null)
+  const cancelledRef = useRef(false)
+  const stoppedFor = useRef<string | null>(null)
+  const handledFor = useRef<string | null>(null)
 
-    const { nodes, edges } = toServerPayload(store)
+  // — Suivi du job (remplace le polling manuel) —
+  // refetch toutes les 3 s jusqu'à done/error, puis s'arrête.
+  const jobQuery = useQuery({
+    queryKey: ['job', jobId],
+    queryFn: async () => {
+      try {
+        return await getJob(jobId!)
+      } catch (err) {
+        if (isPermanentJobError(err) && stoppedFor.current !== jobId) {
+          stoppedFor.current = jobId
+          const s = useAppStore.getState()
+          s.appendConsoleLines([{ k: 'sys', t: 'Statut du job indisponible — suivi arrêté.' }])
+          s.setJobStatus(null)
+        }
+        throw err
+      }
+    },
+    enabled: !!jobId,
+    refetchInterval: (q) => {
+      const d = q.state.data
+      if (d && (d.status === 'done' || d.status === 'error')) return false
+      // 4xx (hors 429) : erreur permanente → suivi arrêté ; réseau/5xx : on continue
+      return isPermanentJobError(q.state.error) ? false : 3_000
+    },
+  })
 
-    if (nodes.length === 0) {
-      store.appendConsoleLines([{ k: 'sys', t: 'Aucun bloc à exécuter.' }])
-      return
-    }
+  const status: JobStatus | null = jobQuery.data?.status ?? null
+  const terminal = status === 'done' || status === 'error'
 
-    store.startRun()
+  // — Sorties structurées une fois le job terminé —
+  const outputsQuery = useQuery({
+    queryKey: ['job-outputs', jobId],
+    queryFn: () => getJobOutputs(jobId!),
+    enabled: !!jobId && terminal,
+  })
 
-    try {
+  // Miroir du statut vers le store (sélecteur minimal pour ConsolePanel).
+  useEffect(() => {
+    useAppStore.getState().setJobStatus(status)
+  }, [status])
+
+  // Fin du run : résultats + messages console (une seule fois par job).
+  useEffect(() => {
+    if (!outputsQuery.data || !jobId || handledFor.current === jobId) return
+    handledFor.current = jobId
+    const outputs = outputsQuery.data
+    const s = useAppStore.getState()
+    s.setResults(outputs)
+    s.appendConsoleLines([
+      status === 'done'
+        ? { k: 'ok', t: `Exécution terminée — ${outputs.length} sortie(s)` }
+        : { k: 'sys', t: `Exécution en erreur : ${jobQuery.data?.error || 'inconnue'}` },
+    ])
+  }, [outputsQuery.data, jobId, status, jobQuery.data?.error])
+
+  // — Lancement du run (mutation) : même séquence que l'ancien onRun —
+  const runMutation = useMutation({
+    mutationFn: async (): Promise<string | null> => {
+      const store = useAppStore.getState()
+      const { nodes, edges } = toServerPayload(store)
+
+      if (nodes.length === 0) {
+        store.appendConsoleLines([{ k: 'sys', t: 'Aucun bloc à exécuter.' }])
+        return null
+      }
+
+      store.appendConsoleLines([{ k: 'sys', t: "C'est parti !" }])
+
       const validation = await validateGraph(nodes, edges)
+      if (cancelledRef.current) return null
       if (!validation.valid) {
-        useAppStore.getState().appendConsoleLines([
+        store.appendConsoleLines([
           { k: 'sys', t: 'Graphe invalide :' },
           ...validation.errors.map(e => ({ k: 'sys', t: `  • ${e}` })),
         ])
-        useAppStore.getState().failRun()
-        return
+        return null
       }
 
-      let pipelineId = useAppStore.getState().pipelineId
-
+      let pipelineId = store.pipelineId
       if (pipelineId === null) {
         // Run sans projet : brouillon invisible (1 seul par user, nettoyé côté serveur)
-        pipelineId = await useAppStore.getState().ensureDraft()
+        pipelineId = await store.ensureDraft()
       } else {
         // Ré-exécution : on préserve le statut (draft reste draft, projet reste projet)
         await updatePipeline(pipelineId, { name: DEFAULT_PIPELINE_NAME, description: '', nodes, edges })
       }
+      if (cancelledRef.current) return null
 
-      useAppStore.getState().appendConsoleLines([{ k: 'info', t: `Pipeline #${pipelineId} sauvegardé` }])
+      store.appendConsoleLines([{ k: 'info', t: `Pipeline #${pipelineId} sauvegardé` }])
 
       const build = await buildPipeline(pipelineId)
+      if (cancelledRef.current) return null
 
-      if (!useAppStore.getState().running) return
-
-      if (build.success) {
-        const lines = [{ k: 'ok', t: `Build réussi — ${build.layer_count} couche(s)` }]
-        if (build.output_shape) {
-          lines.push({ k: 'info', t: `  Forme de sortie : [${build.output_shape.join(', ')}]` })
-        }
-        useAppStore.getState().appendConsoleLines(lines)
-
-        // Exécution réelle (GPU ou subprocess local en mode mock) — les résultats
-        // remontent via callbacks vers le job.
-        try {
-          const job = await executePipeline(pipelineId)
-          if (!job?.id) {
-            // Job non sérialisé (régression) : ne pas poller un id fantôme
-            useAppStore.getState().appendConsoleLines([{ k: 'sys', t: 'Exécution lancée sans identifiant de job — statut indisponible.' }])
-            useAppStore.getState().failRun()
-            return
-          }
-          useAppStore.getState().setLastJob(job)
-          if (job.status === 'error') {
-            // Échec immédiat (ex. location GPU refusée) : message backend, pas de polling
-            useAppStore.getState().appendConsoleLines([{ k: 'sys', t: `Exécution en erreur : ${job.error || 'inconnue'}` }])
-            useAppStore.getState().failRun()
-            return
-          }
-          pollJob(job.id)
-        } catch {
-          useAppStore.getState().appendConsoleLines([{ k: 'sys', t: "Échec du lancement de l'exécution." }])
-        }
-        useAppStore.getState().finishRun(build)
-      } else {
-        useAppStore.getState().appendConsoleLines([
-          { k: 'sys', t: `Erreur de build : ${build.error ?? 'inconnue'}` },
-        ])
-        useAppStore.getState().failRun()
+      if (!build.success) {
+        store.appendConsoleLines([{ k: 'sys', t: `Erreur de build : ${build.error ?? 'inconnue'}` }])
+        return null
       }
-    } catch (err) {
+
+      store.appendConsoleLines([
+        { k: 'ok', t: `Build réussi — ${build.layer_count} couche(s)` },
+        ...(build.output_shape
+          ? [{ k: 'info', t: `  Forme de sortie : [${build.output_shape.join(', ')}]` }]
+          : []),
+      ])
+
+      let job: Job | null = null
+      try {
+        job = await executePipeline(pipelineId)
+      } catch {
+        store.appendConsoleLines([{ k: 'sys', t: "Échec du lancement de l'exécution." }])
+        return null
+      }
+      if (cancelledRef.current) return null
+
+      if (!job?.id) {
+        // Job non sérialisé (régression) : ne pas suivre un id fantôme
+        store.appendConsoleLines([{ k: 'sys', t: 'Exécution lancée sans identifiant de job — statut indisponible.' }])
+        return null
+      }
+      store.setLastJob(job)
+      return job.id
+    },
+    onSuccess: (id) => {
+      if (cancelledRef.current || !id) return
+      setJobId(id)
+    },
+    onError: (err) => {
       console.error('Pipeline run failed:', err)
-      if (useAppStore.getState().running) {
-        useAppStore.getState().failRun()
-        // Affiche le détail serveur (400 build/validate…) au lieu d'un message générique
-        let detail = "Erreur lors de l'exécution."
-        if (axios.isAxiosError(err)) {
-          const d = (err.response?.data as { detail?: string } | undefined)?.detail
-          if (d) detail = `Erreur : ${d}`
+      // Affiche le détail serveur (400 build/validate…) au lieu d'un message générique
+      let detail = "Erreur lors de l'exécution."
+      if (axios.isAxiosError(err)) {
+        const d = (err.response?.data as { detail?: unknown } | undefined)?.detail
+        if (d) {
+          // detail peut être une string (400 build/validate) ou un tableau
+          // pydantic (422) — extraire les messages, jamais [object Object].
+          const msg = typeof d === 'string'
+            ? d
+            : Array.isArray(d)
+              ? d.map(e => (e as { msg?: string } | undefined)?.msg ?? '').filter(Boolean).join('; ')
+              : JSON.stringify(d)
+          detail = `Erreur : ${msg}`
         }
-        useAppStore.getState().appendConsoleLines([{ k: 'sys', t: detail }])
       }
-    }
-  }, [])
+      useAppStore.getState().appendConsoleLines([{ k: 'sys', t: detail }])
+    },
+  })
+
+  const onRun = useCallback(() => {
+    if (runMutation.isPending) return // double lancement bloqué par isPending
+    cancelledRef.current = false
+    runMutation.mutate()
+  }, [runMutation])
 
   const onStop = useCallback(() => {
-    if (!useAppStore.getState().running) return
-    useAppStore.getState().stopRun()
-  }, [])
+    if (!runMutation.isPending && !jobId) return
+    // Annule l'attente : isPending → false (reset) et suivi arrêté (enabled: false)
+    cancelledRef.current = true
+    runMutation.reset()
+    setJobId(null)
+    useAppStore.getState().appendConsoleLines([{ k: 'sys', t: 'Arrêté' }])
+  }, [runMutation, jobId])
 
   const onClear = useCallback(() => {
     const s = useAppStore.getState()
@@ -140,5 +191,5 @@ export function useBlockRunner() {
     s.clearAll()
   }, [])
 
-  return { onRun, onStop, onClear }
+  return { onRun, onStop, onClear, isPending: runMutation.isPending, isError: runMutation.isError, jobId, status }
 }

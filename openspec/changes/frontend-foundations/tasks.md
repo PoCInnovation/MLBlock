@@ -20,13 +20,13 @@
 
 ## 3. Phase 3 — TanStack Query (état serveur)
 
-- [ ] 3.1 Installer `@tanstack/react-query` (v5) et ajouter `QueryClientProvider` dans `src/main.tsx` avec un client singleton (via `useState`)
-- [ ] 3.2 Remplacer le `fetchCatalog` du boot par `useQuery(['catalog'])` avec un `staleTime` long (le catalogue change rarement)
-- [ ] 3.3 Remplacer `listPipelines` par `useQuery(['pipelines'])`, invalidée après chaque mutation (create/update/delete)
-- [ ] 3.4 Remplacer `getPipeline` par `useQuery(['pipeline', id])` qui alimente `loadPipeline` (le store reste consommateur)
-- [ ] 3.5 Remplacer `pollJob` (setInterval maison, 40 tries, sans cleanup) par `useQuery(['job', jobId])` avec `refetchInterval` conditionnel : 3 s, désactivé quand le statut est `done` ou `error`
-- [ ] 3.6 Remplacer le `getJobOutputs` du timer par `useQuery(['job-outputs', jobId], { enabled: status === 'done' })`
-- [ ] 3.7 Convertir l'orchestration du run en `useMutation` (même séquence dans `mutationFn` : toServerPayload → validateGraph → ensureDraft/updatePipeline → buildPipeline → executePipeline → jobId) ; messages console conservés ; `onSuccess` → suivi du job
-- [ ] 3.8 Option A : supprimer `running`, `startRun`, `stopRun`, `failRun` du store et refactorer le UI complet (bouton Run, guards, console) pour lire `isPending` et les états de la mutation
-- [ ] 3.9 `onStop` → cancel de la mutation/polling (arrêt de l'attente côté UI)
-- [ ] 3.10 Smoke navigateur : run complet (graphe invalide, succès, arrêt via onStop), suivi du job sans polling maison, erreurs par étape affichées dans la console
+- [x] 3.1 Installer `@tanstack/react-query` (v5) et ajouter `QueryClientProvider` dans `src/main.tsx` avec un client singleton (via `useState`)
+- [x] 3.2 Remplacer le `fetchCatalog` du boot par `useQuery(['catalog'])` avec un `staleTime` long (le catalogue change rarement)
+- [x] 3.3 Remplacer `listPipelines` par `useQuery(['pipelines'])`, invalidée après chaque mutation (create/update/delete)
+- [x] 3.4 Remplacer `getPipeline` par `useQuery(['pipeline', id])` qui alimente `loadPipeline` (le store reste consommateur)
+- [x] 3.5 Remplacer `pollJob` (setInterval maison, 40 tries, sans cleanup) par `useQuery(['job', jobId])` avec `refetchInterval` conditionnel : 3 s, désactivé quand le statut est `done` ou `error`
+- [x] 3.6 Remplacer le `getJobOutputs` du timer par `useQuery(['job-outputs', jobId], { enabled: status === 'done' })`
+- [x] 3.7 Convertir l'orchestration du run en `useMutation` (même séquence dans `mutationFn` : toServerPayload → validateGraph → ensureDraft/updatePipeline → buildPipeline → executePipeline → jobId) ; messages console conservés ; `onSuccess` → suivi du job
+- [x] 3.8 Option A : supprimer `running`, `startRun`, `stopRun`, `failRun` du store et refactorer le UI complet (bouton Run, guards, console) pour lire `isPending` et les états de la mutation
+- [x] 3.9 `onStop` → cancel de la mutation/polling (arrêt de l'attente côté UI)
+- [x] 3.10 Smoke navigateur : run complet (graphe invalide, succès, arrêt via onStop), suivi du job sans polling maison, erreurs par étape affichées dans la console

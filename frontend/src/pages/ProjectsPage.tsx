@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import useAppStore, { fingerprintOf } from '../store/useAppStore'
 import { listPipelines, getPipeline, deletePipeline } from '../api/client'
@@ -44,31 +45,31 @@ function fmtDate(iso: string): string {
 
 export default function ProjectsPage() {
   const navigate = useNavigate()
-  const [projects, setProjects] = useState<PipelineSummary[] | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const queryClient = useQueryClient()
+  const projectsQuery = useQuery({
+    queryKey: ['pipelines'],
+    queryFn: () => listPipelines(100),
+  })
+  const projects = projectsQuery.data?.items ?? null
+  // Erreurs d'action (ouverture/suppression) distinctes de l'erreur de liste
+  const [actionError, setActionError] = useState<string | null>(null)
+  const listError = projectsQuery.isError ? 'Impossible de charger tes projets. Le serveur est peut-être en veille.' : null
+  const error = actionError ?? listError
   const [exporting, setExporting] = useState<PipelineSummary | null>(null)
   const [importError, setImportError] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const { importFile } = usePipelineImport()
 
-  const reload = useCallback(async () => {
-    try {
-      setProjects((await listPipelines()).items)
-      setError(null)
-    } catch {
-      setError('Impossible de charger tes projets. Le serveur est peut-être en veille.')
-    }
-  }, [])
-
-  useEffect(() => { reload() }, [reload])
-
   const openProject = async (p: PipelineSummary) => {
     try {
-      const detail = await getPipeline(p.id)
+      const detail = await queryClient.fetchQuery({
+        queryKey: ['pipeline', p.id],
+        queryFn: () => getPipeline(p.id),
+      })
       useAppStore.getState().loadPipeline(detail.nodes, detail.edges, detail.id, detail.name, detail.columns)
       navigate('/editor')
     } catch {
-      setError('Impossible d’ouvrir ce projet.')
+      setActionError('Impossible d’ouvrir ce projet.')
     }
   }
 
@@ -76,14 +77,16 @@ export default function ProjectsPage() {
     if (!window.confirm(`Supprimer le projet « ${p.name} » ? Cette action est définitive.`)) return
     try {
       await deletePipeline(p.id)
-      reload()
+      setActionError(null)
+      // Garde le pending jusqu'à la fin du refetch de la liste
+      await queryClient.invalidateQueries({ queryKey: ['pipelines'] })
     } catch {
-      setError('Impossible de supprimer ce projet.')
+      setActionError('Impossible de supprimer ce projet.')
     }
   }
 
   const onImportFile = async (file: File) => {
-    setError(null)
+    setActionError(null)
     const err = await importFile(file)
     if (err) setImportError(err)
     else navigate('/editor')
@@ -146,7 +149,10 @@ export default function ProjectsPage() {
       {exporting && (
         <ExportModal
           title={`Exporter « ${exporting.name} »`}
-          resolve={() => getPipeline(exporting.id)}
+          resolve={() => queryClient.fetchQuery({
+            queryKey: ['pipeline', exporting.id],
+            queryFn: () => getPipeline(exporting.id),
+          })}
           onClose={() => setExporting(null)}
         />
       )}

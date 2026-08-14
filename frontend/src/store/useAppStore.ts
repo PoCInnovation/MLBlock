@@ -38,10 +38,7 @@ type AppState = {
   user: unknown | null
   flowNodes: Node[]
   flowEdges: Edge[]
-  running: boolean
-  runningId: string | null
   consoleLines: ConsoleLine[]
-  result: unknown
   drag: DragState | null
   catalog: InternalCatalog | null
   catalogError: boolean
@@ -83,11 +80,6 @@ type AppState = {
   updateFlowParam: (nodeId: string, k: string, v: string) => void
   removeFlowNode: (nodeId: string) => void
   appendConsoleLines: (lines: ConsoleLine[]) => void
-  startRun: () => void
-  setRunningId: (id: string | null) => void
-  finishRun: (result: unknown) => void
-  stopRun: () => void
-  failRun: () => void
   clearAll: () => void
   setCatalog: (catalog: InternalCatalog) => void
   setCatalogError: (error: boolean, message?: string) => void
@@ -143,10 +135,7 @@ const useAppStore = create<AppState>((set, get) => ({
   category: 'data',
   flowNodes: [],
   flowEdges: [],
-  running: false,
-  runningId: null,
   consoleLines: [],
-  result: null,
   drag: null,
   user: null,
   catalog: null,
@@ -374,31 +363,7 @@ const useAppStore = create<AppState>((set, get) => ({
 
   appendConsoleLines: (lines) => set((s) => ({ consoleLines: [...s.consoleLines, ...lines] })),
 
-  startRun: () => set({
-    running: true,
-    runningId: null,
-    consoleLines: [{ k: 'sys', t: "C'est parti !" }],
-    result: null,
-  }),
-
-  setRunningId: (id) => set({ runningId: id }),
-
-  finishRun: (result) => set((s) => ({
-    running: false,
-    runningId: null,
-    result,
-    consoleLines: [...s.consoleLines, { k: 'ok', t: 'Terminé' }],
-  })),
-
-  stopRun: () => set((s) => ({
-    running: false,
-    runningId: null,
-    consoleLines: [...s.consoleLines, { k: 'sys', t: 'Arrêté' }],
-  })),
-
-  failRun: () => set((s) => ({ running: false, runningId: null })),
-
-  clearAll: () => set({ flowNodes: [], flowEdges: [], consoleLines: [], result: null, running: false, runningId: null, lastJobId: null, jobStatus: null, results: [], columns: [], columnCounter: 0 }),
+  clearAll: () => set({ flowNodes: [], flowEdges: [], consoleLines: [], lastJobId: null, jobStatus: null, results: [], columns: [], columnCounter: 0 }),
 
   setCatalog: (catalog) => set((s) => {
     const firstCat = catalog.categories[0]?.id ?? 'data'
