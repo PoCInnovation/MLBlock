@@ -103,12 +103,12 @@ function BlockNode({ data, id }: NodeProps<BlockNodeData>) {
             {(() => {
               // Séparateur unique traversant body (si bilatéral) + params : il
               // s'aligne d'office avec les colonnes de la grille commune.
+              const paramCount = data.segs.filter(s => s.t !== 'text').length
               const bodyBoth = data.inputs.length > 0 && data.outputs.length > 0
-              const hasParams = data.segs.some(s => s.t !== 'text')
-              if (!bodyBoth && !hasParams) return null
+              if (!bodyBoth && paramCount === 0) return null
               const startRow = data.inputs.length > 0 || data.outputs.length > 0 ? 2 : 1
               const start = bodyBoth ? 1 : startRow
-              return <Separator orientation="vertical" style={{ gridColumn: 2, gridRow: `${start} / ${startRow + data.segs.length}` }} />
+              return <Separator orientation="vertical" style={{ gridColumn: 2, gridRow: `${start} / ${startRow + paramCount}` }} />
             })()}
             <div className="col-span-3 flex justify-end pt-2">
               <button className="block-delete-btn border-none bg-none text-text-muted font-extrabold text-[11px] cursor-pointer p-0 font-body" onClick={() => removeFlowNode(id)}>Supprimer</button>

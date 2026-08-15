@@ -215,13 +215,14 @@ export default function BlockSegments({ segs, fields, blockId, blockType, onUpda
     ? { borderTop: '1px solid var(--color-border)', paddingTop: 8 }
     : {}
 
+  // Le label du bloc (text seg ajouté par fetchCatalog) est déjà dans le
+  // CardTitle — on ne le re-rend pas dans les params.
+  const paramSegs = segs.filter(s => s.t !== 'text')
+
   return (
     <>
-      {segs.map((s, i) => {
+      {paramSegs.map((s, i) => {
         const row = startRow + i
-        if (s.t === 'text') {
-          return <span key={i} style={{ gridColumn: 1, gridRow: row, justifySelf: 'start', padding: '3px 0', ...labelStyle, ...(i === 0 ? dividerStyle : {}) }}>{s.v}</span>
-        }
         if (!onUpdate) {
           return (
             <>
