@@ -84,32 +84,37 @@ function BlockNode({ data, id }: NodeProps<BlockNodeData>) {
           </svg>
         </CardAction>
       </CardHeader>
-      {(data.inputs.length > 0 || data.outputs.length > 0) && (
+      {(data.inputs.length > 0 || data.outputs.length > 0 || data.segs.length > 0) && (
         <CardContent className="flex-1 min-h-0">
-          {data.inputs.length > 0 && data.outputs.length > 0 ? (
-            <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-3">
-              <div className={inputsClassName}>
+          <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-x-3">
+            {data.inputs.length > 0 && (
+              <div className={inputsClassName} style={{ gridColumn: 1, gridRow: 1 }}>
                 {data.inputs.map(p => <div key={p.name}>{p.name} · {p.dtype}</div>)}
               </div>
-              <Separator orientation="vertical" />
-              <div className={outputsClassName}>
+            )}
+            {data.outputs.length > 0 && (
+              <div className={outputsClassName} style={{ gridColumn: data.inputs.length > 0 ? 3 : 1, gridRow: 1 }}>
                 {data.outputs.map(p => <div key={p.name}>{p.name} · {p.dtype}</div>)}
               </div>
+            )}
+            {data.segs.length > 0 && (
+              <BlockSegments segs={data.segs} fields={data.fields} blockId={id} blockType={data.type} onUpdate={updateFlowParam} columnOptions={columnOptions} startRow={data.inputs.length > 0 || data.outputs.length > 0 ? 2 : 1} />
+            )}
+            {(() => {
+              // Séparateur unique traversant body (si bilatéral) + params : il
+              // s'aligne d'office avec les colonnes de la grille commune.
+              const bodyBoth = data.inputs.length > 0 && data.outputs.length > 0
+              const hasParams = data.segs.some(s => s.t !== 'text')
+              if (!bodyBoth && !hasParams) return null
+              const startRow = data.inputs.length > 0 || data.outputs.length > 0 ? 2 : 1
+              const start = bodyBoth ? 1 : startRow
+              return <Separator orientation="vertical" style={{ gridColumn: 2, gridRow: `${start} / ${startRow + data.segs.length}` }} />
+            })()}
+            <div className="col-span-3 flex justify-end pt-2">
+              <button className="block-delete-btn border-none bg-none text-text-muted font-extrabold text-[11px] cursor-pointer p-0 font-body" onClick={() => removeFlowNode(id)}>Supprimer</button>
             </div>
-          ) : (
-            <div className={data.inputs.length > 0 ? inputsClassName : outputsClassName}>
-              {(data.inputs.length > 0 ? data.inputs : data.outputs).map(p => <div key={p.name}>{p.name} · {p.dtype}</div>)}
-            </div>
-          )}
-        </CardContent>
-      )}
-      {data.segs.length > 0 && (
-        <CardFooter className="flex flex-col items-stretch gap-2 -mx-lg border-t border-border bg-white/3 p-2 rounded-b-2xl text-[12px] font-extrabold text-text-muted">
-          <BlockSegments segs={data.segs} fields={data.fields} blockId={id} blockType={data.type} onUpdate={updateFlowParam} columnOptions={columnOptions} />
-          <div className="flex justify-end">
-            <button className="block-delete-btn border-none bg-none text-text-muted font-extrabold text-[11px] cursor-pointer p-0 font-body" onClick={() => removeFlowNode(id)}>Supprimer</button>
           </div>
-        </CardFooter>
+        </CardContent>
       )}
       {data.inputs.map((p, i, arr) => (
         <Handle
