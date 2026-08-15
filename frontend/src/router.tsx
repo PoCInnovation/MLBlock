@@ -1,9 +1,9 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
-import { useEffect } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import type { ReactNode } from 'react'
 import useAppStore from './store/useAppStore'
 import HomePage from './pages/HomePage'
-import EditorPage from './pages/EditorPage'
+const EditorPage = lazy(() => import('./pages/EditorPage'))
 import ProjectsPage from './pages/ProjectsPage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
@@ -26,7 +26,7 @@ function RequireAuth({ children }: { children: ReactNode }) {
 
 export const router = createBrowserRouter([
   { path: '/', element: <HomePage /> },
-  { path: '/editor', element: <RequireAuth><EditorPage /></RequireAuth> },
+  { path: '/editor', element: <RequireAuth><Suspense fallback={<div className="h-screen flex items-center justify-center bg-bg text-text-muted font-heading text-lg">Chargement…</div>}><EditorPage /></Suspense></RequireAuth> },
   { path: '/projets', element: <RequireAuth><ProjectsPage /></RequireAuth> },
   { path: '/login', element: <LoginPage /> },
   { path: '/register', element: <RegisterPage /> },
