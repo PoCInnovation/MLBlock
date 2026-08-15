@@ -7,6 +7,7 @@ import { theme } from '../../theme'
 import { ACCEPT_BY_BLOCK, DEFAULT_ACCEPT, SAMPLE_CATEGORY_BY_BLOCK } from '../../utils/samples'
 import SampleDataModal from '../ui/SampleDataModal'
 import { HoverCard, HoverCardTrigger, HoverCardContent } from '../ui/hover-card'
+import { Separator } from '../ui/separator'
 
 const inputBase: React.CSSProperties = {
   background: 'rgba(255,255,255,.9)', border: 'none', borderRadius: theme.radius.sm,
@@ -192,194 +193,247 @@ export default function BlockSegments({ segs, fields, blockId, blockType, onUpda
 
   const activeSampleCat = blockType ? SAMPLE_CATEGORY_BY_BLOCK[blockType] : undefined
 
+  // Grille 3 colonnes : [labels | séparateur | champs]. Chaque segment occupe
+  // une rangée (gridRow = i+1) : le label à droite de sa colonne (collé au
+  // séparateur), le champ à gauche de la sienne. Le séparateur traverse toutes
+  // les rangées (gridRow 1/-1). Pas de gap-y : les cellules portent leur
+  // padding vertical, sinon le séparateur serait segmenté aux gaps.
+  const labelCell = (s: Exclude<Segment, { t: 'text' }>, row: number) => (
+    <span key={`l${row}`} style={{ gridColumn: 1, gridRow: row, justifySelf: 'end', alignSelf: 'center', padding: '3px 0', lineHeight: 1, ...labelStyle }}>
+      {s.k}:
+    </span>
+  )
+  const fieldCell = (row: number, children: React.ReactNode) => (
+    <span key={`f${row}`} style={{ gridColumn: 3, gridRow: row, justifySelf: 'start', padding: '3px 0' }}>
+      {children}
+    </span>
+  )
+
   return (
-    <>
+    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-3">
       {segs.map((s, i) => {
-    if (s.t === 'text') return <span key={i}>{s.v}</span>
-    if (!onUpdate) return <span key={i} style={fieldPill}>{s.def}</span>
+        const row = i + 1
+        if (s.t === 'text') {
+          return <span key={i} style={{ gridColumn: 1, gridRow: row, justifySelf: 'start', padding: '3px 0', ...labelStyle }}>{s.v}</span>
+        }
+        if (!onUpdate) {
+          return (
+            <>
+              {labelCell(s, row)}
+              {fieldCell(row, <span style={fieldPill}>{s.def}</span>)}
+            </>
+          )
+        }
 
-    const value = fields![s.k] ?? s.def ?? ''
-    const cols = columnOptions?.[s.k]
+        const value = fields![s.k] ?? s.def ?? ''
+        const cols = columnOptions?.[s.k]
 
-    // Suggestions (datalist) pour un champ libre — choices docstring ou colonnes CSV
-    if (cols || s.t === 'sug') {
-      const opts = cols ?? (s.t === 'sug' ? s.opts : [])
-      const dlId = `mlb-dl-${blockId}-${s.k}`
-      return (
-        <ParamInfo key={i} seg={s}><span style={{ display: 'flex', alignItems: 'center', gap: 4, flexBasis: '100%' }}>
-          <span style={labelStyle}>{s.k}:</span>
-          <input
-            list={dlId}
-            type="text"
-            value={value}
-            onChange={e => onUpdate(blockId!, s.k, e.target.value)}
-            onFocus={() => useAppStore.getState().commitUndoPoint()}
-            style={{ ...inputBase, width: 110 }}
-                        placeholder={cols ? 'colonne…' : undefined}
-          />
-          <datalist id={dlId}>{opts.map(o => <option key={o} value={o} />)}</datalist>
-        </span>
-      </ParamInfo>
-    )
-    }
+        // Suggestions (datalist) pour un champ libre — choices docstring ou colonnes CSV
+        if (cols || s.t === 'sug') {
+          const opts = cols ?? (s.t === 'sug' ? s.opts : [])
+          const dlId = `mlb-dl-${blockId}-${s.k}`
+          return (
+            <>
+              {labelCell(s, row)}
+              {fieldCell(row, (
+                <ParamInfo seg={s}><input
+                  list={dlId}
+                  type="text"
+                  value={value}
+                  onChange={e => onUpdate(blockId!, s.k, e.target.value)}
+                  onFocus={() => useAppStore.getState().commitUndoPoint()}
+                  style={{ ...inputBase, width: 110 }}
+                  placeholder={cols ? 'colonne…' : undefined}
+                /></ParamInfo>
+              ))}
+              <datalist id={dlId}>{opts.map(o => <option key={o} value={o} />)}</datalist>
+            </>
+          )
+        }
 
-    if (s.t === 'sel') return (
-      <ParamInfo key={i} seg={s}><span style={{ display: 'flex', alignItems: 'center', gap: 4, flexBasis: '100%' }}>
-        <span style={labelStyle}>{s.k}:</span>
-        <select
-          value={value}
-          onChange={e => onUpdate(blockId!, s.k, e.target.value)}
-          onFocus={() => useAppStore.getState().commitUndoPoint()}
-          style={selectBase}
-                  >
-          {s.opts.map(o => <option key={o} value={o}>{o}</option>)}
-        </select>
-      </span>
-      </ParamInfo>
-    )
-
-    if (s.t === 'bool') {
-      const checked = value === 'true'
-      return (
-        <ParamInfo key={i} seg={s}><span style={{ display: 'flex', alignItems: 'center', gap: 4, flexBasis: '100%' }}>
-          <span style={labelStyle}>{s.k}:</span>
-          <input
-            type="checkbox"
-            checked={checked}
-            onChange={e => onUpdate(blockId!, s.k, e.target.checked ? 'true' : 'false')}
-            onFocus={() => useAppStore.getState().commitUndoPoint()}
-                        style={{ cursor: 'pointer', accentColor: '#2a211c' }}
-          />
-        </span>
-      </ParamInfo>
-    )
-    }
-
-    if (s.t === 'num') {
-      const v = validateSeg(s, value)
-      const placeholder = s.min != null && s.max != null ? `entre ${s.min} et ${s.max}` : undefined
-      const isNumeric = s.min != null || s.max != null || s.step != null
-      // datalist incompatible avec type=number → text quand suggestions
-      const useText = !!s.opts && s.opts.length > 0
-      if (useText) {
-        const dlId = `mlb-dl-${blockId}-${s.k}`
-        const invalid = !v.ok && value.trim() !== ''
-        return (
-          <ParamInfo key={i} seg={s}><span style={{ display: 'flex', flexDirection: 'column', gap: 2, flexBasis: '100%' }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <span style={labelStyle}>{s.k}:</span>
-              <input
-                list={dlId}
-                type="text"
+        if (s.t === 'sel') return (
+          <>
+            {labelCell(s, row)}
+            {fieldCell(row, (
+              <ParamInfo seg={s}><select
                 value={value}
                 onChange={e => onUpdate(blockId!, s.k, e.target.value)}
                 onFocus={() => useAppStore.getState().commitUndoPoint()}
-                style={{ ...inputBase, width: (s.w || 60) + 'px', ...validBorder(v, value.trim() !== '') }}
-                title={v.msg}
-                placeholder={placeholder}
-              />
-              <datalist id={dlId}>{s.opts!.map(o => <option key={o} value={o} />)}</datalist>
-            </span>
-            {invalid && <span role="alert" style={errMsgStyle}>{v.msg}</span>}
-          </span>
-        </ParamInfo>
+                style={selectBase}
+              >
+                {s.opts.map(o => <option key={o} value={o}>{o}</option>)}
+              </select></ParamInfo>
+            ))}
+          </>
         )
-      }
-      const invalid = !v.ok && value.trim() !== ''
-      return (
-        <ParamInfo key={i} seg={s}><span style={{ display: 'flex', flexDirection: 'column', gap: 2, flexBasis: '100%' }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span style={labelStyle}>{s.k}:</span>
-            <input
-              type={isNumeric ? 'number' : 'text'}
-              onFocus={() => useAppStore.getState().commitUndoPoint()}
-              value={value}
-              onChange={e => onUpdate(blockId!, s.k, e.target.value)}
-              style={{ ...inputBase, width: (s.w || (isNumeric ? 60 : 90)) + 'px', ...validBorder(v, value.trim() !== '') }}
-              title={v.msg}
-              placeholder={placeholder}
-              min={s.min}
-              max={s.max}
-              step={s.step}
-            />
-          </span>
-          {invalid && <span role="alert" style={errMsgStyle}>{v.msg}</span>}
-        </span>
-      </ParamInfo>
-    )
-    }
 
-    if (s.t === 'list') {
-      const v = validateSeg(s, value)
-      const dlId = `mlb-dl-${blockId}-${s.k}`
-      const invalid = !v.ok && value.trim() !== ''
-      return (
-        <ParamInfo key={i} seg={s}><span style={{ display: 'flex', flexDirection: 'column', gap: 2, flexBasis: '100%' }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span style={labelStyle}>{s.k}:</span>
-            <input
-              list={s.opts && s.opts.length > 0 ? dlId : undefined}
-              type="text"
-              value={value}
-              onChange={e => onUpdate(blockId!, s.k, e.target.value)}
-              style={{ ...inputBase, width: 110, ...validBorder(v, value.trim() !== '') }}
-              title={v.msg}
-              placeholder={s.format ?? '[1, 2, 3]'}
-            />
-            {s.opts && s.opts.length > 0 && (
-              <datalist id={dlId}>{s.opts.map(o => <option key={o} value={o} />)}</datalist>
-            )}
-          </span>
-          {invalid && <span role="alert" style={errMsgStyle}>{v.msg}</span>}
-        </span>
-      </ParamInfo>
-    )
-    }
+        if (s.t === 'bool') {
+          const checked = value === 'true'
+          return (
+            <>
+              {labelCell(s, row)}
+              {fieldCell(row, (
+                <ParamInfo seg={s}><input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={e => onUpdate(blockId!, s.k, e.target.checked ? 'true' : 'false')}
+                  onFocus={() => useAppStore.getState().commitUndoPoint()}
+                  style={{ cursor: 'pointer', accentColor: '#2a211c' }}
+                /></ParamInfo>
+              ))}
+            </>
+          )
+        }
 
-    if (s.t === 'file') {
-      const sampleCat = blockType ? SAMPLE_CATEGORY_BY_BLOCK[blockType] : undefined
-      const fileAccept = (blockType ? ACCEPT_BY_BLOCK[blockType] : undefined) ?? DEFAULT_ACCEPT
-      const state = uploadState[s.k]
-      const meta = fileMetaState[s.k]
-      const hasUrl = fields?.[s.k]?.startsWith('https://')
-      const fname = meta?.name ?? (hasUrl ? fields![s.k].split('/').pop() : null)
-      const fsize = meta?.size
+        if (s.t === 'num') {
+          const v = validateSeg(s, value)
+          const placeholder = s.min != null && s.max != null ? `entre ${s.min} et ${s.max}` : undefined
+          const isNumeric = s.min != null || s.max != null || s.step != null
+          // datalist incompatible avec type=number → text quand suggestions
+          const useText = !!s.opts && s.opts.length > 0
+          if (useText) {
+            const dlId = `mlb-dl-${blockId}-${s.k}`
+            const invalid = !v.ok && value.trim() !== ''
+            return (
+              <>
+                {labelCell(s, row)}
+                {fieldCell(row, (
+                  <ParamInfo seg={s}><span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <input
+                      list={dlId}
+                      type="text"
+                      value={value}
+                      onChange={e => onUpdate(blockId!, s.k, e.target.value)}
+                      onFocus={() => useAppStore.getState().commitUndoPoint()}
+                      style={{ ...inputBase, width: (s.w || 60) + 'px', ...validBorder(v, value.trim() !== '') }}
+                      title={v.msg}
+                      placeholder={placeholder}
+                    />
+                    {invalid && <span role="alert" style={errMsgStyle}>{v.msg}</span>}
+                  </span></ParamInfo>
+                ))}
+                <datalist id={dlId}>{s.opts!.map(o => <option key={o} value={o} />)}</datalist>
+              </>
+            )
+          }
+          const invalid = !v.ok && value.trim() !== ''
+          return (
+            <>
+              {labelCell(s, row)}
+              {fieldCell(row, (
+                <ParamInfo seg={s}><span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <input
+                    type={isNumeric ? 'number' : 'text'}
+                    onFocus={() => useAppStore.getState().commitUndoPoint()}
+                    value={value}
+                    onChange={e => onUpdate(blockId!, s.k, e.target.value)}
+                    style={{ ...inputBase, width: (s.w || (isNumeric ? 60 : 90)) + 'px', ...validBorder(v, value.trim() !== '') }}
+                    title={v.msg}
+                    placeholder={placeholder}
+                    min={s.min}
+                    max={s.max}
+                    step={s.step}
+                  />
+                  {invalid && <span role="alert" style={errMsgStyle}>{v.msg}</span>}
+                </span></ParamInfo>
+              ))}
+            </>
+          )
+        }
 
-      if (state === 'uploading') return (
-        <span key={i} style={fileCard}>
-          <span style={fileNameStyle}>{meta?.name ?? 'Upload…'}</span>
-          <span style={fileMeta}><Loader2 size={12} style={{ animation: 'mlbSpin .8s linear infinite' }} /></span>
-        </span>
-      )
+        if (s.t === 'list') {
+          const v = validateSeg(s, value)
+          const dlId = `mlb-dl-${blockId}-${s.k}`
+          const invalid = !v.ok && value.trim() !== ''
+          return (
+            <>
+              {labelCell(s, row)}
+              {fieldCell(row, (
+                <ParamInfo seg={s}><span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <input
+                    list={s.opts && s.opts.length > 0 ? dlId : undefined}
+                    type="text"
+                    value={value}
+                    onChange={e => onUpdate(blockId!, s.k, e.target.value)}
+                    style={{ ...inputBase, width: 110, ...validBorder(v, value.trim() !== '') }}
+                    title={v.msg}
+                    placeholder={s.format ?? '[1, 2, 3]'}
+                  />
+                  {invalid && <span role="alert" style={errMsgStyle}>{v.msg}</span>}
+                </span></ParamInfo>
+              ))}
+              {s.opts && s.opts.length > 0 && (
+                <datalist id={dlId}>{s.opts.map(o => <option key={o} value={o} />)}</datalist>
+              )}
+            </>
+          )
+        }
 
-      if (state === 'error') return (
-        <span key={i} style={fileCard}>
-          <span style={{ ...errStyle, display: 'inline-flex', alignItems: 'center', gap: 4 }}><TriangleAlert size={12} /> Échec</span>
-          <button type="button" style={{ ...errStyle, background: 'none', border: 'none', padding: 0, fontFamily: 'inherit' }} onClick={() => inputRefs.current[s.k]?.click()}>Réessayer</button>
-          <input ref={el => { inputRefs.current[s.k] = el }} type="file" accept={fileAccept} style={{ display: 'none' }} onChange={e => handleFile(s.k, e)} />
-        </span>
-      )
+        if (s.t === 'file') {
+          const sampleCat = blockType ? SAMPLE_CATEGORY_BY_BLOCK[blockType] : undefined
+          const fileAccept = (blockType ? ACCEPT_BY_BLOCK[blockType] : undefined) ?? DEFAULT_ACCEPT
+          const state = uploadState[s.k]
+          const meta = fileMetaState[s.k]
+          const hasUrl = fields?.[s.k]?.startsWith('https://')
+          const fname = meta?.name ?? (hasUrl ? fields![s.k].split('/').pop() : null)
+          const fsize = meta?.size
 
-      if (hasUrl && fname) return (
-        <span key={i} style={fileCard}>
-          <span style={fileNameStyle}>{fname}</span>
-          {fsize && <span style={fileMeta}>{fmtSize(fsize)}</span>}
-          <button style={removeBtn} onClick={() => { onUpdate(blockId!, s.k, ''); setFileMetaState(m => { const n = { ...m }; delete n[s.k]; return n }) }}>×</button>
-          <input ref={el => { inputRefs.current[s.k] = el }} type="file" accept={fileAccept} style={{ display: 'none' }} onChange={e => handleFile(s.k, e)} />
-        </span>
-      )
+          if (state === 'uploading') return (
+            <>
+              {labelCell(s, row)}
+              {fieldCell(row, (
+                <span style={fileCard}>
+                  <span style={fileNameStyle}>{meta?.name ?? 'Upload…'}</span>
+                  <span style={fileMeta}><Loader2 size={12} style={{ animation: 'mlbSpin .8s linear infinite' }} /></span>
+                </span>
+              ))}
+            </>
+          )
 
-      return (
-        <span key={i} style={{ display: 'flex', flexBasis: '100%' }}>
-          <input ref={el => { inputRefs.current[s.k] = el }} type="file" accept={fileAccept} style={{ display: 'none' }} onChange={e => handleFile(s.k, e)} />
-          <button type="button" onClick={() => sampleCat ? setSampleOpen(s.k) : inputRefs.current[s.k]?.click()} style={{ ...fileBtn, fontFamily: 'inherit' }} title={s.desc}>
-            <FileUp size={13} /> {sampleCat ? 'Données' : 'CSV'}
-          </button>
-        </span>
-      )
-    }
-      return null
+          if (state === 'error') return (
+            <>
+              {labelCell(s, row)}
+              {fieldCell(row, (
+                <span style={fileCard}>
+                  <span style={{ ...errStyle, display: 'inline-flex', alignItems: 'center', gap: 4 }}><TriangleAlert size={12} /> Échec</span>
+                  <button type="button" style={{ ...errStyle, background: 'none', border: 'none', padding: 0, fontFamily: 'inherit' }} onClick={() => inputRefs.current[s.k]?.click()}>Réessayer</button>
+                  <input ref={el => { inputRefs.current[s.k] = el }} type="file" accept={fileAccept} style={{ display: 'none' }} onChange={e => handleFile(s.k, e)} />
+                </span>
+              ))}
+            </>
+          )
+
+          if (hasUrl && fname) return (
+            <>
+              {labelCell(s, row)}
+              {fieldCell(row, (
+                <span style={fileCard}>
+                  <span style={fileNameStyle}>{fname}</span>
+                  {fsize && <span style={fileMeta}>{fmtSize(fsize)}</span>}
+                  <button style={removeBtn} onClick={() => { onUpdate(blockId!, s.k, ''); setFileMetaState(m => { const n = { ...m }; delete n[s.k]; return n }) }}>×</button>
+                  <input ref={el => { inputRefs.current[s.k] = el }} type="file" accept={fileAccept} style={{ display: 'none' }} onChange={e => handleFile(s.k, e)} />
+                </span>
+              ))}
+            </>
+          )
+
+          return (
+            <>
+              {labelCell(s, row)}
+              {fieldCell(row, (
+                <span style={{ display: 'flex' }}>
+                  <input ref={el => { inputRefs.current[s.k] = el }} type="file" accept={fileAccept} style={{ display: 'none' }} onChange={e => handleFile(s.k, e)} />
+                  <button type="button" onClick={() => sampleCat ? setSampleOpen(s.k) : inputRefs.current[s.k]?.click()} style={{ ...fileBtn, fontFamily: 'inherit' }} title={s.desc}>
+                    <FileUp size={13} /> {sampleCat ? 'Données' : 'CSV'}
+                  </button>
+                </span>
+              ))}
+            </>
+          )
+        }
+        return null
       })}
+      <Separator orientation="vertical" style={{ gridColumn: 2, gridRow: `1 / ${segs.length + 1}` }} />
       {sampleOpen && activeSampleCat && (
         <SampleDataModal
           category={activeSampleCat}
@@ -388,6 +442,6 @@ export default function BlockSegments({ segs, fields, blockId, blockType, onUpda
           onClose={() => setSampleOpen(null)}
         />
       )}
-    </>
+    </div>
   )
 }

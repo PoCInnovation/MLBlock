@@ -84,29 +84,33 @@ function BlockNode({ data, id }: NodeProps<BlockNodeData>) {
           </svg>
         </CardAction>
       </CardHeader>
-      {data.outputs.length > 0 && (
+      {(data.inputs.length > 0 || data.outputs.length > 0) && (
         <CardContent className="flex-1 min-h-0">
-          <div className={outputsClassName}>
-            {data.outputs.map(p => <div key={p.name}>{p.name} · {p.dtype}</div>)}
-          </div>
-        </CardContent>
-      )}
-      <CardFooter className="flex flex-col items-stretch gap-2 -mx-lg border-t border-border bg-white/3 p-2 rounded-b-2xl text-[12px] font-extrabold text-text-muted">
-        <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-3">
-          <div className="flex items-center flex-wrap gap-1.5 text-text-muted text-xs min-w-0">
-            <BlockSegments segs={data.segs} fields={data.fields} blockId={id} blockType={data.type} onUpdate={updateFlowParam} columnOptions={columnOptions} />
-          </div>
-          <Separator orientation="vertical" />
-          {data.inputs.length > 0 && (
-            <div className={inputsClassName}>
-              {data.inputs.map(p => <div key={p.name}>{p.name} · {p.dtype}</div>)}
+          {data.inputs.length > 0 && data.outputs.length > 0 ? (
+            <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-3">
+              <div className={inputsClassName}>
+                {data.inputs.map(p => <div key={p.name}>{p.name} · {p.dtype}</div>)}
+              </div>
+              <Separator orientation="vertical" />
+              <div className={outputsClassName}>
+                {data.outputs.map(p => <div key={p.name}>{p.name} · {p.dtype}</div>)}
+              </div>
+            </div>
+          ) : (
+            <div className={data.inputs.length > 0 ? inputsClassName : outputsClassName}>
+              {(data.inputs.length > 0 ? data.inputs : data.outputs).map(p => <div key={p.name}>{p.name} · {p.dtype}</div>)}
             </div>
           )}
-        </div>
-        <div className="flex justify-end">
-          <button className="block-delete-btn border-none bg-none text-text-muted font-extrabold text-[11px] cursor-pointer p-0 font-body" onClick={() => removeFlowNode(id)}>Supprimer</button>
-        </div>
-      </CardFooter>
+        </CardContent>
+      )}
+      {data.segs.length > 0 && (
+        <CardFooter className="flex flex-col items-stretch gap-2 -mx-lg border-t border-border bg-white/3 p-2 rounded-b-2xl text-[12px] font-extrabold text-text-muted">
+          <BlockSegments segs={data.segs} fields={data.fields} blockId={id} blockType={data.type} onUpdate={updateFlowParam} columnOptions={columnOptions} />
+          <div className="flex justify-end">
+            <button className="block-delete-btn border-none bg-none text-text-muted font-extrabold text-[11px] cursor-pointer p-0 font-body" onClick={() => removeFlowNode(id)}>Supprimer</button>
+          </div>
+        </CardFooter>
+      )}
       {data.inputs.map((p, i, arr) => (
         <Handle
           key={p.name}
