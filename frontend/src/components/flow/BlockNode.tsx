@@ -57,7 +57,7 @@ function BlockNode({ data, id }: NodeProps<BlockNodeData>) {
   return (
     <Card
       size="sm"
-      className="bg-surface2! shadow-block min-w-[180px] max-w-[260px] overflow-visible!"
+      className="bg-surface2! shadow-block min-w-[180px] max-w-[260px] overflow-visible! px-lg! pb-lg! rounded-2xl!"
       style={{
         borderTop: `3px solid ${data.categoryColor}`,
         width: viewMode === 'grid' ? 244 : undefined,
@@ -84,32 +84,28 @@ function BlockNode({ data, id }: NodeProps<BlockNodeData>) {
           </svg>
         </CardAction>
       </CardHeader>
-      <div className="flex gap-3">
-        <CardContent className="flex-1 min-w-0">
+      {data.outputs.length > 0 && (
+        <CardContent className="flex-1 min-h-0">
+          <div className={outputsClassName}>
+            {data.outputs.map(p => <div key={p.name}>{p.name} · {p.dtype}</div>)}
+          </div>
+        </CardContent>
+      )}
+      <CardFooter className="flex flex-col items-stretch gap-2 -mx-lg border-t border-border bg-white/3 p-2 rounded-b-2xl text-[12px] font-extrabold text-text-muted">
+        <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-3">
+          <div className="flex items-center flex-wrap gap-1.5 text-text-muted text-xs min-w-0">
+            <BlockSegments segs={data.segs} fields={data.fields} blockId={id} blockType={data.type} onUpdate={updateFlowParam} columnOptions={columnOptions} />
+          </div>
+          <Separator orientation="vertical" />
           {data.inputs.length > 0 && (
             <div className={inputsClassName}>
               {data.inputs.map(p => <div key={p.name}>{p.name} · {p.dtype}</div>)}
             </div>
           )}
-          <div className="flex items-center flex-wrap gap-1.5 text-text-muted text-xs">
-            <BlockSegments segs={data.segs} fields={data.fields} blockId={id} blockType={data.type} onUpdate={updateFlowParam} columnOptions={columnOptions} />
-          </div>
-        </CardContent>
-        {data.outputs.length > 0 && (
-          <>
-            <Separator orientation="vertical" />
-            <CardContent className="flex-none! p-0">
-              <div className={outputsClassName}>
-                {data.outputs.map(p => <div key={p.name}>{p.name} · {p.dtype}</div>)}
-              </div>
-            </CardContent>
-          </>
-        )}
-      </div>
-      <CardFooter className="-mx-3!">
-        <CardAction className="ml-auto">
+        </div>
+        <div className="flex justify-end">
           <button className="block-delete-btn border-none bg-none text-text-muted font-extrabold text-[11px] cursor-pointer p-0 font-body" onClick={() => removeFlowNode(id)}>Supprimer</button>
-        </CardAction>
+        </div>
       </CardFooter>
       {data.inputs.map((p, i, arr) => (
         <Handle
