@@ -1,31 +1,18 @@
-# UI A11y
-
 ## Purpose
 
 L'interface respecte les préférences de mouvement réduit, maintient un contraste lisible pour le texte secondaire, expose des contrôles sémantiques focusables et explique ses états vides.
 
-## Requirements
-
-### Requirement: Mouvement réduit respecté
-The system MUST disable animations and transitions when the user prefers reduced motion (`prefers-reduced-motion: reduce`), covering keyframes (`mlbGlow`, `mlbFloat`, `mlbBlink`, `mlbSpin`) and inline transitions alike.
-
-#### Scenario: Réduction de mouvement activée
-- **WHEN** l'utilisateur active `prefers-reduced-motion: reduce`
-- **THEN** aucune animation ni transition ne s'exécute (durées neutralisées, itérations forcées à 1)
-
-#### Scenario: Mouvement standard
-- **WHEN** aucune préférence de mouvement réduit n'est active
-- **THEN** les animations et transitions actuelles (150ms, `mlb*`) restent inchangées
+## MODIFIED Requirements
 
 ### Requirement: Contraste du texte secondaire
-The secondary text color MUST meet at least 4.5:1 contrast on the dark surfaces it appears on. The `textDim` token MUST be lightened so 11px metadata reaches ≥4.5:1 on `surface2` (currently 4.98:1 with `#948A81`).
+The secondary text color MUST meet at least 4.5:1 contrast on the dark surfaces it appears on (upgraded from 3:1/4:1). The `textDim` token MUST be lightened so 11px metadata reaches ≥4.5:1 on `surface2` (currently 4.40:1).
 
 #### Scenario: Checklist et compteurs lisibles
 - **WHEN** une case de checklist non cochée ou un compteur de palette est affiché sur `surface2`
 - **THEN** le texte est lisible (contraste ≥ 4.5:1) tout en restant hiérarchiquement secondaire
 
 ### Requirement: Contraste des boutons d'action
-Primary action buttons with white text (accent `Lancer`/`Mes projets`/sample `useBtn`, auth buttons) MUST meet 4.5:1 contrast between text and background. The accent used for white-text buttons is `#B8552E` (4.80:1) and the auth color is `#5E64E8` (4.70:1).
+Primary action buttons with white text (accent `Lancer`/`Mes projets`/sample `useBtn`, auth buttons) MUST meet 4.5:1 contrast between text and background. The accent used for white-text buttons must be darkened from `#D97757` (3.12:1) and the auth color from `#6366F1` (4.47:1).
 
 #### Scenario: Bouton Lancer
 - **WHEN** le bouton « Lancer » est rendu avec du texte blanc sur fond accent
@@ -59,6 +46,19 @@ No interactive control MAY remove its visible focus indicator. Controls that cur
 #### Scenario: Renommage de colonne
 - **WHEN** l'utilisateur navigue au clavier jusqu'au champ de renommage d'une colonne
 - **THEN** le champ affiche un indicateur de focus visible (bordure ou anneau), pas `outline: none` seul
+
+## ADDED Requirements
+
+### Requirement: Mouvement réduit respecté
+The system MUST disable animations and transitions when the user prefers reduced motion (`prefers-reduced-motion: reduce`), covering keyframes (`mlbGlow`, `mlbFloat`, `mlbBlink`, `mlbSpin`) and inline transitions alike.
+
+#### Scenario: Réduction de mouvement activée
+- **WHEN** l'utilisateur active `prefers-reduced-motion: reduce`
+- **THEN** aucune animation ni transition ne s'exécute (durées neutralisées, itérations forcées à 1)
+
+#### Scenario: Mouvement standard
+- **WHEN** aucune préférence de mouvement réduit n'est active
+- **THEN** les animations et transitions actuelles (150ms, `mlb*`) restent inchangées
 
 ### Requirement: Contrôles d'upload sémantiques
 The CSV upload controls (« Réessayer » and the file button) MUST be real buttons (`<button type="button">`), focusable via keyboard and activable with Enter/Space, with unchanged visual style.
