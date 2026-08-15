@@ -42,7 +42,7 @@ export function DropdownMenuLabel({ inset = false, style, ...props }: React.Comp
   return (
     <Menu.GroupLabel
       data-inset={inset}
-      className={`px-3 pt-1.5 pb-1 text-[11px] font-extrabold text-text-muted tracking-[.04em] uppercase ${inset ? 'pl-6' : 'pl-3'}`}
+      className={`px-3 pt-1.5 pb-1 text-[12px] font-extrabold text-text-muted tracking-[.04em] uppercase ${inset ? 'pl-6' : 'pl-3'}`}
       style={style}
       {...props}
     />
@@ -142,7 +142,7 @@ export function DropdownMenuSeparator({ style, ...props }: React.ComponentProps<
 export function DropdownMenuShortcut({ children, style }: { children: ReactNode; style?: React.CSSProperties }) {
   return (
     <span
-      className="ml-auto text-[11px] tracking-[.05em] text-text-dim"
+      className="ml-auto text-[12px] tracking-[.05em] text-text-dim"
       style={style}
     >
       {children}

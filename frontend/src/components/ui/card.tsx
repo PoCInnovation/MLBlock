@@ -79,7 +79,7 @@ export function CardFooter({ style, ...props }: React.ComponentProps<'div'> & { 
   return (
     <div
       data-slot="card-footer"
-      className="flex items-center -mx-lg border-t border-border bg-white/3 rounded-b-lg p-2 text-[11px] font-extrabold text-text-muted"
+      className="flex items-center -mx-lg border-t border-border bg-white/3 rounded-b-lg p-2 text-[12px] font-extrabold text-text-muted"
       style={style}
       {...props}
     />

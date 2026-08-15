@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { Play } from 'lucide-react'
 import HeroBlockStack from './HeroBlockStack'
+import { theme } from '../../theme'
 
 export default function HeroSection() {
   const navigate = useNavigate()
@@ -16,7 +17,7 @@ export default function HeroSection() {
           Sans code, pour apprendre l'IA
         </div>
         <h1 style={{ fontFamily: "'Fredoka', sans-serif", fontWeight: 600, fontSize: 62, lineHeight: 1.04, letterSpacing: '-.02em', margin: '22px 0 0', textWrap: 'balance' }}>
-          Crée ton intelligence<br />artificielle, <span style={{ color: '#D97757' }}>bloc par bloc.</span>
+          Crée ton intelligence<br />artificielle, <span style={{ color: theme.color.accent }}>bloc par bloc.</span>
         </h1>
         <p style={{ fontSize: 19, lineHeight: 1.55, color: '#b7ada3', maxWidth: 470, margin: '22px 0 0', fontWeight: 600 }}>
           Empile des blocs pour construire un modèle qui apprend tout seul : reconnaître des images, comprendre des phrases, prédire des évènements. Pas besoin de savoir programmer, il suffit d'assembler.
@@ -25,7 +26,7 @@ export default function HeroSection() {
           <button
             onClick={() => navigate('/projets')}
             className="hover-lift"
-            style={{ background: '#D97757', color: '#fff', border: 'none', padding: '15px 26px', borderRadius: 14, fontWeight: 800, fontSize: 16, cursor: 'pointer', boxShadow: '0 4px 0 rgba(0,0,0,.25)', display: 'inline-flex', alignItems: 'center', gap: 9, transition: 'filter .15s ease, transform .15s ease' }}
+            style={{ background: theme.color.accent, color: '#fff', border: 'none', padding: '15px 26px', borderRadius: 14, fontWeight: 800, fontSize: 16, cursor: 'pointer', boxShadow: '0 4px 0 rgba(0,0,0,.25)', display: 'inline-flex', alignItems: 'center', gap: 9, transition: 'filter .15s ease, transform .15s ease' }}
           >
             <Play size={16} fill="currentColor" /> Mes projets
           </button>

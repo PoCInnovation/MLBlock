@@ -18,7 +18,7 @@ import UnsavedChangesDialog from '../ui/UnsavedChangesDialog'
 import { clearStash } from '../../utils/pending-stash'
 import { theme } from '../../theme'
 
-const ghostBtn: React.CSSProperties = { background: 'rgba(255,255,255,.06)', color: theme.color.textLight, border: '1px solid rgba(255,255,255,.1)', padding: '8px 14px', borderRadius: theme.radius.md, fontWeight: 700, fontSize: 13.5, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7, transition: 'background .15s ease, transform .15s ease' }
+const ghostBtn: React.CSSProperties = { background: theme.color.surface3, color: theme.color.textLight, border: `1px solid ${theme.color.border}`, padding: '8px 14px', borderRadius: theme.radius.md, fontWeight: 700, fontSize: 13.5, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7, minHeight: 44, transition: 'background .15s ease, transform .15s ease' }
 const actionBtn: React.CSSProperties = { ...ghostBtn, color: '#cfc6bd', padding: '9px 14px' }
 
 export default function EditorHeader() {
@@ -81,7 +81,7 @@ export default function EditorHeader() {
   }
 
   return (
-    <div style={{ height: 60, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', background: theme.color.surface, borderBottom: '1px solid rgba(255,255,255,.07)', zIndex: 20 }}>
+    <div style={{ height: 60, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', background: theme.color.surface, borderBottom: `1px solid ${theme.color.border}`, zIndex: 20 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
         <div onClick={() => navigate('/')} style={{ display: 'flex', alignItems: 'center', gap: 9, cursor: 'pointer' }}>
           <div style={{ width: 30, height: 30, borderRadius: 9, background: theme.color.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: theme.shadow.btn }}>
@@ -89,8 +89,8 @@ export default function EditorHeader() {
           </div>
           <span style={{ fontFamily: theme.font.heading, fontWeight: 600, fontSize: 19 }}>MLBlock</span>
         </div>
-        <div style={{ width: 1, height: 26, background: 'rgba(255,255,255,.1)' }} />
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.08)', padding: '6px 12px', borderRadius: theme.radius.md }}>
+        <div style={{ width: 1, height: 26, background: theme.color.border }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: theme.color.surface3, border: `1px solid ${theme.color.border}`, padding: '6px 12px', borderRadius: theme.radius.md }}>
           <span style={{ width: 7, height: 7, borderRadius: '50%', background: theme.color.status, display: 'inline-block' }} />
           {editingName ? (
             <input
@@ -138,7 +138,7 @@ export default function EditorHeader() {
           onClick={() => setViewMode(viewMode === 'grid' ? 'free' : 'grid')}
           title={viewMode === 'grid' ? 'Passer à la vue libre' : 'Passer à la vue colonnes (grille)'}
           aria-label="Basculer la vue"
-          style={{ ...ghostBtn, padding: '9px 10px', color: viewMode === 'grid' ? theme.color.accentLight : theme.color.textLight, border: viewMode === 'grid' ? '1px solid rgba(217,119,87,.45)' : '1px solid rgba(255,255,255,.1)' }}
+          style={{ ...ghostBtn, padding: '9px 10px', color: viewMode === 'grid' ? theme.color.accentLight : theme.color.textLight, border: viewMode === 'grid' ? '1px solid rgba(217,119,87,.45)' : `1px solid ${theme.color.border}` }}
         >
           {viewMode === 'grid' ? <Columns3 size={16} /> : <LayoutGrid size={16} />}
           {viewMode === 'grid' ? 'Vue colonnes' : 'Vue libre'}
@@ -149,9 +149,9 @@ export default function EditorHeader() {
           title={dirty ? 'Sauvegarder les modifications' : 'Aucune modification à sauvegarder'}
           style={{
             ...actionBtn,
-            background: dirty ? 'rgba(34,197,94,.14)' : 'rgba(255,255,255,.05)',
+            background: dirty ? 'rgba(34,197,94,.14)' : theme.color.surface3,
             color: dirty ? '#8fd1a8' : theme.color.textDim,
-            border: dirty ? '1px solid rgba(34,197,94,.35)' : '1px solid rgba(255,255,255,.1)',
+            border: dirty ? '1px solid rgba(34,197,94,.35)' : `1px solid ${theme.color.border}`,
             fontWeight: 800,
             opacity: saving ? 0.6 : 1,
             cursor: dirty && !saving ? 'pointer' : 'default',
@@ -163,7 +163,7 @@ export default function EditorHeader() {
         <button onClick={onStop} disabled={!stopActive} style={{ ...actionBtn, background: 'rgba(224,112,95,.16)', color: theme.color.accentLight, border: '1px solid rgba(224,112,95,.4)', fontWeight: 800, opacity: stopActive ? 1 : 0.35, cursor: stopActive ? 'pointer' : 'default' }}>
           <Square size={13} fill="currentColor" /> Arrêter
         </button>
-        <button onClick={onRun} disabled={isPending} style={{ color: '#fff', border: 'none', padding: '9px 20px', borderRadius: theme.radius.md, fontWeight: 800, fontSize: 14, cursor: isPending ? 'default' : 'pointer', boxShadow: theme.shadow.btn, display: 'inline-flex', alignItems: 'center', gap: 8, background: theme.color.accent, opacity: isPending ? 0.6 : 1, transition: 'filter .15s ease, transform .15s ease' }}>
+        <button onClick={onRun} disabled={isPending} style={{ color: '#fff', border: 'none', padding: '9px 20px', borderRadius: theme.radius.md, fontWeight: 800, fontSize: 14, minHeight: 44, cursor: isPending ? 'default' : 'pointer', boxShadow: theme.shadow.btn, display: 'inline-flex', alignItems: 'center', gap: 8, background: theme.color.accent, opacity: isPending ? 0.6 : 1, transition: 'filter .15s ease, transform .15s ease' }}>
           {isPending ? <Loader2 size={15} style={{ animation: 'mlbSpin .8s linear infinite' }} /> : <Play size={15} fill="currentColor" />}
           {isPending ? 'Exécution…' : 'Lancer'}
         </button>

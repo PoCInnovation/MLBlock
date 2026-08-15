@@ -6,6 +6,7 @@ import { listPipelines, getPipeline, deletePipeline } from '../api/client'
 import type { PipelineSummary } from '../types/catalog'
 import { usePipelineImport } from '../hooks/usePipelineImport'
 import ExportModal from '../components/ui/ExportModal'
+import SkipLink from '../components/ui/SkipLink'
 import { Upload } from 'lucide-react'
 
 const MAX_PROJECTS = 20
@@ -29,13 +30,13 @@ const cardStyle =
 const cardName =
   'font-extrabold text-base overflow-hidden text-ellipsis whitespace-nowrap'
 const cardMeta =
-  'text-text-muted text-[12.5px] font-semibold'
+  'text-text-muted text-[13px] font-semibold'
 const cardActions =
   'flex gap-2 mt-1'
 const cardBtn =
-  'bg-[rgba(255,255,255,.06)] text-text-light border-none px-3 py-1.5 rounded-sm font-bold text-[12.5px] cursor-pointer'
+  'bg-[rgba(255,255,255,.06)] text-text-light border-none px-3 py-1.5 rounded-sm font-bold text-[13px] cursor-pointer'
 const cardBtnDanger =
-  'bg-[rgba(255,255,255,.06)] text-error-light border-none px-3 py-1.5 rounded-sm font-bold text-[12.5px] cursor-pointer'
+  'bg-[rgba(255,255,255,.06)] text-error-light border-none px-3 py-1.5 rounded-sm font-bold text-[13px] cursor-pointer'
 const emptyStyle =
   'max-w-[980px] mx-auto mt-15 text-center text-text-muted text-[15px] font-semibold'
 
@@ -95,7 +96,8 @@ export default function ProjectsPage() {
   const atLimit = (projects?.length ?? 0) >= MAX_PROJECTS
 
   return (
-    <div className={pageStyle}>
+    <div id="main" className={pageStyle}>
+      <SkipLink />
       <div className={headerStyle}>
         <div>
           <h1 className={titleStyle}>Mes projets</h1>
@@ -138,7 +140,7 @@ export default function ProjectsPage() {
             <div className={cardName} title={p.name}>{p.name}</div>
             <div className={cardMeta}>Modifié le {fmtDate(p.updated_at)}</div>
             <div className={cardActions}>
-              <button className="bg-auth text-white border-none px-3 py-1.5 rounded-sm font-bold text-[12.5px] cursor-pointer" style={{ transition: 'background .15s ease' }} onClick={() => openProject(p)}>Ouvrir</button>
+              <button className="bg-auth text-white border-none px-3 py-1.5 rounded-sm font-bold text-[13px] cursor-pointer" style={{ transition: 'background .15s ease' }} onClick={() => openProject(p)}>Ouvrir</button>
               <button className={cardBtn} style={{ transition: 'background .15s ease' }} onClick={() => setExporting(p)}>Exporter</button>
               <button className={cardBtnDanger} style={{ transition: 'background .15s ease' }} onClick={() => removeProject(p)}>Supprimer</button>
             </div>

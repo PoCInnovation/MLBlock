@@ -8,6 +8,7 @@ import { toServerPayload } from '../utils/blockHelpers'
 import { parseEditorParams } from '../utils/editorParams'
 import { writeStash, readStash, clearStash } from '../utils/pending-stash'
 import EditorHeader from '../components/editor/EditorHeader'
+import SkipLink from '../components/ui/SkipLink'
 import EditorUnavailableModal from '../components/ui/EditorUnavailableModal'
 import UnsavedChangesDialog from '../components/ui/UnsavedChangesDialog'
 import Toast from '../components/ui/Toast'
@@ -174,7 +175,8 @@ export default function EditorPage() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-bg text-text overflow-hidden">
+    <div id="main" className="h-screen flex flex-col bg-bg text-text overflow-hidden">
+      <SkipLink />
       <EditorHeader />
       {restoredWork && (
         <div className="flex items-center justify-between gap-3 px-4 py-[9px] bg-[rgba(143,209,168,.13)] border-b border-[rgba(143,209,168,.35)] text-success-muted text-[13px] font-bold shrink-0">

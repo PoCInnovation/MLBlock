@@ -22,7 +22,7 @@ const fieldPill: React.CSSProperties = {
   background: 'rgba(255,255,255,.85)', padding: '2px 8px', borderRadius: theme.radius.sm, fontWeight: 800,
 }
 const labelStyle: React.CSSProperties = {
-  fontSize: 11, fontWeight: 700, opacity: 0.85, whiteSpace: 'nowrap',
+  fontSize: 12, fontWeight: 700, opacity: 0.85, whiteSpace: 'nowrap',
 }
 const fileCard: React.CSSProperties = {
   display: 'flex', alignItems: 'center', gap: 6, flexBasis: '100%',
@@ -33,7 +33,7 @@ const fileNameStyle: React.CSSProperties = {
   color: theme.color.file, maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
 }
 const fileMeta: React.CSSProperties = {
-  color: theme.color.fileMeta, fontSize: 11, fontWeight: 600,
+  color: theme.color.fileMeta, fontSize: 12, fontWeight: 600,
 }
 const fileBtn: React.CSSProperties = {
   background: 'rgba(99,102,241,.2)', border: '1px dashed rgba(99,102,241,.5)',
@@ -42,12 +42,16 @@ const fileBtn: React.CSSProperties = {
 }
 const removeBtn: React.CSSProperties = {
   width: 16, height: 16, borderRadius: '50%', border: 'none',
-  background: 'rgba(0,0,0,.2)', color: theme.color.file, fontSize: 10,
+  background: 'rgba(0,0,0,.2)', color: theme.color.file, fontSize: 12,
   lineHeight: '16px', cursor: 'pointer', padding: 0, display: 'inline-flex',
   alignItems: 'center', justifyContent: 'center',
 }
 const errStyle: React.CSSProperties = {
-  color: theme.color.errorLight, fontSize: 11, fontWeight: 600, cursor: 'pointer',
+  color: theme.color.errorLight, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+}
+/** Message d'erreur statique affiché sous un champ invalide (non cliquable). */
+const errMsgStyle: React.CSSProperties = {
+  color: theme.color.errorLight, fontSize: 12, fontWeight: 600, lineHeight: 1.3,
 }
 
 function fmtSize(bytes: number): string {
@@ -100,7 +104,7 @@ function ParamInfo({ seg, children }: { seg: Exclude<Segment, { t: 'text' }>; ch
         {p.desc && (
           <div style={{ fontSize: 12, color: theme.color.textMuted, marginBottom: 8 }}>{p.desc}</div>
         )}
-        <div style={{ fontSize: 11, color: theme.color.textDim, display: 'flex', flexDirection: 'column', gap: 3 }}>
+        <div style={{ fontSize: 12, color: theme.color.textDim, display: 'flex', flexDirection: 'column', gap: 3 }}>
           <span>Type : {p.t}</span>
           {p.def !== undefined && p.def !== '' && <span>Défaut : {p.def}</span>}
           {p.min != null && <span>Min : {p.min}</span>}
@@ -259,39 +263,47 @@ export default function BlockSegments({ segs, fields, blockId, blockType, onUpda
       const useText = !!s.opts && s.opts.length > 0
       if (useText) {
         const dlId = `mlb-dl-${blockId}-${s.k}`
+        const invalid = !v.ok && value.trim() !== ''
         return (
-          <ParamInfo key={i} seg={s}><span style={{ display: 'flex', alignItems: 'center', gap: 4, flexBasis: '100%' }}>
-            <span style={labelStyle}>{s.k}:</span>
-            <input
-              list={dlId}
-              type="text"
-              value={value}
-              onChange={e => onUpdate(blockId!, s.k, e.target.value)}
-              onFocus={() => useAppStore.getState().commitUndoPoint()}
-              style={{ ...inputBase, width: (s.w || 60) + 'px', ...validBorder(v, value.trim() !== '') }}
-              title={v.msg}
-              placeholder={placeholder}
-            />
-            <datalist id={dlId}>{s.opts!.map(o => <option key={o} value={o} />)}</datalist>
+          <ParamInfo key={i} seg={s}><span style={{ display: 'flex', flexDirection: 'column', gap: 2, flexBasis: '100%' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={labelStyle}>{s.k}:</span>
+              <input
+                list={dlId}
+                type="text"
+                value={value}
+                onChange={e => onUpdate(blockId!, s.k, e.target.value)}
+                onFocus={() => useAppStore.getState().commitUndoPoint()}
+                style={{ ...inputBase, width: (s.w || 60) + 'px', ...validBorder(v, value.trim() !== '') }}
+                title={v.msg}
+                placeholder={placeholder}
+              />
+              <datalist id={dlId}>{s.opts!.map(o => <option key={o} value={o} />)}</datalist>
+            </span>
+            {invalid && <span role="alert" style={errMsgStyle}>{v.msg}</span>}
           </span>
         </ParamInfo>
         )
       }
+      const invalid = !v.ok && value.trim() !== ''
       return (
-        <ParamInfo key={i} seg={s}><span style={{ display: 'flex', alignItems: 'center', gap: 4, flexBasis: '100%' }}>
-          <span style={labelStyle}>{s.k}:</span>
-          <input
-            type={isNumeric ? 'number' : 'text'}
-            onFocus={() => useAppStore.getState().commitUndoPoint()}
-            value={value}
-            onChange={e => onUpdate(blockId!, s.k, e.target.value)}
-            style={{ ...inputBase, width: (s.w || (isNumeric ? 60 : 90)) + 'px', ...validBorder(v, value.trim() !== '') }}
-            title={v.msg}
-            placeholder={placeholder}
-            min={s.min}
-            max={s.max}
-            step={s.step}
-          />
+        <ParamInfo key={i} seg={s}><span style={{ display: 'flex', flexDirection: 'column', gap: 2, flexBasis: '100%' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={labelStyle}>{s.k}:</span>
+            <input
+              type={isNumeric ? 'number' : 'text'}
+              onFocus={() => useAppStore.getState().commitUndoPoint()}
+              value={value}
+              onChange={e => onUpdate(blockId!, s.k, e.target.value)}
+              style={{ ...inputBase, width: (s.w || (isNumeric ? 60 : 90)) + 'px', ...validBorder(v, value.trim() !== '') }}
+              title={v.msg}
+              placeholder={placeholder}
+              min={s.min}
+              max={s.max}
+              step={s.step}
+            />
+          </span>
+          {invalid && <span role="alert" style={errMsgStyle}>{v.msg}</span>}
         </span>
       </ParamInfo>
     )
@@ -300,21 +312,25 @@ export default function BlockSegments({ segs, fields, blockId, blockType, onUpda
     if (s.t === 'list') {
       const v = validateSeg(s, value)
       const dlId = `mlb-dl-${blockId}-${s.k}`
+      const invalid = !v.ok && value.trim() !== ''
       return (
-        <ParamInfo key={i} seg={s}><span style={{ display: 'flex', alignItems: 'center', gap: 4, flexBasis: '100%' }}>
-          <span style={labelStyle}>{s.k}:</span>
-          <input
-            list={s.opts && s.opts.length > 0 ? dlId : undefined}
-            type="text"
-            value={value}
-            onChange={e => onUpdate(blockId!, s.k, e.target.value)}
-            style={{ ...inputBase, width: 110, ...validBorder(v, value.trim() !== '') }}
-            title={v.msg}
-            placeholder={s.format ?? '[1, 2, 3]'}
-          />
-          {s.opts && s.opts.length > 0 && (
-            <datalist id={dlId}>{s.opts.map(o => <option key={o} value={o} />)}</datalist>
-          )}
+        <ParamInfo key={i} seg={s}><span style={{ display: 'flex', flexDirection: 'column', gap: 2, flexBasis: '100%' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={labelStyle}>{s.k}:</span>
+            <input
+              list={s.opts && s.opts.length > 0 ? dlId : undefined}
+              type="text"
+              value={value}
+              onChange={e => onUpdate(blockId!, s.k, e.target.value)}
+              style={{ ...inputBase, width: 110, ...validBorder(v, value.trim() !== '') }}
+              title={v.msg}
+              placeholder={s.format ?? '[1, 2, 3]'}
+            />
+            {s.opts && s.opts.length > 0 && (
+              <datalist id={dlId}>{s.opts.map(o => <option key={o} value={o} />)}</datalist>
+            )}
+          </span>
+          {invalid && <span role="alert" style={errMsgStyle}>{v.msg}</span>}
         </span>
       </ParamInfo>
     )

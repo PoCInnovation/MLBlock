@@ -11,12 +11,12 @@
   --color-surface4: #1e1c19;
   --color-canvas: #1b1613;
   --color-console: #120f0d;
-  --color-accent: #D97757;
+  --color-accent: #B8552E;
   --color-accent-light: #E8915F;
   --color-text: #f0e9e3;
   --color-text-light: #e8e0d8;
   --color-text-muted: #b7ada3;
-  --color-text-dim: #8a8178;
+  --color-text-dim: #948A81;
   --color-text-input: #2a211c;
   --color-input-bg: #2a2724;
   --color-status: #66C7B0;
@@ -28,7 +28,7 @@
   --color-warning: #E8C77A;
   --color-convert: #F59E0B;
   --color-info: #9aa0c4;
-  --color-auth: #6366F1;
+  --color-auth: #5E64E8;
   --color-file: #c7d2fe;
   --color-file-meta: #818cf8;
   --color-file-btn: #a5b4fc;
@@ -68,7 +68,7 @@
   }
   input, select, button { font-family: inherit; }
 
-  :focus-visible { outline: 2px solid #6366F1; outline-offset: 2px; }
+  :focus-visible { outline: 2px solid #5E64E8; outline-offset: 2px; }
 }
 
 @layer components {

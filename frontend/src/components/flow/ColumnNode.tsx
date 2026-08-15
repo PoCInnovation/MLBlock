@@ -84,7 +84,7 @@ function ColumnNode({ data, id }: NodeProps<ColumnNodeData>) {
               if (e.key === 'Enter') commitLabel()
               if (e.key === 'Escape') setEditing(false)
             }}
-            className="min-w-0 bg-input-bg border border-auth rounded-sm outline-none! text-text font-extrabold text-[12.5px] px-1.5 py-[3px]"
+            className="min-w-0 bg-input-bg border border-auth rounded-sm focus:ring-2 focus:ring-auth/50 focus:outline-none text-text font-extrabold text-[12.5px] px-1.5 py-[3px]"
           />
         ) : (
           <HoverCard>

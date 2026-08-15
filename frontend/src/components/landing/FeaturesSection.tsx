@@ -80,7 +80,7 @@ export default function FeaturesSection() {
                 style={{
                     maxWidth: 1240,
                     margin: '0 auto',
-                    padding: '72px 48px',
+                    padding: '48px 48px 72px',
                 }}
             >
                 <h2
@@ -118,7 +118,7 @@ export default function FeaturesSection() {
                             style={{
                                 background: '#251e1a',
                                 border: '1px solid rgba(255,255,255,.06)',
-                                borderRadius: 20,
+                                borderRadius: 24,
                                 padding: 28,
                             }}
                         >
@@ -132,7 +132,8 @@ export default function FeaturesSection() {
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    marginBottom: 18,
+                                    marginTop: 2,
+                                    marginBottom: 16,
                                 }}
                             >
                                 {icon}

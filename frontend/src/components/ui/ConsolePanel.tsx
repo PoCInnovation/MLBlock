@@ -48,6 +48,7 @@ export default function ConsolePanel() {
                 color: tab === t ? theme.color.text : theme.color.textMuted,
                 border: 'none', padding: '4px 12px', borderRadius: 999,
                 fontWeight: 800, fontSize: 12.5, cursor: 'pointer',
+                minHeight: 44, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               }}
             >
               {t === 'console' ? 'Console' : 'Résultats'}

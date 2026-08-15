@@ -6,7 +6,7 @@ export default function HomeFooter() {
             style={{
                 maxWidth: 1240,
                 margin: '0 auto',
-                padding: '34px 48px',
+                padding: '34px 48px 56px',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',

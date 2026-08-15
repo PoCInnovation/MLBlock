@@ -8,7 +8,7 @@ const paletteStyle: React.CSSProperties = {
   flexShrink: 0,
   height: '100%',
   background: theme.color.surface2,
-  borderRight: `1px solid rgba(255,255,255,.06)`,
+  borderRight: `1px solid ${theme.color.border}`,
   display: 'flex',
   flexDirection: 'column',
   minHeight: 0,
@@ -16,7 +16,7 @@ const paletteStyle: React.CSSProperties = {
 
 const headerStyle: React.CSSProperties = {
   padding: '14px 18px 12px',
-  borderBottom: '1px solid rgba(255,255,255,.05)',
+  borderBottom: `1px solid ${theme.color.border}`,
   flexShrink: 0,
   fontFamily: theme.font.heading,
   fontWeight: 600,
@@ -29,8 +29,8 @@ const searchInputStyle: React.CSSProperties = {
   padding: '8px 12px',
   marginTop: 10,
   borderRadius: theme.radius.md,
-  border: `1px solid rgba(255,255,255,.1)`,
-  background: 'rgba(255,255,255,.05)',
+  border: `1px solid ${theme.color.border}`,
+  background: theme.color.surface3,
   color: theme.color.text,
   fontSize: 13,
 }
@@ -43,13 +43,17 @@ const chipsStyle: React.CSSProperties = {
 }
 
 const chipStyle = (active: boolean): React.CSSProperties => ({
+  minHeight: 44,
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
   padding: '4px 10px',
   borderRadius: 999,
   fontSize: 11,
   fontWeight: 700,
   cursor: 'pointer',
   border: 'none',
-  background: active ? theme.color.accent : 'rgba(255,255,255,.05)',
+  background: active ? theme.color.accent : theme.color.surface3,
   color: active ? '#fff' : theme.color.textMuted,
   transition: 'background .2s, color .2s',
 })
@@ -72,12 +76,13 @@ const itemStyle: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   gap: 8,
+  minHeight: 44,
   padding: '8px 10px',
   borderRadius: theme.radius.md,
   marginBottom: 8,
   cursor: 'grab',
-  background: 'rgba(255,255,255,.04)',
-  border: `1px solid rgba(255,255,255,.06)`,
+  background: theme.color.surface3,
+  border: `1px solid ${theme.color.border}`,
   color: theme.color.text,
   fontSize: 13,
   fontWeight: 700,

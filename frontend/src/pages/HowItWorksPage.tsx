@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { Play } from 'lucide-react'
 import SiteLayout from '../components/landing/SiteLayout'
+import { theme } from '../theme'
 
 export default function HowItWorksPage() {
   const navigate = useNavigate()
@@ -63,7 +64,7 @@ export default function HowItWorksPage() {
               },
             ].map(({ title, text }, i) => (
               <div key={i} style={{ display: 'flex', gap: 20, marginBottom: i < 4 ? 28 : 0 }}>
-                <div style={{ flexShrink: 0, width: 32, height: 32, borderRadius: 10, background: '#2e2420', border: '1px solid rgba(255,255,255,.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Fredoka', sans-serif", fontWeight: 700, fontSize: 15, color: '#D97757' }}>
+                <div style={{ flexShrink: 0, width: 32, height: 32, borderRadius: 10, background: '#2e2420', border: '1px solid rgba(255,255,255,.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Fredoka', sans-serif", fontWeight: 700, fontSize: 15, color: theme.color.accent }}>
                   {i + 1}
                 </div>
                 <div>
@@ -90,7 +91,7 @@ export default function HowItWorksPage() {
             </div>
             <button
               onClick={() => navigate('/editor')}
-              style={{ background: '#D97757', color: '#fff', border: 'none', padding: '15px 28px', borderRadius: 14, fontWeight: 800, fontSize: 16, cursor: 'pointer', boxShadow: '0 4px 0 rgba(0,0,0,.25)', display: 'inline-flex', alignItems: 'center', gap: 9, whiteSpace: 'nowrap' }}
+              style={{ background: theme.color.accent, color: '#fff', border: 'none', padding: '15px 28px', borderRadius: 14, fontWeight: 800, fontSize: 16, cursor: 'pointer', boxShadow: '0 4px 0 rgba(0,0,0,.25)', display: 'inline-flex', alignItems: 'center', gap: 9, whiteSpace: 'nowrap' }}
             >
               <Play size={14} /> Ouvrir l'éditeur
             </button>
