@@ -21,16 +21,7 @@ import { theme } from '../../theme'
 const ghostBtn: React.CSSProperties = { background: 'rgba(255,255,255,.06)', color: theme.color.textLight, border: '1px solid rgba(255,255,255,.1)', padding: '8px 14px', borderRadius: theme.radius.md, fontWeight: 700, fontSize: 13.5, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7, transition: 'background .15s ease, transform .15s ease' }
 const actionBtn: React.CSSProperties = { ...ghostBtn, color: '#cfc6bd', padding: '9px 14px' }
 
-type EditorHeaderProps = {
-  // Le header gère sa propre instance de useBlockRunner (mutation + suivi) pour
-  // lire isPending — ces props restent pour la compatibilité avec EditorPage
-  // (ancien contrat) et sont ignorées.
-  onRun: () => void
-  onStop: () => void
-  onClear: () => void
-}
-
-export default function EditorHeader(_props: EditorHeaderProps) {
+export default function EditorHeader() {
   const navigate    = useNavigate()
   const projectName = useAppStore(s => s.projectName)
   const setProjectName = useAppStore(s => s.setProjectName)

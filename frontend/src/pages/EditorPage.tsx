@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useBlocker, useSearchParams } from 'react-router-dom'
-import { useBlockRunner } from '../hooks/useBlockRunner'
 import { useUndoRedo } from '../hooks/useUndoRedo'
 import useAppStore from '../store/useAppStore'
 import { fetchCatalog, listPipelineJobs, getJobOutputs, getPipeline } from '../api/client'
@@ -24,7 +23,6 @@ function stashIfDirty(): void {
 }
 
 export default function EditorPage() {
-  const { onRun, onStop, onClear } = useBlockRunner()
   useUndoRedo()
   const [searchParams, setSearchParams] = useSearchParams()
   const catalog      = useAppStore(s => s.catalog)
@@ -177,7 +175,7 @@ export default function EditorPage() {
 
   return (
     <div className="h-screen flex flex-col bg-bg text-text overflow-hidden">
-      <EditorHeader onRun={onRun} onStop={onStop} onClear={onClear} />
+      <EditorHeader />
       {restoredWork && (
         <div className="flex items-center justify-between gap-3 px-4 py-[9px] bg-[rgba(143,209,168,.13)] border-b border-[rgba(143,209,168,.35)] text-success-muted text-[13px] font-bold shrink-0">
           <span className="inline-flex items-center gap-2"><CheckCircle2 size={15} /> Travail récupéré — clique sur Sauvegarder pour conserver</span>
