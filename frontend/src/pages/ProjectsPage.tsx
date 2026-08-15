@@ -136,7 +136,7 @@ export default function ProjectsPage() {
         {projects?.map(p => (
           <div key={p.id} className={`hover-card ${cardStyle}`} style={{ transition: 'border-color .15s ease, transform .15s ease' }}>
             <div className={cardName} title={p.name}>{p.name}</div>
-            <div className={cardMeta}>Modifié le {fmtDate(p.updated_at)} · {p.node_count} bloc{p.node_count > 1 ? 's' : ''}</div>
+            <div className={cardMeta}>Modifié le {fmtDate(p.updated_at)}</div>
             <div className={cardActions}>
               <button className="bg-auth text-white border-none px-3 py-1.5 rounded-sm font-bold text-[12.5px] cursor-pointer" style={{ transition: 'background .15s ease' }} onClick={() => openProject(p)}>Ouvrir</button>
               <button className={cardBtn} style={{ transition: 'background .15s ease' }} onClick={() => setExporting(p)}>Exporter</button>

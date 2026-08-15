@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { z } from 'zod'
 import type {
   BlockDef,
   BlockDefMap,
@@ -17,11 +18,32 @@ import type {
   Segment,
 } from '../types/catalog'
 import { supabase } from '../services/supabase'
-import { catalogSchema, validationSchema } from '../schemas/api'
+import {
+  buildResponseSchema,
+  catalogSchema,
+  generateResponseSchema,
+  jobOutputSchema,
+  jobSchema,
+  pipelineDetailSchema,
+  pipelinePageSchema,
+  validationSchema,
+} from '../schemas/api'
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000'
 
 export const http = axios.create({ baseURL: BASE, timeout: 60_000 })
+
+function parseOrThrow<T>(schema: z.ZodType<T>, endpoint: string, data: unknown): T {
+  const parsed = schema.safeParse(data)
+  if (!parsed.success) {
+    const issues = parsed.error.issues
+      .slice(0, 3)
+      .map(i => `${i.path.join('.') || '<root>'}: ${i.message}`)
+      .join('; ')
+    throw new Error(`${endpoint} returned an invalid response: ${issues}`)
+  }
+  return parsed.data
+}
 
 http.interceptors.request.use(async (config) => {
   try {
@@ -74,7 +96,7 @@ function toSegments(key: string, raw: unknown): Segment {
 
 export async function fetchCatalog(): Promise<InternalCatalog> {
   const { data } = await http.get<unknown>('/api/catalog')
-  const parsed = catalogSchema.parse(data)
+  const parsed = parseOrThrow(catalogSchema, 'GET /api/catalog', data)
 
   const categories: Category[] = parsed.categories.map(c => ({ id: c.id, name: c.name, color: c.color }))
   const blocks: BlockDefMap = {}
@@ -101,8 +123,8 @@ export async function fetchCatalog(): Promise<InternalCatalog> {
 }
 
 export async function createPipeline(data: PipelineCreate): Promise<PipelineDetail> {
-  const { data: res } = await http.post<PipelineDetail>('/api/pipelines', data)
-  return res
+  const { data: res } = await http.post<unknown>('/api/pipelines', data)
+  return parseOrThrow(pipelineDetailSchema, 'POST /api/pipelines', res)
 }
 
 export interface PipelinePage {
@@ -114,18 +136,18 @@ export interface PipelinePage {
 }
 
 export async function listPipelines(size = 100): Promise<PipelinePage> {
-  const { data } = await http.get<PipelinePage>('/api/pipelines', { params: { page: 1, size } })
-  return data
+  const { data } = await http.get<unknown>('/api/pipelines', { params: { page: 1, size } })
+  return parseOrThrow(pipelinePageSchema, 'GET /api/pipelines', data)
 }
 
 export async function getPipeline(id: string): Promise<PipelineDetail> {
-  const { data } = await http.get<PipelineDetail>(`/api/pipelines/${id}`)
-  return data
+  const { data } = await http.get<unknown>(`/api/pipelines/${id}`)
+  return parseOrThrow(pipelineDetailSchema, `GET /api/pipelines/${id}`, data)
 }
 
 export async function updatePipeline(id: string, data: PipelineCreate): Promise<PipelineDetail> {
-  const { data: res } = await http.put<PipelineDetail>(`/api/pipelines/${id}`, data)
-  return res
+  const { data: res } = await http.put<unknown>(`/api/pipelines/${id}`, data)
+  return parseOrThrow(pipelineDetailSchema, `PUT /api/pipelines/${id}`, res)
 }
 
 export async function deletePipeline(id: string): Promise<void> {
@@ -138,13 +160,13 @@ export async function validateGraph(nodes: PipelineNode[], edges: PipelineEdge[]
 }
 
 export async function buildPipeline(id: string): Promise<BuildResponse> {
-  const { data } = await http.post<BuildResponse>(`/api/pipelines/${id}/build`)
-  return data
+  const { data } = await http.post<unknown>(`/api/pipelines/${id}/build`)
+  return parseOrThrow(buildResponseSchema, `POST /api/pipelines/${id}/build`, data)
 }
 
 export async function generatePipelineCode(id: string): Promise<GenerateResponse> {
-  const { data } = await http.post<GenerateResponse>(`/api/pipelines/${id}/generate`)
-  return data
+  const { data } = await http.post<unknown>(`/api/pipelines/${id}/generate`)
+  return parseOrThrow(generateResponseSchema, `POST /api/pipelines/${id}/generate`, data)
 }
 
 const columnsCache = new Map<string, string[] | null>()
@@ -169,16 +191,16 @@ export async function executePipeline(id: string): Promise<Job> {
 }
 
 export async function getJob(id: string): Promise<Job> {
-  const { data } = await http.get<Job>(`/api/jobs/${id}`)
-  return data
+  const { data } = await http.get<unknown>(`/api/jobs/${id}`)
+  return parseOrThrow(jobSchema, `GET /api/jobs/${id}`, data)
 }
 
 export async function getJobOutputs(id: string): Promise<JobOutput[]> {
-  const { data } = await http.get<JobOutput[]>(`/api/jobs/${id}/outputs`)
-  return data
+  const { data } = await http.get<unknown>(`/api/jobs/${id}/outputs`)
+  return parseOrThrow(z.array(jobOutputSchema), `GET /api/jobs/${id}/outputs`, data)
 }
 
 export async function listPipelineJobs(id: string): Promise<Job[]> {
-  const { data } = await http.get<Job[]>(`/api/pipelines/${id}/jobs`)
-  return data
+  const { data } = await http.get<unknown>(`/api/pipelines/${id}/jobs`)
+  return parseOrThrow(z.array(jobSchema), `GET /api/pipelines/${id}/jobs`, data)
 }

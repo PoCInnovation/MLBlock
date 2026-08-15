@@ -50,9 +50,7 @@ export interface PipelineSummary {
   name: string
   description: string
   is_draft: boolean
-  created_at: string
   updated_at: string
-  node_count: number
 }
 
 export interface PipelineDetail extends PipelineSummary {
@@ -69,9 +67,9 @@ export interface ValidationResponse {
 export interface BuildResponse {
   success: boolean
   output_shape: number[] | null
-  output_values: number[][] | null
+  output_values?: number[][] | null
   layer_count: number
-  error: string | null
+  error?: string | null
 }
 
 export interface GenerateResponse {
