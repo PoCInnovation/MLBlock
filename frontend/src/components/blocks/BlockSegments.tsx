@@ -148,7 +148,9 @@ function validateSeg(seg: Segment, value: string): { ok: boolean; msg?: string }
 
 function validBorder(v: { ok: boolean; msg?: string }, filled: boolean): React.CSSProperties {
   if (!filled) return {}
-  return { border: `1.5px solid ${v.ok ? theme.color.success : theme.color.error}`, boxShadow: 'none' }
+  // box-shadow inset plutôt que border : ne prend aucune place, donc aucun
+  // décalage du champ (texte/alignement) quand la valeur change d'état.
+  return { boxShadow: `inset 0 0 0 1.5px ${v.ok ? theme.color.success : theme.color.error}` }
 }
 
 type BlockSegmentsProps = {
