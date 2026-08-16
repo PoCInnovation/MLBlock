@@ -212,10 +212,10 @@ export default function BlockSegments({ segs, fields, blockId, blockType, onUpda
       {children}
     </span>
   )
-  // Ligne de séparation body/params (le border-t de l'ancien CardFooter).
-  const dividerStyle = startRow > 1
-    ? { borderTop: '1px solid var(--color-border)', paddingTop: 8 }
-    : {}
+  // Ligne de séparation body/params : gérée par BlockNode (rangée dédiée
+  // col-span-3). Un borderTop par cellule créait un escalier au croisement
+  // avec le séparateur vertical (label et champ n'ont pas la même hauteur).
+  const dividerStyle = {}
 
   // Le label du bloc (text seg ajouté par fetchCatalog) est déjà dans le
   // CardTitle — on ne le re-rend pas dans les params.

@@ -97,18 +97,32 @@ function BlockNode({ data, id }: NodeProps<BlockNodeData>) {
                 {data.outputs.map(p => <div key={p.name}>{p.name} · {p.dtype}</div>)}
               </div>
             )}
-            {data.segs.length > 0 && (
-              <BlockSegments segs={data.segs} fields={data.fields} blockId={id} blockType={data.type} onUpdate={updateFlowParam} columnOptions={columnOptions} startRow={data.inputs.length > 0 || data.outputs.length > 0 ? 2 : 1} />
-            )}
             {(() => {
-              // Séparateur vertical unique : même format pour tous les blocs,
-              // qu'ils aient des inputs, des outputs, des params ou rien.
-              // Il traverse le body (rangée 1) + les rangées de params.
               const paramCount = data.segs.filter(s => s.t !== 'text').length
               const hasBody = data.inputs.length > 0 || data.outputs.length > 0
-              if (!hasBody && paramCount === 0) return null
-              const endRow = (hasBody ? 2 : 1) + paramCount
-              return <Separator orientation="vertical" style={{ gridColumn: 2, gridRow: `1 / ${endRow}` }} />
+              const hasParams = paramCount > 0
+              const sepRow = hasBody && hasParams ? 2 : 0
+              return (
+                <>
+                  {sepRow > 0 && (
+                    // Ligne horizontale body/params : une vraie rangée col-span-3
+                    // (pleine largeur) plutôt qu'un borderTop sur chaque cellule —
+                    // le borderTop par cellule était décalé en escalier car le
+                    // label et le champ n'ont pas la même hauteur.
+                    <Separator orientation="horizontal" style={{ gridColumn: '1 / -1', gridRow: sepRow, margin: '8px 0' }} />
+                  )}
+                  {data.segs.length > 0 && (
+                    <BlockSegments segs={data.segs} fields={data.fields} blockId={id} blockType={data.type} onUpdate={updateFlowParam} columnOptions={columnOptions} startRow={hasBody ? (hasParams ? 3 : 1) : 1} />
+                  )}
+                  {(() => {
+                    // Séparateur vertical unique : traverse body + ligne
+                    // horizontale + params, quel que soit le contenu du bloc.
+                    if (!hasBody && !hasParams) return null
+                    const totalRows = (hasBody ? 1 : 0) + (sepRow > 0 ? 1 : 0) + paramCount
+                    return <Separator orientation="vertical" style={{ gridColumn: 2, gridRow: `1 / ${totalRows + 1}` }} />
+                  })()}
+                </>
+              )
             })()}
             <div className="col-span-3 flex justify-end pt-2">
               <button className="block-delete-btn border-none bg-none text-text-muted font-extrabold text-[11px] cursor-pointer p-0 font-body" onClick={() => removeFlowNode(id)}>Supprimer</button>
