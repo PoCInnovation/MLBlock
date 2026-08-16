@@ -86,34 +86,45 @@ function BlockNode({ data, id }: NodeProps<BlockNodeData>) {
       </CardHeader>
       {(data.inputs.length > 0 || data.outputs.length > 0 || data.segs.length > 0) && (
         <CardContent className="flex-1 min-h-0">
-          <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-x-3">
-            {data.inputs.length > 0 && (
-              <div className={inputsClassName} style={{ gridColumn: 1, gridRow: 1 }}>
-                {data.inputs.map(p => <div key={p.name}>{p.name} · {p.dtype}</div>)}
+          {data.inputs.length > 0 && data.outputs.length > 0 || data.segs.some(s => s.t !== 'text') ? (
+            <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-x-3">
+              {data.inputs.length > 0 && (
+                <div className={inputsClassName} style={{ gridColumn: 1, gridRow: 1 }}>
+                  {data.inputs.map(p => <div key={p.name}>{p.name} · {p.dtype}</div>)}
+                </div>
+              )}
+              {data.outputs.length > 0 && (
+                <div className={outputsClassName} style={{ gridColumn: data.inputs.length > 0 ? 3 : 1, gridRow: 1 }}>
+                  {data.outputs.map(p => <div key={p.name}>{p.name} · {p.dtype}</div>)}
+                </div>
+              )}
+              {data.segs.length > 0 && (
+                <BlockSegments segs={data.segs} fields={data.fields} blockId={id} blockType={data.type} onUpdate={updateFlowParam} columnOptions={columnOptions} startRow={data.inputs.length > 0 || data.outputs.length > 0 ? 2 : 1} />
+              )}
+              {(() => {
+                // Séparateur unique traversant body (si bilatéral) + params : il
+                // s'aligne d'office avec les colonnes de la grille commune.
+                const paramCount = data.segs.filter(s => s.t !== 'text').length
+                const bodyBoth = data.inputs.length > 0 && data.outputs.length > 0
+                if (!bodyBoth && paramCount === 0) return null
+                const startRow = data.inputs.length > 0 || data.outputs.length > 0 ? 2 : 1
+                const start = bodyBoth ? 1 : startRow
+                return <Separator orientation="vertical" style={{ gridColumn: 2, gridRow: `${start} / ${startRow + paramCount}` }} />
+              })()}
+              <div className="col-span-3 flex justify-end pt-2">
+                <button className="block-delete-btn border-none bg-none text-text-muted font-extrabold text-[11px] cursor-pointer p-0 font-body" onClick={() => removeFlowNode(id)}>Supprimer</button>
               </div>
-            )}
-            {data.outputs.length > 0 && (
-              <div className={outputsClassName} style={{ gridColumn: data.inputs.length > 0 ? 3 : 1, gridRow: 1 }}>
-                {data.outputs.map(p => <div key={p.name}>{p.name} · {p.dtype}</div>)}
-              </div>
-            )}
-            {data.segs.length > 0 && (
-              <BlockSegments segs={data.segs} fields={data.fields} blockId={id} blockType={data.type} onUpdate={updateFlowParam} columnOptions={columnOptions} startRow={data.inputs.length > 0 || data.outputs.length > 0 ? 2 : 1} />
-            )}
-            {(() => {
-              // Séparateur unique traversant body (si bilatéral) + params : il
-              // s'aligne d'office avec les colonnes de la grille commune.
-              const paramCount = data.segs.filter(s => s.t !== 'text').length
-              const bodyBoth = data.inputs.length > 0 && data.outputs.length > 0
-              if (!bodyBoth && paramCount === 0) return null
-              const startRow = data.inputs.length > 0 || data.outputs.length > 0 ? 2 : 1
-              const start = bodyBoth ? 1 : startRow
-              return <Separator orientation="vertical" style={{ gridColumn: 2, gridRow: `${start} / ${startRow + paramCount}` }} />
-            })()}
-            <div className="col-span-3 flex justify-end pt-2">
-              <button className="block-delete-btn border-none bg-none text-text-muted font-extrabold text-[11px] cursor-pointer p-0 font-body" onClick={() => removeFlowNode(id)}>Supprimer</button>
             </div>
-          </div>
+          ) : (
+            <>
+              <div className={data.inputs.length > 0 ? inputsClassName : outputsClassName}>
+                {(data.inputs.length > 0 ? data.inputs : data.outputs).map(p => <div key={p.name}>{p.name} · {p.dtype}</div>)}
+              </div>
+              <div className="flex justify-end pt-2">
+                <button className="block-delete-btn border-none bg-none text-text-muted font-extrabold text-[11px] cursor-pointer p-0 font-body" onClick={() => removeFlowNode(id)}>Supprimer</button>
+              </div>
+            </>
+          )}
         </CardContent>
       )}
       {data.inputs.map((p, i, arr) => (
