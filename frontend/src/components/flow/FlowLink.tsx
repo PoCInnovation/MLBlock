@@ -1,5 +1,5 @@
 import { memo, useSyncExternalStore } from 'react'
-import type { EdgeProps } from 'reactflow'
+import { getSmoothStepPath, type EdgeProps } from 'reactflow'
 import useAppStore from '../../store/useAppStore'
 import { COL_W, COL_PAD, colHeight, colOf } from '../../utils/gridLayout'
 
@@ -52,7 +52,7 @@ function roundedPath(points: [number, number][]): string {
  * - Lien qui SAUTE des colonnes : au-dessus de la colonne de départ, puis
  *   en dessous des colonnes traversées jusqu'à la destination.
  */
-function FlowLink({ id, source, target, sourceX, sourceY, targetX, targetY, style }: EdgeProps) {
+function FlowLink({ id, source, target, sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition, style }: EdgeProps) {
   const viewMode = useAppStore(s => s.viewMode)
   const flowNodes = useAppStore(s => s.flowNodes)
   const flowEdges = useAppStore(s => s.flowEdges)
@@ -61,6 +61,17 @@ function FlowLink({ id, source, target, sourceX, sourceY, targetX, targetY, styl
   let d: string
   const src = flowNodes.find(n => n.id === source)
   const tgt = flowNodes.find(n => n.id === target)
+  // Chemin smoothstep natif (vue libre + cas non routés) : part du handle
+  // source, coins arrondis, arrive au handle cible.
+  const [smoothPath] = getSmoothStepPath({
+    sourceX,
+    sourceY,
+    sourcePosition,
+    targetX,
+    targetY,
+    targetPosition,
+    borderRadius: CORNER,
+  })
   if (viewMode === 'grid' && src && tgt) {
     const sc = colOf(src)
     const tc = colOf(tgt)
@@ -96,10 +107,12 @@ function FlowLink({ id, source, target, sourceX, sourceY, targetX, targetY, styl
         [targetX, targetY],
       ])
     } else {
-      d = `M ${sourceX} ${sourceY} L ${targetX} ${targetY}`
+      // Lien vers l'arrière ou même colonne : smoothstep direct.
+      d = smoothPath
     }
   } else {
-    d = `M ${sourceX} ${sourceY} L ${targetX} ${targetY}`
+    // Vue libre : chemin smoothstep (coins arrondis) entre les deux handles.
+    d = smoothPath
   }
 
   const color = typeof style?.stroke === 'string' ? style.stroke : '#888'
