@@ -5,11 +5,14 @@ import BlockSegments from '../blocks/BlockSegments'
 import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card'
 import { Separator } from '../ui/separator'
 import { resolveColumnsForPath, resolveFlowSourcePath } from '../../utils/columns'
+import { isAmbiguous } from '../../utils/portResolution'
+import { theme } from '../../theme'
 import type { Port, Segment } from '../../types/catalog'
 
 // Taille/bordure du handle : classes !important car le CSS ReactFlow
 // (non-layé) écraserait les utilitaires Tailwind sinon.
 const handleClassName = 'w-[14px]! h-[14px]! rounded-full! bg-accent! border-2! border-surface2!'
+const handleFedClassName = 'w-[14px]! h-[14px]! rounded-full! bg-success! border-2! border-surface2!'
 
 const outputsClassName = 'flex flex-col gap-0.5 text-[11px] font-bold text-text-muted'
 
@@ -40,6 +43,11 @@ function BlockNode({ data, id }: NodeProps<BlockNodeData>) {
   const viewMode = useAppStore(s => s.viewMode)
   const [columnOptions, setColumnOptions] = useState<Record<string, string[]>>({})
   const description = catalog?.blocks[data.type]?.description
+
+  // Ports fournis (état dérivé des edges — jamais stocké) : un input est
+  // fourni s'il a une edge entrante, un output s'il a une edge sortante.
+  const inputFed: Record<string, true> = Object.fromEntries(flowEdges.filter(e => e.target === id).map(e => [e.targetHandle ?? 'in_1', true]))
+  const outputFed: Record<string, true> = Object.fromEntries(flowEdges.filter(e => e.source === id).map(e => [e.sourceHandle ?? 'out_1', true]))
 
   useEffect(() => {
     setColumnOptions({})
@@ -89,12 +97,20 @@ function BlockNode({ data, id }: NodeProps<BlockNodeData>) {
           <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-x-3">
             {data.inputs.length > 0 && (
               <div className={inputsClassName} style={{ gridColumn: 1, gridRow: 1 }}>
-                {data.inputs.map(p => <div key={p.name}>{p.name} · {p.dtype}</div>)}
+                {data.inputs.map(p => (
+                  <div key={p.name} style={inputFed[p.name] ? { color: theme.color.success } : undefined}>
+                    {p.name} · {p.dtype}
+                  </div>
+                ))}
               </div>
             )}
             {data.outputs.length > 0 && (
               <div className={outputsClassName} style={{ gridColumn: 3, gridRow: 1 }}>
-                {data.outputs.map(p => <div key={p.name}>{p.name} · {p.dtype}</div>)}
+                {data.outputs.map(p => (
+                  <div key={p.name} style={outputFed[p.name] ? { color: theme.color.success } : undefined}>
+                    {p.name} · {p.dtype}
+                  </div>
+                ))}
               </div>
             )}
             {(() => {
@@ -136,8 +152,15 @@ function BlockNode({ data, id }: NodeProps<BlockNodeData>) {
           id={p.name}
           type="target"
           position={Position.Left}
-          className={handleClassName}
-          style={{ top: topFor(i, arr.length) }}
+          className={inputFed[p.name] ? handleFedClassName : handleClassName}
+          // Côté non-ambigu : tous les handles sont empilés au centre (50%),
+          // un seul visible (i === 0) — ReactFlow positionne les edges sur
+          // les handles présents, ils doivent donc rester dans le DOM.
+          style={{
+            top: isAmbiguous(data.inputs) ? topFor(i, arr.length) : '50%',
+            opacity: isAmbiguous(data.inputs) || i === 0 ? 1 : 0,
+            pointerEvents: isAmbiguous(data.inputs) || i === 0 ? undefined : 'none',
+          }}
           title={`${p.name}: ${p.dtype}`}
         />
       ))}
@@ -147,8 +170,12 @@ function BlockNode({ data, id }: NodeProps<BlockNodeData>) {
           id={p.name}
           type="source"
           position={Position.Right}
-          className={handleClassName}
-          style={{ top: topFor(i, arr.length) }}
+          className={outputFed[p.name] ? handleFedClassName : handleClassName}
+          style={{
+            top: isAmbiguous(data.outputs) ? topFor(i, arr.length) : '50%',
+            opacity: isAmbiguous(data.outputs) || i === 0 ? 1 : 0,
+            pointerEvents: isAmbiguous(data.outputs) || i === 0 ? undefined : 'none',
+          }}
           title={`${p.name}: ${p.dtype}`}
         />
       ))}

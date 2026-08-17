@@ -2,7 +2,7 @@ import type { BlockDefMap, Port } from '../types/catalog'
 
 export type Verdict = 'compatible' | 'convertible' | 'incompatible'
 
-const WILDCARDS = new Set(['object', 'Any'])
+export const WILDCARDS = new Set(['object', 'Any'])
 
 /** Mirror of backend mlblock/core/types.py family_of. */
 export function familyOf(dtype: string): string {

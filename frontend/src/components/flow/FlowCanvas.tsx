@@ -23,6 +23,7 @@ import FlowPalette from './FlowPalette'
 import ConsolePanel from '../ui/ConsolePanel'
 import { segsToFields } from '../../utils/flowConversion'
 import { buildConversionGraph, classifyEdge, converterFor, portDtype } from '../../utils/typeCheck'
+import { resolveConnection, type ResolvedConnection } from '../../utils/portResolution'
 import { COL_W, COL_PAD, BLOCK_W, HEADER_H, colHeight, colOf, isEdgeValid, maxRowInCol, posFor, rowOf, snapPosition } from '../../utils/gridLayout'
 import type { InternalCatalog, Port } from '../../types/catalog'
 
@@ -104,7 +105,7 @@ function FlowCanvasInner() {
     })
   }, [viewMode, columns, flowNodes])
 
-  const insertConverter = useCallback((conn: Connection, convType: string) => {
+  const insertConverter = useCallback((conn: Connection, convType: string, resolved: ResolvedConnection) => {
     useAppStore.getState().commitUndoPoint()
     if (!catalog) return
     const def = catalog.blocks[convType]
@@ -134,10 +135,12 @@ function FlowCanvasInner() {
         outputs: def.outputs,
       },
     }
+    // Câblage avec les ports résolus (sourcePort de A, targetPort de B) :
+    // les handles cliqués ne sont pas fiables côté non-ambigu (point unique).
     const edgeA: Edge = {
       id: `e_${conn.source}_${convId}`,
       source: conn.source ?? '',
-      sourceHandle: conn.sourceHandle ?? 'out_1',
+      sourceHandle: resolved.sourcePort,
       target: convId,
       targetHandle: convIn,
     }
@@ -146,7 +149,7 @@ function FlowCanvasInner() {
       source: convId,
       sourceHandle: convOut,
       target: conn.target ?? '',
-      targetHandle: conn.targetHandle ?? 'in_1',
+      targetHandle: resolved.targetPort,
     }
     addFlowNode(node)
     addFlowEdges(flowEdges.filter(ed => !(ed.source === conn.source && ed.target === conn.target)).concat([edgeA, edgeB]))
@@ -185,28 +188,48 @@ function FlowCanvasInner() {
     }
     const src = flowNodes.find(n => n.id === params.source)
     const tgt = flowNodes.find(n => n.id === params.target)
-    const srcDtype = portDtype(portList(src, 'outputs'), params.sourceHandle)
-    const tgtDtype = portDtype(portList(tgt, 'inputs'), params.targetHandle)
-    if (!src || !tgt || !srcDtype || !tgtDtype) {
+    const srcPorts = portList(src, 'outputs')
+    const tgtPorts = portList(tgt, 'inputs')
+    if (!src || !tgt || !srcPorts?.length || !tgtPorts?.length) {
       addFlowEdges(addEdge(params, []))
       return
     }
-    const verdict = classifyEdge(srcDtype, tgtDtype, graph)
-    if (verdict === 'compatible') {
-      addFlowEdges(addEdge(params, []))
-    } else if (verdict === 'convertible') {
-      const conv = converterFor(srcDtype, tgtDtype, catalog.blocks)
+    // Résolution automatique du couple (source_port, target_port) : côté
+    // non-ambigu le point unique représente tous les ports, le scoring
+    // choisit le plus compatible. Côté ambigu le handle cliqué est figé.
+    const resolved = resolveConnection(srcPorts, tgtPorts, params.sourceHandle, params.targetHandle, graph)
+    if (!resolved) {
+      const srcDtype = portDtype(srcPorts, params.sourceHandle)
+      const tgtDtype = portDtype(tgtPorts, params.targetHandle)
+      showToast({ kind: 'error', message: `${srcDtype} → ${tgtDtype} : aucune conversion possible` })
+      return
+    }
+    if (resolved.verdict === 'compatible') {
+      // Remplacement : un input n'a jamais qu'une edge — supprime l'ancienne
+      // sur ce port avant d'ajouter la nouvelle (1 input = 1 edge max).
+      const rest = flowEdges.filter(e => !(e.target === tgt.id && e.targetHandle === resolved.targetPort))
+      addFlowEdges(rest.concat([{
+        id: `e_${src.id}_${tgt.id}_${resolved.targetPort}`,
+        source: src.id,
+        sourceHandle: resolved.sourcePort,
+        target: tgt.id,
+        targetHandle: resolved.targetPort,
+      }]))
+    } else {
+      const conv = converterFor(
+        srcPorts.find(p => p.name === resolved.sourcePort)?.dtype ?? '',
+        tgtPorts.find(p => p.name === resolved.targetPort)?.dtype ?? '',
+        catalog.blocks,
+      )
       if (!conv) {
-        showToast({ kind: 'error', message: `${srcDtype} → ${tgtDtype} : chemin de conversion introuvable` })
+        showToast({ kind: 'error', message: `chemin de conversion introuvable` })
         return
       }
       showToast({
         kind: 'convert',
-        message: `${srcDtype} → ${tgtDtype} : conversion via ${conv}`,
-        action: () => insertConverter(params, conv),
+        message: `conversion via ${conv}`,
+        action: () => insertConverter(params, conv, resolved),
       })
-    } else {
-      showToast({ kind: 'error', message: `${srcDtype} → ${tgtDtype} : aucune conversion possible` })
     }
   }, [catalog, flowNodes, flowEdges, graph, addFlowEdges, showToast, insertConverter, viewMode])
 
