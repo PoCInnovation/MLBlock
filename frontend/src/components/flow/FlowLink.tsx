@@ -1,4 +1,4 @@
-import { memo } from 'react'
+import { memo, useSyncExternalStore } from 'react'
 import type { EdgeProps } from 'reactflow'
 import useAppStore from '../../store/useAppStore'
 import { COL_W, COL_PAD, colHeight, colOf } from '../../utils/gridLayout'
@@ -7,6 +7,25 @@ import { COL_W, COL_PAD, colHeight, colOf } from '../../utils/gridLayout'
 const TOP_Y = -28
 /** Rayon des coins du routage. */
 const CORNER = 16
+
+/** Préférence système « réduire les animations » (SMIL n'est pas désactivable par CSS). */
+function usePrefersReducedMotion(): boolean {
+  const mq = typeof window !== 'undefined' ? window.matchMedia('(prefers-reduced-motion: reduce)') : null
+  return useSyncExternalStore(
+    cb => {
+      mq?.addEventListener('change', cb)
+      return () => mq?.removeEventListener('change', cb)
+    },
+    () => mq?.matches ?? false,
+  )
+}
+
+/** Décalage de départ dérivé de l'id du lien : désynchronise les particules. */
+function beginOffset(id: string): number {
+  let h = 0
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) % 1000
+  return h / 1000
+}
 
 function roundedPath(points: [number, number][]): string {
   let d = `M ${points[0][0]} ${points[0][1]}`
@@ -37,6 +56,7 @@ function FlowLink({ id, source, target, sourceX, sourceY, targetX, targetY, styl
   const viewMode = useAppStore(s => s.viewMode)
   const flowNodes = useAppStore(s => s.flowNodes)
   const flowEdges = useAppStore(s => s.flowEdges)
+  const reduceMotion = usePrefersReducedMotion()
 
   let d: string
   const src = flowNodes.find(n => n.id === source)
@@ -98,6 +118,26 @@ function FlowLink({ id, source, target, sourceX, sourceY, targetX, targetY, styl
         style={style}
         markerEnd={`url(#${markerId})`}
       />
+      {!reduceMotion && (
+        <circle
+          cx={sourceX}
+          cy={sourceY}
+          r="4"
+          fill={color}
+          className="pointer-events-none"
+          aria-hidden="true"
+        >
+          {/* keyPoints: la particule s'arrête avant la flèche (fin du chemin). */}
+          <animateMotion
+            dur="2s"
+            begin={`${beginOffset(id)}s`}
+            repeatCount="indefinite"
+            path={d}
+            keyPoints="0;0.94"
+            keyTimes="0;1"
+          />
+        </circle>
+      )}
     </g>
   )
 }
