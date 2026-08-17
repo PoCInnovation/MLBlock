@@ -120,8 +120,6 @@ function FlowLink({ id, source, target, sourceX, sourceY, targetX, targetY, styl
       />
       {!reduceMotion && (
         <circle
-          cx={sourceX}
-          cy={sourceY}
           r="4"
           fill={color}
           className="pointer-events-none"
