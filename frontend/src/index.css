@@ -210,6 +210,10 @@
 }
 .grid-mode .react-flow__edge { pointer-events: none; }
 
+/* Conteneur des boutons d'edges : sans top/left explicites ReactFlow le
+   laisse tomber dans le flux (en bas du viewport) — le fixer à l'origine. */
+.react-flow__edgelabel-renderer { top: 0; left: 0; }
+
 /* Connect : handles plus grands au survol (zone d'attrapage élargie). */
 .react-flow__handle:hover { transform: scale(1.6); }
 
@@ -219,6 +223,11 @@
 
 /* Bouton supprimer du bloc (footer de la card) : rouge au survol. */
 .block-delete-btn:hover { color: #ef4444; }
+
+/* Bouton supprimer du lien (au centre de l'edge) : rouge au survol,
+   focus visible pour la navigation clavier. */
+.edge-delete-btn:hover { color: #ef4444; border-color: #ef4444; }
+.edge-delete-btn:focus-visible { outline: 2px solid #E8915F; outline-offset: 1px; }
 
 /* Bloc : seul la poignée du header draggue (dragHandle) — curseur
    par défaut partout ailleurs. */

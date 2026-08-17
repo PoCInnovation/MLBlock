@@ -1,7 +1,8 @@
-import { memo, useSyncExternalStore } from 'react'
-import { getSmoothStepPath, type EdgeProps } from 'reactflow'
+import { memo, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { EdgeLabelRenderer, getSmoothStepPath, type EdgeProps } from 'reactflow'
 import useAppStore from '../../store/useAppStore'
 import { COL_W, COL_PAD, colHeight, colOf } from '../../utils/gridLayout'
+import { theme } from '../../theme'
 
 /** Couloir supérieur : au-dessus des cartes (les colonnes commencent à y=0). */
 const TOP_Y = -28
@@ -56,7 +57,11 @@ function FlowLink({ id, source, target, sourceX, sourceY, sourcePosition, target
   const viewMode = useAppStore(s => s.viewMode)
   const flowNodes = useAppStore(s => s.flowNodes)
   const flowEdges = useAppStore(s => s.flowEdges)
+  const applyFlowEdgeChanges = useAppStore(s => s.applyFlowEdgeChanges)
   const reduceMotion = usePrefersReducedMotion()
+  const pathRef = useRef<SVGPathElement>(null)
+  // Centre du chemin, mesuré après rendu : position du bouton de suppression.
+  const [center, setCenter] = useState<{ x: number; y: number } | null>(null)
 
   let d: string
   const src = flowNodes.find(n => n.id === source)
@@ -115,6 +120,13 @@ function FlowLink({ id, source, target, sourceX, sourceY, sourcePosition, target
     d = smoothPath
   }
 
+  // Centre du chemin, mesuré après rendu : position du bouton de suppression.
+  useLayoutEffect(() => {
+    const el = pathRef.current
+    if (!el) return
+    setCenter(el.getPointAtLength(el.getTotalLength() / 2))
+  }, [d])
+
   const color = typeof style?.stroke === 'string' ? style.stroke : '#888'
   const markerId = `mlb-arrow-${id}`
 
@@ -126,6 +138,7 @@ function FlowLink({ id, source, target, sourceX, sourceY, sourcePosition, target
         </marker>
       </defs>
       <path
+        ref={pathRef}
         d={d}
         className="react-flow__edge-path fill-none stroke-[2.5]"
         style={style}
@@ -148,6 +161,43 @@ function FlowLink({ id, source, target, sourceX, sourceY, sourcePosition, target
             keyTimes="0;1"
           />
         </circle>
+      )}
+      {center && (
+        <EdgeLabelRenderer>
+          <button
+            type="button"
+            className="edge-delete-btn"
+            title="Supprimer le lien"
+            aria-label="Supprimer le lien"
+            onClick={e => {
+              e.stopPropagation()
+              // Même chemin que la touche Delete : point d'undo puis remove.
+              useAppStore.getState().commitUndoPoint()
+              applyFlowEdgeChanges([{ id, type: 'remove' }])
+            }}
+            style={{
+              position: 'absolute',
+              transform: `translate(-50%, -50%) translate(${center.x}px, ${center.y}px)`,
+              width: 22,
+              height: 22,
+              borderRadius: 999,
+              border: `1px solid ${theme.color.border}`,
+              background: theme.color.surface2,
+              color: theme.color.textMuted,
+              fontSize: 12,
+              lineHeight: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              zIndex: 10,
+              pointerEvents: 'auto',
+              boxShadow: theme.shadow.btn,
+            }}
+          >
+            ✕
+          </button>
+        </EdgeLabelRenderer>
       )}
     </g>
   )
