@@ -157,3 +157,15 @@ backend/tmp.py
 backend/mlblock.db
 .mcp.json
 .playwright-mcp
+
+# Agent scratch
+/.hermes
+/_bmad
+/_bmad-output
+
+# Captures d'écran (vérifs navigateur)
+*.check.png
+homepage-check.png
+links-*.png
+hover-card-preview.png
+param-hover-card.png
