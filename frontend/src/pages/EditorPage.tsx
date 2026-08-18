@@ -20,7 +20,7 @@ function stashIfDirty(): void {
   const u = s.user as { id?: string } | null
   if (!u?.id || !s.isDirty()) return
   const { nodes, edges } = toServerPayload(s)
-  writeStash(u.id, { name: s.projectName, nodes, edges, pipelineId: s.pipelineId, savedAt: new Date().toISOString(), columns: s.columns })
+  writeStash(u.id, { name: s.projectName, nodes, edges, pipelineId: s.pipelineId, savedAt: new Date().toISOString() })
 }
 
 export default function EditorPage() {
@@ -29,7 +29,6 @@ export default function EditorPage() {
   const catalog      = useAppStore(s => s.catalog)
   const catalogError = useAppStore(s => s.catalogError)
   const pipelineId   = useAppStore(s => s.pipelineId)
-  const viewMode     = useAppStore(s => s.viewMode)
   const restoredWork = useAppStore(s => s.restoredWork)
   const setRestoredWork = useAppStore(s => s.setRestoredWork)
 
@@ -95,20 +94,10 @@ export default function EditorPage() {
     const stash = readStash(u.id)
     if (!stash) return
     clearStash(u.id)
-    s.loadPipeline(stash.nodes, stash.edges, stash.pipelineId ?? '', stash.name, stash.columns)
+    s.loadPipeline(stash.nodes, stash.edges, stash.pipelineId ?? '', stash.name)
     if (!stash.pipelineId) useAppStore.setState({ pipelineId: null })
     // Le toast sera montré par l'effet catalogue, une fois le rendu final en place
     useAppStore.getState().setRestoredWork(true)
-  }, [])
-
-  // État de l'éditeur depuis l'URL : /editor?pipeline=<uuid>&view=free|grid
-  // (le stash de récupération a priorité : si du travail non sauvegardé
-  // existe, on ne l'écrase pas avec le pipeline de l'URL).
-  useEffect(() => {
-    const s = useAppStore.getState()
-    const params = parseEditorParams(searchParams)
-    if (params.view !== s.viewMode) s.setViewMode(params.view)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Pipeline de l'URL : chargé via Query, appliqué seulement si le canvas
@@ -118,17 +107,17 @@ export default function EditorPage() {
     if (!d) return
     const s = useAppStore.getState()
     if (s.flowNodes.length === 0 && !s.restoredWork) {
-      s.loadPipeline(d.nodes, d.edges, d.id, d.name, d.columns)
+      s.loadPipeline(d.nodes, d.edges, d.id, d.name)
     }
   }, [pipelineQuery.data])
 
-  // Miroir zustand → URL : le pipeline ouvert et la vue sont partageables
+  // Miroir zustand → URL : le pipeline ouvert est partageable
   useEffect(() => {
     setSearchParams(
-      { view: viewMode, ...(pipelineId ? { pipeline: pipelineId } : {}) },
+      pipelineId ? { pipeline: pipelineId } : {},
       { replace: true }
     )
-  }, [viewMode, pipelineId, setSearchParams])
+  }, [pipelineId, setSearchParams])
 
   // Projet ouvert : recharge les résultats du dernier run (persistés en db)
   useEffect(() => {

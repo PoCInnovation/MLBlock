@@ -68,18 +68,12 @@ export const pipelineEdgeSchema = z.object({
   target_port: z.string(),
 })
 
-export const pipelineColumnSchema = z.object({
-  id: z.string(),
-  label: z.string(),
-})
-
 export const pipelineCreateSchema = z.object({
   name: z.string(),
   description: z.string(),
   is_draft: z.boolean().optional(),
   nodes: z.array(pipelineNodeSchema),
   edges: z.array(pipelineEdgeSchema),
-  columns: z.array(pipelineColumnSchema).optional(),
 })
 
 export const pipelineSummarySchema = z.object({
@@ -93,7 +87,6 @@ export const pipelineSummarySchema = z.object({
 export const pipelineDetailSchema = pipelineSummarySchema.extend({
   nodes: z.array(pipelineNodeSchema),
   edges: z.array(pipelineEdgeSchema),
-  columns: z.array(pipelineColumnSchema),
 })
 
 export const pipelinePageSchema = z.object({

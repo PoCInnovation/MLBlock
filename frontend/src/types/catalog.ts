@@ -42,7 +42,6 @@ export interface PipelineCreate {
   is_draft?: boolean
   nodes: PipelineNode[]
   edges: PipelineEdge[]
-  columns?: { id: string; label: string }[]
 }
 
 export interface PipelineSummary {
@@ -56,7 +55,6 @@ export interface PipelineSummary {
 export interface PipelineDetail extends PipelineSummary {
   nodes: PipelineNode[]
   edges: PipelineEdge[]
-  columns: { id: string; label: string }[]
 }
 
 export interface ValidationResponse {

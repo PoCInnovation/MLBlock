@@ -57,7 +57,6 @@ class PipelineCreate(BaseModel):
     is_draft: bool = False
     nodes: list[PipelineNode]
     edges: list[PipelineEdge]
-    columns: list[dict[str, str]] | None = None
 
 
 class PipelineUpdate(BaseModel):
@@ -66,7 +65,6 @@ class PipelineUpdate(BaseModel):
     is_draft: bool | None = None
     nodes: list[PipelineNode] | None = None
     edges: list[PipelineEdge] | None = None
-    columns: list[dict[str, str]] | None = None
 
 
 class PipelineDetail(BaseModel):
@@ -76,7 +74,6 @@ class PipelineDetail(BaseModel):
     is_draft: bool
     nodes: list[PipelineNode]
     edges: list[PipelineEdge]
-    columns: list[dict[str, str]] = []
     code: str
     created_at: str
     updated_at: str

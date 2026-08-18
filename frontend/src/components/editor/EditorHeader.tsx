@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Save, Play, Loader2, Upload, Download, Square, MoreVertical, FolderKanban, Trash2, LogOut, Check, Undo2, Redo2, LayoutGrid, Columns3 } from 'lucide-react'
+import { Save, Play, Loader2, Upload, Download, Square, MoreVertical, FolderKanban, Trash2, LogOut, Check, Undo2, Redo2 } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -40,8 +40,6 @@ export default function EditorHeader() {
   const canRedo = useAppStore(s => s.canRedo())
   const undo = useAppStore(s => s.undo)
   const redo = useAppStore(s => s.redo)
-  const viewMode = useAppStore(s => s.viewMode)
-  const setViewMode = useAppStore(s => s.setViewMode)
   const { importFile } = usePipelineImport()
 
   const [saving, setSaving] = useState(false)
@@ -133,15 +131,6 @@ export default function EditorHeader() {
           style={{ ...ghostBtn, padding: '9px 10px', opacity: canRedo ? 1 : 0.35, cursor: canRedo ? 'pointer' : 'default' }}
         >
           <Redo2 size={16} />
-        </button>
-        <button
-          onClick={() => setViewMode(viewMode === 'grid' ? 'free' : 'grid')}
-          title={viewMode === 'grid' ? 'Passer à la vue libre' : 'Passer à la vue colonnes (grille)'}
-          aria-label="Basculer la vue"
-          style={{ ...ghostBtn, padding: '9px 10px', color: viewMode === 'grid' ? theme.color.accentLight : theme.color.textLight, border: viewMode === 'grid' ? '1px solid rgba(217,119,87,.45)' : `1px solid ${theme.color.border}` }}
-        >
-          {viewMode === 'grid' ? <Columns3 size={16} /> : <LayoutGrid size={16} />}
-          {viewMode === 'grid' ? 'Vue colonnes' : 'Vue libre'}
         </button>
         <button
           onClick={onSave}

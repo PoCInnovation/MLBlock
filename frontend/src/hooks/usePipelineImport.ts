@@ -13,7 +13,7 @@ export function usePipelineImport() {
     try {
       const imported = await parseImportFile(file)
       const detail = await createPipeline({ name: imported.name, description: '', is_draft: false, nodes: imported.nodes, edges: imported.edges })
-      useAppStore.getState().loadPipeline(detail.nodes, detail.edges, detail.id, detail.name, detail.columns)
+      useAppStore.getState().loadPipeline(detail.nodes, detail.edges, detail.id, detail.name)
       return null
     } catch (e) {
       if (axios.isAxiosError(e)) {

@@ -9,17 +9,6 @@ vi.mock('../api/client', () => ({
 }))
 
 import useAppStore, { fingerprintOf } from './useAppStore'
-import type { GridColumn } from '../utils/gridLayout'
-
-type PosLike = { x: number; y: number; col?: number; row?: number }
-
-const gridNode = (id: string, col: number, row: number, extra: Record<string, unknown> = {}): Node =>
-  ({
-    id,
-    position: { col, row, x: 48 + col * 340, y: 74 + row * 190 },
-    data: { type: 'csv', fields: { a: '1' }, segs: [] },
-    ...extra,
-  }) as Node
 
 const freeNode = (id: string, x: number, y: number, extra: Record<string, unknown> = {}): Node =>
   ({
@@ -39,8 +28,8 @@ const edge = (id: string, source: string, target: string, extra: Record<string, 
     ...extra,
   }) as Edge
 
-const fp = (nodes: Node[], edges: Edge[] = [], projectName = 'p', columns: GridColumn[] = []): string =>
-  fingerprintOf({ flowNodes: nodes, flowEdges: edges, projectName, columns })
+const fp = (nodes: Node[], edges: Edge[] = [], projectName = 'p'): string =>
+  fingerprintOf({ flowNodes: nodes, flowEdges: edges, projectName })
 
 const initialState = useAppStore.getState()
 
@@ -49,30 +38,15 @@ beforeEach(() => {
 })
 
 describe('fingerprintOf', () => {
-  it('keeps the fingerprint stable while dragging in grid mode (x/y ignored, col/row kept)', () => {
-    const a = gridNode('a', 1, 2)
-    const b = gridNode('a', 1, 2)
-    ;(b.position as PosLike).x = 999
-    ;(b.position as PosLike).y = 999
-    expect(fp([a])).toBe(fp([b]))
-
-    const c = gridNode('a', 2, 2)
-    expect(fp([a])).not.toBe(fp([c]))
-
-    // A grid node without raw x/y (only col/row) hashes identically
-    const d = { ...a, position: { col: 1, row: 2 } } as unknown as Node
-    expect(fp([a])).toBe(fp([d]))
-  })
-
-  it('treats free-mode x/y as semantic (they participate)', () => {
+  it('treats x/y as semantic (they participate)', () => {
     expect(fp([freeNode('a', 10, 20)])).not.toBe(fp([freeNode('a', 30, 20)]))
     expect(fp([freeNode('a', 10, 20)])).not.toBe(fp([freeNode('a', 10, 40)]))
     expect(fp([freeNode('a', 10, 20)])).toBe(fp([freeNode('a', 10, 20)]))
   })
 
   it('ignores volatile ReactFlow metadata on nodes and edges', () => {
-    const base = gridNode('a', 0, 0)
-    const decorated = gridNode('a', 0, 0, {
+    const base = freeNode('a', 10, 20)
+    const decorated = freeNode('a', 10, 20, {
       selected: true,
       dragging: false,
       measured: { width: 244, height: 300 },
@@ -88,18 +62,18 @@ describe('fingerprintOf', () => {
   })
 
   it('ignores cosmetic data (label, category, colors) but detects field changes', () => {
-    const a = gridNode('a', 0, 0)
-    const relabeled = gridNode('a', 0, 0, {
+    const a = freeNode('a', 10, 20)
+    const relabeled = freeNode('a', 10, 20, {
       data: { type: 'csv', fields: { a: '1' }, segs: [], label: 'Autre', category: 'data', categoryColor: '#000' },
     })
     expect(fp([a])).toBe(fp([relabeled]))
 
-    const changedField = gridNode('a', 0, 0, {
+    const changedField = freeNode('a', 10, 20, {
       data: { type: 'csv', fields: { a: '2' }, segs: [] },
     })
     expect(fp([a])).not.toBe(fp([changedField]))
 
-    const changedSegs = gridNode('a', 0, 0, {
+    const changedSegs = freeNode('a', 10, 20, {
       data: { type: 'csv', fields: { a: '1' }, segs: [{ t: 'text', v: 'x' }] },
     })
     expect(fp([a])).not.toBe(fp([changedSegs]))
@@ -111,9 +85,7 @@ describe('fingerprintOf', () => {
     expect(fp([], [edge('e1', 'a', 'b', { targetHandle: 'in_2' })])).not.toBe(fp([], [edge('e1', 'a', 'b')]))
   })
 
-  it('includes columns and projectName', () => {
-    const cols: GridColumn[] = [{ id: 'c0', label: '0' }]
-    expect(fp([], [], 'p', cols)).not.toBe(fp([], [], 'p', []))
+  it('includes projectName', () => {
     expect(fp([], [], 'p')).not.toBe(fp([], [], 'q'))
   })
 })
@@ -122,7 +94,7 @@ describe('isDirty transitions', () => {
   it('starts clean and becomes dirty on node/edge edits, clean again after save', () => {
     expect(useAppStore.getState().isDirty()).toBe(false)
 
-    useAppStore.getState().addFlowNode(gridNode('n1', 0, 0))
+    useAppStore.getState().addFlowNode(freeNode('n1', 100, 80))
     expect(useAppStore.getState().isDirty()).toBe(true)
 
     // simulate a save: fingerprint of the current state is stored
@@ -135,33 +107,8 @@ describe('isDirty transitions', () => {
 
   it('reports clean when savedFingerprint is null (no saved baseline)', () => {
     useAppStore.setState({ savedFingerprint: null })
-    useAppStore.getState().addFlowNode(gridNode('n1', 0, 0))
+    useAppStore.getState().addFlowNode(freeNode('n1', 100, 80))
     expect(useAppStore.getState().isDirty()).toBe(false)
-  })
-
-  it('stays clean when a grid drop lands on the same cell (position re-alignment only)', () => {
-    const n = gridNode('n1', 0, 0)
-    useAppStore.setState({
-      viewMode: 'grid',
-      columns: [{ id: 'c0', label: '0' }],
-      flowNodes: [n],
-    })
-    // Baseline from the actual store state (projectName included in fingerprint)
-    useAppStore.setState({ savedFingerprint: fingerprintOf(useAppStore.getState()) })
-    useAppStore.getState().moveNodeTo('n1', 0, 0)
-    expect(useAppStore.getState().isDirty()).toBe(false)
-  })
-
-  it('becomes dirty when a grid drop moves the node to another cell', () => {
-    const n = gridNode('n1', 0, 0)
-    useAppStore.setState({
-      viewMode: 'grid',
-      columns: [{ id: 'c0', label: '0' }, { id: 'c1', label: '1' }],
-      flowNodes: [n],
-    })
-    useAppStore.setState({ savedFingerprint: fingerprintOf(useAppStore.getState()) })
-    useAppStore.getState().moveNodeTo('n1', 1, 0)
-    expect(useAppStore.getState().isDirty()).toBe(true)
   })
 })
 

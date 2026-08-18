@@ -31,7 +31,6 @@ class Pipeline(SQLModel, table=True):
     is_draft: bool = Field(default=True)
     nodes: list[dict] = Field(default=[], sa_column=Column(JSON))
     edges: list[dict] = Field(default=[], sa_column=Column(JSON))
-    columns: list[dict] = Field(default=[], sa_column=Column(JSON))
     code: str = ""
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

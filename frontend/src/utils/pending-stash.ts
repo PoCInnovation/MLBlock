@@ -1,5 +1,4 @@
 import type { PipelineNode, PipelineEdge } from '../types/catalog'
-import type { GridColumn } from './gridLayout'
 
 export type PendingStash = {
   name: string
@@ -7,7 +6,6 @@ export type PendingStash = {
   edges: PipelineEdge[]
   pipelineId: string | null
   savedAt: string
-  columns?: GridColumn[]
 }
 
 const keyFor = (userId: string) => `mlblock-pending-${userId}`

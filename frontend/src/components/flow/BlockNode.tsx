@@ -40,7 +40,6 @@ function BlockNode({ data, id }: NodeProps<BlockNodeData>) {
   const catalog = useAppStore(s => s.catalog)
   const flowNodes = useAppStore(s => s.flowNodes)
   const flowEdges = useAppStore(s => s.flowEdges)
-  const viewMode = useAppStore(s => s.viewMode)
   const [columnOptions, setColumnOptions] = useState<Record<string, string[]>>({})
   const description = catalog?.blocks[data.type]?.description
 
@@ -68,7 +67,6 @@ function BlockNode({ data, id }: NodeProps<BlockNodeData>) {
       className="bg-surface2! shadow-block min-w-[180px] max-w-[260px] overflow-visible! px-lg! pb-lg! rounded-2xl!"
       style={{
         borderTop: `3px solid ${data.categoryColor}`,
-        width: viewMode === 'grid' ? 244 : undefined,
       }}
     >
       <CardHeader>

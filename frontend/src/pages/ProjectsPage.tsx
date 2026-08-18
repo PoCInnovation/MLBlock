@@ -67,7 +67,7 @@ export default function ProjectsPage() {
         queryKey: ['pipeline', p.id],
         queryFn: () => getPipeline(p.id),
       })
-      useAppStore.getState().loadPipeline(detail.nodes, detail.edges, detail.id, detail.name, detail.columns)
+      useAppStore.getState().loadPipeline(detail.nodes, detail.edges, detail.id, detail.name)
       navigate('/editor')
     } catch {
       setActionError('Impossible d’ouvrir ce projet.')
@@ -119,7 +119,7 @@ export default function ProjectsPage() {
             style={{ opacity: atLimit ? 0.5 : 1, cursor: atLimit ? 'not-allowed' : 'pointer', transition: 'filter .15s ease, transform .15s ease' }}
             disabled={atLimit}
             title={atLimit ? 'Limite de 20 projets atteinte. Supprime un projet pour en créer un nouveau.' : undefined}
-            onClick={() => { useAppStore.getState().clearAll(); useAppStore.setState({ pipelineId: null, projectName: 'mon-premier-modèle', savedFingerprint: fingerprintOf({ flowNodes: [], flowEdges: [], projectName: 'mon-premier-modèle', columns: [] }), undoStack: [], redoStack: [] }); navigate('/editor') }}
+            onClick={() => { useAppStore.getState().clearAll(); useAppStore.setState({ pipelineId: null, projectName: 'mon-premier-modèle', savedFingerprint: fingerprintOf({ flowNodes: [], flowEdges: [], projectName: 'mon-premier-modèle' }), undoStack: [], redoStack: [] }); navigate('/editor') }}
           >
             + Nouveau projet
           </button>

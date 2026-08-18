@@ -239,7 +239,6 @@ def _row_to_detail(row: PipelineTable, nodes, edges) -> PipelineDetail:
         is_draft=row.is_draft,
         nodes=node_schemas,
         edges=edge_schemas,
-        columns=row.columns or [],
         code=row.code,
         created_at=row.created_at.isoformat(),
         updated_at=row.updated_at.isoformat(),
@@ -329,7 +328,6 @@ def create_pipeline(
         is_draft=body.is_draft,
         nodes=[n.model_dump() for n in body.nodes],
         edges=[e.model_dump() for e in body.edges],
-        columns=body.columns or [],
     )
     session.add(row)
     session.commit()
@@ -372,8 +370,6 @@ def update_pipeline(
         row.nodes = [n.model_dump() for n in body.nodes]
     if body.edges is not None:
         row.edges = [e.model_dump() for e in body.edges]
-    if body.columns is not None:
-        row.columns = body.columns
     row.updated_at = datetime.now(timezone.utc)
 
     session.add(row)
