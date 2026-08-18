@@ -12,7 +12,7 @@ import { Upload } from 'lucide-react'
 const MAX_PROJECTS = 20
 
 const pageStyle =
-  'min-h-screen bg-bg text-text font-body px-8 py-12'
+  'min-h-screen bg-bg text-text font-body px-4 py-8 md:px-8 md:py-12'
 const headerStyle =
   'max-w-[980px] mx-auto mb-7 flex items-center justify-between'
 const titleStyle =

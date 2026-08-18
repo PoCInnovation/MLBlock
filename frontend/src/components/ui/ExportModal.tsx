@@ -12,7 +12,7 @@ const overlayStyle: React.CSSProperties = {
 }
 const modalStyle: React.CSSProperties = {
   background: theme.color.surface2, borderRadius: theme.radius.lg, padding: 26,
-  width: 340, boxShadow: theme.shadow.block, border: `1px solid ${theme.color.border}`,
+  width: 340, maxWidth: 'calc(100vw - 32px)', boxShadow: theme.shadow.block, border: `1px solid ${theme.color.border}`,
 }
 const btnBase: React.CSSProperties = {
   display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%',

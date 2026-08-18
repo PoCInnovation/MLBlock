@@ -213,3 +213,104 @@
 /* Bloc : seul la poignée du header draggue (dragHandle) — curseur
    par défaut partout ailleurs. */
 .react-flow__node-block { cursor: default !important; }
+
+/* ===== Mobile-first : éditeur ===== */
+
+/* En-tête éditeur : hauteur fixe desktop (le wrap est réservé au mobile). */
+.editor-header { height: 60px; padding: 0 16px; }
+
+/* Palette : sidebar inline ≥768px, masquée en mobile (tiroir + backdrop
+   pilotés par .palette-open dans FlowCanvas). */
+.flow-palette { display: flex; flex-shrink: 0; }
+.palette-toggle, .palette-backdrop, .palette-drawer { display: none; }
+
+/* Hamburger de la landing : caché ≥768px. */
+.landing-nav-burger {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  color: var(--color-text);
+  cursor: pointer;
+}
+/* Menu mobile : rendu conditionnellement par HomeNav, masqué au desktop
+   (ex. redimensionnement après ouverture). */
+.landing-nav-menu { display: none; }
+
+/* En-tête éditeur : wrap < 900px (bande 768-900px : les 6 boutons du header
+   fixe 60px débordent sinon) ; ≥901px : rangée unique inchangée. */
+@media (max-width: 900px) {
+  .editor-header {
+    height: auto;
+    padding: 6px 16px;
+    flex-wrap: wrap;
+    align-content: center;
+    row-gap: 4px;
+  }
+  .editor-header .header-actions {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    margin-left: auto;
+  }
+}
+
+@media (max-width: 767px) {
+  /* Palette : masquée dans le flux, ouverte en tiroir fixe via le bouton.
+     z 40/50 : au-dessus des panes ReactFlow (≤5), sous les modals (100+). */
+  .flow-palette { display: none; }
+  .palette-toggle {
+    display: inline-flex;
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 10;
+  }
+  .palette-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.55);
+    z-index: 40;
+  }
+  .palette-drawer {
+    display: flex;
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(300px, 85vw);
+    z-index: 50;
+  }
+  /* Nom du projet : tronqué avec ellipsis seulement en mobile (le desktop
+     affichait déjà les noms longs en entier). */
+  .project-name {
+    max-width: min(180px, 30vw);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline-block;
+  }
+  /* Console : hauteur au contenu (max 40vh) ; l'en-tête s'enroule pour que
+     titre + bouton repli + onglets + badge « Terminé » passent en 375px. */
+  .console-panel { height: auto !important; max-height: 40vh; }
+  .console-panel .console-header { flex-wrap: wrap; row-gap: 4px; }
+  /* Landing : hamburger + menu repliable, liens masqués. */
+  .landing-nav-links { display: none !important; }
+  .landing-nav-burger { display: inline-flex; }
+  .landing-nav-menu { display: block; }
+}
+
+/* Handles tactiles ≥ 22px (WCAG 2.5.5) : pointer coarse couvre les
+   appareils tactiles. Règles DANS @layer utilities : pour les déclarations
+   !important les règles en layer l'emportent sur les règles hors layer
+   (cascade inversée) — sinon les utilitaires w-[14px]! de BlockNode
+   (même layer) resteraient vainqueurs. Position en fin de layer → ordre. */
+@layer utilities {
+  @media (pointer: coarse) {
+    .react-flow__handle { width: 22px !important; height: 22px !important; }
+  }
+}

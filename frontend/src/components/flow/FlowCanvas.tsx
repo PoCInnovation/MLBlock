@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import ReactFlow, {
   Background,
   Controls,
@@ -14,6 +14,7 @@ import ReactFlow, {
   type EdgeChange,
 } from 'reactflow'
 import 'reactflow/dist/style.css'
+import { Menu } from 'lucide-react'
 import useAppStore from '../../store/useAppStore'
 import { theme } from '../../theme'
 import BlockNode from './BlockNode'
@@ -69,11 +70,62 @@ function FlowCanvasInner() {
 
   const { screenToFlowPosition, fitView } = useReactFlow()
   const wrapperRef = useRef<HTMLDivElement>(null)
+  // Tiroir palette mobile (overlay) — desktop : jamais ouvert, bouton caché.
+  const [paletteOpen, setPaletteOpen] = useState(false)
+  // Compteur de taps : décale les ajouts successifs pour éviter l'empilement
+  // exact au centre (le premier reste centré).
+  const tapSeq = useRef(0)
+  const paletteToggleRef = useRef<HTMLButtonElement>(null)
+  const paletteDrawerRef = useRef<HTMLDivElement>(null)
+  const wasOpenRef = useRef(false)
+
+  useEffect(() => {
+    if (!paletteOpen) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setPaletteOpen(false) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [paletteOpen])
+
+  // Focus : dans le tiroir à l'ouverture, retour au bouton à la fermeture.
+  useEffect(() => {
+    if (paletteOpen) {
+      wasOpenRef.current = true
+      paletteDrawerRef.current?.focus()
+    } else if (wasOpenRef.current) {
+      wasOpenRef.current = false
+      paletteToggleRef.current?.focus()
+    }
+  }, [paletteOpen])
 
   const graph = useMemo(
     () => (catalog ? buildConversionGraph(catalog.blocks) : new Map<string, Set<string>>()),
     [catalog]
   )
+
+  /** Construit un nœud bloc — partagé entre drop (DnD) et tap-to-add. */
+  const buildNode = useCallback((type: string, position: { x: number; y: number }): Node | null => {
+    if (!catalog) return null
+    const def = catalog.blocks[type]
+    if (!def) return null
+    const cat = catalog.categories.find(c => c.id === def.cat)
+    const label = def.segs.find(s => s.t === 'text')?.v ?? type
+    return {
+      id: `${type}_${Date.now()}`,
+      type: 'block',
+      dragHandle: '.block-drag-handle',
+      position,
+      data: {
+        type,
+        label,
+        category: def.cat,
+        categoryColor: cat?.color ?? theme.color.accent,
+        segs: def.segs,
+        fields: segsToFields(def),
+        inputs: def.inputs,
+        outputs: def.outputs,
+      },
+    }
+  }, [catalog])
 
   const insertConverter = useCallback((conn: Connection, convType: string, resolved: ResolvedConnection) => {
     useAppStore.getState().commitUndoPoint()
@@ -210,33 +262,32 @@ function FlowCanvasInner() {
       useAppStore.getState().commitUndoPoint()
 
       const position = screenToFlowPosition({ x: e.clientX, y: e.clientY })
-      const def = catalog.blocks[type]
-      const cat = catalog.categories.find(c => c.id === def.cat)
-      const label = def.segs.find(s => s.t === 'text')?.v ?? type
-
-      const node: Node = {
-        id: `${type}_${Date.now()}`,
-        type: 'block',
-        dragHandle: '.block-drag-handle',
-        position,
-        data: {
-          type,
-          label,
-          category: def.cat,
-          categoryColor: cat?.color ?? theme.color.accent,
-          segs: def.segs,
-          fields: segsToFields(def),
-          inputs: def.inputs,
-          outputs: def.outputs,
-        },
-      }
+      const node = buildNode(type, position)
+      if (!node) return
       addFlowNode(node)
       // ponytail: fitView recenters on the dropped node — screenToFlowPosition
       // on an empty canvas (fitView scale ~0.1) yields enormous flow coords
       setTimeout(() => fitView({ padding: 0.2, duration: 300 }), 50)
     },
-    [catalog, screenToFlowPosition, addFlowNode, fitView]
+    [catalog, screenToFlowPosition, buildNode, addFlowNode, fitView]
   )
+
+  // Tap-to-add (mobile) : même construction que le drop, position = centre
+  // du viewport visible (le rect du canvas, pas de la fenêtre). Les ajouts
+  // successifs sont décalés de 22px en Y (cycles de 6) pour ne pas s'empiler
+  // exactement au centre.
+  const addNodeAtCenter = useCallback((type: string) => {
+    const rect = wrapperRef.current?.getBoundingClientRect()
+    const x = rect ? rect.left + rect.width / 2 : window.innerWidth / 2
+    const y = rect ? rect.top + rect.height / 2 : window.innerHeight / 2
+    const position = screenToFlowPosition({ x, y: y + (tapSeq.current++ % 6) * 22 })
+    const node = buildNode(type, position)
+    if (!node) return
+    useAppStore.getState().commitUndoPoint()
+    addFlowNode(node)
+    setPaletteOpen(false)
+    setTimeout(() => fitView({ padding: 0.2, duration: 300 }), 50)
+  }, [buildNode, screenToFlowPosition, addFlowNode, fitView])
 
   const renderEdges = useMemo(
     () => flowEdges.map(e => {
@@ -248,7 +299,11 @@ function FlowCanvasInner() {
 
   return (
     <div style={{ flex: 1, position: 'relative', display: 'flex', minWidth: 0, minHeight: 0, height: '100%' }}>
-      <FlowPalette onDragStart={onDragStart} />
+      {/* Palette : sidebar fixe ≥768px, masquée en mobile (tiroir ci-dessous).
+          La sidebar n'a PAS de onAdd : le tap-to-add est mobile uniquement. */}
+      <div className="flow-palette">
+        <FlowPalette onDragStart={onDragStart} />
+      </div>
       <div ref={wrapperRef} style={{ flex: 1, height: '100%' }}>
         <ReactFlow
           nodes={flowNodes}
@@ -270,6 +325,43 @@ function FlowCanvasInner() {
           <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
         </ReactFlow>
       </div>
+      {/* Bouton d'ouverture de la palette (mobile uniquement, cf. index.css). */}
+      <button
+        ref={paletteToggleRef}
+        className="palette-toggle"
+        onClick={() => setPaletteOpen(true)}
+        aria-label={paletteOpen ? 'Fermer les blocs' : 'Ouvrir les blocs'}
+        aria-expanded={paletteOpen}
+        aria-controls="flow-palette-drawer"
+        title="Blocs"
+        style={{
+          position: 'absolute', top: 12, left: 12, zIndex: 10,
+          width: 44, height: 44, alignItems: 'center', justifyContent: 'center',
+          background: theme.color.surface3, color: theme.color.text,
+          border: `1px solid ${theme.color.border}`, borderRadius: theme.radius.md,
+          cursor: 'pointer', boxShadow: theme.shadow.btn,
+        }}
+      >
+        <Menu size={20} />
+      </button>
+      {/* Tiroir palette mobile : overlay fixe + backdrop (z 40/50 au-dessus
+          des panes ReactFlow, sous les modals). */}
+      {paletteOpen && (
+        <>
+          <div className="palette-backdrop" onClick={() => setPaletteOpen(false)} />
+          <div
+            ref={paletteDrawerRef}
+            id="flow-palette-drawer"
+            className="palette-drawer"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Palette de blocs"
+            tabIndex={-1}
+          >
+            <FlowPalette onDragStart={onDragStart} onAdd={addNodeAtCenter} onClose={() => setPaletteOpen(false)} />
+          </div>
+        </>
+      )}
       <ConsolePanel />
     </div>
   )

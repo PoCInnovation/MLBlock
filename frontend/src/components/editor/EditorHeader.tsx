@@ -79,8 +79,8 @@ export default function EditorHeader() {
   }
 
   return (
-    <div style={{ height: 60, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', background: theme.color.surface, borderBottom: `1px solid ${theme.color.border}`, zIndex: 20 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+    <div className="editor-header" style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: theme.color.surface, borderBottom: `1px solid ${theme.color.border}`, zIndex: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0 }}>
         <div onClick={() => navigate('/')} style={{ display: 'flex', alignItems: 'center', gap: 9, cursor: 'pointer' }}>
           <div style={{ width: 30, height: 30, borderRadius: 9, background: theme.color.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: theme.shadow.btn }}>
             <div style={{ width: 11, height: 11, background: '#fff', borderRadius: 3 }} />
@@ -88,8 +88,8 @@ export default function EditorHeader() {
           <span style={{ fontFamily: theme.font.heading, fontWeight: 600, fontSize: 19 }}>MLBlock</span>
         </div>
         <div style={{ width: 1, height: 26, background: theme.color.border }} />
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: theme.color.surface3, border: `1px solid ${theme.color.border}`, padding: '6px 12px', borderRadius: theme.radius.md }}>
-          <span style={{ width: 7, height: 7, borderRadius: '50%', background: theme.color.status, display: 'inline-block' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: theme.color.surface3, border: `1px solid ${theme.color.border}`, padding: '6px 12px', borderRadius: theme.radius.md, minWidth: 0 }}>
+          <span style={{ width: 7, height: 7, borderRadius: '50%', background: theme.color.status, display: 'inline-block', flexShrink: 0 }} />
           {editingName ? (
             <input
               value={draftName}
@@ -100,12 +100,13 @@ export default function EditorHeader() {
                 if (e.key === 'Enter') commitName()
                 if (e.key === 'Escape') { setDraftName(projectName); setEditingName(false) }
               }}
-              style={{ background: 'transparent', border: 'none', borderBottom: `1px solid ${theme.color.auth}`, outline: 'none', color: theme.color.text, fontWeight: 800, fontSize: 14, width: 180 }}
+              style={{ background: 'transparent', border: 'none', borderBottom: `1px solid ${theme.color.auth}`, outline: 'none', color: theme.color.text, fontWeight: 800, fontSize: 14, width: 'min(180px, 30vw)' }}
             />
           ) : (
             <span
               onClick={() => { setDraftName(projectName); setEditingName(true) }}
               title="Cliquer pour renommer"
+              className="project-name"
               style={{ fontWeight: 800, fontSize: 14, cursor: 'text', borderBottom: '1px dashed rgba(255,255,255,.28)' }}
             >
               {projectName}
@@ -113,7 +114,7 @@ export default function EditorHeader() {
           )}
         </div>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+      <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
         <button
           onClick={undo}
           disabled={!canUndo}

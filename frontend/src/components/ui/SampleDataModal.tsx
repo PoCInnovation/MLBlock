@@ -10,7 +10,7 @@ const overlayStyle: React.CSSProperties = {
 }
 const modalStyle: React.CSSProperties = {
   background: theme.color.surface2, borderRadius: theme.radius.lg, padding: 24,
-  width: 480, maxHeight: '80vh', overflowY: 'auto',
+  width: 480, maxWidth: 'calc(100vw - 32px)', maxHeight: '80vh', overflowY: 'auto',
   boxShadow: theme.shadow.block, border: `1px solid ${theme.color.border}`,
 }
 const sectionTitle: React.CSSProperties = {

@@ -1,6 +1,8 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import { X } from 'lucide-react'
 import useAppStore from '../../store/useAppStore'
 import { colorFor } from '../../utils/blockHelpers'
+import { shouldIgnoreTap } from '../../utils/tapGuard'
 import { theme } from '../../theme'
 
 const paletteStyle: React.CSSProperties = {
@@ -22,6 +24,9 @@ const headerStyle: React.CSSProperties = {
   fontWeight: 600,
   fontSize: 17,
   color: theme.color.text,
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'stretch',
 }
 
 const searchInputStyle: React.CSSProperties = {
@@ -107,12 +112,44 @@ const dotStyle = (color: string): React.CSSProperties => ({
 
 type FlowPaletteProps = {
   onDragStart: (e: React.DragEvent, type: string) => void
+  /**
+   * Tap-to-add (mobile uniquement — le tiroir passe onAdd, la sidebar desktop
+   * non : un clic desktop sur un item doit rester inerte).
+   */
+  onAdd?: (type: string) => void
+  /** Fermeture du tiroir mobile (affiche un bouton ✕ dans l'en-tête). */
+  onClose?: () => void
 }
 
-export default function FlowPalette({ onDragStart }: FlowPaletteProps) {
+export default function FlowPalette({ onDragStart, onAdd, onClose }: FlowPaletteProps) {
   const catalog = useAppStore(s => s.catalog)
   const [query, setQuery] = useState('')
   const [cat, setCat] = useState('all')
+  // Position du pointerdown : un vrai drag parcourt > 8px avant le click —
+  // on ignore alors le click post-drag (certains navigateurs l'émettent)
+  // pour ne pas créer de doublon avec le drop.
+  const pressStart = useRef<{ x: number; y: number } | null>(null)
+  // Un drag HTML5 (même court, ≤8px) marque le flag : le click qui suit ne
+  // doit pas ajouter de bloc (dragStarted est réinitialisé au pointerdown).
+  const dragStarted = useRef(false)
+
+  const handleItemClick = (type: string, e: React.MouseEvent) => {
+    if (dragStarted.current) {
+      dragStarted.current = false
+      pressStart.current = null
+      return
+    }
+    const press = pressStart.current
+    pressStart.current = null
+    if (shouldIgnoreTap(press, e.clientX, e.clientY)) return
+    onAdd?.(type)
+  }
+
+  const handleItemKeyDown = (type: string, e: React.KeyboardEvent) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return
+    e.preventDefault()
+    if (!dragStarted.current) onAdd?.(type)
+  }
 
   if (!catalog) return null
 
@@ -132,7 +169,18 @@ export default function FlowPalette({ onDragStart }: FlowPaletteProps) {
   return (
     <div style={paletteStyle}>
       <div style={headerStyle}>
-        Blocs
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span>Blocs</span>
+          {onClose && (
+            <button
+              onClick={onClose}
+              aria-label="Fermer"
+              style={{ background: 'none', border: 'none', color: theme.color.textMuted, cursor: 'pointer', fontWeight: 900, fontSize: 16, width: 36, height: 36, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: 999 }}
+            >
+              <X size={17} />
+            </button>
+          )}
+        </div>
         <input
           value={query}
           onChange={e => setQuery(e.target.value)}
@@ -165,7 +213,12 @@ export default function FlowPalette({ onDragStart }: FlowPaletteProps) {
                   <div
                     key={type}
                     draggable
-                    onDragStart={e => onDragStart(e, type)}
+                    role="button"
+                    tabIndex={0}
+                    onDragStart={e => { dragStarted.current = true; onDragStart(e, type) }}
+                    onPointerDown={e => { dragStarted.current = false; pressStart.current = { x: e.clientX, y: e.clientY } }}
+                    onClick={e => handleItemClick(type, e)}
+                    onKeyDown={e => handleItemKeyDown(type, e)}
                     style={itemStyle}
                     title={def.description || undefined}
                   >
