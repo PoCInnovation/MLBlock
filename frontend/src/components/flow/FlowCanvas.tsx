@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import ReactFlow, {
   Background,
   Controls,
+  ControlButton,
   MiniMap,
   ReactFlowProvider,
   useReactFlow,
@@ -14,7 +15,7 @@ import ReactFlow, {
   type EdgeChange,
 } from 'reactflow'
 import 'reactflow/dist/style.css'
-import { Menu } from 'lucide-react'
+import { AlignVerticalJustifyCenter, Menu } from 'lucide-react'
 import useAppStore from '../../store/useAppStore'
 import { theme } from '../../theme'
 import BlockNode from './BlockNode'
@@ -24,6 +25,7 @@ import ConsolePanel from '../ui/ConsolePanel'
 import { segsToFields } from '../../utils/flowConversion'
 import { buildConversionGraph, classifyEdge, converterFor, portDtype } from '../../utils/typeCheck'
 import { resolveConnection, type ResolvedConnection } from '../../utils/portResolution'
+import { arrangeGraph } from '../../utils/layout'
 import type { InternalCatalog, Port } from '../../types/catalog'
 
 const nodeTypes = { block: BlockNode }
@@ -68,8 +70,11 @@ function FlowCanvasInner() {
   const catalog = useAppStore(s => s.catalog)
   const showToast = useAppStore(s => s.showToast)
 
-  const { screenToFlowPosition, fitView } = useReactFlow()
+  const { screenToFlowPosition, fitView, getZoom } = useReactFlow()
   const wrapperRef = useRef<HTMLDivElement>(null)
+  // Timer du fitView post-dispose : annulé au démontage pour ne pas appeler
+  // fitView sur une instance ReactFlow démontée.
+  const fitViewTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   // Tiroir palette mobile (overlay) — desktop : jamais ouvert, bouton caché.
   const [paletteOpen, setPaletteOpen] = useState(false)
   // Compteur de taps : décale les ajouts successifs pour éviter l'empilement
@@ -78,6 +83,12 @@ function FlowCanvasInner() {
   const paletteToggleRef = useRef<HTMLButtonElement>(null)
   const paletteDrawerRef = useRef<HTMLDivElement>(null)
   const wasOpenRef = useRef(false)
+
+  useEffect(() => {
+    return () => {
+      if (fitViewTimerRef.current) clearTimeout(fitViewTimerRef.current)
+    }
+  }, [])
 
   useEffect(() => {
     if (!paletteOpen) return
@@ -289,6 +300,51 @@ function FlowCanvasInner() {
     setTimeout(() => fitView({ padding: 0.2, duration: 300 }), 50)
   }, [buildNode, screenToFlowPosition, addFlowNode, fitView])
 
+  // Disposer : ré-arrangement hiérarchique EXPLICITE des nœuds (dagre) —
+  // jamais automatique (ni au chargement, ni après chaque édition). Taille
+  // lue dans le DOM au moment du clic (hauteurs variables : params/segments),
+  // corrigée du zoom pour rester en coordonnées de flow ; snapshot d'undo
+  // avant application pour que Ctrl+Z restaure les positions manuelles.
+  const handleArrange = useCallback(() => {
+    if (useAppStore.getState().flowNodes.length < 2) return // no-op silencieux
+    // rAF : le DOM reflète le dernier rendu (édition d'un param puis clic
+    // immédiat sur Disposer avant le re-render React).
+    requestAnimationFrame(() => {
+      const store = useAppStore.getState()
+      if (store.flowNodes.length < 2) return
+      const zoom = getZoom() || 1 // zoom 0 → division infinie → NaN
+      // Lookup en une passe par data-id : un id avec guillemet/backslash
+      // (ids serveur passés verbatim au chargement) ferait jeter
+      // querySelector(selon template).
+      const elById: Record<string, Element> = {}
+      wrapperRef.current?.querySelectorAll('.react-flow__node').forEach(el => {
+        const id = el.getAttribute('data-id')
+        if (id) elById[id] = el
+      })
+      const nodes = store.flowNodes.map(n => {
+        const rect = elById[n.id]?.getBoundingClientRect()
+        // Fallback 220×140 si le DOM manque ou si le rect est dégénéré
+        // (0×0 : display:none ou non encore disposé).
+        const width = rect && rect.width > 0 ? rect.width / zoom : 220
+        const height = rect && rect.height > 0 ? rect.height / zoom : 140
+        return { id: n.id, width, height }
+      })
+      const edges = store.flowEdges.map(e => ({ source: e.source, target: e.target }))
+      const positions = arrangeGraph(nodes, edges)
+      // Graphe déjà disposé : aucun déplacement visible → pas de point d'undo
+      // inutile. Tolérance 1px : le zoom fitView fait dériver les mesures
+      // DOM de fractions de pixel entre deux clics — l'égalité stricte ne
+      // déclencherait jamais le skip.
+      if (store.flowNodes.every(n => {
+        const p = positions[n.id]
+        return Math.abs(n.position.x - p.x) < 1 && Math.abs(n.position.y - p.y) < 1
+      })) return
+      store.commitUndoPoint()
+      store.setFlowNodes(store.flowNodes.map(n => ({ ...n, position: positions[n.id] })))
+      fitViewTimerRef.current = setTimeout(() => fitView({ padding: 0.2, duration: 300 }), 50)
+    })
+  }, [getZoom, fitView])
+
   const renderEdges = useMemo(
     () => flowEdges.map(e => {
       const base = edgeStyleFor(e, flowNodes, graph)
@@ -320,7 +376,16 @@ function FlowCanvasInner() {
           fitView
           fitViewOptions={{ padding: 0.2 }}
         >
-          <Controls />
+          <Controls>
+            <ControlButton
+              onClick={handleArrange}
+              title="Disposer"
+              aria-label="Disposer les blocs automatiquement"
+              disabled={flowNodes.length < 2}
+            >
+              <AlignVerticalJustifyCenter size={18} />
+            </ControlButton>
+          </Controls>
           <MiniMap />
           <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
         </ReactFlow>

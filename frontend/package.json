@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
+    "@dagrejs/dagre": "^3.1.1",
     "@hookform/resolvers": "^5.7.1",
     "@radix-ui/react-separator": "^1.1.15",
     "@supabase/supabase-js": "^2.111.0",
