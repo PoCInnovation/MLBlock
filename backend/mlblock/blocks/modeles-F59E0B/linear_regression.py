@@ -1,4 +1,4 @@
-def linear_regression(train_data: "pd.DataFrame", target_column: "str", fit_intercept: "bool" = True) -> "Model":
+def linear_regression(train_data: "pd.DataFrame", target_column: "str", fit_intercept: "bool" = True) -> "Model":  # noqa: F821 -- annotation descriptive en chaîne (métadonnées DSL, noms virtuels)
     """Régression linéaire.
     Régression linéaire sur un DataFrame.
 

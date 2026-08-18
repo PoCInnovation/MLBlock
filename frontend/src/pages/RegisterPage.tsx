@@ -34,6 +34,7 @@ export default function RegisterPage() {
     mode: 'onChange',
     defaultValues: { email: '', password: '', confirm: '' },
   })
+  // eslint-disable-next-line react-hooks/incompatible-library -- react-hook-form (bibliothèque de formulaires du repo) : watch() non mémoïsable, composant non mémoïsé.
   const password = form.watch('password')
 
   const rules = [

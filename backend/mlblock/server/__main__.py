@@ -1,5 +1,3 @@
-import os
-
 # Load .env before importing application modules
 try:
     from dotenv import load_dotenv

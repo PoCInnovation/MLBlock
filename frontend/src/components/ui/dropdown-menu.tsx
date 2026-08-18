@@ -1,3 +1,5 @@
+/* eslint-disable react-refresh/only-export-components -- Portage shadcn/ui : un fichier
+   exporte volontairement plusieurs composants + constantes (convention du repo). */
 import { Menu } from '@base-ui/react/menu'
 import type { ReactNode } from 'react'
 import { Check, ChevronRight } from 'lucide-react'

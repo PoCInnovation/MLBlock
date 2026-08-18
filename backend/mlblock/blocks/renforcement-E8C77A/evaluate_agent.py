@@ -1,4 +1,4 @@
-def evaluate_agent(env: "Env", policy: "Policy", episodes: "int" = 10) -> "float":
+def evaluate_agent(env: "Env", policy: "Policy", episodes: "int" = 10) -> "float":  # noqa: F821 -- annotation descriptive en chaîne (métadonnées DSL, noms virtuels)
     """Évaluer un agent.
     Joue plusieurs épisodes avec la politique apprise et retourne la récompense
     moyenne.

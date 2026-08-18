@@ -3,7 +3,7 @@ from typing import Literal
 import torch
 
 
-def train_model(in_1: "torch.nn.Module", in_2: "torch.utils.data.DataLoader", in_3: "torch.optim.Optimizer", in_4: "torch.nn.Module", epochs: "int" = 5, device: Literal["cpu", "cuda", "mps"] = "cpu") -> "dict[model: torch.nn.Module, history: list]":
+def train_model(in_1: "torch.nn.Module", in_2: "torch.utils.data.DataLoader", in_3: "torch.optim.Optimizer", in_4: "torch.nn.Module", epochs: "int" = 5, device: Literal["cpu", "cuda", "mps"] = "cpu") -> "dict[model: torch.nn.Module, history: list]":  # noqa: F821 -- annotation descriptive en chaîne (métadonnées DSL, noms virtuels)
     """Entraîner le modèle.
     Entraîne le modèle sur plusieurs époques.
     

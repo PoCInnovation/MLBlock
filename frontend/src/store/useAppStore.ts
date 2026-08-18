@@ -4,7 +4,7 @@ import type { InternalCatalog } from '../types/catalog'
 import type { PipelineNode, PipelineEdge, Job, JobOutput, JobStatus } from '../types/catalog'
 import { createPipeline, updatePipeline } from '../api/client'
 import type { Node, Edge, NodeChange, EdgeChange } from 'reactflow'
-import { applyNodeChanges, applyEdgeChanges, addEdge, type Connection } from 'reactflow'
+import { applyNodeChanges, applyEdgeChanges } from 'reactflow'
 
 export type ConsoleLine = { k: string; t: string }
 

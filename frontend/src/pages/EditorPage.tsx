@@ -51,6 +51,7 @@ export default function EditorPage() {
   const [guardBusy, setGuardBusy] = useState(false)
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Synchronisation avec un état externe (bloqueur react-router) : seule façon de réagir au passage en « blocked ».
     if (blocker.state === 'blocked') setGuardOpen(true)
   }, [blocker.state])
 

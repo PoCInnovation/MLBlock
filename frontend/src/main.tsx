@@ -1,3 +1,5 @@
+/* eslint-disable react-refresh/only-export-components -- Fichier d'entrée Vite : les
+   composants racine sont définis ici volontairement, aucun HMR attendu sur l'entrée. */
 import React, { useEffect, useState } from 'react'
 import ReactDOM from 'react-dom/client'
 import { RouterProvider } from 'react-router-dom'
@@ -25,7 +27,7 @@ function Root() {
         setUser(null)
         setAuthReady(true)
       })
-    const { data: { subscription } } = onAuthStateChange((session: any) => {
+    const { data: { subscription } } = onAuthStateChange((session) => {
       // Session perdue (expiration, logout externe) avec travail non sauvegardé :
       // stash le pipeline pour récupération après reconnexion.
       const s = useAppStore.getState()

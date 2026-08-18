@@ -49,6 +49,7 @@ export default function SampleDataModal({ category, onPick, onChooseFile, onClos
 
   useEffect(() => {
     let cancelled = false
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Reset synchrone volontaire : changement de catégorie → état « Chargement… » immédiat, pas de liste périmée.
     setSamples(null)
     setError(null)
     http

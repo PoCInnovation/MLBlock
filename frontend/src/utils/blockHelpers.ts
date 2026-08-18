@@ -1,6 +1,6 @@
 import type { Node, Edge } from 'reactflow'
 import type { PipelineNode, PipelineEdge } from '../types/catalog'
-import type { BlockDefMap, Category } from '../types/catalog'
+import type { Category } from '../types/catalog'
 
 export const colorFor = (cat: string, categories: Category[]): string => {
   const c = categories.find(c => c.id === cat)

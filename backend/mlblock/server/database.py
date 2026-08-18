@@ -28,6 +28,7 @@ def get_session() -> Generator[Session, None, None]:
 
 
 def init_db() -> None:
-    # Explicitly import models to register them on SQLModel.metadata before creation
-    from mlblock.server.models import Profile, Pipeline, Job, JobOutput
+    # Import explicite des modèles pour les enregistrer sur SQLModel.metadata
+    # avant create_all — effet de bord volontaire, les noms ne sont pas utilisés.
+    from mlblock.server.models import Profile, Pipeline, Job, JobOutput  # noqa: F401
     SQLModel.metadata.create_all(_get_engine())

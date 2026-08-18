@@ -2,7 +2,7 @@ import { memo, useEffect, useState } from 'react'
 import { Handle, Position, type NodeProps } from 'reactflow'
 import useAppStore from '../../store/useAppStore'
 import BlockSegments from '../blocks/BlockSegments'
-import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card'
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
 import { Separator } from '../ui/separator'
 import { resolveColumnsForPath, resolveFlowSourcePath } from '../../utils/columns'
 import { isAmbiguous } from '../../utils/portResolution'
@@ -49,6 +49,7 @@ function BlockNode({ data, id }: NodeProps<BlockNodeData>) {
   const outputFed: Record<string, true> = Object.fromEntries(flowEdges.filter(e => e.source === id).map(e => [e.sourceHandle ?? 'out_1', true]))
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Reset synchrone volontaire : évite d'afficher les colonnes périmées de l'ancien chemin pendant le fetch.
     setColumnOptions({})
     const hasTarget = data.segs.some(s => 'k' in s && s.k === 'target_column')
     if (!hasTarget) return

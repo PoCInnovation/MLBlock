@@ -1,4 +1,4 @@
-def df_to_tensor(in_1: "pd.DataFrame") -> "torch.Tensor":
+def df_to_tensor(in_1: "pd.DataFrame") -> "torch.Tensor":  # noqa: F821 -- annotation descriptive en chaîne (métadonnées DSL, noms virtuels)
     """Convertir un DataFrame en tenseur.
     Convertit un DataFrame en tenseur float32.
 

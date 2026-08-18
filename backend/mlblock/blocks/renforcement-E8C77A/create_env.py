@@ -1,4 +1,4 @@
-def create_env(env_id: "str" = "CartPole-v1") -> "Env":
+def create_env(env_id: "str" = "CartPole-v1") -> "Env":  # noqa: F821 -- annotation descriptive en chaîne (métadonnées DSL, noms virtuels)
     """Créer un environnement.
     Crée un environnement d'apprentissage par renforcement (gymnasium).
 

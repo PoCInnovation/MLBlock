@@ -119,15 +119,20 @@ def test_auth_valid_token_accepted(real_auth_client: TestClient):
     try:
         user_info = _signup_user(email, password)
         token = user_info["access_token"]
+        headers = {"Authorization": f"Bearer {token}"}
 
-        resp = real_auth_client.get(
-            "/api/blocks",
-            headers={"Authorization": f"Bearer {token}"},
+        created = real_auth_client.post(
+            "/api/pipelines",
+            json={"name": f"auth-check-{test_id}", "nodes": [], "edges": []},
+            headers=headers,
         )
+        assert created.status_code == 201
+
+        resp = real_auth_client.get("/api/pipelines", headers=headers)
         assert resp.status_code == 200
         data = resp.json()
         assert "items" in data
-        assert data["total"] > 0
+        assert any(i["name"] == f"auth-check-{test_id}" for i in data["items"])
     finally:
         if user_info and user_info.get("user_id"):
             _delete_user(user_info["user_id"], SUPABASE_SERVICE_KEY)
@@ -137,7 +142,7 @@ def test_auth_valid_token_accepted(real_auth_client: TestClient):
 def test_auth_invalid_token_rejected(real_auth_client: TestClient):
     """A forged/bad JWT is rejected with 401."""
     resp = real_auth_client.get(
-        "/api/blocks",
+        "/api/pipelines",
         headers={"Authorization": "Bearer this.is.not.a.valid.jwt"},
     )
     assert resp.status_code == 401
@@ -146,7 +151,7 @@ def test_auth_invalid_token_rejected(real_auth_client: TestClient):
 @pytest.mark.skipif(not SUPABASE_URL, reason="SUPABASE_URL not set")
 def test_auth_no_token_rejected(real_auth_client: TestClient):
     """No Authorization header returns 401."""
-    resp = real_auth_client.get("/api/blocks")
+    resp = real_auth_client.get("/api/pipelines")
     assert resp.status_code == 401
 
 

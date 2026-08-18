@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """Validation des exercices — run local via l'API."""
+# ruff: noqa: E501 -- Les définitions d'exercices sont des littéraux compacts
+# (lignes volontairement longues), pas du code formaté.
 import json
 import os
 import time
 import urllib.error
 import urllib.request
-import uuid
 from dotenv import load_dotenv
 
 load_dotenv()

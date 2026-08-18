@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def q_learning(env: "Env", episodes: "int" = 500, lr: "float" = 0.1, gamma: "float" = 0.99) -> "Policy":
+def q_learning(env: "Env", episodes: "int" = 500, lr: "float" = 0.1, gamma: "float" = 0.99) -> "Policy":  # noqa: F821 -- annotation descriptive en chaîne (métadonnées DSL, noms virtuels)
     """Apprendre par Q-learning.
     Entraîne une table Q sur un environnement discret (CartPole, MountainCar…).
 

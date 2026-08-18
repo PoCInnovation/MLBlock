@@ -19,7 +19,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from mlblock.server.routes import catalog_router, samples_router, pipelines_router, validation_router, jobs_router, files_router, health_router
+# Import volontairement après load_dotenv() : voir commentaire ci-dessus.
+from mlblock.server.routes import (  # noqa: E402
+    catalog_router,
+    samples_router,
+    pipelines_router,
+    validation_router,
+    jobs_router,
+    files_router,
+    health_router,
+)
 
 app.include_router(catalog_router)
 app.include_router(samples_router)

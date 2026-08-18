@@ -26,4 +26,21 @@ dependencies = [
 dev = [
     "httpx>=0.28.1",
     "pytest>=9.0.3",
+    "ruff>=0.16.3",
 ]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+# Correctness only (pycodestyle errors + pyflakes bugs). isort/upgrade exclus :
+# le codebase n'a jamais été linté, éviter le churn de formatage/imports.
+select = ["E", "F"]
+
+[tool.ruff.lint.per-file-ignores]
+# Fichiers de définition de blocs : les signatures (annotations descriptives en
+# chaînes, métadonnées du DSL) sont volontairement longues — convention du repo.
+# Les F821 des annotations sont traitées ligne par ligne (# noqa) pour ne jamais
+# masquer une vraie faute de frappe dans le corps exécutable d'un bloc.
+"mlblock/blocks/**/*.py" = ["E501"]

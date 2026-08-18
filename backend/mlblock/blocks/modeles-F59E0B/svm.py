@@ -1,7 +1,7 @@
 from typing import Literal
 
 
-def svm(in_1: "pd.DataFrame", target_column: "str", task: Literal["classification", "regression"] = "classification", kernel: Literal["rbf", "linear", "poly", "sigmoid"] = "rbf", C: "float" = 1.0) -> "object":
+def svm(in_1: "pd.DataFrame", target_column: "str", task: Literal["classification", "regression"] = "classification", kernel: Literal["rbf", "linear", "poly", "sigmoid"] = "rbf", C: "float" = 1.0) -> "object":  # noqa: F821 -- annotation descriptive en chaîne (métadonnées DSL, noms virtuels)
     """Machine à vecteurs de support.
     Machine à vecteurs de support (classification ou régression).
     

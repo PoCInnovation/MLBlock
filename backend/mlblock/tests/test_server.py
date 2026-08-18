@@ -4,55 +4,52 @@ import os
 import uuid
 
 import pytest
-from dotenv import load_dotenv
 from fastapi.testclient import TestClient
 
-load_dotenv()
-
+# conftest.py a déjà chargé l'env avant ce module (load_dotenv + imports internes).
 from mlblock.server.main import app
 
+_SUPABASE_CONFIGURED = bool(os.environ.get("SUPABASE_URL") and os.environ.get("SUPABASE_SECRET_KEY"))
 
-# ── Blocks ──────────────────────────────────────────────────────────
+
+# ── Catalogue des blocs (API /api/catalog, ex-/api/blocks) ──────────
 
 
-def test_list_blocks_returns_paginated(client: TestClient):
-    resp = client.get("/api/blocks?page=1&size=20")
+def test_catalog_returns_all_blocks(catalog_client: TestClient):
+    resp = catalog_client.get("/api/catalog")
     assert resp.status_code == 200
     data = resp.json()
-    assert "items" in data
-    assert "total" in data
-    assert data["page"] == 1
-    assert data["size"] == 20
+    assert "categories" in data
+    blocks = [b for cat in data["categories"] for b in cat["blocks"]]
+    assert blocks
+    assert all({"type", "params", "inputs", "outputs"} <= set(b) for b in blocks)
 
 
-def test_list_blocks_filters_by_category(client: TestClient):
-    resp = client.get("/api/blocks?category=neural")
+def test_catalog_groups_blocks_by_category(catalog_client: TestClient):
+    resp = catalog_client.get("/api/catalog")
     assert resp.status_code == 200
-    data = resp.json()
-    assert all(item["category"]["name"] == "neural" for item in data["items"])
+    cats = {c["id"]: c for c in resp.json()["categories"]}
+    assert "convolution" in cats
+    assert cats["convolution"]["blocks"]
+    assert all("type" in b for b in cats["convolution"]["blocks"])
 
 
-def test_get_block_by_type(client: TestClient):
-    resp = client.get("/api/blocks/conv2d")
+def test_get_block_by_type(catalog_client: TestClient):
+    resp = catalog_client.get("/api/catalog")
     assert resp.status_code == 200
-    data = resp.json()
-    assert data["name"] == "conv2d"
-    assert data["category"]["name"] == "neural"
+    blocks = {b["type"]: b for cat in resp.json()["categories"] for b in cat["blocks"]}
+    assert "conv2d" in blocks
+    data = blocks["conv2d"]
     assert "params" in data
     assert "outputs" in data
 
 
-def test_get_block_unknown_returns_404(client: TestClient):
-    resp = client.get("/api/blocks/doesnotexist")
-    assert resp.status_code == 404
-
-
-def test_list_categories(client: TestClient):
-    resp = client.get("/api/blocks/categories")
+def test_list_categories(catalog_client: TestClient):
+    resp = catalog_client.get("/api/catalog")
     assert resp.status_code == 200
-    cats = resp.json()
-    names = [c["name"] for c in cats]
-    assert "neural" in names
+    cats = resp.json()["categories"]
+    ids = [c["id"] for c in cats]
+    assert "convolution" in ids
 
 
 # ── Pipelines CRUD ─────────────────────────────────────────────────
@@ -592,6 +589,7 @@ def test_load_text_block_registered():
     assert "load_text" in blocks
 
 
+@pytest.mark.skipif(not _SUPABASE_CONFIGURED, reason="Supabase non configuré (SUPABASE_URL/SUPABASE_SECRET_KEY)")
 def test_samples_endpoint_returns_manifest():
     """GET /api/samples sert le manifest du bucket sample-data (avec urls)."""
     from mlblock.server.routes import get_samples

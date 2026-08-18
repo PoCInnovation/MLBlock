@@ -1,5 +1,4 @@
 import useAppStore from '../../store/useAppStore'
-import type { JobOutput } from '../../types/catalog'
 import { theme } from '../../theme'
 
 type TypedOutput =

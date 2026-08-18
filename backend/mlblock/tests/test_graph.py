@@ -1,6 +1,6 @@
 import pytest
 
-from mlblock.core.graph import Graph, GraphNode, Edge
+from mlblock.core.graph import Graph, GraphNode
 
 
 SIMPLE_GRAPH = {

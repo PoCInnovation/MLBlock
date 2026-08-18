@@ -42,7 +42,9 @@ class VastAI:
         r.raise_for_status()
         return r.json().get("offers", [])
 
-    def launch_instance(self, gpu_name: str, num_gpus: int, image: str, disk: int, onstart: str | None = None) -> dict[str, Any]:
+    def launch_instance(
+        self, gpu_name: str, num_gpus: int, image: str, disk: int, onstart: str | None = None
+    ) -> dict[str, Any]:
         if not self.api_key or self.api_key.startswith("mock"):
             return {"id": "mock-instance-id"}
 

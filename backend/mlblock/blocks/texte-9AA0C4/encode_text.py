@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def encode_text(in_1: "list[str]", vocab: "dict", max_len: "int" = 32) -> "numpy.ndarray":
+def encode_text(in_1: "list[str]", vocab: "dict", max_len: "int" = 32) -> "numpy.ndarray":  # noqa: F821 -- annotation descriptive en chaîne (métadonnées DSL, noms virtuels)
     """Encoder des tokens en indices.
     Convertit une liste de tokens en indices de vocabulaire (padding).
 

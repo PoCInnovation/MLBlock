@@ -131,7 +131,10 @@ def _normalize_type(t: str) -> str:
 def _is_data_port_type(ptype: str) -> bool:
     """Data-flow types (input/output ports) vs hyperparams."""
     p = _normalize_type(ptype)
-    if p in ("pd.DataFrame", "Model", "object", "Tensor", "DataFrame", "Dataset", "DataLoader", "Module", "Optimizer", "PIL.Image.Image", "Env", "Policy", "dict"):
+    if p in (
+        "pd.DataFrame", "Model", "object", "Tensor", "DataFrame", "Dataset", "DataLoader",
+        "Module", "Optimizer", "PIL.Image.Image", "Env", "Policy", "dict",
+    ):
         return True
     return p.startswith(("torch.", "numpy.", "tuple["))
 
@@ -227,7 +230,10 @@ def _discover():
                         legacy_spec = {
                             "label": obj_name.replace("_", " ").title(),
                             "category": cat_name,
-                            "params": {k: {"type": v.type, "default": v.default, "required": v.required} for k, v in block.params.items()},
+                            "params": {
+                                k: {"type": v.type, "default": v.default, "required": v.required}
+                                for k, v in block.params.items()
+                            },
                             "inputs": block.inputs,
                             "outputs": block.outputs,
                             "template": "",

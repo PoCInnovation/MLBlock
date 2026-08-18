@@ -3,8 +3,8 @@ bucket Supabase `sample-data` (public). Idempotent : upsert.
 
 Usage : uv run python scripts/generate_samples.py   (depuis backend/)
 """
-import csv
-import io
+# ruff: noqa: E501 -- Les manifests de données d'exemple sont des littéraux
+# compacts (lignes volontairement longues), pas du code formaté.
 import json
 import os
 import random

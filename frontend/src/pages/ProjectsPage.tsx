@@ -55,9 +55,9 @@ export default function ProjectsPage() {
   // Erreurs d'action (ouverture/suppression) distinctes de l'erreur de liste
   const [actionError, setActionError] = useState<string | null>(null)
   const listError = projectsQuery.isError ? 'Impossible de charger tes projets. Le serveur est peut-être en veille.' : null
-  const error = actionError ?? listError
-  const [exporting, setExporting] = useState<PipelineSummary | null>(null)
   const [importError, setImportError] = useState<string | null>(null)
+  const error = actionError ?? listError ?? importError
+  const [exporting, setExporting] = useState<PipelineSummary | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const { importFile } = usePipelineImport()
 

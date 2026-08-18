@@ -90,7 +90,7 @@ def _cleanup_pipeline_files(pipeline_id: UUID) -> None:
 
 def _fr_label(block) -> str:
     """Label FR : première ligne de la docstring, sinon name.title()."""
-    first = next((l.strip() for l in (block.description or "").splitlines() if l.strip()), "")
+    first = next((line.strip() for line in (block.description or "").splitlines() if line.strip()), "")
     first = first.rstrip(".")
     if len(first) >= 3 and not first.startswith(("Parameter", "Block", "Args")):
         return first
@@ -99,7 +99,7 @@ def _fr_label(block) -> str:
 
 def _fr_summary(block) -> str:
     """Description courte : 2e ligne de la docstring (après le label), sinon label."""
-    lines = [l.strip() for l in (block.description or "").splitlines() if l.strip()]
+    lines = [line.strip() for line in (block.description or "").splitlines() if line.strip()]
     if len(lines) >= 2 and not lines[1].startswith(("Args", "Param")):
         return lines[1].rstrip(".")
     return _fr_label(block)
@@ -291,7 +291,7 @@ def create_pipeline(
         "nodes": [n.model_dump() for n in body.nodes],
         "edges": [e.model_dump() for e in body.edges],
     }
-    graph = Graph(graph_data)  # raises ValueError on cycle
+    Graph(graph_data)  # raises ValueError on cycle
 
     user_uuid = UUID(user_id)
 
@@ -794,5 +794,9 @@ def build_pipeline_model(
     return {
         "success": True,
         "output_shape": list(last_output.shape),
-        "layer_count": len(layers) if layers else len([n for n in graph.topological_sort() if graph.nodes[n].block and graph.nodes[n].block.can_build()]),
+        "layer_count": (
+            len(layers)
+            if layers
+            else len([n for n in graph.topological_sort() if graph.nodes[n].block and graph.nodes[n].block.can_build()])
+        ),
     }

@@ -1,5 +1,4 @@
-import type { Node, Edge } from 'reactflow'
-import type { InternalCatalog, BlockDefMap } from '../types/catalog'
+import type { BlockDefMap } from '../types/catalog'
 
 export type FlowBlock = {
   id: string

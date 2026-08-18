@@ -204,7 +204,8 @@ def test_param_meta_range_and_step():
 def test_param_meta_choices_odd_format_len():
     from mlblock.blocks.registry import _extract_param_desc
     desc, meta = _extract_param_desc(
-        "Args:\n    method: Métrique. (choix: mse|accuracy)\n    k: Taille. (impair)\n    s: Forme. (format: [C,H,W])\n    m: Moyennes. (longueur: 3)",
+        "Args:\n    method: Métrique. (choix: mse|accuracy)\n    k: Taille. (impair)\n"
+        "    s: Forme. (format: [C,H,W])\n    m: Moyennes. (longueur: 3)",
         "method",
     )
     assert meta["choices"] == ["mse", "accuracy"]
@@ -271,7 +272,9 @@ def test_fr_label_fallback():
 def test_fr_summary():
     from mlblock.server.routes import _fr_summary
     assert _fr_summary(BLOCK_REGISTRY["conv2d"]) == "Applique une convolution 2D sur le tenseur d'entrée"
-    assert _fr_summary(BLOCK_REGISTRY["linear"]) == "Couche entièrement connectée : transforme l'entrée par une matrice apprise"
+    assert _fr_summary(BLOCK_REGISTRY["linear"]) == (
+        "Couche entièrement connectée : transforme l'entrée par une matrice apprise"
+    )
     # fallback label
     class Fake:
         name = "foo_bar"

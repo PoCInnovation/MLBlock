@@ -1,4 +1,4 @@
-def silhouette(model: "Model", in_1: "pd.DataFrame") -> "float":
+def silhouette(model: "Model", in_1: "pd.DataFrame") -> "float":  # noqa: F821 -- annotation descriptive en chaîne (métadonnées DSL, noms virtuels)
     """Score de silhouette.
     Évalue la qualité du clustering du modèle sur les données.
 

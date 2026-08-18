@@ -1,3 +1,5 @@
+/* eslint-disable react-refresh/only-export-components -- Module routeur : exporte l'instance
+   router ; les composants internes (RequireAuth) appartiennent aux routes, pas au HMR. */
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { lazy, Suspense, useEffect } from 'react'
 import type { ReactNode } from 'react'

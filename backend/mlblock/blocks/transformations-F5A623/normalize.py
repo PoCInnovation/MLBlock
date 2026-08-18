@@ -1,4 +1,4 @@
-def normalize(in_1: "torch.Tensor", mean: "list", std: "list") -> "torch.Tensor":
+def normalize(in_1: "torch.Tensor", mean: "list", std: "list") -> "torch.Tensor":  # noqa: F821 -- annotation descriptive en chaîne (métadonnées DSL, noms virtuels)
     """Normaliser un tenseur.
     Normalise un tenseur image par moyenne/écart-type.
     

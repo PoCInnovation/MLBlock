@@ -60,15 +60,25 @@ function fmtSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`
 }
 
+/** Chemin de stockage unique pour un upload : horodaté pour éviter les collisions de noms. */
+function uploadPath(userId: string | undefined, blockId: string): string {
+  return `${userId ?? 'anonymous'}/${blockId}_${Date.now()}.csv`
+}
+
 /** HoverCard d'un paramètre : description + métadonnées (type, défaut, bornes). */
 function ParamInfo({ seg, children }: { seg: Exclude<Segment, { t: 'text' }>; children: React.ReactNode }) {
   // Le middleware inline du PreviewCard ancre sur la LIGNE du champ (large) —
   // on suit le X du pointeur pour aligner le popup dessus (alignOffset).
   const [pointerX, setPointerX] = useState<number | null>(null)
   const triggerRef = useRef<HTMLSpanElement | null>(null)
+  /* eslint-disable react-hooks/refs -- Mesure DOM volontaire au rendu : le
+     middleware inline du PreviewCard ne suit pas la souris, on aligne le popup
+     sur le X du pointeur via le rect du trigger (voir commentaire ci-dessus).
+     Une bascule vers useLayoutEffect introduirait un double rendu par mousemove. */
   const alignOffset = pointerX != null && triggerRef.current
     ? pointerX - (triggerRef.current.getBoundingClientRect().left + triggerRef.current.getBoundingClientRect().width / 2)
     : 0
+  /* eslint-enable react-hooks/refs */
   // Union de segments : lecture normalisée des métadonnées optionnelles.
   const p = seg as unknown as {
     k: string
@@ -178,7 +188,7 @@ export default function BlockSegments({ segs, fields, blockId, blockType, onUpda
     setFileMetaState(s => ({ ...s, [k]: { name: file.name, size: file.size } }))
     try {
       const { data: { user } } = await supabase.auth.getUser()
-      const path = `${user?.id ?? 'anonymous'}/${blockId}_${Date.now()}.csv`
+      const path = uploadPath(user?.id, blockId)
       const url = await uploadFile(file, 'user-uploads', path)
       if (url) {
         onUpdate(blockId, k, url)

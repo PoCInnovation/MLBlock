@@ -1,4 +1,4 @@
-def logistic_regression(train_data: "pd.DataFrame", target_column: "str", max_iter: "int" = 1000) -> "Model":
+def logistic_regression(train_data: "pd.DataFrame", target_column: "str", max_iter: "int" = 1000) -> "Model":  # noqa: F821 -- annotation descriptive en chaîne (métadonnées DSL, noms virtuels)
     """Régression logistique.
     Régression logistique (classification binaire).
 

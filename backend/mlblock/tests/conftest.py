@@ -1,3 +1,5 @@
+# ruff: noqa: E402 -- load_dotenv() doit précéder les imports internes : main.py,
+# database.py et auth.py lisent les variables d'env au module-level.
 import os
 import uuid
 from uuid import UUID
@@ -51,6 +53,14 @@ def _ensure_test_user() -> str:
         pytest.skip(f"Création user admin impossible: {r.status_code} {r.text[:120]}")
     _test_user_id = r.json()["id"]
     return _test_user_id
+
+
+@pytest.fixture(name="catalog_client")
+def catalog_client_fixture():
+    """Client sans DB ni Supabase : pour les routes sans dépendance base
+    (catalogue des blocs) — fonctionne aussi en CI sans secrets."""
+    with TestClient(app) as c:
+        yield c
 
 
 @pytest.fixture(name="client")

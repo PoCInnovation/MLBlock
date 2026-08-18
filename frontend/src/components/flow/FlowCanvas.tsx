@@ -26,7 +26,7 @@ import { segsToFields } from '../../utils/flowConversion'
 import { buildConversionGraph, classifyEdge, converterFor, portDtype } from '../../utils/typeCheck'
 import { resolveConnection, type ResolvedConnection } from '../../utils/portResolution'
 import { arrangeGraph } from '../../utils/layout'
-import type { InternalCatalog, Port } from '../../types/catalog'
+import type { Port } from '../../types/catalog'
 
 const nodeTypes = { block: BlockNode }
 const edgeTypes = { flow: FlowLink }
@@ -63,8 +63,6 @@ function FlowCanvasInner() {
   // Single source of truth: the store. No local canvas state, no sync effects.
   const flowNodes = useAppStore(s => s.flowNodes)
   const flowEdges = useAppStore(s => s.flowEdges)
-  const applyFlowNodeChanges = useAppStore(s => s.applyFlowNodeChanges)
-  const applyFlowEdgeChanges = useAppStore(s => s.applyFlowEdgeChanges)
   const addFlowNode = useAppStore(s => s.addFlowNode)
   const addFlowEdges = useAppStore(s => s.addFlowEdges)
   const catalog = useAppStore(s => s.catalog)
@@ -382,6 +380,9 @@ function FlowCanvasInner() {
               title="Disposer"
               aria-label="Disposer les blocs automatiquement"
               disabled={flowNodes.length < 2}
+              // Les icônes lucide utilisent currentColor ; sans couleur explicite
+              // le bouton hérite du texte clair du canvas (blanc sur blanc).
+              style={{ color: '#1a192b' }}
             >
               <AlignVerticalJustifyCenter size={18} />
             </ControlButton>

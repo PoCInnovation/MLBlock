@@ -1,3 +1,5 @@
+/* eslint-disable react-refresh/only-export-components -- Portage shadcn/ui : un fichier
+   exporte volontairement plusieurs composants + constantes (convention du repo). */
 import { PreviewCard } from '@base-ui/react/preview-card'
 
 /**

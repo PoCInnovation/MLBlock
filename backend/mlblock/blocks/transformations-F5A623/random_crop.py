@@ -1,4 +1,4 @@
-def random_crop(in_1: "torch.Tensor", size: "int") -> "torch.Tensor":
+def random_crop(in_1: "torch.Tensor", size: "int") -> "torch.Tensor":  # noqa: F821 -- annotation descriptive en chaîne (métadonnées DSL, noms virtuels)
     """Recadrage aléatoire.
     Recadre aléatoirement le tenseur (augmentation).
     

@@ -1,4 +1,4 @@
-def sequence_dataset(in_1: "pd.DataFrame | numpy.ndarray", seq_len: "int" = 10, target_column: "str" = "") -> "torch.utils.data.DataLoader":
+def sequence_dataset(in_1: "pd.DataFrame | numpy.ndarray", seq_len: "int" = 10, target_column: "str" = "") -> "torch.utils.data.DataLoader":  # noqa: F821 -- annotation descriptive en chaîne (métadonnées DSL, noms virtuels)
     """Créer des fenêtres de séquence.
     Découpe une série en fenêtres glissantes (X = seq_len pas, y = la valeur
     suivante) pour RNN / time series. Avec target_column, y est la valeur
