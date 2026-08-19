@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react'
+import React, { memo, useRef, useState } from 'react'
 import type { Segment } from '../../types/catalog'
 import { uploadFile, supabase } from '../../services/supabase'
 import { FileUp, Loader2, TriangleAlert } from 'lucide-react'
@@ -175,7 +175,7 @@ type BlockSegmentsProps = {
   startRow?: number
 }
 
-export default function BlockSegments({ segs, fields, blockId, blockType, onUpdate, columnOptions, startRow = 1 }: BlockSegmentsProps): React.ReactNode {
+const BlockSegments = memo(function BlockSegments({ segs, fields, blockId, blockType, onUpdate, columnOptions, startRow = 1 }: BlockSegmentsProps): React.ReactNode {
   const [uploadState, setUploadState] = useState<Record<string, 'uploading' | 'error'>>({})
   const [fileMetaState, setFileMetaState] = useState<Record<string, { name: string; size: number }>>({})
   const [sampleOpen, setSampleOpen] = useState<string | null>(null)
@@ -470,4 +470,6 @@ export default function BlockSegments({ segs, fields, blockId, blockType, onUpda
       )}
     </>
   )
-}
+})
+
+export default BlockSegments

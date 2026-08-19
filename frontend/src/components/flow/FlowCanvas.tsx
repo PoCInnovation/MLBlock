@@ -16,6 +16,7 @@ import ReactFlow, {
 } from 'reactflow'
 import 'reactflow/dist/style.css'
 import { AlignVerticalJustifyCenter, Menu } from 'lucide-react'
+import { useShallow } from 'zustand/react/shallow'
 import useAppStore from '../../store/useAppStore'
 import { theme } from '../../theme'
 import BlockNode from './BlockNode'
@@ -59,10 +60,12 @@ function edgeStyleFor(e: Edge, nodes: Node[], graph: Map<string, Set<string>>): 
   }
 }
 
-function FlowCanvasInner() {
+const FlowCanvasInner = React.memo(function FlowCanvasInner() {
   // Single source of truth: the store. No local canvas state, no sync effects.
-  const flowNodes = useAppStore(s => s.flowNodes)
-  const flowEdges = useAppStore(s => s.flowEdges)
+  const { flowNodes, flowEdges } = useAppStore(useShallow(s => ({
+    flowNodes: s.flowNodes,
+    flowEdges: s.flowEdges,
+  })))
   const addFlowNode = useAppStore(s => s.addFlowNode)
   const addFlowEdges = useAppStore(s => s.addFlowEdges)
   const catalog = useAppStore(s => s.catalog)
@@ -138,6 +141,7 @@ function FlowCanvasInner() {
 
   const insertConverter = useCallback((conn: Connection, convType: string, resolved: ResolvedConnection) => {
     useAppStore.getState().commitUndoPoint()
+    const { flowNodes, flowEdges } = useAppStore.getState()
     if (!catalog) return
     const def = catalog.blocks[convType]
     if (!def) return
@@ -184,7 +188,7 @@ function FlowCanvasInner() {
     }
     addFlowNode(node)
     addFlowEdges(flowEdges.filter(ed => !(ed.source === conn.source && ed.target === conn.target)).concat([edgeA, edgeB]))
-  }, [catalog, flowNodes, flowEdges, addFlowNode, addFlowEdges])
+  }, [catalog, addFlowNode, addFlowEdges])
 
   // Undo/redo : snapshot avant toute suppression (rafale = un seul appel
   // ReactFlow — le `some` évite de pousser plusieurs points par sélection).
@@ -201,6 +205,7 @@ function FlowCanvasInner() {
 
   const onConnect = useCallback((params: Connection) => {
     useAppStore.getState().commitUndoPoint()
+    const { flowNodes, flowEdges } = useAppStore.getState()
     if (!catalog) {
       addFlowEdges(addEdge(params, []))
       return
@@ -250,7 +255,7 @@ function FlowCanvasInner() {
         action: () => insertConverter(params, conv, resolved),
       })
     }
-  }, [catalog, flowNodes, flowEdges, graph, addFlowEdges, showToast, insertConverter])
+  }, [catalog, graph, addFlowEdges, showToast, insertConverter])
 
   const onDragStart = useCallback((e: React.DragEvent, type: string) => {
     e.dataTransfer.setData('application/mlblock-type', type)
@@ -431,7 +436,7 @@ function FlowCanvasInner() {
       <ConsolePanel />
     </div>
   )
-}
+})
 
 export default function FlowCanvas() {
   return (

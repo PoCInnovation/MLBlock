@@ -75,6 +75,7 @@ function TeamCard({ name, role, tagline, color, linkedin }: TeamMember) {
                     <img
                         src={`/assets/team/${name.toLowerCase()}.png`}
                         alt={name}
+                        loading="lazy"
                         onError={() => setPhotoFailed(true)}
                         style={{
                             width: 96,

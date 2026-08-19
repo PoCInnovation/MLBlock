@@ -1,5 +1,6 @@
-import { memo, useEffect, useState } from 'react'
+import { memo, useEffect, useMemo, useState } from 'react'
 import { Handle, Position, type NodeProps } from 'reactflow'
+import { useShallow } from 'zustand/react/shallow'
 import useAppStore from '../../store/useAppStore'
 import BlockSegments from '../blocks/BlockSegments'
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
@@ -38,15 +39,23 @@ function BlockNode({ data, id }: NodeProps<BlockNodeData>) {
   const updateFlowParam = useAppStore(s => s.updateFlowParam)
   const removeFlowNode = useAppStore(s => s.removeFlowNode)
   const catalog = useAppStore(s => s.catalog)
-  const flowNodes = useAppStore(s => s.flowNodes)
-  const flowEdges = useAppStore(s => s.flowEdges)
+  const { flowNodes, flowEdges } = useAppStore(useShallow(s => ({
+    flowNodes: s.flowNodes,
+    flowEdges: s.flowEdges,
+  })))
   const [columnOptions, setColumnOptions] = useState<Record<string, string[]>>({})
   const description = catalog?.blocks[data.type]?.description
 
   // Ports fournis (état dérivé des edges — jamais stocké) : un input est
   // fourni s'il a une edge entrante, un output s'il a une edge sortante.
-  const inputFed: Record<string, true> = Object.fromEntries(flowEdges.filter(e => e.target === id).map(e => [e.targetHandle ?? 'in_1', true]))
-  const outputFed: Record<string, true> = Object.fromEntries(flowEdges.filter(e => e.source === id).map(e => [e.sourceHandle ?? 'out_1', true]))
+  const inputFed = useMemo(
+    () => Object.fromEntries(flowEdges.filter(e => e.target === id).map(e => [e.targetHandle ?? 'in_1', true])),
+    [flowEdges, id],
+  )
+  const outputFed = useMemo(
+    () => Object.fromEntries(flowEdges.filter(e => e.source === id).map(e => [e.sourceHandle ?? 'out_1', true])),
+    [flowEdges, id],
+  )
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- Reset synchrone volontaire : évite d'afficher les colonnes périmées de l'ancien chemin pendant le fetch.

@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from 'react'
+import { memo, useRef, useEffect, useState } from 'react'
 import { theme } from '../../theme'
 import useAppStore from '../../store/useAppStore'
 import ResultsPanel from './ResultsPanel'
@@ -6,7 +6,7 @@ import { CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react'
 
 const COLORS: Record<string, string> = { sys: 'var(--color-text)', info: 'var(--color-info)', ok: 'var(--color-success-muted)', epoch: 'var(--color-warning)' }
 
-export default function ConsolePanel() {
+const ConsolePanel = memo(function ConsolePanel() {
   const consoleLines = useAppStore(s => s.consoleLines)
   // Sélecteur minimal : le statut du run est synchronisé dans le store par le
   // suivi du job (useBlockRunner) — plus de flag d'exécution côté store.
@@ -95,4 +95,6 @@ export default function ConsolePanel() {
       ))}
     </div>
   )
-}
+})
+
+export default ConsolePanel

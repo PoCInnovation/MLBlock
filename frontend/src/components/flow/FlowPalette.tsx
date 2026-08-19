@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { memo, useRef, useState } from 'react'
 import { X } from 'lucide-react'
 import useAppStore from '../../store/useAppStore'
 import { colorFor } from '../../utils/blockHelpers'
@@ -121,7 +121,7 @@ type FlowPaletteProps = {
   onClose?: () => void
 }
 
-export default function FlowPalette({ onDragStart, onAdd, onClose }: FlowPaletteProps) {
+const FlowPalette = memo(function FlowPalette({ onDragStart, onAdd, onClose }: FlowPaletteProps) {
   const catalog = useAppStore(s => s.catalog)
   const [query, setQuery] = useState('')
   const [cat, setCat] = useState('all')
@@ -236,4 +236,6 @@ export default function FlowPalette({ onDragStart, onAdd, onClose }: FlowPalette
       </div>
     </div>
   )
-}
+})
+
+export default FlowPalette
