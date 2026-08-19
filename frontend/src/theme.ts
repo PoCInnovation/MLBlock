@@ -30,6 +30,8 @@ export const theme = {
     fileBtn: '#a5b4fc',
     border: '#3a3531',
     divider: '#6b6560',
+    lilac: '#B6A0E3',
+    sky: '#7DAFEA',
   },
   spacing: {
     xs: 4,

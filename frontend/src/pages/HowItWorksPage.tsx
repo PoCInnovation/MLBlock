@@ -14,7 +14,7 @@ export default function HowItWorksPage() {
           <h1 style={{ fontFamily: "'Fredoka', sans-serif", fontWeight: 600, fontSize: 46, letterSpacing: '-.02em', margin: '0 0 18px' }}>
             Comment ça marche
           </h1>
-          <p style={{ fontSize: 18, lineHeight: 1.6, color: '#b7ada3', maxWidth: 680, margin: 0, fontWeight: 600 }}>
+          <p style={{ fontSize: 18, lineHeight: 1.6, color: 'var(--color-text-muted)', maxWidth: 680, margin: 0, fontWeight: 600 }}>
             MLBlock permet de construire un pipeline de machine learning en assemblant des blocs, sans écrire une ligne de code.
           </p>
         </div>
@@ -26,8 +26,8 @@ export default function HowItWorksPage() {
           <h2 style={{ fontFamily: "'Fredoka', sans-serif", fontWeight: 600, fontSize: 34, letterSpacing: '-.01em', margin: '0 0 18px' }}>
             Le principe d'assemblage
           </h2>
-          <div style={{ background: '#1f1916', border: '1px solid rgba(255,255,255,.06)', borderRadius: 20, padding: '32px 36px' }}>
-            <p style={{ fontSize: 17, lineHeight: 1.65, color: '#b7ada3', fontWeight: 600, margin: 0 }}>
+          <div style={{ background: 'var(--color-surface)', border: '1px solid rgba(255,255,255,.06)', borderRadius: 20, padding: '32px 36px' }}>
+            <p style={{ fontSize: 17, lineHeight: 1.65, color: 'var(--color-text-muted)', fontWeight: 600, margin: 0 }}>
               Les blocs s'emboîtent comme des pièces de puzzle, encoches en bas, trous en haut. Tu déposes un bloc sous un autre, il se clipse. Pas de fils à tirer, pas de connexions à faire à la main. L'ordre dans lequel tu empiles tes blocs, c'est l'ordre dans lequel ils s'exécutent.
             </p>
           </div>
@@ -40,7 +40,7 @@ export default function HowItWorksPage() {
           <h2 style={{ fontFamily: "'Fredoka', sans-serif", fontWeight: 600, fontSize: 34, letterSpacing: '-.01em', margin: '0 0 18px' }}>
             Que se passe-t-il quand tu appuies sur Démarrer&nbsp;?
           </h2>
-          <div style={{ background: '#1f1916', border: '1px solid rgba(255,255,255,.06)', borderRadius: 20, padding: '32px 36px' }}>
+          <ol style={{ background: 'var(--color-surface)', border: '1px solid rgba(255,255,255,.06)', borderRadius: 20, padding: '32px 36px', listStyle: 'none', margin: 0 }}>
             {[
               {
                 title: 'Tu assembles, on construit la structure',
@@ -63,29 +63,29 @@ export default function HowItWorksPage() {
                 text: 'Une fois l\'entraînement terminé, le résultat final remonte de la machine vers notre serveur, qui te l\'affiche directement dans l\'éditeur.',
               },
             ].map(({ title, text }, i) => (
-              <div key={i} style={{ display: 'flex', gap: 20, marginBottom: i < 4 ? 28 : 0 }}>
+              <li key={i} style={{ display: 'flex', gap: 20, marginBottom: i < 4 ? 28 : 0 }}>
                 <div style={{ flexShrink: 0, width: 32, height: 32, borderRadius: 10, background: '#2e2420', border: '1px solid rgba(255,255,255,.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Fredoka', sans-serif", fontWeight: 700, fontSize: 15, color: theme.color.accent }}>
                   {i + 1}
                 </div>
                 <div>
-                  <p style={{ fontFamily: "'Fredoka', sans-serif", fontWeight: 600, fontSize: 18, color: '#f0e9e3', margin: '0 0 4px' }}>{title}</p>
-                  <p style={{ fontSize: 15, lineHeight: 1.6, color: '#b7ada3', fontWeight: 600, margin: 0 }}>{text}</p>
+                  <p style={{ fontFamily: "'Fredoka', sans-serif", fontWeight: 600, fontSize: 18, color: 'var(--color-text)', margin: '0 0 4px' }}>{title}</p>
+                  <p style={{ fontSize: 15, lineHeight: 1.6, color: 'var(--color-text-muted)', fontWeight: 600, margin: 0 }}>{text}</p>
                 </div>
-              </div>
+              </li>
             ))}
-          </div>
+          </ol>
         </div>
       </section>
 
       {/* CTA */}
       <section style={{ padding: '72px 48px' }}>
         <div style={{ maxWidth: 1240, margin: '0 auto' }}>
-          <div style={{ background: '#1f1916', border: '1px solid rgba(255,255,255,.06)', borderRadius: 24, padding: '48px 48px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 24 }}>
+          <div style={{ background: 'var(--color-surface)', border: '1px solid rgba(255,255,255,.06)', borderRadius: 24, padding: '48px 48px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 24 }}>
             <div>
               <h3 style={{ fontFamily: "'Fredoka', sans-serif", fontWeight: 600, fontSize: 28, margin: '0 0 8px' }}>
                 Prêt à assembler ton premier pipeline ?
               </h3>
-              <p style={{ color: '#b7ada3', fontSize: 16, fontWeight: 600, margin: 0 }}>
+              <p style={{ color: 'var(--color-text-muted)', fontSize: 16, fontWeight: 600, margin: 0 }}>
                 Tu peux commencer maintenant.
               </p>
             </div>

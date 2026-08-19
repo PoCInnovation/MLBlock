@@ -19,8 +19,11 @@ const s: Record<string, string> = {
   divider: 'flex items-center gap-3 my-4 text-divider text-[13px]',
   line: 'flex-1 h-px bg-border',
   error: 'text-error text-[13px] mb-3 text-center',
-  link: 'text-auth cursor-pointer text-center mt-3 text-sm',
+  link: 'text-[#E8915F] cursor-pointer text-center mt-3 text-sm',
 }
+
+const errorId = 'login-email-error'
+const pwErrorId = 'login-password-error'
 
 export default function LoginPage() {
   const [error, setError] = useState('')
@@ -107,7 +110,7 @@ export default function LoginPage() {
                 control={form.control}
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="login-email">Email</FieldLabel>
+                    <FieldLabel htmlFor="login-email">Email *</FieldLabel>
                     <input
                       {...field}
                       id="login-email"
@@ -115,10 +118,11 @@ export default function LoginPage() {
                       autoComplete="email"
                       placeholder="exemple@mail.com"
                       aria-invalid={fieldState.invalid}
+                      aria-describedby={fieldState.invalid ? errorId : undefined}
                       className={s.input}
                       style={{ borderColor: fieldState.invalid ? 'var(--color-error)' : undefined }}
                     />
-                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                    {fieldState.invalid && <div id={errorId}><FieldError errors={[fieldState.error]} /></div>}
                   </Field>
                 )}
               />
@@ -127,7 +131,7 @@ export default function LoginPage() {
                 control={form.control}
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="login-password">Mot de passe</FieldLabel>
+                    <FieldLabel htmlFor="login-password">Mot de passe *</FieldLabel>
                     <input
                       {...field}
                       id="login-password"
@@ -135,10 +139,11 @@ export default function LoginPage() {
                       autoComplete="current-password"
                       placeholder="••••••"
                       aria-invalid={fieldState.invalid}
+                      aria-describedby={fieldState.invalid ? pwErrorId : undefined}
                       className={s.input}
                       style={{ borderColor: fieldState.invalid ? 'var(--color-error)' : undefined }}
                     />
-                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                    {fieldState.invalid && <div id={pwErrorId}><FieldError errors={[fieldState.error]} /></div>}
                   </Field>
                 )}
               />

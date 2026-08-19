@@ -165,7 +165,7 @@ export default function EditorPage() {
   }
 
   return (
-    <div id="main" className="h-screen flex flex-col bg-bg text-text overflow-hidden">
+    <main id="main" className="h-screen flex flex-col bg-bg text-text overflow-hidden">
       <SkipLink />
       <EditorHeader />
       {restoredWork && (
@@ -183,6 +183,6 @@ export default function EditorPage() {
         onDiscard={() => leaveGuard(false)}
         onCancel={() => { setGuardOpen(false); blocker.reset?.() }}
       />
-    </div>
+    </main>
   )
 }

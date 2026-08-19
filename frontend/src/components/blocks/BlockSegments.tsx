@@ -41,9 +41,9 @@ const fileBtn: React.CSSProperties = {
   fontSize: 12, cursor: 'pointer', display: 'inline-block',
 }
 const removeBtn: React.CSSProperties = {
-  width: 16, height: 16, borderRadius: '50%', border: 'none',
+  width: 24, height: 24, borderRadius: '50%', border: 'none',
   background: 'rgba(0,0,0,.2)', color: theme.color.file, fontSize: 12,
-  lineHeight: '16px', cursor: 'pointer', padding: 0, display: 'inline-flex',
+  lineHeight: '24px', cursor: 'pointer', padding: 0, display: 'inline-flex',
   alignItems: 'center', justifyContent: 'center',
 }
 const errStyle: React.CSSProperties = {

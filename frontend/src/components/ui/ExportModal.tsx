@@ -5,15 +5,8 @@ import type { PipelineDetail } from '../../types/catalog'
 import { generatePipelineCode } from '../../api/client'
 import { downloadFile, pipelineToJson, slugify } from '../../utils/exportImport'
 import { FileText, FileCode2 } from 'lucide-react'
+import { Dialog, DialogTitle, DialogFooter } from './dialog'
 
-const overlayStyle: React.CSSProperties = {
-  position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)',
-  display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100,
-}
-const modalStyle: React.CSSProperties = {
-  background: theme.color.surface2, borderRadius: theme.radius.lg, padding: 26,
-  width: 340, maxWidth: 'calc(100vw - 32px)', boxShadow: theme.shadow.block, border: `1px solid ${theme.color.border}`,
-}
 const btnBase: React.CSSProperties = {
   display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%',
   padding: '14px 16px', marginBottom: 10, borderRadius: theme.radius.md, cursor: 'pointer',
@@ -31,6 +24,7 @@ export type ExportProps = {
 
 /** Modal de choix [JSON | Code] puis téléchargement. */
 export default function ExportModal({ title, resolve, onClose }: ExportProps) {
+  const [open, setOpen] = useState(true)
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -41,7 +35,7 @@ export default function ExportModal({ title, resolve, onClose }: ExportProps) {
       const detail = await resolve()
       const base = slugify(detail.name)
       if (kind === 'code' && detail.nodes.length === 0) {
-        setError('Ajoute des blocs au pipeline avant d’exporter le code.')
+        setError('Ajoute des blocs au pipeline avant d\u2019exporter le code.')
         return
       }
       if (kind === 'json') {
@@ -63,25 +57,25 @@ export default function ExportModal({ title, resolve, onClose }: ExportProps) {
   }
 
   return (
-    <div style={overlayStyle} onClick={onClose}>
-      <div style={modalStyle} onClick={e => e.stopPropagation()}>
-        <div style={{ fontSize: 17, fontWeight: 800, marginBottom: 16 }}>{title}</div>
-        <button style={btnBase} onClick={() => doExport('json')} disabled={busy !== null}>
-          <span>JSON de la pipeline</span>
-          <FileText size={18} color={theme.color.file} />
-          <div style={hint} />
-        </button>
-        <button style={btnBase} onClick={() => doExport('code')} disabled={busy !== null}>
-          <span>Code (main.py)</span>
-          <FileCode2 size={18} color={theme.color.accentLight} />
-          <div style={hint} />
-        </button>
-        {error && <div style={{ color: theme.color.error, fontSize: 13, fontWeight: 700 }}>{error}</div>}
-        {busy && <div style={{ color: theme.color.textMuted, fontSize: 13, marginTop: 8 }}>Préparation…</div>}
-        <button onClick={onClose} style={{ ...btnBase, justifyContent: 'center', background: 'transparent', border: 'none', color: theme.color.textMuted, marginBottom: 0 }}>
+    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose() }}>
+      <DialogTitle>{title}</DialogTitle>
+      <button style={btnBase} onClick={() => doExport('json')} disabled={busy !== null}>
+        <span>JSON de la pipeline</span>
+        <FileText size={18} color={theme.color.file} />
+        <div style={hint} />
+      </button>
+      <button style={btnBase} onClick={() => doExport('code')} disabled={busy !== null}>
+        <span>Code (main.py)</span>
+        <FileCode2 size={18} color={theme.color.accentLight} />
+        <div style={hint} />
+      </button>
+      {error && <div style={{ color: theme.color.error, fontSize: 13, fontWeight: 700 }}>{error}</div>}
+      {busy && <div style={{ color: theme.color.textMuted, fontSize: 13, marginTop: 8 }}>Préparation…</div>}
+      <DialogFooter>
+        <button onClick={onClose} style={{ background: 'transparent', border: `1px solid ${theme.color.border}`, color: theme.color.textMuted, borderRadius: theme.radius.md, padding: '8px 16px', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
           Annuler
         </button>
-      </div>
-    </div>
+      </DialogFooter>
+    </Dialog>
   )
 }

@@ -28,7 +28,7 @@ function blockRadius(isHat?: boolean, isLast?: boolean) {
 
 export default function HeroBlockStack() {
   return (
-    <div style={{ animation: 'mlbFloat 5s ease-in-out infinite' }}>
+    <div aria-hidden="true" style={{ animation: 'mlbFloat 5s ease-in-out infinite' }}>
       <div style={{ position: 'relative', padding: 26, background: '#211b18', border: '1px solid rgba(255,255,255,.07)', borderRadius: 24, boxShadow: '0 30px 60px rgba(0,0,0,.4)', maxWidth: 380, marginLeft: 'auto' }}>
         <div style={{ display: 'flex', gap: 6, marginBottom: 18 }}>
           <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#E0705F' }} />

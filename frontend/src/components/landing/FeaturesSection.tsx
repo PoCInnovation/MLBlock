@@ -26,7 +26,7 @@ const FEATURES: Feature[] = [
         desc: "Attrape un bloc, dépose-le dans ton projet. Il s'emboîte tout seul à la bonne place. Aucune ligne à taper.",
     },
     {
-        color: '#B6A0E3',
+        color: 'var(--color-lilac)',
         icon: (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 <div
@@ -59,7 +59,7 @@ const FEATURES: Feature[] = [
         desc: 'Images, textes, tableaux de chiffres : reconnais, classe et prédis avec des modèles simples ou de vrais réseaux de neurones.',
     },
     {
-        color: '#7DAFEA',
+        color: 'var(--color-sky)',
         icon: <Play size={14} color="#fff" />,
         title: 'Vois-le apprendre',
         desc: 'Appuie sur Lancer et regarde, tour après tour, ton modèle se tromper de moins en moins et devenir de plus en plus précis.',

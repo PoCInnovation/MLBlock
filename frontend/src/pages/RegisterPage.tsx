@@ -17,11 +17,15 @@ const s: Record<string, string> = {
   btn: 'w-full px-3.5 py-2.5 rounded-[8px] border-none text-sm font-semibold cursor-pointer mb-3',
   primaryBtn: 'bg-auth text-white',
   error: 'text-error text-[13px] mb-3 text-center',
-  link: 'text-auth cursor-pointer text-center mt-3 text-sm',
+  link: 'text-[#E8915F] cursor-pointer text-center mt-3 text-sm',
 }
 
 const ruleStyle = (ok: boolean): string =>
   `${ok ? 'text-success' : 'text-text-dim'} text-xs font-bold mb-1`
+
+const regEmailErrorId = 'register-email-error'
+const regPwErrorId = 'register-password-error'
+const regConfirmErrorId = 'register-confirm-error'
 
 export default function RegisterPage() {
   const [error, setError] = useState('')
@@ -76,7 +80,7 @@ export default function RegisterPage() {
                 control={form.control}
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="register-email">Email</FieldLabel>
+                    <FieldLabel htmlFor="register-email">Email *</FieldLabel>
                     <input
                       {...field}
                       id="register-email"
@@ -84,10 +88,11 @@ export default function RegisterPage() {
                       autoComplete="email"
                       placeholder="exemple@mail.com"
                       aria-invalid={fieldState.invalid}
+                      aria-describedby={fieldState.invalid ? regEmailErrorId : undefined}
                       className={s.input}
                       style={{ borderColor: fieldState.invalid ? 'var(--color-error)' : undefined }}
                     />
-                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                    {fieldState.invalid && <div id={regEmailErrorId}><FieldError errors={[fieldState.error]} /></div>}
                   </Field>
                 )}
               />
@@ -96,7 +101,7 @@ export default function RegisterPage() {
                 control={form.control}
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="register-password">Mot de passe</FieldLabel>
+                    <FieldLabel htmlFor="register-password">Mot de passe *</FieldLabel>
                     <input
                       {...field}
                       id="register-password"
@@ -104,10 +109,11 @@ export default function RegisterPage() {
                       autoComplete="new-password"
                       placeholder="••••••"
                       aria-invalid={fieldState.invalid}
+                      aria-describedby={fieldState.invalid ? regPwErrorId : undefined}
                       className={s.input}
                       style={{ borderColor: fieldState.invalid ? 'var(--color-error)' : undefined }}
                     />
-                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                    {fieldState.invalid && <div id={regPwErrorId}><FieldError errors={[fieldState.error]} /></div>}
                   </Field>
                 )}
               />
@@ -121,7 +127,7 @@ export default function RegisterPage() {
                 control={form.control}
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="register-confirm">Confirmer le mot de passe</FieldLabel>
+                    <FieldLabel htmlFor="register-confirm">Confirmer le mot de passe *</FieldLabel>
                     <input
                       {...field}
                       id="register-confirm"
@@ -129,10 +135,11 @@ export default function RegisterPage() {
                       autoComplete="new-password"
                       placeholder="••••••"
                       aria-invalid={fieldState.invalid}
+                      aria-describedby={fieldState.invalid ? regConfirmErrorId : undefined}
                       className={s.input}
                       style={{ borderColor: fieldState.invalid ? 'var(--color-error)' : undefined }}
                     />
-                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                    {fieldState.invalid && <div id={regConfirmErrorId}><FieldError errors={[fieldState.error]} /></div>}
                   </Field>
                 )}
               />

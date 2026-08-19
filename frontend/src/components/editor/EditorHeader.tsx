@@ -81,12 +81,12 @@ export default function EditorHeader() {
   return (
     <div className="editor-header" style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: theme.color.surface, borderBottom: `1px solid ${theme.color.border}`, zIndex: 20 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0 }}>
-        <div onClick={() => navigate('/')} style={{ display: 'flex', alignItems: 'center', gap: 9, cursor: 'pointer' }}>
+        <button type="button" onClick={() => navigate('/')} aria-label="Retour à l'accueil" style={{ display: 'flex', alignItems: 'center', gap: 9, cursor: 'pointer', background: 'none', border: 'none', padding: 0, margin: 0 }}>
           <div style={{ width: 30, height: 30, borderRadius: 9, background: theme.color.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: theme.shadow.btn }}>
             <div style={{ width: 11, height: 11, background: '#fff', borderRadius: 3 }} />
           </div>
           <span style={{ fontFamily: theme.font.heading, fontWeight: 600, fontSize: 19 }}>MLBlock</span>
-        </div>
+        </button>
         <div style={{ width: 1, height: 26, background: theme.color.border }} />
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: theme.color.surface3, border: `1px solid ${theme.color.border}`, padding: '6px 12px', borderRadius: theme.radius.md, minWidth: 0 }}>
           <span style={{ width: 7, height: 7, borderRadius: '50%', background: theme.color.status, display: 'inline-block', flexShrink: 0 }} />
@@ -103,14 +103,16 @@ export default function EditorHeader() {
               style={{ background: 'transparent', border: 'none', borderBottom: `1px solid ${theme.color.auth}`, outline: 'none', color: theme.color.text, fontWeight: 800, fontSize: 14, width: 'min(180px, 30vw)' }}
             />
           ) : (
-            <span
+            <button
+              type="button"
               onClick={() => { setDraftName(projectName); setEditingName(true) }}
               title="Cliquer pour renommer"
+              aria-label="Modifier le nom du projet"
               className="project-name"
-              style={{ fontWeight: 800, fontSize: 14, cursor: 'text', borderBottom: '1px dashed rgba(255,255,255,.28)' }}
+              style={{ fontWeight: 800, fontSize: 14, cursor: 'pointer', borderBottom: '1px dashed rgba(255,255,255,.28)', background: 'none', border: 'none', padding: 0, margin: 0 }}
             >
               {projectName}
-            </span>
+            </button>
           )}
         </div>
       </div>
@@ -204,7 +206,7 @@ export default function EditorHeader() {
       {importError && (
         <div style={{ position: 'fixed', bottom: 18, right: 18, background: theme.color.surface3, border: `1px solid ${theme.color.error}`, color: theme.color.errorLight, padding: '10px 16px', borderRadius: theme.radius.md, fontWeight: 700, fontSize: 13, zIndex: 120 }}>
           {importError}
-          <button onClick={() => setImportError(null)} style={{ marginLeft: 10, background: 'none', border: 'none', color: theme.color.errorLight, cursor: 'pointer', fontWeight: 900 }}>×</button>
+          <button onClick={() => setImportError(null)} aria-label="Fermer" style={{ marginLeft: 10, background: 'none', border: 'none', color: theme.color.errorLight, cursor: 'pointer', fontWeight: 900 }}>×</button>
         </div>
       )}
 

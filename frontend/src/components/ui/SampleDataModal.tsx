@@ -1,18 +1,10 @@
 import { useEffect, useState } from 'react'
 import { http } from '../../api/client'
 import { theme } from '../../theme'
-import { FileUp, X } from 'lucide-react'
+import { FileUp } from 'lucide-react'
 import type { Sample } from '../../utils/samples'
+import { Dialog, DialogTitle } from './dialog'
 
-const overlayStyle: React.CSSProperties = {
-  position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)',
-  display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100,
-}
-const modalStyle: React.CSSProperties = {
-  background: theme.color.surface2, borderRadius: theme.radius.lg, padding: 24,
-  width: 480, maxWidth: 'calc(100vw - 32px)', maxHeight: '80vh', overflowY: 'auto',
-  boxShadow: theme.shadow.block, border: `1px solid ${theme.color.border}`,
-}
 const sectionTitle: React.CSSProperties = {
   fontSize: 13, fontWeight: 800, color: theme.color.textLight,
   margin: '14px 0 10px', textTransform: 'uppercase', letterSpacing: '.5px',
@@ -44,6 +36,7 @@ export type SampleDataModalProps = {
 
 /** Modal « Données d'entraînement » : nos données (samples) ou les vôtres. */
 export default function SampleDataModal({ category, onPick, onChooseFile, onClose }: SampleDataModalProps) {
+  const [open, setOpen] = useState(true)
   const [samples, setSamples] = useState<Sample[] | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -60,33 +53,28 @@ export default function SampleDataModal({ category, onPick, onChooseFile, onClos
   }, [category])
 
   return (
-    <div style={overlayStyle} onClick={onClose}>
-      <div style={modalStyle} onClick={e => e.stopPropagation()}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-          <span style={{ fontFamily: theme.font.heading, fontWeight: 600, fontSize: 18 }}>Données d'entraînement</span>
-          <button onClick={onClose} aria-label="Fermer" style={{ background: 'none', border: 'none', color: theme.color.textMuted, cursor: 'pointer', fontWeight: 900, fontSize: 16 }}><X size={17} /></button>
-        </div>
+    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose() }}>
+      <DialogTitle>Données d'entraînement</DialogTitle>
 
-        <div style={sectionTitle}>Utiliser nos données</div>
-        {error && <div style={{ color: theme.color.errorLight, fontSize: 13, fontWeight: 700 }}>{error}</div>}
-        {!error && samples === null && <div style={{ color: theme.color.textMuted, fontSize: 13 }}>Chargement…</div>}
-        {!error && samples !== null && samples.length === 0 && (
-          <div style={{ color: theme.color.textMuted, fontSize: 13 }}>Aucune donnée d'exemple dans cette catégorie.</div>
-        )}
-        {samples?.map(s => (
-          <div key={s.id} style={sampleCard}>
-            <div>
-              <div style={{ fontWeight: 800, fontSize: 13.5 }}>{s.name}</div>
-              <div style={sampleMeta}>{s.description}</div>
-              <div style={sampleMeta}>{s.columns.length > 0 ? `${s.columns.length} colonnes · ` : ''}{s.rows} ligne(s)</div>
-            </div>
-            <button style={useBtn} onClick={() => onPick(s.url, s.name)}>Utiliser</button>
+      <div style={sectionTitle}>Utiliser nos données</div>
+      {error && <div style={{ color: theme.color.errorLight, fontSize: 13, fontWeight: 700 }}>{error}</div>}
+      {!error && samples === null && <div style={{ color: theme.color.textMuted, fontSize: 13 }}>Chargement…</div>}
+      {!error && samples !== null && samples.length === 0 && (
+        <div style={{ color: theme.color.textMuted, fontSize: 13 }}>Aucune donnée d'exemple dans cette catégorie.</div>
+      )}
+      {samples?.map(s => (
+        <div key={s.id} style={sampleCard}>
+          <div>
+            <div style={{ fontWeight: 800, fontSize: 13.5 }}>{s.name}</div>
+            <div style={sampleMeta}>{s.description}</div>
+            <div style={sampleMeta}>{s.columns.length > 0 ? `${s.columns.length} colonnes · ` : ''}{s.rows} ligne(s)</div>
           </div>
-        ))}
+          <button style={useBtn} onClick={() => onPick(s.url, s.name)}>Utiliser</button>
+        </div>
+      ))}
 
-        <div style={sectionTitle}>Apporter vos données</div>
-        <button style={uploadBtn} onClick={onChooseFile}><FileUp size={15} /> Choisir un fichier</button>
-      </div>
-    </div>
+      <div style={sectionTitle}>Apporter vos données</div>
+      <button style={uploadBtn} onClick={onChooseFile}><FileUp size={15} /> Choisir un fichier</button>
+    </Dialog>
   )
 }

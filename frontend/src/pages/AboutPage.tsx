@@ -22,7 +22,7 @@ const TEAM: TeamMember[] = [
     {
         name: 'Chedli',
         role: 'Dev',
-        tagline: '[A REMPLIR PAR Chedli]',
+        tagline: 'Curieux par nature, je construit des outils qui apprennent.',
         color: '#B6A0E3',
         linkedin:
             'https://www.linkedin.com/in/chedli-ouaziz-9b756a295/?skipRedirect=true',
@@ -30,7 +30,7 @@ const TEAM: TeamMember[] = [
     {
         name: 'Ali',
         role: 'Dev',
-        tagline: '[A REMPLIR PAR Ali]',
+        tagline: 'Passionné par le code et l\'IA, je donne vie aux idées.',
         color: '#7DAFEA',
         linkedin:
             'https://www.linkedin.com/in/ali-bassim-b3956734a/?skipRedirect=true',
@@ -38,7 +38,7 @@ const TEAM: TeamMember[] = [
     {
         name: 'Sacha',
         role: 'Responsable',
-        tagline: '[A REMPLIR PAR Sacha]',
+        tagline: 'Coordonner l\'équipe pour livrer un projet qui a du sens.',
         color: theme.color.status,
         linkedin:
             'https://www.linkedin.com/in/sacha-henneveux-084052304/?skipRedirect=true',
@@ -137,7 +137,7 @@ function TeamCard({ name, role, tagline, color, linkedin }: TeamMember) {
             </p>
             <p
                 style={{
-                    color: '#6f665e',
+                    color: '#948A81',
                     fontSize: 14,
                     fontWeight: 700,
                     margin: 0,
