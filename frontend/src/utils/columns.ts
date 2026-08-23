@@ -1,5 +1,5 @@
 import { fetchFileColumns } from '../api/client'
-import type { Edge, Node } from 'reactflow'
+import type { Edge, Node } from '@xyflow/react'
 
 /** Columns of a stored CSV (cached upstream). Null = unresolvable. */
 export async function resolveColumnsForPath(path: string | undefined): Promise<string[] | null> {
@@ -23,7 +23,12 @@ export function resolveFlowSourcePath(nodes: Node[], edges: Edge[], nodeId: stri
     if (seen.has(id)) return undefined
     seen.add(id)
     const n = nodes.find(x => x.id === id)
-    if (n?.data?.type === 'load_csv') return n.data?.fields?.path ?? undefined
+    const data = n?.data as Record<string, unknown> | undefined
+    if (data && typeof data.type === 'string' && data.type === 'load_csv') {
+      const fields = data.fields as Record<string, unknown> | undefined
+      const p = fields?.path
+      return typeof p === 'string' ? p : undefined
+    }
     for (const e of edges) {
       if (e.target === id) {
         const p = walk(e.source)

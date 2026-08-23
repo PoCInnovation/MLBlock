@@ -1,5 +1,5 @@
 import { theme } from '../../theme'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from '@tanstack/react-router'
 import useAppStore from '../../store/useAppStore'
 import { CloudOff, ArrowLeft } from 'lucide-react'
 
@@ -18,7 +18,7 @@ export default function EditorUnavailableModal() {
           {message ?? 'Impossible de joindre le serveur. Vérifie que le backend est lancé et réessaie.'}
         </div>
         <button
-          onClick={() => navigate('/')}
+          onClick={() => navigate({ to: '/' })}
           style={{ background: 'rgba(255,255,255,.08)', color: '#e8e0d8', border: '1px solid rgba(255,255,255,.15)', padding: '10px 24px', borderRadius: 10, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}
         >
           <ArrowLeft size={14} /> Retour

@@ -1,5 +1,5 @@
 import { memo, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
-import { EdgeLabelRenderer, getSmoothStepPath, type EdgeProps } from 'reactflow'
+import { EdgeLabelRenderer, getSmoothStepPath, type EdgeProps } from '@xyflow/react'
 import useAppStore from '../../store/useAppStore'
 import { theme } from '../../theme'
 

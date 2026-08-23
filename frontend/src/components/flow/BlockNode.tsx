@@ -1,5 +1,5 @@
 import { memo, useEffect, useMemo, useState } from 'react'
-import { Handle, Position, type NodeProps } from 'reactflow'
+import { Handle, Position, type NodeProps, type Node } from '@xyflow/react'
 import { useShallow } from 'zustand/react/shallow'
 import useAppStore from '../../store/useAppStore'
 import BlockSegments from '../blocks/BlockSegments'
@@ -35,7 +35,7 @@ function topFor(i: number, n: number): string {
   return `${((i + 1) * 100) / (n + 1)}%`
 }
 
-function BlockNode({ data, id }: NodeProps<BlockNodeData>) {
+function BlockNode({ data, id }: NodeProps<Node<BlockNodeData>>) {
   const updateFlowParam = useAppStore(s => s.updateFlowParam)
   const removeFlowNode = useAppStore(s => s.removeFlowNode)
   const catalog = useAppStore(s => s.catalog)

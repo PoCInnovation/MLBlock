@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import type { Node, Edge } from 'reactflow'
+import type { Node, Edge } from '@xyflow/react'
 
 // The store imports ../api/client, which pulls in axios + Supabase — mock it
 // so the suite runs in a plain Node env.

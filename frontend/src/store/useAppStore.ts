@@ -3,8 +3,8 @@ import { toServerPayload } from '../utils/blockHelpers'
 import type { InternalCatalog } from '../types/catalog'
 import type { PipelineNode, PipelineEdge, Job, JobOutput, JobStatus } from '../types/catalog'
 import { createPipeline, updatePipeline } from '../api/client'
-import type { Node, Edge, NodeChange, EdgeChange } from 'reactflow'
-import { applyNodeChanges, applyEdgeChanges } from 'reactflow'
+import type { Node, Edge, NodeChange, EdgeChange } from '@xyflow/react'
+import { applyNodeChanges, applyEdgeChanges } from '@xyflow/react'
 
 export type ConsoleLine = { k: string; t: string }
 

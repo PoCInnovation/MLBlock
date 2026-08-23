@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import ReactFlow, {
+import {
+  ReactFlow,
   Background,
   Controls,
   ControlButton,
@@ -13,8 +14,8 @@ import ReactFlow, {
   type Node,
   type NodeChange,
   type EdgeChange,
-} from 'reactflow'
-import 'reactflow/dist/style.css'
+} from '@xyflow/react'
+import '@xyflow/react/dist/style.css'
 import { AlignVerticalJustifyCenter, Menu } from 'lucide-react'
 import { useShallow } from 'zustand/react/shallow'
 import useAppStore from '../../store/useAppStore'
@@ -41,10 +42,11 @@ const edgeColor: Record<string, string> = {
   convertible: theme.color.convert,
   incompatible: theme.color.error,
 }
-
-/** Ports of a flow node (reactflow Node data is untyped `any`). */
+/** Ports of a flow node (xyflow Node data is untyped `Record<string, unknown>`). */
 function portList(node: Node | undefined, side: 'inputs' | 'outputs'): Port[] | undefined {
-  return node?.data?.[side]
+  const data = node?.data as Record<string, unknown> | undefined
+  const v = data?.[side]
+  return Array.isArray(v) ? (v as Port[]) : undefined
 }
 
 function edgeStyleFor(e: Edge, nodes: Node[], graph: Map<string, Set<string>>): React.CSSProperties {
