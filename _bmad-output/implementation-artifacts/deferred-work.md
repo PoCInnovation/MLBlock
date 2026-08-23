@@ -31,3 +31,21 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-react19-reactflow12-upgrade.md`
   summary: Add unit tests for FlowCanvas portList/edgeStyleFor guards
   evidence: Array.isArray guard for portList and edgeStyleFor color mapping have no tests — wrong edge colors would ship undetected.
+- source_spec: `_bmad-output/implementation-artifacts/spec-astryx-non-canvas-ui.md`
+  summary: Add interaction test for EditorHeader Astryx DropdownMenu
+  evidence: Migrated from Base UI Menu to Astryx DropdownMenu data-driven items with no test — menu could be inert with green CI.
+- source_spec: `_bmad-output/implementation-artifacts/spec-astryx-non-canvas-ui.md`
+  summary: Add focus/ARIA test for Dialog backed by Astryx native <dialog>
+  evidence: Replaced Base UI Portal/Title with Astryx Dialog + plain divs — focus trap and aria-labelledby lost with no test.
+- source_spec: `_bmad-output/implementation-artifacts/spec-astryx-non-canvas-ui.md`
+  summary: Add prop-forwarding test for Card size→padding mapping
+  evidence: Card size sm→padding 3 mapping and className/style forwarding have no test — visual regression invisible.
+- source_spec: `_bmad-output/implementation-artifacts/spec-astryx-non-canvas-ui.md`
+  summary: Add visual smoke for global CSS layer ordering (index.css + astryx.css)
+  evidence: main.tsx now imports both CSS but no test asserts @layer order or @theme tokens remain defined — unstyled render would ship undetected.
+- source_spec: `_bmad-output/implementation-artifacts/spec-astryx-non-canvas-ui.md`
+  summary: Add resize test for HomeNav breakpoint handler (matchMedia→resize)
+  evidence: HomeNav switched from matchMedia change to resize innerWidth check with no test — mobile menu could stay open on desktop.
+- source_spec: `_bmad-output/implementation-artifacts/spec-astryx-non-canvas-ui.md`
+  summary: Add disabled/loading contract test for Astryx Button across Projects/Login
+  evidence: Button isDisabled/isLoading/tooltip props have no test — project limit bypass or double-submit could ship.

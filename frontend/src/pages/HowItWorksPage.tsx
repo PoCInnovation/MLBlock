@@ -1,6 +1,7 @@
 import { useNavigate } from '@tanstack/react-router'
 import { Play } from 'lucide-react'
 import SiteLayout from '../components/landing/SiteLayout'
+import { Button } from '@astryxdesign/core'
 import { theme } from '../theme'
 
 export default function HowItWorksPage() {
@@ -89,12 +90,7 @@ export default function HowItWorksPage() {
                 Tu peux commencer maintenant.
               </p>
             </div>
-            <button
-              onClick={() => navigate({ to: '/editor' })}
-              style={{ background: theme.color.accent, color: '#fff', border: 'none', padding: '15px 28px', borderRadius: 14, fontWeight: 800, fontSize: 16, cursor: 'pointer', boxShadow: '0 4px 0 rgba(0,0,0,.25)', display: 'inline-flex', alignItems: 'center', gap: 9, whiteSpace: 'nowrap' }}
-            >
-              <Play size={14} /> Ouvrir l'éditeur
-            </button>
+            <Button label="Ouvrir l'éditeur" variant="primary" icon={<Play size={14} />} onClick={() => navigate({ to: '/editor' })} />
           </div>
         </div>
       </section>

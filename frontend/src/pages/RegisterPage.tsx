@@ -4,18 +4,16 @@ import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { signUp } from '../services/auth'
 import SiteLayout from '../components/landing/SiteLayout'
-import { Field, FieldError, FieldLabel } from '../components/ui/field'
+import { Field, FieldError, FieldLabel, FormLayout } from '../components/ui/field'
 import { CheckCircle2, Circle } from 'lucide-react'
+import { Card, Button } from '@astryxdesign/core'
 import { registerSchema, type RegisterInput } from '../schemas/auth'
 import { mapSupabaseError } from '../schemas/errors'
 
 const s: Record<string, string> = {
   wrapper: 'flex items-center justify-center min-h-[60vh] px-5 py-10',
-  card: 'bg-surface4 rounded-md p-10 w-full max-w-[400px]',
   title: 'text-2xl font-bold mb-6 text-center text-text',
   input: 'w-full px-3.5 py-2.5 mb-4 rounded-[8px] border border-border bg-input-bg text-text text-sm',
-  btn: 'w-full px-3.5 py-2.5 rounded-[8px] border-none text-sm font-semibold cursor-pointer mb-3',
-  primaryBtn: 'bg-auth text-white',
   error: 'text-error text-[13px] mb-3 text-center',
   link: 'text-[#E8915F] cursor-pointer text-center mt-3 text-sm',
 }
@@ -66,7 +64,7 @@ export default function RegisterPage() {
   return (
     <SiteLayout>
       <div className={s.wrapper}>
-        <div className={s.card}>
+        <Card style={{ padding: 40, width: '100%', maxWidth: 400 }}>
           <div className={s.title}>Inscription</div>
           {error && <div className={s.error}>{error}</div>}
           {done ? (
@@ -75,6 +73,7 @@ export default function RegisterPage() {
             </div>
           ) : (
             <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
+              <FormLayout>
               <Controller
                 name="email"
                 control={form.control}
@@ -143,11 +142,12 @@ export default function RegisterPage() {
                   </Field>
                 )}
               />
-              <button type="submit" disabled={loading} className={`${s.btn} ${s.primaryBtn}`} style={{ opacity: loading ? 0.6 : 1 }}>{loading ? 'Création…' : 'Créer un compte'}</button>
+              <Button label={loading ? 'Création…' : 'Créer un compte'} variant="primary" type="submit" isLoading={loading} width="100%" />
+              </FormLayout>
             </form>
           )}
           <button className={`${s.link} bg-none border-none`} onClick={() => navigate({ to: '/login' })}>Déjà un compte ? Se connecter</button>
-        </div>
+        </Card>
       </div>
     </SiteLayout>
   )

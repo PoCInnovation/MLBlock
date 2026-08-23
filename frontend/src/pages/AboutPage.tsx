@@ -1,6 +1,7 @@
 import { theme } from '../theme'
 import { useState, useRef, useEffect, CSSProperties } from 'react';
 import SiteLayout from '../components/landing/SiteLayout';
+import { Card } from '@astryxdesign/core';
 
 type TeamMember = {
     name: string;
@@ -153,19 +154,18 @@ function TeamCard({ name, role, tagline, color, linkedin }: TeamMember) {
 
     if (linkedin) {
         return (
-            <a
-                href={linkedin}
-                target="_blank"
-                rel="noopener noreferrer"
+            <Card
                 style={cardStyle}
                 onMouseEnter={() => setHovered(true)}
                 onMouseLeave={() => setHovered(false)}
             >
+                <a href={linkedin} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
                 {inner}
-            </a>
+                </a>
+            </Card>
         );
     }
-    return <div style={cardStyle}>{inner}</div>;
+    return <Card style={cardStyle}>{inner}</Card>;
 }
 
 function PocLogoSlot({ height }: { height?: number }) {

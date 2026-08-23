@@ -4,18 +4,15 @@ import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { signInWithEmail, signInWithMagicLink, signInWithGoogle, signInWithMicrosoft } from '../services/auth'
 import SiteLayout from '../components/landing/SiteLayout'
-import { Field, FieldError, FieldLabel } from '../components/ui/field'
+import { Field, FieldError, FieldLabel, FormLayout } from '../components/ui/field'
+import { Button, Card } from '@astryxdesign/core'
 import { loginSchema, type LoginInput } from '../schemas/auth'
 import { mapSupabaseError } from '../schemas/errors'
 
 const s: Record<string, string> = {
   wrapper: 'flex items-center justify-center min-h-[60vh] px-5 py-10',
-  card: 'bg-surface4 rounded-md p-10 w-full max-w-[400px]',
   title: 'text-2xl font-bold mb-6 text-center text-text',
   input: 'w-full px-3.5 py-2.5 mb-4 rounded-[8px] border border-border bg-input-bg text-text text-sm',
-  btn: 'w-full px-3.5 py-2.5 rounded-[8px] border-none text-sm font-semibold cursor-pointer mb-3',
-  primaryBtn: 'bg-auth text-white',
-  secondaryBtn: 'bg-border text-text',
   divider: 'flex items-center gap-3 my-4 text-divider text-[13px]',
   line: 'flex-1 h-px bg-border',
   error: 'text-error text-[13px] mb-3 text-center',
@@ -96,15 +93,16 @@ export default function LoginPage() {
   return (
     <SiteLayout>
       <div className={s.wrapper}>
-        <div className={s.card}>
+        <Card style={{ padding: 40, width: '100%', maxWidth: 400 }}>
           <div className={s.title}>Connexion</div>
           {error && <div className={s.error}>{error}</div>}
           {magicSent ? (
             <div className="text-base font-bold mb-6 text-center text-text-muted">
-              Un lien magique t'a été envoyé par email.
+              Un lien magique t&apos;a été envoyé par email.
             </div>
           ) : (
             <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
+              <FormLayout>
               <Controller
                 name="email"
                 control={form.control}
@@ -147,17 +145,20 @@ export default function LoginPage() {
                   </Field>
                 )}
               />
-              <button type="submit" disabled={loading} className={`${s.btn} ${s.primaryBtn}`} style={{ opacity: loading ? 0.6 : 1 }}>{loading ? 'Connexion…' : 'Se connecter'}</button>
+              <Button label={loading ? 'Connexion…' : 'Se connecter'} variant="primary" type="submit" isLoading={loading} width="100%" />
+              </FormLayout>
               <div className={s.divider}>
                 <div className={s.line} /><span>ou</span><div className={s.line} />
               </div>
-              <button type="button" disabled={loading} className={`${s.btn} ${s.secondaryBtn}`} style={{ opacity: loading ? 0.6 : 1 }} onClick={handleMagicLink}>Envoyer un lien magique</button>
-              <button type="button" disabled={loading} className={`${s.btn} ${s.secondaryBtn}`} style={{ opacity: loading ? 0.6 : 1 }} onClick={handleGoogle}>Continuer avec Google</button>
-              <button type="button" disabled={loading} className={`${s.btn} ${s.secondaryBtn}`} style={{ opacity: loading ? 0.6 : 1 }} onClick={handleMicrosoft}>Continuer avec Microsoft</button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <Button label="Envoyer un lien magique" variant="secondary" isLoading={loading} width="100%" onClick={handleMagicLink} />
+                <Button label="Continuer avec Google" variant="secondary" isLoading={loading} width="100%" onClick={handleGoogle} />
+                <Button label="Continuer avec Microsoft" variant="secondary" isLoading={loading} width="100%" onClick={handleMicrosoft} />
+              </div>
             </form>
           )}
-          <button className={`${s.link} bg-none border-none`} onClick={() => navigate({ to: '/register' })}>Pas encore de compte ? S'inscrire</button>
-        </div>
+          <button className={`${s.link} bg-none border-none`} onClick={() => navigate({ to: '/register' })}>Pas encore de compte ? S&apos;inscrire</button>
+        </Card>
       </div>
     </SiteLayout>
   )

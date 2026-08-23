@@ -4,16 +4,16 @@ import { Menu, X } from 'lucide-react'
 import useAppStore from '../../store/useAppStore'
 import { signOut } from '../../services/auth'
 import { theme } from '../../theme'
+import { Button, HStack } from '@astryxdesign/core'
 
 export default function HomeNav() {
-  const location     = useLocation()
-  const navigate     = useNavigate()
-  const user         = useAppStore(s => s.user)
-  const setUser      = useAppStore(s => s.setUser)
+  const location = useLocation()
+  const navigate = useNavigate()
+  const user = useAppStore(s => s.user)
+  const setUser = useAppStore(s => s.setUser)
   const [open, setOpen] = useState(false)
   const navWrapRef = useRef<HTMLDivElement>(null)
 
-  // Fermeture : Échap, tap hors du menu, retour à ≥768px.
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
@@ -29,10 +29,9 @@ export default function HomeNav() {
   }, [open])
 
   useEffect(() => {
-    const mq = window.matchMedia('(min-width: 768px)')
-    const onChange = (e: MediaQueryListEvent) => { if (e.matches) setOpen(false) }
-    mq.addEventListener('change', onChange)
-    return () => mq.removeEventListener('change', onChange)
+    const onResize = () => { if (window.innerWidth >= 768) setOpen(false) }
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
   }, [])
 
   const scrollToFeatures = () =>
@@ -43,7 +42,6 @@ export default function HomeNav() {
       scrollToFeatures()
     } else {
       navigate({ to: '/' })
-      // After navigation the DOM re-renders; scroll on next tick
       setTimeout(scrollToFeatures, 80)
     }
   }
@@ -58,7 +56,6 @@ export default function HomeNav() {
     transition: 'color .15s, border-color .15s',
   })
 
-  // Ferme le menu mobile puis exécute l'action du lien
   const go = (fn: () => void) => { setOpen(false); fn() }
 
   const handleAuth = () => {
@@ -91,27 +88,13 @@ export default function HomeNav() {
             <span style={{ fontFamily: theme.font.heading, fontWeight: 600, fontSize: 23, letterSpacing: '-.01em' }}>MLBlock</span>
           </div>
         </div>
-        <div className="landing-nav-links" style={{ display: 'flex', alignItems: 'center', gap: 30 }}>
+        <HStack gap={4} style={{ display: 'flex', alignItems: 'center', gap: 30 } as unknown as CSSProperties} className="landing-nav-links">
           <button onClick={handleDecouvrir} style={{ ...linkStyle(false), background: 'none', border: 'none' }}>Découvrir</button>
           <button onClick={() => navigate({ to: '/how-it-works' })} style={{ ...linkStyle(location.pathname === '/how-it-works'), background: 'none', border: 'none' }}>Comment ça marche</button>
           <button onClick={() => navigate({ to: '/about' })} style={{ ...linkStyle(location.pathname === '/about'), background: 'none', border: 'none' }}>Qui sommes nous</button>
-          <button
-            onClick={() => navigate({ to: '/projets' })}
-            style={{ background: theme.color.accent, color: '#fff', border: 'none', padding: '11px 20px', borderRadius: 12, fontWeight: 800, fontSize: 15, cursor: 'pointer', boxShadow: theme.shadow.btn }}
-          >
-            Mes projets
-          </button>
-          {user ? (
-            <button onClick={handleAuth} style={{ background: theme.color.border, color: theme.color.textMuted, border: 'none', padding: '11px 20px', borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
-              Déconnexion
-            </button>
-          ) : (
-            <button onClick={handleAuth} style={{ background: theme.color.border, color: theme.color.textMuted, border: 'none', padding: '11px 20px', borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
-              Connexion
-            </button>
-          )}
-        </div>
-        {/* Hamburger : visible uniquement <768px (cf. index.css). */}
+          <Button label="Mes projets" variant="primary" size="md" onClick={() => navigate({ to: '/projets' })} />
+          <Button label={user ? 'Déconnexion' : 'Connexion'} variant="secondary" size="md" onClick={handleAuth} />
+        </HStack>
         <button
           className="landing-nav-burger"
           onClick={() => setOpen(o => !o)}
@@ -121,7 +104,6 @@ export default function HomeNav() {
           {open ? <X size={22} /> : <Menu size={22} />}
         </button>
       </nav>
-      {/* Menu mobile repliable : se ferme au tap sur un lien. */}
       {open && (
         <div className="landing-nav-menu">
           <button onClick={() => go(handleDecouvrir)} style={menuLinkStyle}>Découvrir</button>

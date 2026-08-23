@@ -1,38 +1,39 @@
-import { Dialog as BaseDialog } from '@base-ui/react/dialog'
 import type { ReactNode } from 'react'
+import { Dialog as AstryxDialog, AlertDialog as AstryxAlertDialog } from '@astryxdesign/core'
 
-/** Dialog accessible (Base UI) stylé avec les tokens du thème. */
-export function Dialog({ open, onOpenChange, children }: { open: boolean; onOpenChange: (open: boolean) => void; children: ReactNode }) {
+type DialogProps = {
+  open?: boolean
+  isOpen?: boolean
+  onOpenChange: (open: boolean) => void
+  title?: string
+  description?: string
+  children: ReactNode
+}
+
+/** Astryx Dialog wrapper — accepts both `open` (legacy) and `isOpen` (Astryx). Keeps focus trap via native <dialog>. */
+export function Dialog({ open, isOpen, onOpenChange, children }: DialogProps) {
+  const resolvedOpen = isOpen ?? open ?? false
   return (
-    <BaseDialog.Root open={open} onOpenChange={onOpenChange}>
-      <BaseDialog.Portal>
-        <BaseDialog.Backdrop className="fixed inset-0 bg-black/55 z-[150]" />
-        <BaseDialog.Popup
-          className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface2 border border-border rounded-lg shadow-[0_20px_60px_rgba(0,0,0,.55)] p-[26px] w-[400px] max-w-[calc(100vw_-_32px)] outline-none z-[160]"
-        >
-          {children}
-        </BaseDialog.Popup>
-      </BaseDialog.Portal>
-    </BaseDialog.Root>
+    <AstryxDialog isOpen={resolvedOpen} onOpenChange={onOpenChange}>
+      {children}
+    </AstryxDialog>
   )
 }
 
 export function DialogTitle({ children }: { children: ReactNode }) {
-  return (
-    <BaseDialog.Title className="text-[17px] font-extrabold m-0">
-      {children}
-    </BaseDialog.Title>
-  )
+  return <div style={{ fontSize: 17, fontWeight: 800, margin: 0 }}>{children}</div>
 }
 
 export function DialogDescription({ children }: { children: ReactNode }) {
-  return (
-    <BaseDialog.Description className="text-text-muted text-[13.5px] font-semibold leading-[1.55] mt-[10px] mb-5">
-      {children}
-    </BaseDialog.Description>
-  )
+  return <div style={{ color: 'var(--color-text-muted)', fontSize: 13.5, fontWeight: 600, lineHeight: 1.55, marginTop: 10, marginBottom: 20 }}>{children}</div>
 }
 
 export function DialogFooter({ children }: { children: ReactNode }) {
-  return <div className="flex gap-2.5 justify-end flex-wrap">{children}</div>
+  return <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', flexWrap: 'wrap' }}>{children}</div>
 }
+
+/** Astryx AlertDialog re-export for destructive confirmations (UnsavedChangesDialog etc). */
+export function AlertDialog(props: React.ComponentProps<typeof AstryxAlertDialog>) {
+  return <AstryxAlertDialog {...props} />
+}
+export { AstryxAlertDialog as AlertDialogPrimitive }

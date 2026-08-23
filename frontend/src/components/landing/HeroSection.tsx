@@ -2,6 +2,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { Play } from 'lucide-react'
 import HeroBlockStack from './HeroBlockStack'
 import { theme } from '../../theme'
+import { Button, HStack } from '@astryxdesign/core'
 
 export default function HeroSection() {
   const navigate = useNavigate()
@@ -22,21 +23,10 @@ export default function HeroSection() {
         <p style={{ fontSize: 19, lineHeight: 1.55, color: 'var(--color-text-muted)', maxWidth: 470, margin: '22px 0 0', fontWeight: 600 }}>
           Empile des blocs pour construire un modèle qui apprend tout seul : reconnaître des images, comprendre des phrases, prédire des évènements. Pas besoin de savoir programmer, il suffit d'assembler.
         </p>
-        <div style={{ display: 'flex', gap: 14, marginTop: 34 }}>
-          <button
-            onClick={() => navigate({ to: '/projets' })}
-            className="hover-lift"
-            style={{ background: theme.color.accent, color: '#fff', border: 'none', padding: '15px 26px', borderRadius: 14, fontWeight: 800, fontSize: 16, cursor: 'pointer', boxShadow: '0 4px 0 rgba(0,0,0,.25)', display: 'inline-flex', alignItems: 'center', gap: 9, transition: 'filter .15s ease, transform .15s ease' }}
-          >
-            <Play size={16} fill="currentColor" /> Mes projets
-          </button>
-          <button
-            onClick={scrollToFeatures}
-            style={{ background: 'rgba(255,255,255,.06)', color: 'var(--color-text)', border: '1px solid rgba(255,255,255,.14)', padding: '15px 24px', borderRadius: 14, fontWeight: 800, fontSize: 16, cursor: 'pointer', transition: 'background .15s ease' }}
-          >
-            En savoir plus
-          </button>
-        </div>
+        <HStack gap={3} style={{ marginTop: 34 }}>
+          <Button label="Mes projets" variant="primary" icon={<Play size={16} fill="currentColor" />} onClick={() => navigate({ to: '/projets' })} />
+          <Button label="En savoir plus" variant="secondary" onClick={scrollToFeatures} />
+        </HStack>
       </div>
       <div className="landing-hero-visual">
         <HeroBlockStack />

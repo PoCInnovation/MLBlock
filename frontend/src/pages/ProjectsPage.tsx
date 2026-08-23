@@ -8,6 +8,7 @@ import { usePipelineImport } from '../hooks/usePipelineImport'
 import ExportModal from '../components/ui/ExportModal'
 import SkipLink from '../components/ui/SkipLink'
 import { Upload } from 'lucide-react'
+import { Card, Button } from '@astryxdesign/core'
 
 const MAX_PROJECTS = 20
 
@@ -19,24 +20,8 @@ const titleStyle =
   'font-heading text-[28px] font-extrabold m-0'
 const subStyle =
   'text-text-muted text-sm mt-1'
-const primaryBtn =
-  'bg-accent text-white border-none px-[18px] py-[11px] rounded-md font-extrabold text-sm cursor-pointer shadow-btn inline-flex items-center gap-2'
-const ghostBtn =
-  'bg-[rgba(255,255,255,.06)] text-text-light border border-border px-[18px] py-[11px] rounded-md font-bold text-sm cursor-pointer'
 const gridStyle =
   'max-w-[980px] mx-auto grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4'
-const cardStyle =
-  'bg-surface2 border border-border rounded-lg px-5 py-[18px] flex flex-col gap-2.5'
-const cardName =
-  'font-extrabold text-base overflow-hidden text-ellipsis whitespace-nowrap'
-const cardMeta =
-  'text-text-muted text-[13px] font-semibold'
-const cardActions =
-  'flex gap-2 mt-1'
-const cardBtn =
-  'bg-[rgba(255,255,255,.06)] text-text-light border-none px-3 py-1.5 rounded-sm font-bold text-[13px] cursor-pointer'
-const cardBtnDanger =
-  'bg-[rgba(255,255,255,.06)] text-error-light border-none px-3 py-1.5 rounded-sm font-bold text-[13px] cursor-pointer'
 const emptyStyle =
   'max-w-[980px] mx-auto mt-15 text-center text-text-muted text-[15px] font-semibold'
 
@@ -52,7 +37,6 @@ export default function ProjectsPage() {
     queryFn: () => listPipelines(100),
   })
   const projects = projectsQuery.data?.items ?? null
-  // Erreurs d'action (ouverture/suppression) distinctes de l'erreur de liste
   const [actionError, setActionError] = useState<string | null>(null)
   const listError = projectsQuery.isError ? 'Impossible de charger tes projets. Le serveur est peut-être en veille.' : null
   const [importError, setImportError] = useState<string | null>(null)
@@ -79,7 +63,6 @@ export default function ProjectsPage() {
     try {
       await deletePipeline(p.id)
       setActionError(null)
-      // Garde le pending jusqu'à la fin du refetch de la liste
       await queryClient.invalidateQueries({ queryKey: ['pipelines'] })
     } catch {
       setActionError('Impossible de supprimer ce projet.')
@@ -113,16 +96,14 @@ export default function ProjectsPage() {
             className="hidden"
             onChange={e => { const f = e.target.files?.[0]; if (f) onImportFile(f); e.target.value = '' }}
           />
-          <button className={`hover-bright ${ghostBtn}`} style={{ transition: 'background .15s ease' }} onClick={() => fileRef.current?.click()}><Upload size={15} /> Importer</button>
-          <button
-            className={primaryBtn}
-            style={{ opacity: atLimit ? 0.5 : 1, cursor: atLimit ? 'not-allowed' : 'pointer', transition: 'filter .15s ease, transform .15s ease' }}
-            disabled={atLimit}
-            title={atLimit ? 'Limite de 20 projets atteinte. Supprime un projet pour en créer un nouveau.' : undefined}
+          <Button label="Importer" variant="secondary" icon={<Upload size={15} />} onClick={() => fileRef.current?.click()} />
+          <Button
+            label="+ Nouveau projet"
+            variant="primary"
+            isDisabled={atLimit}
+            tooltip={atLimit ? 'Limite de 20 projets atteinte.' : undefined}
             onClick={() => { useAppStore.getState().clearAll(); useAppStore.setState({ pipelineId: null, projectName: 'mon-premier-modèle', savedFingerprint: fingerprintOf({ flowNodes: [], flowEdges: [], projectName: 'mon-premier-modèle' }), undoStack: [], redoStack: [] }); navigate({ to: '/editor' }) }}
-          >
-            + Nouveau projet
-          </button>
+          />
         </div>
       </div>
 
@@ -130,21 +111,21 @@ export default function ProjectsPage() {
 
       {projects !== null && projects.length === 0 && !error && (
         <div className={emptyStyle}>
-          Aucun projet pour l'instant. Crée ton premier pipeline avec « + Nouveau projet » ou importe un fichier JSON.
+          Aucun projet pour l&apos;instant. Crée ton premier pipeline avec « + Nouveau projet » ou importe un fichier JSON.
         </div>
       )}
 
       <div className={gridStyle}>
         {projects?.map(p => (
-          <div key={p.id} className={`hover-card ${cardStyle}`} style={{ transition: 'border-color .15s ease, transform .15s ease' }}>
-            <div className={cardName} title={p.name}>{p.name}</div>
-            <div className={cardMeta}>Modifié le {fmtDate(p.updated_at)}</div>
-            <div className={cardActions}>
-              <button className="bg-auth text-white border-none px-3 py-1.5 rounded-sm font-bold text-[13px] cursor-pointer" style={{ transition: 'background .15s ease' }} onClick={() => openProject(p)}>Ouvrir</button>
-              <button className={cardBtn} style={{ transition: 'background .15s ease' }} onClick={() => setExporting(p)}>Exporter</button>
-              <button className={cardBtnDanger} style={{ transition: 'background .15s ease' }} onClick={() => removeProject(p)}>Supprimer</button>
+          <Card key={p.id} className="hover-card" style={{ display: 'flex', flexDirection: 'column', gap: 10, transition: 'border-color .15s ease, transform .15s ease' }}>
+            <div style={{ fontWeight: 800, fontSize: 16, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={p.name}>{p.name}</div>
+            <div style={{ color: 'var(--color-text-muted)', fontSize: 13, fontWeight: 600 }}>Modifié le {fmtDate(p.updated_at)}</div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+              <Button label="Ouvrir" variant="primary" size="sm" onClick={() => openProject(p)} />
+              <Button label="Exporter" variant="secondary" size="sm" onClick={() => setExporting(p)} />
+              <Button label="Supprimer" variant="destructive" size="sm" onClick={() => removeProject(p)} />
             </div>
-          </div>
+          </Card>
         ))}
       </div>
 

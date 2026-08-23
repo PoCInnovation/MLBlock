@@ -1,12 +1,6 @@
 import { useRef, useState } from 'react'
 import { Save, Play, Loader2, Upload, Download, Square, MoreVertical, FolderKanban, Trash2, LogOut, Check, Undo2, Redo2 } from 'lucide-react'
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-} from '../ui/dropdown-menu'
+import { DropdownMenu } from '../ui/dropdown-menu'
 import { useNavigate } from '@tanstack/react-router'
 import useAppStore from '../../store/useAppStore'
 import { signOut } from '../../services/auth'
@@ -159,46 +153,22 @@ export default function EditorHeader() {
           {isPending ? <Loader2 size={15} style={{ animation: 'mlbSpin .8s linear infinite' }} /> : <Play size={15} fill="currentColor" />}
           {isPending ? 'Exécution…' : 'Lancer'}
         </button>
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            render={
-              <button
-                className="hover-bright"
-                style={{ ...ghostBtn, padding: '9px 11px' }}
-                aria-label="Menu du projet"
-                title="Menu du projet"
-              >
-                <MoreVertical size={17} />
-              </button>
-            }
-          />
-          <DropdownMenuContent>
-            <DropdownMenuItem onClick={() => fileRef.current?.click()}>
-              <Upload size={15} /> Importer
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setExportOpen(true)}>
-              <Download size={15} /> Exporter
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => navigate({ to: '/projets' })}>
-              <FolderKanban size={15} /> Mes projets
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={onClear}>
-              <Trash2 size={15} /> Tout effacer
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              variant="destructive"
-              onClick={() => {
+        <DropdownMenu
+          button={{ label: 'Menu du projet', icon: <MoreVertical size={17} />, isIconOnly: true, variant: 'secondary' }}
+          items={[
+            { label: 'Importer', icon: <Upload size={15} />, onClick: () => fileRef.current?.click() },
+            { label: 'Exporter', icon: <Download size={15} />, onClick: () => setExportOpen(true) },
+            { type: 'divider' },
+            { label: 'Mes projets', icon: <FolderKanban size={15} />, onClick: () => navigate({ to: '/projets' }) },
+            { label: 'Tout effacer', icon: <Trash2 size={15} />, onClick: onClear },
+            { type: 'divider' },
+            { label: 'Déconnexion', icon: <LogOut size={15} />, variant: 'destructive', onClick: () => {
                 const s = useAppStore.getState()
                 if (s.isDirty() && s.user) setLogoutOpen(true)
                 else { void signOut().then(() => { setUser(null); navigate({ to: '/' }) }) }
-              }}
-            >
-              <LogOut size={15} /> Déconnexion
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+              } },
+          ]}
+        />
       </div>
 
       <input ref={fileRef} type="file" accept=".json,application/json" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) onImportPicked(f); e.target.value = '' }} />

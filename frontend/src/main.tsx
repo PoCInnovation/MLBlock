@@ -9,8 +9,8 @@ import { getSession, onAuthStateChange } from './services/auth'
 import { toServerPayload } from './utils/blockHelpers'
 import { writeStash } from './utils/pending-stash'
 import { routeTree } from './routeTree.gen'
+import '@astryxdesign/core/astryx.css'
 import './index.css'
-
 const router = createRouter({ routeTree })
 
 declare module '@tanstack/react-router' {
