@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from '@tanstack/react-router'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { signInWithEmail, signInWithMagicLink, signInWithGoogle, signInWithMicrosoft } from '../services/auth'
@@ -45,7 +45,7 @@ export default function LoginPage() {
     try {
       const { error: err } = await signInWithEmail(data.email, data.password)
       if (err) setError(mapSupabaseError(err.message))
-      else navigate('/projets')
+      else navigate({ to: '/projets' })
     } catch {
       setError(mapSupabaseError('Network request failed'))
     } finally {
@@ -156,7 +156,7 @@ export default function LoginPage() {
               <button type="button" disabled={loading} className={`${s.btn} ${s.secondaryBtn}`} style={{ opacity: loading ? 0.6 : 1 }} onClick={handleMicrosoft}>Continuer avec Microsoft</button>
             </form>
           )}
-          <button className={`${s.link} bg-none border-none`} onClick={() => navigate('/register')}>Pas encore de compte ? S'inscrire</button>
+          <button className={`${s.link} bg-none border-none`} onClick={() => navigate({ to: '/register' })}>Pas encore de compte ? S'inscrire</button>
         </div>
       </div>
     </SiteLayout>

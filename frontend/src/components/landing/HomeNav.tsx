@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from '@tanstack/react-router'
 import { Menu, X } from 'lucide-react'
 import useAppStore from '../../store/useAppStore'
 import { signOut } from '../../services/auth'
@@ -42,7 +42,7 @@ export default function HomeNav() {
     if (location.pathname === '/') {
       scrollToFeatures()
     } else {
-      navigate('/')
+      navigate({ to: '/' })
       // After navigation the DOM re-renders; scroll on next tick
       setTimeout(scrollToFeatures, 80)
     }
@@ -64,9 +64,9 @@ export default function HomeNav() {
   const handleAuth = () => {
     go(() => {
       if (user) {
-        void (async () => { try { await signOut() } catch {} setUser(null); navigate('/') })()
+        void (async () => { try { await signOut() } catch {} setUser(null); navigate({ to: '/' }) })()
       } else {
-        navigate('/login')
+        navigate({ to: '/login' })
       }
     })
   }
@@ -82,7 +82,7 @@ export default function HomeNav() {
       <nav className="landing-nav" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '22px 48px', maxWidth: 1240, margin: '0 auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
           <div
-            onClick={() => navigate('/')}
+            onClick={() => navigate({ to: '/' })}
             style={{ display: 'flex', alignItems: 'center', gap: 11, cursor: 'pointer' }}
           >
             <div style={{ width: 34, height: 34, borderRadius: 10, background: theme.color.accent, boxShadow: theme.shadow.btn, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -93,10 +93,10 @@ export default function HomeNav() {
         </div>
         <div className="landing-nav-links" style={{ display: 'flex', alignItems: 'center', gap: 30 }}>
           <button onClick={handleDecouvrir} style={{ ...linkStyle(false), background: 'none', border: 'none' }}>Découvrir</button>
-          <button onClick={() => navigate('/how-it-works')} style={{ ...linkStyle(location.pathname === '/how-it-works'), background: 'none', border: 'none' }}>Comment ça marche</button>
-          <button onClick={() => navigate('/about')} style={{ ...linkStyle(location.pathname === '/about'), background: 'none', border: 'none' }}>Qui sommes nous</button>
+          <button onClick={() => navigate({ to: '/how-it-works' })} style={{ ...linkStyle(location.pathname === '/how-it-works'), background: 'none', border: 'none' }}>Comment ça marche</button>
+          <button onClick={() => navigate({ to: '/about' })} style={{ ...linkStyle(location.pathname === '/about'), background: 'none', border: 'none' }}>Qui sommes nous</button>
           <button
-            onClick={() => navigate('/projets')}
+            onClick={() => navigate({ to: '/projets' })}
             style={{ background: theme.color.accent, color: '#fff', border: 'none', padding: '11px 20px', borderRadius: 12, fontWeight: 800, fontSize: 15, cursor: 'pointer', boxShadow: theme.shadow.btn }}
           >
             Mes projets
@@ -125,9 +125,9 @@ export default function HomeNav() {
       {open && (
         <div className="landing-nav-menu">
           <button onClick={() => go(handleDecouvrir)} style={menuLinkStyle}>Découvrir</button>
-          <button onClick={() => go(() => navigate('/how-it-works'))} style={menuLinkStyle}>Comment ça marche</button>
-          <button onClick={() => go(() => navigate('/about'))} style={menuLinkStyle}>Qui sommes nous</button>
-          <button onClick={() => go(() => navigate('/projets'))} style={{ ...menuLinkStyle, color: theme.color.accentLight }}>Mes projets</button>
+          <button onClick={() => go(() => navigate({ to: '/how-it-works' }))} style={menuLinkStyle}>Comment ça marche</button>
+          <button onClick={() => go(() => navigate({ to: '/about' }))} style={menuLinkStyle}>Qui sommes nous</button>
+          <button onClick={() => go(() => navigate({ to: '/projets' }))} style={{ ...menuLinkStyle, color: theme.color.accentLight }}>Mes projets</button>
           <button onClick={handleAuth} style={menuLinkStyle}>{user ? 'Déconnexion' : 'Connexion'}</button>
         </div>
       )}

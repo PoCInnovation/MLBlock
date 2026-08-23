@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from '@tanstack/react-router'
 import useAppStore, { fingerprintOf } from '../store/useAppStore'
 import { listPipelines, getPipeline, deletePipeline } from '../api/client'
 import type { PipelineSummary } from '../types/catalog'
@@ -68,7 +68,7 @@ export default function ProjectsPage() {
         queryFn: () => getPipeline(p.id),
       })
       useAppStore.getState().loadPipeline(detail.nodes, detail.edges, detail.id, detail.name)
-      navigate('/editor')
+      navigate({ to: '/editor' })
     } catch {
       setActionError('Impossible d’ouvrir ce projet.')
     }
@@ -90,7 +90,7 @@ export default function ProjectsPage() {
     setActionError(null)
     const err = await importFile(file)
     if (err) setImportError(err)
-    else navigate('/editor')
+    else navigate({ to: '/editor' })
   }
 
   const atLimit = (projects?.length ?? 0) >= MAX_PROJECTS
@@ -119,7 +119,7 @@ export default function ProjectsPage() {
             style={{ opacity: atLimit ? 0.5 : 1, cursor: atLimit ? 'not-allowed' : 'pointer', transition: 'filter .15s ease, transform .15s ease' }}
             disabled={atLimit}
             title={atLimit ? 'Limite de 20 projets atteinte. Supprime un projet pour en créer un nouveau.' : undefined}
-            onClick={() => { useAppStore.getState().clearAll(); useAppStore.setState({ pipelineId: null, projectName: 'mon-premier-modèle', savedFingerprint: fingerprintOf({ flowNodes: [], flowEdges: [], projectName: 'mon-premier-modèle' }), undoStack: [], redoStack: [] }); navigate('/editor') }}
+            onClick={() => { useAppStore.getState().clearAll(); useAppStore.setState({ pipelineId: null, projectName: 'mon-premier-modèle', savedFingerprint: fingerprintOf({ flowNodes: [], flowEdges: [], projectName: 'mon-premier-modèle' }), undoStack: [], redoStack: [] }); navigate({ to: '/editor' }) }}
           >
             + Nouveau projet
           </button>

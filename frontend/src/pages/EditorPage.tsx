@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { useBlocker, useSearchParams } from 'react-router-dom'
+import { useBlocker, useNavigate, useSearch } from '@tanstack/react-router'
 import { useUndoRedo } from '../hooks/useUndoRedo'
 import useAppStore from '../store/useAppStore'
 import { fetchCatalog, listPipelineJobs, getJobOutputs, getPipeline } from '../api/client'
 import { toServerPayload } from '../utils/blockHelpers'
-import { parseEditorParams } from '../utils/editorParams'
 import { writeStash, readStash, clearStash } from '../utils/pending-stash'
 import EditorHeader from '../components/editor/EditorHeader'
 import SkipLink from '../components/ui/SkipLink'
@@ -25,7 +24,8 @@ function stashIfDirty(): void {
 
 export default function EditorPage() {
   useUndoRedo()
-  const [searchParams, setSearchParams] = useSearchParams()
+  const search = useSearch({ from: '/editor' })
+  const navigate = useNavigate({ from: '/editor' })
   const catalog      = useAppStore(s => s.catalog)
   const catalogError = useAppStore(s => s.catalogError)
   const pipelineId   = useAppStore(s => s.pipelineId)
@@ -33,11 +33,11 @@ export default function EditorPage() {
   const setRestoredWork = useAppStore(s => s.setRestoredWork)
 
   // Lectures serveur via TanStack Query (le store reste consommateur du catalogue)
-  const urlPipelineId = parseEditorParams(searchParams).pipeline ?? null
+  const urlPipelineId = (search.pipeline as string | undefined) ?? null
   const catalogQuery = useQuery({
     queryKey: ['catalog'],
     queryFn: fetchCatalog,
-    staleTime: 5 * 60_000,
+    staleTime: Infinity,
   })
   const pipelineQuery = useQuery({
     queryKey: ['pipeline', urlPipelineId],
@@ -46,14 +46,18 @@ export default function EditorPage() {
   })
 
   // Garde de navigation : bloque toute sortie avec modifications non sauvegardées
-  const blocker = useBlocker(() => useAppStore.getState().isDirty())
+  const blocker = useBlocker({
+    shouldBlockFn: () => useAppStore.getState().isDirty(),
+    withResolver: true,
+    enableBeforeUnload: () => useAppStore.getState().isDirty(),
+  })
   const [guardOpen, setGuardOpen] = useState(false)
   const [guardBusy, setGuardBusy] = useState(false)
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- Synchronisation avec un état externe (bloqueur react-router) : seule façon de réagir au passage en « blocked ».
-    if (blocker.state === 'blocked') setGuardOpen(true)
-  }, [blocker.state])
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Synchronisation avec un état externe (bloqueur) : seule façon de réagir au passage en « blocked ».
+    if (blocker.status === 'blocked') setGuardOpen(true)
+  }, [blocker.status])
 
   const leaveGuard = async (save: boolean) => {
     setGuardBusy(true)
@@ -114,11 +118,12 @@ export default function EditorPage() {
 
   // Miroir zustand → URL : le pipeline ouvert est partageable
   useEffect(() => {
-    setSearchParams(
-      pipelineId ? { pipeline: pipelineId } : {},
-      { replace: true }
-    )
-  }, [pipelineId, setSearchParams])
+    const nextSearch = pipelineId ? { pipeline: pipelineId } : {}
+    const curr = (search.pipeline as string | undefined) ?? null
+    if (curr !== pipelineId) {
+      navigate({ search: nextSearch as never, replace: true })
+    }
+  }, [pipelineId, navigate, search.pipeline])
 
   // Projet ouvert : recharge les résultats du dernier run (persistés en db)
   useEffect(() => {

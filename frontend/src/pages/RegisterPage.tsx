@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from '@tanstack/react-router'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { signUp } from '../services/auth'
@@ -146,7 +146,7 @@ export default function RegisterPage() {
               <button type="submit" disabled={loading} className={`${s.btn} ${s.primaryBtn}`} style={{ opacity: loading ? 0.6 : 1 }}>{loading ? 'Création…' : 'Créer un compte'}</button>
             </form>
           )}
-          <button className={`${s.link} bg-none border-none`} onClick={() => navigate('/login')}>Déjà un compte ? Se connecter</button>
+          <button className={`${s.link} bg-none border-none`} onClick={() => navigate({ to: '/login' })}>Déjà un compte ? Se connecter</button>
         </div>
       </div>
     </SiteLayout>

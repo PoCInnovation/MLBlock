@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import json
 import os
 import re
 import threading
@@ -8,7 +10,8 @@ from uuid import UUID
 
 import requests
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi.responses import JSONResponse, Response
 from sqlmodel import Session, select
 
 from mlblock.blocks.registry import BLOCK_REGISTRY
@@ -105,8 +108,8 @@ def _fr_summary(block) -> str:
     return _fr_label(block)
 
 
-@catalog_router.get("")
-def get_catalog() -> dict:
+@catalog_router.get("", response_model=None)
+def get_catalog(request: Request = None):  # type: ignore[assignment]
     categories: dict[str, dict] = {}
     for block in BLOCK_REGISTRY.values():
         cat = block.category.name
@@ -127,12 +130,28 @@ def get_catalog() -> dict:
             "inputs": block.inputs,
             "outputs": block.outputs,
         })
-    return {"categories": list(categories.values())}
+    payload = {"categories": sorted(list(categories.values()), key=lambda c: c["id"])}
+    # Appel direct en test (sans Request) : compatibilité — renvoie le dict brut.
+    if request is None:
+        return payload
+    body = json.dumps(payload, sort_keys=True).encode()
+    etag = hashlib.md5(body, usedforsecurity=False).hexdigest()
+    etag_header = f'"{etag}"'
+    headers = {
+        "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+        "ETag": etag_header,
+        "Access-Control-Expose-Headers": "ETag, Cache-Control",
+    }
+    inm = request.headers.get("if-none-match", "")
+    # Support weak validators (W/\"...\"), multiple values, and *
+    etags = [t.strip().removeprefix("W/") for t in inm.split(",") if t.strip()]
+    if etag_header in etags or "*" in etags:
+        return Response(status_code=304, headers=headers)
+    return JSONResponse(content=payload, headers=headers)
 
 
 @samples_router.get("")
 def get_samples(category: str | None = None) -> list[dict]:
-    """Bibliothèque de données d'exemple — manifest du bucket `sample-data`."""
     secret = os.environ.get("SUPABASE_SECRET_KEY", "")
     project = os.environ.get("SUPABASE_URL", "").replace("https://", "").split(".")[0]
     if not secret or not project:

@@ -24,7 +24,7 @@ export type ExportProps = {
 
 /** Modal de choix [JSON | Code] puis téléchargement. */
 export default function ExportModal({ title, resolve, onClose }: ExportProps) {
-  const [open, setOpen] = useState(true)
+  const [open] = useState(true)
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 

@@ -36,7 +36,7 @@ export type SampleDataModalProps = {
 
 /** Modal « Données d'entraînement » : nos données (samples) ou les vôtres. */
 export default function SampleDataModal({ category, onPick, onChooseFile, onClose }: SampleDataModalProps) {
-  const [open, setOpen] = useState(true)
+  const [open] = useState(true)
   const [samples, setSamples] = useState<Sample[] | null>(null)
   const [error, setError] = useState<string | null>(null)
 

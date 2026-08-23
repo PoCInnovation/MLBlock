@@ -7,7 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from '../ui/dropdown-menu'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from '@tanstack/react-router'
 import useAppStore from '../../store/useAppStore'
 import { signOut } from '../../services/auth'
 import { getPipeline } from '../../api/client'
@@ -81,7 +81,7 @@ export default function EditorHeader() {
   return (
     <div className="editor-header" style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: theme.color.surface, borderBottom: `1px solid ${theme.color.border}`, zIndex: 20 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0 }}>
-        <button type="button" onClick={() => navigate('/')} aria-label="Retour à l'accueil" style={{ display: 'flex', alignItems: 'center', gap: 9, cursor: 'pointer', background: 'none', border: 'none', padding: 0, margin: 0 }}>
+        <button type="button" onClick={() => navigate({ to: '/' })} aria-label="Retour à l'accueil" style={{ display: 'flex', alignItems: 'center', gap: 9, cursor: 'pointer', background: 'none', border: 'none', padding: 0, margin: 0 }}>
           <div style={{ width: 30, height: 30, borderRadius: 9, background: theme.color.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: theme.shadow.btn }}>
             <div style={{ width: 11, height: 11, background: '#fff', borderRadius: 3 }} />
           </div>
@@ -180,7 +180,7 @@ export default function EditorHeader() {
               <Download size={15} /> Exporter
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => navigate('/projets')}>
+            <DropdownMenuItem onClick={() => navigate({ to: '/projets' })}>
               <FolderKanban size={15} /> Mes projets
             </DropdownMenuItem>
             <DropdownMenuItem onClick={onClear}>
@@ -192,7 +192,7 @@ export default function EditorHeader() {
               onClick={() => {
                 const s = useAppStore.getState()
                 if (s.isDirty() && s.user) setLogoutOpen(true)
-                else { void signOut().then(() => { setUser(null); navigate('/') }) }
+                else { void signOut().then(() => { setUser(null); navigate({ to: '/' }) }) }
               }}
             >
               <LogOut size={15} /> Déconnexion
@@ -233,7 +233,7 @@ export default function EditorHeader() {
             setLogoutOpen(false)
             await signOut()
             setUser(null)
-            navigate('/')
+            navigate({ to: '/' })
           } catch {
             useAppStore.getState().showToast({ kind: 'error', message: "Échec de la sauvegarde — la déconnexion est annulée" })
           } finally {
@@ -247,7 +247,7 @@ export default function EditorHeader() {
           // setUser(null) AVANT signOut : le handler de session-expirée (main.tsx)
           // ne doit pas re-stasher un logout intentionnel (user déjà null → skip)
           setUser(null)
-          void signOut().then(() => navigate('/'))
+          void signOut().then(() => navigate({ to: '/' }))
         }}
         onCancel={() => setLogoutOpen(false)}
       />

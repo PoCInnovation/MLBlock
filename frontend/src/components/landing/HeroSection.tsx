@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from '@tanstack/react-router'
 import { Play } from 'lucide-react'
 import HeroBlockStack from './HeroBlockStack'
 import { theme } from '../../theme'
@@ -24,7 +24,7 @@ export default function HeroSection() {
         </p>
         <div style={{ display: 'flex', gap: 14, marginTop: 34 }}>
           <button
-            onClick={() => navigate('/projets')}
+            onClick={() => navigate({ to: '/projets' })}
             className="hover-lift"
             style={{ background: theme.color.accent, color: '#fff', border: 'none', padding: '15px 26px', borderRadius: 14, fontWeight: 800, fontSize: 16, cursor: 'pointer', boxShadow: '0 4px 0 rgba(0,0,0,.25)', display: 'inline-flex', alignItems: 'center', gap: 9, transition: 'filter .15s ease, transform .15s ease' }}
           >

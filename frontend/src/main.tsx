@@ -2,14 +2,22 @@
    composants racine sont définis ici volontairement, aucun HMR attendu sur l'entrée. */
 import React, { useEffect, useState } from 'react'
 import ReactDOM from 'react-dom/client'
-import { RouterProvider } from 'react-router-dom'
+import { createRouter, RouterProvider } from '@tanstack/react-router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import useAppStore from './store/useAppStore'
 import { getSession, onAuthStateChange } from './services/auth'
 import { toServerPayload } from './utils/blockHelpers'
 import { writeStash } from './utils/pending-stash'
-import { router } from './router'
+import { routeTree } from './routeTree.gen'
 import './index.css'
+
+const router = createRouter({ routeTree })
+
+declare module '@tanstack/react-router' {
+  interface Register {
+    router: typeof router
+  }
+}
 
 function Root() {
   const setUser = useAppStore(s => s.setUser)
