@@ -73,7 +73,25 @@ export default function EditorHeader() {
   }
 
   return (
-    <div className="editor-header" style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: theme.color.surface, borderBottom: `1px solid ${theme.color.border}`, zIndex: 20 }}>
+    <div
+      className="editor-header floating-panel"
+      style={{
+        flexShrink: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        background: theme.color.surface,
+        border: `1px solid ${theme.color.border}`,
+        borderRadius: theme.radius.xl,
+        boxShadow: '0 8px 32px rgba(0,0,0,.12)',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
+        zIndex: 20,
+        gap: 16,
+        transition: 'transform 200ms ease, opacity 200ms ease',
+        willChange: 'transform, opacity',
+      }}
+    >
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0 }}>
         <button type="button" onClick={() => navigate({ to: '/' })} aria-label="Retour à l'accueil" style={{ display: 'flex', alignItems: 'center', gap: 9, cursor: 'pointer', background: 'none', border: 'none', padding: 0, margin: 0 }}>
           <div style={{ width: 30, height: 30, borderRadius: 9, background: theme.color.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: theme.shadow.btn }}>

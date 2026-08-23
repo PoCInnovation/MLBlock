@@ -8,15 +8,11 @@ const COLORS: Record<string, string> = { sys: 'var(--color-text)', info: 'var(--
 
 const ConsolePanel = memo(function ConsolePanel() {
   const consoleLines = useAppStore(s => s.consoleLines)
-  // Sélecteur minimal : le statut du run est synchronisé dans le store par le
-  // suivi du job (useBlockRunner) — plus de flag d'exécution côté store.
   const jobStatus    = useAppStore(s => s.jobStatus)
   const [tab, setTab] = useState<'console' | 'results'>('console')
-  // Repli (tab) : barre de titre seule — lisible sur petit écran.
   const [collapsed, setCollapsed] = useState(false)
   const scrollRef    = useRef<HTMLDivElement>(null)
 
-  // Job en cours d'exécution (suivi actif) : indicateur + autoscroll.
   const active = jobStatus === 'queued' || jobStatus === 'dispatched' || jobStatus === 'running'
   const done   = jobStatus === 'done'
 
@@ -26,16 +22,22 @@ const ConsolePanel = memo(function ConsolePanel() {
     }
   }, [consoleLines, active, collapsed])
 
-  if (consoleLines.length === 0) return null
+  // Console still renders empty placeholder when no lines — floating panel
+  // stays visible (no crash), only content area empty.
 
   return (
-    <div className="console-panel" style={{
-      position: 'absolute', left: 18, right: 18, bottom: 18, height: collapsed ? 'auto' : 196,
+    <div className="console-panel floating-panel console-collapsible" style={{
       background: 'var(--color-console)', border: '1px solid rgba(255,255,255,.09)',
-      borderRadius: 16, boxShadow: '0 20px 60px rgba(0,0,0,.55)',
+      borderRadius: theme.radius.xl, boxShadow: '0 8px 32px rgba(0,0,0,.12)',
+      backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
       display: 'flex', flexDirection: 'column', overflow: 'hidden',
+      height: collapsed ? 48 : 180,
+      opacity: 1,
+      transition: 'height 200ms ease, opacity 200ms ease, transform 200ms ease',
+      willChange: 'height, opacity, transform',
+      flexShrink: 0,
     }}>
-      <div className="console-header" style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 16px', borderBottom: '1px solid rgba(255,255,255,.07)' }}>
+      <div className="console-header" style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 16px', borderBottom: collapsed ? 'none' : '1px solid rgba(255,255,255,.07)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: active ? theme.color.warning : theme.color.status, animation: active ? 'mlbBlink 1s ease-in-out infinite' : 'none', display: 'inline-block' }} />
           <span style={{ fontWeight: 800, fontSize: 13.5, letterSpacing: '.02em' }}>Ce qui se passe</span>
@@ -86,11 +88,15 @@ const ConsolePanel = memo(function ConsolePanel() {
           role="log"
           aria-live="polite"
           aria-label="Sortie de la console"
-          style={{ flex: 1, overflowY: 'auto', padding: '12px 16px', fontFamily: 'ui-monospace, monospace', fontSize: 13, lineHeight: 1.7 }}
+          style={{ flex: 1, overflowY: 'auto', padding: '12px 16px', fontFamily: 'ui-monospace, monospace', fontSize: 13, lineHeight: 1.7, opacity: 1, transition: 'opacity 200ms ease' }}
         >
-          {consoleLines.map((line, i) => (
-            <div key={i} style={{ color: COLORS[line.k] || '#a89f97' }}>{line.t}</div>
-          ))}
+          {consoleLines.length === 0 ? (
+            <div style={{ color: theme.color.textMuted, fontStyle: 'italic' }}>Aucune sortie — lance un pipeline pour voir les logs.</div>
+          ) : (
+            consoleLines.map((line, i) => (
+              <div key={i} style={{ color: COLORS[line.k] || '#a89f97' }}>{line.t}</div>
+            ))
+          )}
         </div>
       ))}
     </div>

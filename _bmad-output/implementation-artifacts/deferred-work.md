@@ -49,3 +49,12 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-astryx-non-canvas-ui.md`
   summary: Add disabled/loading contract test for Astryx Button across Projects/Login
   evidence: Button isDisabled/isLoading/tooltip props have no test — project limit bypass or double-submit could ship.
+- source_spec: `_bmad-output/implementation-artifacts/spec-floating-editor.md`
+  summary: Add visual test for floating editor outer centered and panels rounded 20
+  evidence: Floating layout (maxWidth 1440, gap 16, rounded 20, backdrop blur) has no visual regression test — unstyled or mis-centered render would ship undetected.
+- source_spec: `_bmad-output/implementation-artifacts/spec-floating-editor.md`
+  summary: Add interaction test for InspectorPanel placeholder and selection
+  evidence: InspectorPanel shows "Sélectionne un bloc" placeholder and selected node details with no test — blank inspector or missing selection would ship undetected.
+- source_spec: `_bmad-output/implementation-artifacts/spec-floating-editor.md`
+  summary: Add test for ConsolePanel always-render and height animation
+  evidence: ConsolePanel now always renders with placeholder and animated height 48↔180, previously returned null when empty — no test verifies placeholder vs logs and prefers-reduced-motion handling.

@@ -283,10 +283,21 @@
     display: flex;
     position: fixed;
     top: 0;
-    right: 0;
+    left: 0;
     bottom: 0;
     width: min(300px, 85vw);
     z-index: 50;
+    border-radius: 20px;
+    transform: translateX(0);
+    opacity: 1;
+    transition: transform 200ms ease, opacity 200ms ease;
+    will-change: transform, opacity;
+  }
+  .inspector-panel {
+    display: none;
+  }
+  .editor-outer {
+    padding: 8px;
   }
   /* Nom du projet : tronqué avec ellipsis seulement en mobile (le desktop
      affichait déjà les noms longs en entier). */
@@ -307,6 +318,48 @@
   .landing-nav-menu { display: block; }
 }
 
+/* ===== Floating editor : panneaux flottants arrondis 20px, animés ===== */
+@layer components {
+  .floating-panel {
+    border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: transform 200ms ease, opacity 200ms ease, box-shadow 200ms ease, height 200ms ease;
+    will-change: transform, opacity;
+  }
+  .floating-canvas {
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  }
+  /* Animation d'entrée des panneaux (opacity + légère translation) */
+  .floating-enter {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  .floating-enter-active {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  /* Console : hauteur animée 0 ↔ 180px sans jank (transition interrompue proprement) */
+  .console-collapsible {
+    overflow: hidden;
+    transition: height 200ms ease, opacity 200ms ease;
+    will-change: height, opacity;
+  }
+  .editor-outer {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-height: 100vh;
+    width: 100%;
+    box-sizing: border-box;
+  }
+}
 /* Handles tactiles ≥ 24px (WCAG 2.5.8) : pointer coarse couvre les
    appareils tactiles. Règles DANS @layer utilities : pour les déclarations
    !important les règles en layer l'emportent sur les règles hors layer
@@ -315,5 +368,24 @@
 @layer utilities {
   @media (pointer: coarse) {
     .react-flow__handle { width: 24px !important; height: 24px !important; }
+  }
+  /* ReactFlow Controls/MiniMap flottants arrondis */
+  .react-flow__controls {
+    border-radius: 20px !important;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  .react-flow__minimap {
+    border-radius: 20px !important;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12) !important;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .floating-panel, .floating-canvas, .console-collapsible, .flow-palette, .palette-drawer {
+      transition: none !important;
+      animation: none !important;
+    }
   }
 }

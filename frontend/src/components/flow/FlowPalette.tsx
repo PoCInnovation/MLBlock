@@ -6,14 +6,20 @@ import { shouldIgnoreTap } from '../../utils/tapGuard'
 import { theme } from '../../theme'
 
 const paletteStyle: React.CSSProperties = {
-  width: 260,
+  width: 280,
   flexShrink: 0,
   height: '100%',
   background: theme.color.surface2,
-  borderRight: `1px solid ${theme.color.border}`,
+  border: `1px solid ${theme.color.border}`,
+  borderRadius: theme.radius.xl,
+  boxShadow: '0 8px 32px rgba(0,0,0,.12)',
+  backdropFilter: 'blur(8px)',
   display: 'flex',
   flexDirection: 'column',
   minHeight: 0,
+  overflow: 'hidden',
+  transition: 'transform 200ms ease, opacity 200ms ease',
+  willChange: 'transform, opacity',
 }
 
 const headerStyle: React.CSSProperties = {
@@ -167,7 +173,7 @@ const FlowPalette = memo(function FlowPalette({ onDragStart, onAdd, onClose }: F
   const hasAnyMatch = Object.keys(catalog.blocks).some(matches)
 
   return (
-    <div style={paletteStyle}>
+    <div style={paletteStyle} className="floating-panel flow-palette-inner">
       <div style={headerStyle}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span>Blocs</span>

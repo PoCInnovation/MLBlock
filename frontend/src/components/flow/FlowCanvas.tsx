@@ -23,7 +23,6 @@ import { theme } from '../../theme'
 import BlockNode from './BlockNode'
 import FlowLink from './FlowLink'
 import FlowPalette from './FlowPalette'
-import ConsolePanel from '../ui/ConsolePanel'
 import { segsToFields } from '../../utils/flowConversion'
 import { buildConversionGraph, classifyEdge, converterFor, portDtype } from '../../utils/typeCheck'
 import { resolveConnection, type ResolvedConnection } from '../../utils/portResolution'
@@ -35,6 +34,7 @@ const edgeTypes = { flow: FlowLink }
 
 const reactFlowStyle: React.CSSProperties = {
   background: theme.color.canvas,
+  borderRadius: 20,
 }
 
 const edgeColor: Record<string, string> = {
@@ -359,13 +359,25 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
   )
 
   return (
-    <div style={{ flex: 1, position: 'relative', display: 'flex', minWidth: 0, minHeight: 0, height: '100%' }}>
+    <div style={{ flex: 1, position: 'relative', display: 'flex', gap: 16, minWidth: 0, minHeight: 0, height: '100%' }}>
       {/* Palette : sidebar fixe ≥768px, masquée en mobile (tiroir ci-dessous).
           La sidebar n'a PAS de onAdd : le tap-to-add est mobile uniquement. */}
       <div className="flow-palette">
         <FlowPalette onDragStart={onDragStart} />
       </div>
-      <div ref={wrapperRef} style={{ flex: 1, height: '100%' }}>
+      <div
+        ref={wrapperRef}
+        className="floating-panel floating-canvas"
+        style={{
+          flex: 1,
+          height: '100%',
+          borderRadius: theme.radius.xl,
+          overflow: 'hidden',
+          boxShadow: '0 8px 32px rgba(0,0,0,.12)',
+          minWidth: 0,
+          position: 'relative',
+        }}
+      >
         <ReactFlow
           nodes={flowNodes}
           edges={renderEdges}
@@ -381,23 +393,39 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
           fitView
           fitViewOptions={{ padding: 0.2 }}
         >
-          <Controls>
+          <Controls
+            style={{
+              borderRadius: theme.radius.xl,
+              overflow: 'hidden',
+              boxShadow: '0 8px 32px rgba(0,0,0,.12)',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
+            }}
+            className="floating-panel"
+          >
             <ControlButton
               onClick={handleArrange}
               title="Disposer"
               aria-label="Disposer les blocs automatiquement"
               disabled={flowNodes.length < 2}
-              // Les icônes lucide utilisent currentColor ; sans couleur explicite
-              // le bouton hérite du texte clair du canvas (blanc sur blanc).
               style={{ color: '#1a192b' }}
             >
               <AlignVerticalJustifyCenter size={18} />
             </ControlButton>
           </Controls>
-          <MiniMap />
+          <MiniMap
+            style={{
+              borderRadius: theme.radius.xl,
+              overflow: 'hidden',
+              boxShadow: '0 8px 32px rgba(0,0,0,.12)',
+            }}
+            className="floating-panel"
+          />
           <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
         </ReactFlow>
       </div>
+      {/* Inspector : panneau flottant droit 260px, placeholder si rien sélectionné */}
+      <InspectorPanel />
       {/* Bouton d'ouverture de la palette (mobile uniquement, cf. index.css). */}
       <button
         ref={paletteToggleRef}
@@ -425,21 +453,100 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
           <div
             ref={paletteDrawerRef}
             id="flow-palette-drawer"
-            className="palette-drawer"
+            className="palette-drawer floating-panel"
             role="dialog"
             aria-modal="true"
             aria-label="Palette de blocs"
             tabIndex={-1}
+            style={{
+              borderRadius: theme.radius.xl,
+              boxShadow: '0 8px 32px rgba(0,0,0,.12)',
+              backdropFilter: 'blur(8px)',
+              overflow: 'hidden',
+              transition: 'transform 200ms ease, opacity 200ms ease',
+              willChange: 'transform, opacity',
+            }}
           >
             <FlowPalette onDragStart={onDragStart} onAdd={addNodeAtCenter} onClose={() => setPaletteOpen(false)} />
           </div>
         </>
       )}
-      <ConsolePanel />
     </div>
   )
 })
 
+/** Inspector flottant droit 260px : placeholder si aucun nœud sélectionné, sinon détails du bloc. */
+function InspectorPanel() {
+  const flowNodes = useAppStore(s => s.flowNodes)
+  const catalog = useAppStore(s => s.catalog)
+  const selected = flowNodes.find(n => n.selected)
+  const data = selected?.data as { label?: string; type?: string; category?: string } | undefined
+  const def = data?.type ? catalog?.blocks[data.type] : undefined
+  return (
+    <div
+      className="floating-panel inspector-panel"
+      style={{
+        width: 260,
+        flexShrink: 0,
+        background: theme.color.surface2,
+        border: `1px solid ${theme.color.border}`,
+        borderRadius: theme.radius.xl,
+        boxShadow: '0 8px 32px rgba(0,0,0,.12)',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: 0,
+        overflow: 'hidden',
+        transition: 'transform 200ms ease, opacity 200ms ease',
+        willChange: 'transform, opacity',
+      }}
+    >
+      <div style={{ padding: '14px 16px', borderBottom: `1px solid ${theme.color.border}`, fontWeight: 800, fontSize: 14 }}>
+        Inspecteur
+      </div>
+      <div
+        style={{
+          flex: 1,
+          padding: 16,
+          overflowY: 'auto',
+          opacity: 1,
+          transition: 'opacity 200ms ease, transform 200ms ease',
+          willChange: 'opacity, transform',
+        }}
+      >
+        {!selected ? (
+          <div style={{ color: theme.color.textMuted, fontSize: 13, fontWeight: 600, textAlign: 'center', padding: '18px 6px', opacity: 1, transition: 'opacity 200ms ease' }}>
+            Sélectionne un bloc
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, opacity: 1, transition: 'opacity 200ms ease' }}>
+            <div style={{ fontWeight: 800, fontSize: 15, color: theme.color.text }}>{data?.label ?? selected.id}</div>
+            {data?.type && <div style={{ fontSize: 12, color: theme.color.textMuted }}>{data.type}</div>}
+            {data?.category && <div style={{ fontSize: 12, color: theme.color.textMuted }}>Catégorie : {data.category}</div>}
+            {def?.description && <div style={{ fontSize: 13, color: theme.color.textLight, lineHeight: 1.5 }}>{def.description}</div>}
+            {def?.inputs?.length ? (
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 12, color: theme.color.textMuted, marginBottom: 4 }}>Entrées</div>
+                {def.inputs.map(p => (
+                  <div key={p.name} style={{ fontSize: 12, color: theme.color.textLight }}>{p.name} · {p.dtype}</div>
+                ))}
+              </div>
+            ) : null}
+            {def?.outputs?.length ? (
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 12, color: theme.color.textMuted, marginBottom: 4 }}>Sorties</div>
+                {def.outputs.map(p => (
+                  <div key={p.name} style={{ fontSize: 12, color: theme.color.textLight }}>{p.name} · {p.dtype}</div>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
 export default function FlowCanvas() {
   return (
     <ReactFlowProvider>
