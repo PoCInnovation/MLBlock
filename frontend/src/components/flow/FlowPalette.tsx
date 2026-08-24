@@ -4,22 +4,24 @@ import useAppStore from '../../store/useAppStore'
 import { colorFor } from '../../utils/blockHelpers'
 import { shouldIgnoreTap } from '../../utils/tapGuard'
 import { theme } from '../../theme'
+import { ToggleButtonGroup, ToggleButton } from '@astryxdesign/core'
+import { ClickableCard } from '@astryxdesign/core'
 
 const paletteStyle: React.CSSProperties = {
   width: 280,
-  flexShrink: 0,
-  height: '100%',
+  display: 'flex',
+  flexDirection: 'column',
+  minHeight: 0,
+  maxHeight: '100%',
+  flex: '1 1 0',
   background: theme.color.surface2,
   border: `1px solid ${theme.color.border}`,
   borderRadius: theme.radius.xl,
   boxShadow: '0 8px 32px rgba(0,0,0,.12)',
   backdropFilter: 'blur(8px)',
-  display: 'flex',
-  flexDirection: 'column',
-  minHeight: 0,
   overflow: 'hidden',
-  transition: 'transform 200ms ease, opacity 200ms ease',
-  willChange: 'transform, opacity',
+  transition: 'transform 200ms ease, opacity 200ms ease, width 200ms ease',
+  willChange: 'transform, opacity, width',
 }
 
 const headerStyle: React.CSSProperties = {
@@ -193,11 +195,19 @@ const FlowPalette = memo(function FlowPalette({ onDragStart, onAdd, onClose }: F
           placeholder="Rechercher un bloc…"
           style={searchInputStyle}
         />
-        <div style={chipsStyle}>
-          <button style={chipStyle(cat === 'all')} onClick={() => setCat('all')}>Tous</button>
-          {categories.map(c => (
-            <button key={c.id} style={chipStyle(cat === c.id)} onClick={() => setCat(c.id)}>{c.name}</button>
-          ))}
+        <div style={{ marginTop: 10 }}>
+          <ToggleButtonGroup
+            type="single"
+            label="Catégories"
+            value={cat}
+            onChange={(v) => setCat((v as string) || 'all')}
+            size="sm"
+          >
+            <ToggleButton label="Tous" value="all" />
+            {categories.map(c => (
+              <ToggleButton key={c.id} label={c.name} value={c.id} />
+            ))}
+          </ToggleButtonGroup>
         </div>
       </div>
       <div style={scrollStyle}>
@@ -216,21 +226,26 @@ const FlowPalette = memo(function FlowPalette({ onDragStart, onAdd, onClose }: F
                 const def = catalog.blocks[type]
                 const label = def.segs.find(s => s.t === 'text')?.v ?? type
                 return (
-                  <div
+                  <ClickableCard
                     key={type}
-                    draggable
-                    role="button"
-                    tabIndex={0}
-                    onDragStart={e => { dragStarted.current = true; onDragStart(e, type) }}
-                    onPointerDown={e => { dragStarted.current = false; pressStart.current = { x: e.clientX, y: e.clientY } }}
-                    onClick={e => handleItemClick(type, e)}
-                    onKeyDown={e => handleItemKeyDown(type, e)}
-                    style={itemStyle}
-                    title={def.description || undefined}
+                    label={label}
+                    onClick={(e) => handleItemClick(type, e as unknown as React.MouseEvent)}
+                    padding={2}
                   >
-                    <span style={dotStyle(colorFor(c.id, categories))} />
-                    <span>{label}</span>
-                  </div>
+                    <div
+                      draggable
+                      onDragStart={e => { dragStarted.current = true; onDragStart(e, type) }}
+                      onPointerDown={e => { dragStarted.current = false; pressStart.current = { x: e.clientX, y: e.clientY } }}
+                      onKeyDown={e => handleItemKeyDown(type, e)}
+                      style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', cursor: 'grab' }}
+                      title={def.description || undefined}
+                      role="button"
+                      tabIndex={0}
+                    >
+                      <span style={dotStyle(colorFor(c.id, categories))} />
+                      <span style={{ fontSize: 13, fontWeight: 700, color: theme.color.text }}>{label}</span>
+                    </div>
+                  </ClickableCard>
                 )
               })}
             </div>

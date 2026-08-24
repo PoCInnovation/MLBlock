@@ -16,10 +16,11 @@ import {
   type EdgeChange,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { AlignVerticalJustifyCenter, Menu } from 'lucide-react'
+import { AlignVerticalJustifyCenter, Menu, PanelLeft, PanelRight, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useShallow } from 'zustand/react/shallow'
 import useAppStore from '../../store/useAppStore'
 import { theme } from '../../theme'
+import { IconButton } from '@astryxdesign/core'
 import BlockNode from './BlockNode'
 import FlowLink from './FlowLink'
 import FlowPalette from './FlowPalette'
@@ -28,7 +29,6 @@ import { buildConversionGraph, classifyEdge, converterFor, portDtype } from '../
 import { resolveConnection, type ResolvedConnection } from '../../utils/portResolution'
 import { arrangeGraph } from '../../utils/layout'
 import type { Port } from '../../types/catalog'
-
 const nodeTypes = { block: BlockNode }
 const edgeTypes = { flow: FlowLink }
 
@@ -80,13 +80,14 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
   const fitViewTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   // Tiroir palette mobile (overlay) — desktop : jamais ouvert, bouton caché.
   const [paletteOpen, setPaletteOpen] = useState(false)
+  const [leftCollapsed, setLeftCollapsed] = useState(false)
+  const [rightCollapsed, setRightCollapsed] = useState(false)
   // Compteur de taps : décale les ajouts successifs pour éviter l'empilement
   // exact au centre (le premier reste centré).
   const tapSeq = useRef(0)
   const paletteToggleRef = useRef<HTMLButtonElement>(null)
   const paletteDrawerRef = useRef<HTMLDivElement>(null)
   const wasOpenRef = useRef(false)
-
   useEffect(() => {
     return () => {
       if (fitViewTimerRef.current) clearTimeout(fitViewTimerRef.current)
@@ -360,10 +361,33 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
 
   return (
     <div style={{ flex: 1, position: 'relative', display: 'flex', gap: 16, minWidth: 0, minHeight: 0, height: '100%' }}>
-      {/* Palette : sidebar fixe ≥768px, masquée en mobile (tiroir ci-dessous).
-          La sidebar n'a PAS de onAdd : le tap-to-add est mobile uniquement. */}
-      <div className="flow-palette">
-        <FlowPalette onDragStart={onDragStart} />
+      {/* Palette gauche repliable avec IconButton et ToggleButtonGroup pour catégories */}
+      <div
+        className="flow-palette"
+        style={{
+          width: leftCollapsed ? 48 : 280,
+          flexShrink: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 8,
+          transition: 'width 200ms ease, opacity 200ms ease',
+          overflow: 'hidden',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: leftCollapsed ? 'center' : 'flex-end', padding: 4 }}>
+          <IconButton
+            label={leftCollapsed ? 'Ouvrir la palette' : 'Replier la palette'}
+            icon={leftCollapsed ? <PanelRight size={16} /> : <PanelLeft size={16} />}
+            variant="ghost"
+            size="sm"
+            onClick={() => setLeftCollapsed(v => !v)}
+          />
+        </div>
+        {!leftCollapsed && (
+          <div style={{ flex: 1, minHeight: 0, display: 'flex' }}>
+            <FlowPalette onDragStart={onDragStart} />
+          </div>
+        )}
       </div>
       <div
         ref={wrapperRef}
@@ -424,9 +448,29 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
           <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
         </ReactFlow>
       </div>
-      {/* Inspector : panneau flottant droit 260px, placeholder si rien sélectionné */}
-      <InspectorPanel />
-      {/* Bouton d'ouverture de la palette (mobile uniquement, cf. index.css). */}
+      {/* Inspector droit repliable avec IconButton */}
+      <div
+        style={{
+          width: rightCollapsed ? 48 : 260,
+          flexShrink: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 8,
+          transition: 'width 200ms ease, opacity 200ms ease',
+          overflow: 'hidden',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: rightCollapsed ? 'center' : 'flex-start', padding: 4 }}>
+          <IconButton
+            label={rightCollapsed ? 'Ouvrir inspecteur' : 'Replier inspecteur'}
+            icon={rightCollapsed ? <PanelLeft size={16} /> : <PanelRight size={16} />}
+            variant="ghost"
+            size="sm"
+            onClick={() => setRightCollapsed(v => !v)}
+          />
+        </div>
+        {!rightCollapsed && <InspectorPanel />}
+      </div>
       <button
         ref={paletteToggleRef}
         className="palette-toggle"
