@@ -1,5 +1,6 @@
 @layer reset, theme, base, astryx-base, astryx-theme, components, utilities;
 @import "tailwindcss";
+@stylex;
 
 /* Tokens du design system (src/theme.ts) exposés en variables CSS.
    Génère les classes utilitaires (bg-surface2, text-text-muted…) et

@@ -9,7 +9,9 @@ import { getSession, onAuthStateChange } from './services/auth'
 import { toServerPayload } from './utils/blockHelpers'
 import { writeStash } from './utils/pending-stash'
 import { routeTree } from './routeTree.gen'
+import '@astryxdesign/core/reset.css'
 import '@astryxdesign/core/astryx.css'
+import '@astryxdesign/theme-neutral/theme.css'
 import './index.css'
 const router = createRouter({ routeTree })
 
