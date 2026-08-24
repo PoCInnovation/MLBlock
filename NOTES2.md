@@ -1,6 +1,0 @@
-- [x] Revenir en arriere, revenir en avant (undo/redo : 2 piles de 50, Ctrl+Z / Shift+Z / Y)
-- [ ] Mobile first 
-- [ ] Template de modles pour que les gens partent d'une base pour la modifier 
-- [x] Premiere lettre des catégories en majuscule 
-- [x] Gestion d'érreur par le gpu (job vide {} corrigé, erreur affichée, polling arrêté sur 4xx)
-- [x] Vue grille kanban : colonnes/rows, drag+snap, règle gauche→droite, colonnes générées auto, cartes auto-size au contenu, colonne 0 fixe, liens routés par couloirs au-dessus des blocs

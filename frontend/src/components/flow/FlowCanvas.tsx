@@ -361,7 +361,7 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
 
   return (
     <div style={{ flex: 1, position: 'relative', display: 'flex', gap: 16, minWidth: 0, minHeight: 0, height: '100%' }}>
-      {/* Palette gauche repliable avec IconButton et ToggleButtonGroup pour catégories */}
+      {/* Palette gauche : bouton repli en haut à droite *dans* la sidebar, instant */}
       <div
         className="flow-palette"
         style={{
@@ -369,32 +369,48 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
           flexShrink: 0,
           display: 'flex',
           flexDirection: 'column',
-          gap: 8,
-          transition: 'width 200ms ease, opacity 200ms ease',
           overflow: 'hidden',
+          transition: 'none',
+          position: 'relative',
         }}
       >
-        <div style={{ display: 'flex', justifyContent: leftCollapsed ? 'center' : 'flex-end', padding: 4 }}>
+        <div
+          style={{
+            position: 'absolute',
+            top: 6,
+            left: 0,
+            right: 0,
+            display: leftCollapsed ? 'flex' : 'none',
+            justifyContent: 'center',
+            zIndex: 2,
+          }}
+        >
           <IconButton
-            label={leftCollapsed ? 'Ouvrir la palette' : 'Replier la palette'}
-            icon={leftCollapsed ? <PanelRight size={16} /> : <PanelLeft size={16} />}
+            label="Ouvrir la palette"
+            icon={<PanelRight size={16} />}
             variant="ghost"
             size="sm"
-            onClick={() => setLeftCollapsed(v => !v)}
+            onClick={() => setLeftCollapsed(false)}
           />
         </div>
-        {!leftCollapsed && (
-          <div style={{ flex: 1, minHeight: 0, display: 'flex' }}>
-            <FlowPalette onDragStart={onDragStart} />
-          </div>
-        )}
+        <div
+          style={{
+            flex: 1,
+            minHeight: 0,
+            display: leftCollapsed ? 'none' : 'flex',
+          }}
+        >
+          <FlowPalette onDragStart={onDragStart} onToggleCollapse={() => setLeftCollapsed(true)} />
+        </div>
       </div>
       <div
         ref={wrapperRef}
         className="floating-panel floating-canvas"
         style={{
           flex: 1,
-          height: '100%',
+          alignSelf: 'stretch',
+          height: 'auto',
+          minHeight: 0,
           borderRadius: theme.radius.xl,
           overflow: 'hidden',
           boxShadow: '0 8px 32px rgba(0,0,0,.12)',
@@ -448,28 +464,46 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
           <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
         </ReactFlow>
       </div>
-      {/* Inspector droit repliable avec IconButton */}
+      {/* Inspector droit : bouton repli en haut à gauche *dans* la sidebar, instant */}
       <div
         style={{
           width: rightCollapsed ? 48 : 260,
           flexShrink: 0,
           display: 'flex',
           flexDirection: 'column',
-          gap: 8,
-          transition: 'width 200ms ease, opacity 200ms ease',
           overflow: 'hidden',
+          transition: 'none',
+          position: 'relative',
         }}
       >
-        <div style={{ display: 'flex', justifyContent: rightCollapsed ? 'center' : 'flex-start', padding: 4 }}>
+        <div
+          style={{
+            position: 'absolute',
+            top: 6,
+            left: 0,
+            right: 0,
+            display: rightCollapsed ? 'flex' : 'none',
+            justifyContent: 'center',
+            zIndex: 2,
+          }}
+        >
           <IconButton
-            label={rightCollapsed ? 'Ouvrir inspecteur' : 'Replier inspecteur'}
-            icon={rightCollapsed ? <PanelLeft size={16} /> : <PanelRight size={16} />}
+            label="Ouvrir inspecteur"
+            icon={<PanelLeft size={16} />}
             variant="ghost"
             size="sm"
-            onClick={() => setRightCollapsed(v => !v)}
+            onClick={() => setRightCollapsed(false)}
           />
         </div>
-        {!rightCollapsed && <InspectorPanel />}
+        <div
+          style={{
+            flex: 1,
+            minHeight: 0,
+            display: rightCollapsed ? 'none' : 'flex',
+          }}
+        >
+          <InspectorPanel onToggleCollapse={() => setRightCollapsed(true)} />
+        </div>
       </div>
       <button
         ref={paletteToggleRef}
@@ -507,8 +541,6 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
               boxShadow: '0 8px 32px rgba(0,0,0,.12)',
               backdropFilter: 'blur(8px)',
               overflow: 'hidden',
-              transition: 'transform 200ms ease, opacity 200ms ease',
-              willChange: 'transform, opacity',
             }}
           >
             <FlowPalette onDragStart={onDragStart} onAdd={addNodeAtCenter} onClose={() => setPaletteOpen(false)} />
@@ -520,7 +552,7 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
 })
 
 /** Inspector flottant droit 260px : placeholder si aucun nœud sélectionné, sinon détails du bloc. */
-function InspectorPanel() {
+function InspectorPanel({ onToggleCollapse }: { onToggleCollapse?: () => void }) {
   const flowNodes = useAppStore(s => s.flowNodes)
   const catalog = useAppStore(s => s.catalog)
   const selected = flowNodes.find(n => n.selected)
@@ -542,29 +574,34 @@ function InspectorPanel() {
         flexDirection: 'column',
         minHeight: 0,
         overflow: 'hidden',
-        transition: 'transform 200ms ease, opacity 200ms ease',
-        willChange: 'transform, opacity',
+        transition: 'none',
       }}
     >
-      <div style={{ padding: '14px 16px', borderBottom: `1px solid ${theme.color.border}`, fontWeight: 800, fontSize: 14 }}>
-        Inspecteur
+      <div style={{ padding: '14px 16px', borderBottom: `1px solid ${theme.color.border}`, display: 'flex', alignItems: 'center', gap: 8 }}>
+        {onToggleCollapse && (
+          <IconButton
+            label="Replier inspecteur"
+            icon={<PanelRight size={16} />}
+            variant="ghost"
+            size="sm"
+            onClick={onToggleCollapse}
+          />
+        )}
+        <span style={{ fontWeight: 800, fontSize: 14 }}>Inspecteur</span>
       </div>
       <div
         style={{
           flex: 1,
           padding: 16,
           overflowY: 'auto',
-          opacity: 1,
-          transition: 'opacity 200ms ease, transform 200ms ease',
-          willChange: 'opacity, transform',
         }}
       >
         {!selected ? (
-          <div style={{ color: theme.color.textMuted, fontSize: 13, fontWeight: 600, textAlign: 'center', padding: '18px 6px', opacity: 1, transition: 'opacity 200ms ease' }}>
+          <div style={{ color: theme.color.textMuted, fontSize: 13, fontWeight: 600, textAlign: 'center', padding: '18px 6px' }}>
             Sélectionne un bloc
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, opacity: 1, transition: 'opacity 200ms ease' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <div style={{ fontWeight: 800, fontSize: 15, color: theme.color.text }}>{data?.label ?? selected.id}</div>
             {data?.type && <div style={{ fontSize: 12, color: theme.color.textMuted }}>{data.type}</div>}
             {data?.category && <div style={{ fontSize: 12, color: theme.color.textMuted }}>Catégorie : {data.category}</div>}

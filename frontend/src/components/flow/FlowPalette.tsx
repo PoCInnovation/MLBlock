@@ -1,29 +1,27 @@
 import { memo, useRef, useState } from 'react'
-import { X } from 'lucide-react'
+import { X, PanelLeft, PanelRight, ChevronDown, ChevronUp } from 'lucide-react'
 import useAppStore from '../../store/useAppStore'
 import { colorFor } from '../../utils/blockHelpers'
 import { shouldIgnoreTap } from '../../utils/tapGuard'
 import { theme } from '../../theme'
-import { ToggleButtonGroup, ToggleButton } from '@astryxdesign/core'
-import { ClickableCard } from '@astryxdesign/core'
+import { ToggleButtonGroup, ToggleButton, Grid, ClickableCard, IconButton } from '@astryxdesign/core'
 
 const paletteStyle: React.CSSProperties = {
   width: 280,
+  flexShrink: 0,
   display: 'flex',
   flexDirection: 'column',
   minHeight: 0,
-  maxHeight: '100%',
-  flex: '1 1 0',
+  maxHeight: 'calc(100vh - 220px)',
+  height: 'calc(100vh - 220px)',
   background: theme.color.surface2,
   border: `1px solid ${theme.color.border}`,
   borderRadius: theme.radius.xl,
   boxShadow: '0 8px 32px rgba(0,0,0,.12)',
   backdropFilter: 'blur(8px)',
   overflow: 'hidden',
-  transition: 'transform 200ms ease, opacity 200ms ease, width 200ms ease',
-  willChange: 'transform, opacity, width',
+  transition: 'none',
 }
-
 const headerStyle: React.CSSProperties = {
   padding: '14px 18px 12px',
   borderBottom: `1px solid ${theme.color.border}`,
@@ -75,6 +73,9 @@ const scrollStyle: React.CSSProperties = {
   flex: 1,
   overflowY: 'auto',
   padding: '14px 14px 28px',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 10,
 }
 
 const catStyle: React.CSSProperties = {
@@ -127,15 +128,17 @@ type FlowPaletteProps = {
   onAdd?: (type: string) => void
   /** Fermeture du tiroir mobile (affiche un bouton ✕ dans l'en-tête). */
   onClose?: () => void
+  /** Collapse toggle for desktop sidebar — affiche un bouton en haut à droite. */
+  onToggleCollapse?: () => void
+  /** État replié (pour icône). */
+  collapsed?: boolean
 }
 
-const FlowPalette = memo(function FlowPalette({ onDragStart, onAdd, onClose }: FlowPaletteProps) {
+const FlowPalette = memo(function FlowPalette({ onDragStart, onAdd, onClose, onToggleCollapse }: FlowPaletteProps) {
   const catalog = useAppStore(s => s.catalog)
   const [query, setQuery] = useState('')
   const [cat, setCat] = useState('all')
-  // Position du pointerdown : un vrai drag parcourt > 8px avant le click —
-  // on ignore alors le click post-drag (certains navigateurs l'émettent)
-  // pour ne pas créer de doublon avec le drop.
+  const [filtersOpen, setFiltersOpen] = useState(true)
   const pressStart = useRef<{ x: number; y: number } | null>(null)
   // Un drag HTML5 (même court, ≤8px) marque le flag : le click qui suit ne
   // doit pas ajouter de bloc (dragStarted est réinitialisé au pointerdown).
@@ -179,15 +182,26 @@ const FlowPalette = memo(function FlowPalette({ onDragStart, onAdd, onClose }: F
       <div style={headerStyle}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span>Blocs</span>
-          {onClose && (
-            <button
-              onClick={onClose}
-              aria-label="Fermer"
-              style={{ background: 'none', border: 'none', color: theme.color.textMuted, cursor: 'pointer', fontWeight: 900, fontSize: 16, width: 36, height: 36, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: 999 }}
-            >
-              <X size={17} />
-            </button>
-          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            {onToggleCollapse && (
+              <IconButton
+                label="Replier la palette"
+                icon={<PanelLeft size={16} />}
+                variant="ghost"
+                size="sm"
+                onClick={onToggleCollapse}
+              />
+            )}
+            {onClose && (
+              <button
+                onClick={onClose}
+                aria-label="Fermer"
+                style={{ background: 'none', border: 'none', color: theme.color.textMuted, cursor: 'pointer', fontWeight: 900, fontSize: 16, width: 36, height: 36, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: 999 }}
+              >
+                <X size={17} />
+              </button>
+            )}
+          </div>
         </div>
         <input
           value={query}
@@ -195,20 +209,34 @@ const FlowPalette = memo(function FlowPalette({ onDragStart, onAdd, onClose }: F
           placeholder="Rechercher un bloc…"
           style={searchInputStyle}
         />
-        <div style={{ marginTop: 10 }}>
-          <ToggleButtonGroup
-            type="single"
-            label="Catégories"
-            value={cat}
-            onChange={(v) => setCat((v as string) || 'all')}
+        <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: 12, fontWeight: 700, color: theme.color.textMuted }}>Filtres</span>
+          <IconButton
+            label={filtersOpen ? 'Replier les filtres' : 'Déplier les filtres'}
+            icon={filtersOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            variant="ghost"
             size="sm"
-          >
-            <ToggleButton label="Tous" value="all" />
-            {categories.map(c => (
-              <ToggleButton key={c.id} label={c.name} value={c.id} />
-            ))}
-          </ToggleButtonGroup>
+            onClick={() => setFiltersOpen(v => !v)}
+          />
         </div>
+        {filtersOpen && (
+          <div style={{ marginTop: 8 }}>
+            <ToggleButtonGroup
+              type="single"
+              label="Catégories"
+              value={cat}
+              onChange={(v) => setCat((v as string) || 'all')}
+              size="sm"
+            >
+              <Grid columns={2} gap={1.5}>
+                <ToggleButton label="Tous" value="all" />
+                {categories.map(c => (
+                  <ToggleButton key={c.id} label={c.name} value={c.id} />
+                ))}
+              </Grid>
+            </ToggleButtonGroup>
+          </div>
+        )}
       </div>
       <div style={scrollStyle}>
         {!hasAnyMatch && (
@@ -222,6 +250,7 @@ const FlowPalette = memo(function FlowPalette({ onDragStart, onAdd, onClose }: F
           return (
             <div key={c.id}>
               <div style={catStyle}>{c.name}</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {types.map(type => {
                 const def = catalog.blocks[type]
                 const label = def.segs.find(s => s.t === 'text')?.v ?? type
@@ -248,6 +277,7 @@ const FlowPalette = memo(function FlowPalette({ onDragStart, onAdd, onClose }: F
                   </ClickableCard>
                 )
               })}
+              </div>
             </div>
           )
         })}

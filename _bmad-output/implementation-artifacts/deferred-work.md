@@ -58,3 +58,9 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-floating-editor.md`
   summary: Add test for ConsolePanel always-render and height animation
   evidence: ConsolePanel now always renders with placeholder and animated height 48↔180, previously returned null when empty — no test verifies placeholder vs logs and prefers-reduced-motion handling.
+- source_spec: `_bmad-output/implementation-artifacts/spec-migrate-blocknode-to-astryx.md`
+  summary: Add a11y for BlockNode drag-handle and delete button
+  evidence: Review found drag-handle svg has no aria-label/role and delete button hard-codes French "Supprimer" with no block-name aria-label — pre-existing, not caused by Astryx Card migration, but surfaced.
+- source_spec: `_bmad-output/implementation-artifacts/spec-migrate-blocknode-to-astryx.md`
+  summary: Add visual regression for BlockNode Divider grid spanning
+  evidence: Vertical/horizontal Divider now uses Astryx Divider with style gridColumn/gridRow inside custom grid — build passes but no test asserts divider renders at correct row/col or forwards style.
