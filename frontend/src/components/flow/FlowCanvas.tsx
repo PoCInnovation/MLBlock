@@ -20,7 +20,7 @@ import { AlignVerticalJustifyCenter, Menu, PanelLeft, PanelRight, ChevronLeft, C
 import { useShallow } from 'zustand/react/shallow'
 import useAppStore from '../../store/useAppStore'
 import { theme } from '../../theme'
-import { IconButton, ToggleButtonGroup, ToggleButton, TextInput, Grid, ClickableCard, Button, Divider } from '@astryxdesign/core'
+import { IconButton, ToggleButtonGroup, ToggleButton, TextInput, Grid, ClickableCard, Button, Divider, Switch, HStack } from '@astryxdesign/core'
 import { Markdown } from '@astryxdesign/core'
 import { courses, getCourse } from '../../content/cours'
 import BlockNode from './BlockNode'
@@ -562,12 +562,13 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
   )
 })
 
-/** Inspector flottant droit 260px : placeholder si aucun nœud sélectionné, sinon détails du bloc. */
+/** Cours panel droit (mode Cours) : catalogue + markdown + watcher réactif sur le DAG caché. */
 function CoursPanel() {
   const [query, setQuery] = useState('')
   const [difficulty, setDifficulty] = useState('Tous')
   const [selected, setSelected] = useState<string | null>(null)
   const [idx, setIdx] = useState(0)
+  const [hintsEnabled, setHintsEnabled] = useState(true)
   const scrollRef = useRef<HTMLDivElement>(null)
   const course = selected ? getCourse(selected) : undefined
   const sections = course?.sections ?? []
@@ -587,11 +588,84 @@ function CoursPanel() {
     const el = scrollRef.current.querySelector(`#${CSS.escape(id)}`) ?? document.getElementById(id)
     if (el) { (el as HTMLElement).scrollIntoView({ behavior: 'auto', block: 'start' }); setIdx(i) }
   }
+  const { flowNodes, flowEdges } = useAppStore(useShallow(s => ({ flowNodes: s.flowNodes, flowEdges: s.flowEdges })))
+  const watcher = useMemo(() => {
+    if (!course || !hintsEnabled) return null
+    const expected = (course as unknown as { expected?: { nodes: { id: string; type: string }[]; edges: { from: string; fromPort?: string; to: string; toPort?: string }[]; hints: Record<string, string> } }).expected
+    if (!expected || !Array.isArray(expected.nodes) || !Array.isArray(expected.edges)) return null
+    function nodeType(n: Node): string | undefined {
+      const d = n.data
+      if (!d || typeof d !== 'object' || !('type' in d)) return undefined
+      const t = (d as Record<string, unknown>).type
+      return typeof t === 'string' ? t : undefined
+    }
+    const actualTypes = new Set(flowNodes.map(nodeType).filter((t): t is string => Boolean(t)))
+    const expectedTypes = new Set(expected.nodes.map(n => n.type))
+    const missing = [...expectedTypes].filter(t => !actualTypes.has(t))
+    const extra = [...actualTypes].filter(t => !expectedTypes.has(t))
+    const idToType = new Map(expected.nodes.map(n => [n.id, n.type] as const))
+    let edgeMismatch: { from: string; fromPort?: string; to: string; toPort?: string } | null = null
+    for (const e of expected.edges) {
+      const fromType = idToType.get(e.from)
+      const toType = idToType.get(e.to)
+      if (!fromType || !toType) continue
+      const found = flowEdges.some(fe => {
+        const sN = flowNodes.find(n => n.id === fe.source)
+        const tN = flowNodes.find(n => n.id === fe.target)
+        const sType = sN ? nodeType(sN) : undefined
+        const tType = tN ? nodeType(tN) : undefined
+        if (sType !== fromType || tType !== toType) return false
+        if (e.fromPort && fe.sourceHandle !== e.fromPort) return false
+        if (e.toPort && fe.targetHandle !== e.toPort) return false
+        return true
+      })
+      if (!found) { edgeMismatch = e; break }
+    }
+    if (missing.length === 0 && !edgeMismatch && extra.length === 0) return null
+    return { missing, extra, edgeMismatch, idToType }
+  }, [course, hintsEnabled, flowNodes, flowEdges])
+  let bannerText: string | null = null
+  if (watcher) {
+    if (watcher.missing.length) {
+      const t = watcher.missing[0]
+      const friendly = (course as unknown as { expected: { hints: Record<string, string> } }).expected.hints?.[t] ?? t
+      bannerText = `Ce n'est pas le bon bloc — attendu ${friendly}`
+    } else if (watcher.edgeMismatch) {
+      const e = watcher.edgeMismatch
+      const fromType = watcher.idToType.get(e.from) ?? e.from
+      const toType = watcher.idToType.get(e.to) ?? e.to
+      const actualEdge = flowEdges.find(fe => {
+        const sN = flowNodes.find(n => n.id === fe.source)
+        const tN = flowNodes.find(n => n.id === fe.target)
+        const sType = sN && typeof sN.data === 'object' && sN.data && 'type' in sN.data ? (sN.data as Record<string, unknown>).type : undefined
+        const tType = tN && typeof tN.data === 'object' && tN.data && 'type' in tN.data ? (tN.data as Record<string, unknown>).type : undefined
+        return sType === fromType && tType === toType
+      })
+      if (e.fromPort && actualEdge?.sourceHandle && actualEdge.sourceHandle !== e.fromPort) {
+        bannerText = `Mauvais branchement — ${fromType} doit aller vers ${toType} via ${e.fromPort}, pas ${actualEdge.sourceHandle}`
+      } else if (e.toPort && actualEdge?.targetHandle && actualEdge.targetHandle !== e.toPort) {
+        bannerText = `Mauvais branchement — ${fromType} doit aller vers ${toType} via ${e.toPort}, pas ${actualEdge.targetHandle}`
+      } else if (e.fromPort || e.toPort) {
+        const port = e.fromPort ?? e.toPort ?? 'port'
+        bannerText = `Mauvais branchement — ${fromType} → ${toType} via ${port}`
+      } else {
+        bannerText = `Mauvais branchement — ${fromType} → ${toType}`
+      }
+    } else if (watcher.extra.length) {
+      const t = watcher.extra[0]
+      bannerText = `Bloc inattendu — ${t} ne fait pas partie de ce cours`
+    }
+  }
   if (course) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12, minHeight: 0 }}>
         <button onClick={() => setSelected(null)} style={{ background: 'none', border: 'none', color: theme.color.textMuted, cursor: 'pointer', fontSize: 13, fontWeight: 700, textAlign: 'left', padding: 0 }}>← Retour au catalogue</button>
         <div style={{ fontWeight: 800, fontSize: 14, color: theme.color.text }}>{course.title}</div>
+        {bannerText ? (
+          <div style={{ background: `${theme.color.warning}18`, border: `1px solid ${theme.color.warning}`, borderRadius: 10, padding: '8px 10px', color: theme.color.warning, fontSize: 12, fontWeight: 700, lineHeight: 1.4 }}>
+            {bannerText}
+          </div>
+        ) : null}
         <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', minHeight: 0, maxHeight: 420, paddingRight: 2 }}>
           <Markdown>{course.body}</Markdown>
         </div>
@@ -604,6 +678,9 @@ function CoursPanel() {
             </div>
           </>
         ) : null}
+        <HStack gap={2} style={{ alignItems: 'center', paddingTop: 4 }}>
+          <Switch label={`Indices: ${hintsEnabled ? 'ON' : 'OFF'}`} value={hintsEnabled} onChange={setHintsEnabled} size="sm" />
+        </HStack>
       </div>
     )
   }
