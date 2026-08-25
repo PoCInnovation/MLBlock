@@ -20,7 +20,7 @@ import { AlignVerticalJustifyCenter, Menu, PanelLeft, PanelRight, ChevronLeft, C
 import { useShallow } from 'zustand/react/shallow'
 import useAppStore from '../../store/useAppStore'
 import { theme } from '../../theme'
-import { IconButton } from '@astryxdesign/core'
+import { IconButton, ToggleButtonGroup, ToggleButton } from '@astryxdesign/core'
 import BlockNode from './BlockNode'
 import FlowLink from './FlowLink'
 import FlowPalette from './FlowPalette'
@@ -82,6 +82,8 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
   const [paletteOpen, setPaletteOpen] = useState(false)
   const [leftCollapsed, setLeftCollapsed] = useState(false)
   const [rightCollapsed, setRightCollapsed] = useState(false)
+  const [rightMode, setRightMode] = useState<'cours' | 'inspecteur'>('inspecteur')
+  const hasOutputs = useAppStore(s => s.results.length > 0)
   // Compteur de taps : décale les ajouts successifs pour éviter l'empilement
   // exact au centre (le premier reste centré).
   const tapSeq = useRef(0)
@@ -502,7 +504,14 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
             display: rightCollapsed ? 'none' : 'flex',
           }}
         >
-          <InspectorPanel onToggleCollapse={() => setRightCollapsed(true)} />
+          <InspectorPanel
+            onToggleCollapse={() => setRightCollapsed(true)}
+            rightMode={rightMode}
+            onChangeMode={v => {
+              if (v) setRightMode(v as 'cours' | 'inspecteur')
+            }}
+            hasOutputs={hasOutputs}
+          />
         </div>
       </div>
       <button
@@ -552,12 +561,38 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
 })
 
 /** Inspector flottant droit 260px : placeholder si aucun nœud sélectionné, sinon détails du bloc. */
-function InspectorPanel({ onToggleCollapse }: { onToggleCollapse?: () => void }) {
+function CoursPlaceholder() {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div style={{ color: theme.color.textMuted, fontSize: 13, fontWeight: 600, textAlign: 'center', padding: '18px 6px' }}>
+        Aucun cours sélectionné
+      </div>
+      <div style={{ color: theme.color.textMuted, fontSize: 12, textAlign: 'center', padding: '4px 6px' }}>
+        Catalogue à venir
+      </div>
+    </div>
+  )
+}
+
+function InspectorPanel({
+  onToggleCollapse,
+  rightMode = 'inspecteur',
+  onChangeMode,
+  hasOutputs = false,
+}: {
+  onToggleCollapse?: () => void
+  rightMode?: 'cours' | 'inspecteur'
+  onChangeMode?: (v: string | null) => void
+  hasOutputs?: boolean
+}) {
   const flowNodes = useAppStore(s => s.flowNodes)
   const catalog = useAppStore(s => s.catalog)
+  const results = useAppStore(s => s.results)
   const selected = flowNodes.find(n => n.selected)
   const data = selected?.data as { label?: string; type?: string; category?: string } | undefined
   const def = data?.type ? catalog?.blocks[data.type] : undefined
+  const count = results.length
+  const inspecteurLabel = count > 0 ? (count > 1 ? `Inspecteur •${count}` : 'Inspecteur •') : hasOutputs ? 'Inspecteur •' : 'Inspecteur'
   return (
     <div
       className="floating-panel inspector-panel"
@@ -577,17 +612,36 @@ function InspectorPanel({ onToggleCollapse }: { onToggleCollapse?: () => void })
         transition: 'none',
       }}
     >
-      <div style={{ padding: '14px 16px', borderBottom: `1px solid ${theme.color.border}`, display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div
+        style={{
+          padding: '10px 12px',
+          borderBottom: `1px solid ${theme.color.border}`,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+        }}
+      >
         {onToggleCollapse && (
           <IconButton
-            label="Replier inspecteur"
+            label="Replier"
             icon={<PanelRight size={16} />}
             variant="ghost"
             size="sm"
             onClick={onToggleCollapse}
           />
         )}
-        <span style={{ fontWeight: 800, fontSize: 14 }}>Inspecteur</span>
+        <ToggleButtonGroup
+          type="single"
+          label="Mode"
+          value={rightMode}
+          onChange={v => {
+            if (v) onChangeMode?.(v)
+          }}
+          size="sm"
+        >
+          <ToggleButton label="Cours" value="cours" />
+          <ToggleButton label={inspecteurLabel} value="inspecteur" />
+        </ToggleButtonGroup>
       </div>
       <div
         style={{
@@ -596,7 +650,9 @@ function InspectorPanel({ onToggleCollapse }: { onToggleCollapse?: () => void })
           overflowY: 'auto',
         }}
       >
-        {!selected ? (
+        {rightMode === 'cours' ? (
+          <CoursPlaceholder />
+        ) : !selected ? (
           <div style={{ color: theme.color.textMuted, fontSize: 13, fontWeight: 600, textAlign: 'center', padding: '18px 6px' }}>
             Sélectionne un bloc
           </div>

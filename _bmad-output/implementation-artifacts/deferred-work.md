@@ -64,3 +64,12 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-migrate-blocknode-to-astryx.md`
   summary: Add visual regression for BlockNode Divider grid spanning
   evidence: Vertical/horizontal Divider now uses Astryx Divider with style gridColumn/gridRow inside custom grid — build passes but no test asserts divider renders at correct row/col or forwards style.
+- source_spec: none
+  summary: Course content & navigation — markdown frontmatter with full DAG, catalog facile/moyen/difficile + search, landing SEO/GEO, Précédent/Suivant
+  evidence: Split from right-sidebar 4-goal intent — catalog/markdown is independently shippable static content, deferred to avoid mega-spec coupling with toggle shell
+- source_spec: none
+  summary: Reactive course watcher — hidden expected DAG vs flowNodes/flowEdges live diff with hints toggle
+  evidence: Split from right-sidebar intent — watcher logic (flowNodes vs expected) is independent of toggle shell and needs separate testing, deferred to avoid coupling
+- source_spec: none
+  summary: Per-block live output — GPU->DB job_outputs per blockId with Realtime, Inspecteur detailed vs Console light, codegen notify
+  evidence: Split from right-sidebar intent — GPU/DB/codegen changes have blast radius beyond UI, independently shippable as separate PR, deferred
