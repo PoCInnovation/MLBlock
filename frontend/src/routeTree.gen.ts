@@ -11,11 +11,13 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AboutRouteImport } from './routes/about'
+import { Route as CoursRouteImport } from './routes/cours'
 import { Route as EditorRouteImport } from './routes/editor'
 import { Route as HowItWorksRouteImport } from './routes/how-it-works'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ProjetsRouteImport } from './routes/projets'
 import { Route as RegisterRouteImport } from './routes/register'
+import { Route as CoursSlugRouteImport } from './routes/cours.$slug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -25,6 +27,11 @@ const IndexRoute = IndexRouteImport.update({
 const AboutRoute = AboutRouteImport.update({
   id: '/about',
   path: '/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CoursRoute = CoursRouteImport.update({
+  id: '/cours',
+  path: '/cours',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EditorRoute = EditorRouteImport.update({
@@ -52,68 +59,86 @@ const RegisterRoute = RegisterRouteImport.update({
   path: '/register',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CoursSlugRoute = CoursSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => CoursRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/cours': typeof CoursRouteWithChildren
   '/editor': typeof EditorRoute
   '/how-it-works': typeof HowItWorksRoute
   '/login': typeof LoginRoute
   '/projets': typeof ProjetsRoute
   '/register': typeof RegisterRoute
+  '/cours/$slug': typeof CoursSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/cours': typeof CoursRouteWithChildren
   '/editor': typeof EditorRoute
   '/how-it-works': typeof HowItWorksRoute
   '/login': typeof LoginRoute
   '/projets': typeof ProjetsRoute
   '/register': typeof RegisterRoute
+  '/cours/$slug': typeof CoursSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/cours': typeof CoursRouteWithChildren
   '/editor': typeof EditorRoute
   '/how-it-works': typeof HowItWorksRoute
   '/login': typeof LoginRoute
   '/projets': typeof ProjetsRoute
   '/register': typeof RegisterRoute
+  '/cours/$slug': typeof CoursSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/about'
+    | '/cours'
     | '/editor'
     | '/how-it-works'
     | '/login'
     | '/projets'
     | '/register'
+    | '/cours/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/about'
+    | '/cours'
     | '/editor'
     | '/how-it-works'
     | '/login'
     | '/projets'
     | '/register'
+    | '/cours/$slug'
   id:
     | '__root__'
     | '/'
     | '/about'
+    | '/cours'
     | '/editor'
     | '/how-it-works'
     | '/login'
     | '/projets'
     | '/register'
+    | '/cours/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
+  CoursRoute: typeof CoursRouteWithChildren
   EditorRoute: typeof EditorRoute
   HowItWorksRoute: typeof HowItWorksRoute
   LoginRoute: typeof LoginRoute
@@ -135,6 +160,13 @@ declare module '@tanstack/react-router' {
       path: '/about'
       fullPath: '/about'
       preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cours': {
+      id: '/cours'
+      path: '/cours'
+      fullPath: '/cours'
+      preLoaderRoute: typeof CoursRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/editor': {
@@ -172,12 +204,30 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/cours/$slug': {
+      id: '/cours/$slug'
+      path: '/$slug'
+      fullPath: '/cours/$slug'
+      preLoaderRoute: typeof CoursSlugRouteImport
+      parentRoute: typeof CoursRoute
+    }
   }
 }
+
+interface CoursRouteChildren {
+  CoursSlugRoute: typeof CoursSlugRoute
+}
+
+const CoursRouteChildren: CoursRouteChildren = {
+  CoursSlugRoute: CoursSlugRoute,
+}
+
+const CoursRouteWithChildren = CoursRoute._addFileChildren(CoursRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
+  CoursRoute: CoursRouteWithChildren,
   EditorRoute: EditorRoute,
   HowItWorksRoute: HowItWorksRoute,
   LoginRoute: LoginRoute,

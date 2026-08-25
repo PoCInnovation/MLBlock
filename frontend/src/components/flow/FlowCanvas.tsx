@@ -20,7 +20,9 @@ import { AlignVerticalJustifyCenter, Menu, PanelLeft, PanelRight, ChevronLeft, C
 import { useShallow } from 'zustand/react/shallow'
 import useAppStore from '../../store/useAppStore'
 import { theme } from '../../theme'
-import { IconButton, ToggleButtonGroup, ToggleButton } from '@astryxdesign/core'
+import { IconButton, ToggleButtonGroup, ToggleButton, TextInput, Grid, ClickableCard, Button, Divider } from '@astryxdesign/core'
+import { Markdown } from '@astryxdesign/core'
+import { courses, getCourse } from '../../content/cours'
 import BlockNode from './BlockNode'
 import FlowLink from './FlowLink'
 import FlowPalette from './FlowPalette'
@@ -561,15 +563,78 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
 })
 
 /** Inspector flottant droit 260px : placeholder si aucun nœud sélectionné, sinon détails du bloc. */
-function CoursPlaceholder() {
+function CoursPanel() {
+  const [query, setQuery] = useState('')
+  const [difficulty, setDifficulty] = useState('Tous')
+  const [selected, setSelected] = useState<string | null>(null)
+  const [idx, setIdx] = useState(0)
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const course = selected ? getCourse(selected) : undefined
+  const sections = course?.sections ?? []
+  useEffect(() => { setIdx(0) }, [selected])
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    return courses.filter(c => {
+      const matchQ = !q || c.title.toLowerCase().includes(q) || c.description.toLowerCase().includes(q)
+      const d = difficulty.toLowerCase()
+      const matchD = d === 'tous' || d === 'all' || c.difficulty === d
+      return matchQ && matchD
+    })
+  }, [query, difficulty])
+  const jump = (i: number) => {
+    const id = sections[i]?.id
+    if (!id || !scrollRef.current) return
+    const el = scrollRef.current.querySelector(`#${CSS.escape(id)}`) ?? document.getElementById(id)
+    if (el) { (el as HTMLElement).scrollIntoView({ behavior: 'auto', block: 'start' }); setIdx(i) }
+  }
+  if (course) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, minHeight: 0 }}>
+        <button onClick={() => setSelected(null)} style={{ background: 'none', border: 'none', color: theme.color.textMuted, cursor: 'pointer', fontSize: 13, fontWeight: 700, textAlign: 'left', padding: 0 }}>← Retour au catalogue</button>
+        <div style={{ fontWeight: 800, fontSize: 14, color: theme.color.text }}>{course.title}</div>
+        <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', minHeight: 0, maxHeight: 420, paddingRight: 2 }}>
+          <Markdown>{course.body}</Markdown>
+        </div>
+        {sections.length > 0 ? (
+          <>
+            <Divider />
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <Button label="Précédent" variant="ghost" onClick={() => jump(idx - 1)} isDisabled={idx === 0} />
+              <Button label="Suivant" variant="ghost" onClick={() => jump(idx + 1)} isDisabled={idx === sections.length - 1} />
+            </div>
+          </>
+        ) : null}
+      </div>
+    )
+  }
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-      <div style={{ color: theme.color.textMuted, fontSize: 13, fontWeight: 600, textAlign: 'center', padding: '18px 6px' }}>
-        Aucun cours sélectionné
-      </div>
-      <div style={{ color: theme.color.textMuted, fontSize: 12, textAlign: 'center', padding: '4px 6px' }}>
-        Catalogue à venir
-      </div>
+      <TextInput label="Rechercher un cours" isLabelHidden value={query} onChange={setQuery} placeholder="Rechercher un cours…" />
+      <ToggleButtonGroup type="single" label="Difficulté" value={difficulty} onChange={v => setDifficulty((v as string) || 'Tous')} size="sm">
+        <Grid columns={2} gap={1.5}>
+          <ToggleButton label="Tous" value="Tous" />
+          <ToggleButton label="Facile" value="facile" />
+          <ToggleButton label="Moyen" value="moyen" />
+          <ToggleButton label="Difficile" value="difficile" />
+        </Grid>
+      </ToggleButtonGroup>
+      {courses.length === 0 ? (
+        <div style={{ color: theme.color.textMuted, fontSize: 13, fontWeight: 600, textAlign: 'center', padding: '18px 6px' }}>Aucun cours disponible</div>
+      ) : filtered.length === 0 ? (
+        <div style={{ color: theme.color.textMuted, fontSize: 13, fontWeight: 600, textAlign: 'center', padding: '18px 6px' }}>Aucun cours trouvé</div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {filtered.map(c => (
+            <ClickableCard key={c.slug} label={c.title} onClick={() => setSelected(c.slug)} padding={2}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2, textAlign: 'left' }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: theme.color.text }}>{c.title}</span>
+                <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: theme.color.textMuted }}>{c.difficulty}</span>
+                <span style={{ fontSize: 12, color: theme.color.textMuted, lineHeight: 1.4 }}>{c.description}</span>
+              </div>
+            </ClickableCard>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -651,7 +716,7 @@ function InspectorPanel({
         }}
       >
         {rightMode === 'cours' ? (
-          <CoursPlaceholder />
+          <CoursPanel />
         ) : !selected ? (
           <div style={{ color: theme.color.textMuted, fontSize: 13, fontWeight: 600, textAlign: 'center', padding: '18px 6px' }}>
             Sélectionne un bloc
