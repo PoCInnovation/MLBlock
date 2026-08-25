@@ -1,6 +1,6 @@
 import type { BlockDefMap } from '../types/catalog'
 
-export type FlowBlock = {
+type FlowBlock = {
   id: string
   type: string
   fields: Record<string, string>

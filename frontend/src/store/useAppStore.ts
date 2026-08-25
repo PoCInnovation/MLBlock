@@ -6,9 +6,9 @@ import { createPipeline, updatePipeline } from '../api/client'
 import type { Node, Edge, NodeChange, EdgeChange } from '@xyflow/react'
 import { applyNodeChanges, applyEdgeChanges } from '@xyflow/react'
 
-export type ConsoleLine = { k: string; t: string }
+type ConsoleLine = { k: string; t: string }
 
-export type Toast = {
+type Toast = {
   kind: 'error' | 'convert' | 'success'
   message: string
   action?: () => void
@@ -26,11 +26,11 @@ type DragBase = {
   label: string
 }
 
-export type DragState = DragBase & { source: 'palette' }
+type DragState = DragBase & { source: 'palette' }
 
 /** Snapshot d'undo/redo : état sémantique du pipeline (ReactFlow direct —
     les métadonnées temporaires sont recalculées au restore). */
-export type UndoSnapshot = { nodes: Node[]; edges: Edge[]; name: string }
+type UndoSnapshot = { nodes: Node[]; edges: Edge[]; name: string }
 
 type AppState = {
   category: string

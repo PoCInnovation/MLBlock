@@ -51,7 +51,7 @@ type PipelineNodeShape = {
   position?: { x: number; y: number } | null
 }
 
-export const pipelineNodeSchema: z.ZodType<PipelineNodeShape> = z.lazy(() =>
+const pipelineNodeSchema: z.ZodType<PipelineNodeShape> = z.lazy(() =>
   z.object({
     id: z.string(),
     type: z.string(),
@@ -61,14 +61,14 @@ export const pipelineNodeSchema: z.ZodType<PipelineNodeShape> = z.lazy(() =>
   }),
 )
 
-export const pipelineEdgeSchema = z.object({
+const pipelineEdgeSchema = z.object({
   source: z.string(),
   source_port: z.string(),
   target: z.string(),
   target_port: z.string(),
 })
 
-export const pipelineCreateSchema = z.object({
+const pipelineCreateSchema = z.object({
   name: z.string(),
   description: z.string(),
   is_draft: z.boolean().optional(),
@@ -76,7 +76,7 @@ export const pipelineCreateSchema = z.object({
   edges: z.array(pipelineEdgeSchema),
 })
 
-export const pipelineSummarySchema = z.object({
+const pipelineSummarySchema = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string(),
@@ -97,7 +97,7 @@ export const pipelinePageSchema = z.object({
   pages: z.number(),
 })
 
-export const jobStatusSchema = z.enum(['queued', 'dispatched', 'running', 'done', 'error'])
+const jobStatusSchema = z.enum(['queued', 'dispatched', 'running', 'done', 'error'])
 
 export const jobSchema = z.object({
   id: z.string(),
@@ -131,16 +131,16 @@ export const generateResponseSchema = z.object({
   code: z.string(),
 })
 
-export type Catalog = z.infer<typeof catalogSchema>
-export type ValidationResponse = z.infer<typeof validationSchema>
-export type PipelineNode = z.infer<typeof pipelineNodeSchema>
-export type PipelineEdge = z.infer<typeof pipelineEdgeSchema>
-export type PipelineCreate = z.infer<typeof pipelineCreateSchema>
-export type PipelineSummary = z.infer<typeof pipelineSummarySchema>
-export type PipelineDetail = z.infer<typeof pipelineDetailSchema>
-export type PipelinePage = z.infer<typeof pipelinePageSchema>
-export type JobStatus = z.infer<typeof jobStatusSchema>
-export type Job = z.infer<typeof jobSchema>
-export type JobOutput = z.infer<typeof jobOutputSchema>
-export type BuildResponse = z.infer<typeof buildResponseSchema>
-export type GenerateResponse = z.infer<typeof generateResponseSchema>
+type Catalog = z.infer<typeof catalogSchema>
+type ValidationResponse = z.infer<typeof validationSchema>
+type PipelineNode = z.infer<typeof pipelineNodeSchema>
+type PipelineEdge = z.infer<typeof pipelineEdgeSchema>
+type PipelineCreate = z.infer<typeof pipelineCreateSchema>
+type PipelineSummary = z.infer<typeof pipelineSummarySchema>
+type PipelineDetail = z.infer<typeof pipelineDetailSchema>
+type PipelinePage = z.infer<typeof pipelinePageSchema>
+type JobStatus = z.infer<typeof jobStatusSchema>
+type Job = z.infer<typeof jobSchema>
+type JobOutput = z.infer<typeof jobOutputSchema>
+type BuildResponse = z.infer<typeof buildResponseSchema>
+type GenerateResponse = z.infer<typeof generateResponseSchema>
