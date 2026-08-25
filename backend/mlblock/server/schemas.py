@@ -91,6 +91,7 @@ class JobStatusUpdate(BaseModel):
 
 class JobOutputPush(BaseModel):
     block: str
+    block_id: str | None = None
     output: str
 
 

@@ -114,6 +114,7 @@ export const jobSchema = z.object({
 
 export const jobOutputSchema = z.object({
   block_name: z.string(),
+  block_id: z.string().nullable().optional(),
   output: z.string(),
   created_at: z.string(),
 })

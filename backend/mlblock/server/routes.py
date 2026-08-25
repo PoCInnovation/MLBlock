@@ -587,7 +587,7 @@ def get_job_outputs(
         select(JobOutput).where(JobOutput.job_id == job_id).order_by(JobOutput.created_at)
     ).all()
     return [
-        {"block_name": r.block_name, "output": r.output, "created_at": r.created_at.isoformat()}
+        {"block_name": r.block_name, "block_id": r.block_id, "output": r.output, "created_at": r.created_at.isoformat()}
         for r in rows
     ]
 
@@ -642,10 +642,15 @@ def push_job_output(
     job = session.get(Job, job_id)
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
+    # Truncate si trop volumineux (multi-output large) — évite explosion DB
+    out = body.output
+    if len(out) > 20000:
+        out = out[:20000] + "...[truncated]"
     output = JobOutput(
         job_id=job_id,
         block_name=body.block,
-        output=body.output,
+        block_id=body.block_id or body.block,
+        output=out,
     )
     session.add(output)
     session.commit()

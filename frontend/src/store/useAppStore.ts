@@ -47,6 +47,7 @@ type AppState = {
   lastJobId: string | null
   jobStatus: JobStatus | null
   results: JobOutput[]
+  jobOutputs: JobOutput[]
   savedFingerprint: string | null
   restoredWork: boolean
   toast: Toast | null
@@ -84,10 +85,12 @@ type AppState = {
   setLastJob: (job: Job) => void
   setJobStatus: (status: JobStatus | null) => void
   setResults: (outputs: JobOutput[]) => void
+  setJobOutputs: (outputs: JobOutput[]) => void
   setRestoredWork: (v: boolean) => void
   showToast: (toast: Toast) => void
   clearToast: () => void
 }
+
 
 
 /** Empreinte du canvas : données sémantiques uniquement — les métadonnées
@@ -127,6 +130,7 @@ const useAppStore = create<AppState>((set, get) => ({
   lastJobId: null,
   jobStatus: null,
   results: [],
+  jobOutputs: [],
   savedFingerprint: fingerprintOf({ flowNodes: [], flowEdges: [], projectName: 'mon-premier-modèle' }),
   restoredWork: false,
   toast: null,
@@ -161,7 +165,8 @@ const useAppStore = create<AppState>((set, get) => ({
 
   appendConsoleLines: (lines) => set((s) => ({ consoleLines: [...s.consoleLines, ...lines] })),
 
-  clearAll: () => set({ flowNodes: [], flowEdges: [], consoleLines: [], lastJobId: null, jobStatus: null, results: [] }),
+  clearAll: () => set({ flowNodes: [], flowEdges: [], consoleLines: [], lastJobId: null, jobStatus: null, results: [], jobOutputs: [] }),
+
 
   setCatalog: (catalog) => set((s) => {
     const firstCat = catalog.categories[0]?.id ?? 'data'
@@ -316,12 +321,12 @@ const useAppStore = create<AppState>((set, get) => ({
 
   setLastJob: (job) => set({ lastJobId: job.id, jobStatus: job.status }),
   setJobStatus: (status) => set({ jobStatus: status }),
-  setResults: (outputs) => set({ results: outputs }),
+  setResults: (outputs) => set({ results: outputs, jobOutputs: outputs }),
+  setJobOutputs: (outputs) => set({ jobOutputs: outputs, results: outputs }),
   setRestoredWork: (v) => set({ restoredWork: v }),
 
   showToast: (toast) => set({ toast }),
   clearToast: () => set({ toast: null }),
   setUser: (user) => set({ user }),
 }))
-
 export default useAppStore

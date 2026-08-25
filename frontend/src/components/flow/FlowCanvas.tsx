@@ -735,11 +735,20 @@ function InspectorPanel({
   const flowNodes = useAppStore(s => s.flowNodes)
   const catalog = useAppStore(s => s.catalog)
   const results = useAppStore(s => s.results)
+  const jobOutputs = useAppStore(s => s.jobOutputs)
   const selected = flowNodes.find(n => n.selected)
   const data = selected?.data as { label?: string; type?: string; category?: string } | undefined
   const def = data?.type ? catalog?.blocks[data.type] : undefined
-  const count = results.length
+  const outputs = jobOutputs.length ? jobOutputs : results
+  const count = outputs.length
   const inspecteurLabel = count > 0 ? (count > 1 ? `Inspecteur •${count}` : 'Inspecteur •') : hasOutputs ? 'Inspecteur •' : 'Inspecteur'
+  // Per-block: filtre par block_id (node.id), fallback block_name quand block_id absent (compat anciennes sorties)
+  const selectedOutputs = selected
+    ? outputs.filter(o => {
+        if (o.block_id) return o.block_id === selected.id
+        return o.block_name === data?.type
+      })
+    : []
   return (
     <div
       className="floating-panel inspector-panel"
@@ -825,6 +834,57 @@ function InspectorPanel({
                 ))}
               </div>
             ) : null}
+            <Divider />
+            {selectedOutputs.length === 0 ? (
+              <div style={{ color: theme.color.textMuted, fontSize: 13, fontWeight: 600, textAlign: 'center', padding: '10px 6px' }}>
+                En attente…
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div style={{ fontWeight: 700, fontSize: 12, color: theme.color.textMuted }}>Sortie</div>
+                {selectedOutputs.map((o, i) => {
+                  let parsed: unknown
+                  try { parsed = JSON.parse(o.output) } catch { parsed = null }
+                  const isTooLarge = o.output.length > 20000
+                  if (isTooLarge) console.warn('[Inspecteur] sortie tronquée', o.block_id ?? o.block_name)
+                  const pretty = (() => {
+                    if (parsed && typeof parsed === 'object') {
+                      try { return JSON.stringify(parsed, null, 2) } catch { return o.output }
+                    }
+                    return o.output
+                  })()
+                  // Type-specific preview: reuse typed payload rendering when possible
+                  const typed = parsed as { type?: string; points?: number[]; values?: Record<string, unknown>; value?: number; text?: string; data?: string; mime?: string } | null
+                  const isImage = typed?.type === 'image' && typeof typed.data === 'string'
+                  const isCurve = typed?.type === 'curve' && Array.isArray(typed.points)
+                  const isMetrics = typed?.type === 'metrics' && typed.values
+                  const isMetric = typed?.type === 'metric' && typeof typed.value === 'number'
+                  return (
+                    <div key={`${o.block_id ?? o.block_name}-${i}`} style={{ background: 'rgba(255,255,255,.04)', border: `1px solid ${theme.color.border}`, borderRadius: 10, padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      {isImage ? (
+                        <img src={`data:${typed.mime ?? 'image/png'};base64,${typed.data}`} alt={o.block_name} style={{ maxWidth: '100%', maxHeight: 180, borderRadius: 6, display: 'block' }} />
+                      ) : isCurve ? (
+                        <div style={{ fontSize: 12, color: theme.color.textMuted }}>{(typed.points?.length ?? 0)} points · min {Math.min(...typed.points!).toFixed(2)} · max {Math.max(...typed.points!).toFixed(2)}</div>
+                      ) : isMetrics ? (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '4px 10px', fontSize: 12 }}>
+                          {Object.entries(typed.values!).map(([k, v]) => (
+                            <div key={k} style={{ display: 'contents' }}>
+                              <span style={{ fontWeight: 700, opacity: 0.75 }}>{k}</span>
+                              <span style={{ fontWeight: 800 }}>{String(v)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : isMetric ? (
+                        <div style={{ fontWeight: 800, fontSize: 16, color: theme.color.success }}>{typed.value}</div>
+                      ) : null}
+                      <pre style={{ margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: 11, lineHeight: 1.4, color: theme.color.textLight, maxHeight: 220, overflowY: 'auto' }}>{pretty.slice(0, 4000)}{pretty.length > 4000 ? '\n…[tronqué]' : ''}</pre>
+                      <div style={{ fontSize: 10, color: theme.color.textMuted }}>{new Date(o.created_at).toLocaleTimeString()}</div>
+                      {i < selectedOutputs.length - 1 ? <Divider /> : null}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
         )}
       </div>

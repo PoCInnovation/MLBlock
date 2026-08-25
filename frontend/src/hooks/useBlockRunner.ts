@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import useAppStore from '../store/useAppStore'
 import { validateGraph, updatePipeline, buildPipeline, executePipeline, getJob, getJobOutputs } from '../api/client'
 import { toServerPayload } from '../utils/blockHelpers'
+import { supabase } from '../services/supabase'
 import axios from 'axios'
-import type { Job, JobStatus } from '../types/catalog'
-
+import type { Job, JobStatus, JobOutput } from '../types/catalog'
 const DEFAULT_PIPELINE_NAME = 'mon-premier-modèle'
 
 /** Erreur 4xx (hors 429) : permanente (job invalide/inexistant) — jamais
@@ -51,32 +51,77 @@ export function useBlockRunner() {
 
   const status: JobStatus | null = jobQuery.data?.status ?? null
   const terminal = status === 'done' || status === 'error'
+  const queryClient = useQueryClient()
 
-  // — Sorties structurées une fois le job terminé —
+  // — Sorties structurées en live (Realtime + polling fallback 2s) —
   const outputsQuery = useQuery({
     queryKey: ['job-outputs', jobId],
     queryFn: () => getJobOutputs(jobId!),
-    enabled: !!jobId && terminal,
+    enabled: !!jobId,
+    refetchInterval: (q) => {
+      const d = jobQuery.data
+      if (d && (d.status === 'done' || d.status === 'error')) return false
+      // Poll 2s en live, Realtime est le canal principal quand dispo
+      return 2_000
+    },
   })
+
+  // Realtime: Supabase channel per jobId -> maj jobOutputs instantanément
+  useEffect(() => {
+    if (!jobId) return
+    let channel: ReturnType<typeof supabase.channel> | null = null
+    try {
+      channel = supabase
+        .channel('job:' + jobId)
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'job_outputs', filter: 'job_id=eq.' + jobId }, (payload) => {
+          const row = payload.new as JobOutput
+          // Tronque côté frontend si nécessaire
+          if (row.output && row.output.length > 20000) {
+            console.warn('[Inspecteur] sortie tronquée', row.block_id ?? row.block_name)
+            row.output = row.output.slice(0, 20000) + '...[truncated]'
+          }
+          const cur = useAppStore.getState().jobOutputs
+          // Évite doublon si polling déjà l'a insérée
+          if (cur.some(o => o.created_at === row.created_at && o.block_id === row.block_id && o.block_name === row.block_name)) return
+          useAppStore.getState().setJobOutputs([...cur, row])
+          // Invalide la query pour resync polling → pas de doublon au prochain tick
+          queryClient.invalidateQueries({ queryKey: ['job-outputs', jobId] })
+        })
+        .subscribe()
+    } catch {
+      // Realtime non dispo -> fallback polling 2s déjà actif
+    }
+    return () => {
+      try { if (channel) supabase.removeChannel(channel) } catch {}
+    }
+  }, [jobId, queryClient])
+
+  // Sync live outputs -> store (pour Inspecteur par block_id)
+  useEffect(() => {
+    if (!outputsQuery.data || !jobId) return
+    // Maj même avant terminal pour le live
+    useAppStore.getState().setJobOutputs(outputsQuery.data as JobOutput[])
+  }, [outputsQuery.data, jobId])
 
   // Miroir du statut vers le store (sélecteur minimal pour ConsolePanel).
   useEffect(() => {
     useAppStore.getState().setJobStatus(status)
   }, [status])
 
-  // Fin du run : résultats + messages console (une seule fois par job).
+  // Fin du run : messages console (une seule fois par job).
   useEffect(() => {
     if (!outputsQuery.data || !jobId || handledFor.current === jobId) return
+    // Attendre terminal pour le message final (Console light)
+    if (!terminal) return
     handledFor.current = jobId
-    const outputs = outputsQuery.data
+    const outputs = outputsQuery.data as JobOutput[]
     const s = useAppStore.getState()
-    s.setResults(outputs)
     s.appendConsoleLines([
       status === 'done'
         ? { k: 'ok', t: `Exécution terminée — ${outputs.length} sortie(s)` }
         : { k: 'sys', t: `Exécution en erreur : ${jobQuery.data?.error || 'inconnue'}` },
     ])
-  }, [outputsQuery.data, jobId, status, jobQuery.data?.error])
+  }, [outputsQuery.data, jobId, status, jobQuery.data?.error, terminal])
 
   // — Lancement du run (mutation) : même séquence que l'ancien onRun —
   const runMutation = useMutation({
