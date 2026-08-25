@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
-export const DifficultySchema = z.enum(['facile', 'moyen', 'difficile'])
-export type Difficulty = z.infer<typeof DifficultySchema>
+const DifficultySchema = z.enum(['facile', 'moyen', 'difficile'])
+type Difficulty = z.infer<typeof DifficultySchema>
 
 const ExpectedSchema = z.object({
   nodes: z.array(z.object({ id: z.string(), type: z.string() })),
@@ -24,7 +24,7 @@ export type CourseMeta = z.infer<typeof CourseMetaSchema> & {
   sections: { id: string; title: string }[]
 }
 
-export function slugify(value: string): string {
+function slugify(value: string): string {
   return value.trim().toLowerCase().replace(/['"]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
 }
 function uniqueSlug(base: string, counts: Map<string, number>): string {
@@ -171,7 +171,7 @@ export function getCourse(slug: string): CourseMeta | undefined {
   return courses.find(c => c.slug === slug || c.id === slug)
 }
 
-export function searchCourses(q: string, difficulty?: string): CourseMeta[] {
+function searchCourses(q: string, difficulty?: string): CourseMeta[] {
   const query = q.trim().toLowerCase()
   return courses.filter(c => {
     const matchQ = !query || c.title.toLowerCase().includes(query) || c.description.toLowerCase().includes(query)

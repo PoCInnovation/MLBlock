@@ -5,7 +5,7 @@ export const loginSchema = z.object({
   password: z.string().min(6, 'Minimum 6 caractères'),
 })
 
-export const passwordSchema = z
+const passwordSchema = z
   .string()
   .min(6, 'Au moins 6 caractères')
   .regex(/[A-Z]/, 'Une majuscule requise')

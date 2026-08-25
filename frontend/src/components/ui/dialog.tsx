@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
-import { Dialog as AstryxDialog, AlertDialog as AstryxAlertDialog } from '@astryxdesign/core'
+import { Dialog as AstryxDialog } from '@astryxdesign/core'
+
 
 type DialogProps = {
   open?: boolean
@@ -31,9 +32,3 @@ export function DialogDescription({ children }: { children: ReactNode }) {
 export function DialogFooter({ children }: { children: ReactNode }) {
   return <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', flexWrap: 'wrap' }}>{children}</div>
 }
-
-/** Astryx AlertDialog re-export for destructive confirmations (UnsavedChangesDialog etc). */
-export function AlertDialog(props: React.ComponentProps<typeof AstryxAlertDialog>) {
-  return <AstryxAlertDialog {...props} />
-}
-export { AstryxAlertDialog as AlertDialogPrimitive }

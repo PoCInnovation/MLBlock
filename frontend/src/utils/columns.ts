@@ -7,14 +7,6 @@ export async function resolveColumnsForPath(path: string | undefined): Promise<s
   return fetchFileColumns(path)
 }
 
-/** Linear mode: nearest preceding load_csv path. */
-export function resolveLinearSourcePath(script: { type: string; fields: Record<string, string> }[], index: number): string | undefined {
-  for (let i = index - 1; i >= 0; i--) {
-    const b = script[i]
-    if (b.type === 'load_csv' && b.fields.path) return b.fields.path
-  }
-  return undefined
-}
 
 /** Advanced mode: walk incoming edges back to the first load_csv node. */
 export function resolveFlowSourcePath(nodes: Node[], edges: Edge[], nodeId: string): string | undefined {
