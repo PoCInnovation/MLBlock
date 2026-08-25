@@ -569,9 +569,14 @@ function CoursPanel() {
   const [selected, setSelected] = useState<string | null>(null)
   const [idx, setIdx] = useState(0)
   const [hintsEnabled, setHintsEnabled] = useState(true)
-  const scrollRef = useRef<HTMLDivElement>(null)
   const course = selected ? getCourse(selected) : undefined
   const sections = course?.sections ?? []
+  const sectionBodies = useMemo(() => {
+    if (!course) return [] as string[]
+    const raw = course.body
+    const parts = raw.split(/\n(?=##\s)/)
+    return parts.map(p => p.trim()).filter(Boolean)
+  }, [course])
   useEffect(() => { setIdx(0) }, [selected])
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -583,10 +588,8 @@ function CoursPanel() {
     })
   }, [query, difficulty])
   const jump = (i: number) => {
-    const id = sections[i]?.id
-    if (!id || !scrollRef.current) return
-    const el = scrollRef.current.querySelector(`#${CSS.escape(id)}`) ?? document.getElementById(id)
-    if (el) { (el as HTMLElement).scrollIntoView({ behavior: 'auto', block: 'start' }); setIdx(i) }
+    if (i < 0 || i >= sections.length) return
+    setIdx(i)
   }
   const { flowNodes, flowEdges } = useAppStore(useShallow(s => ({ flowNodes: s.flowNodes, flowEdges: s.flowEdges })))
   const watcher = useMemo(() => {
@@ -657,6 +660,7 @@ function CoursPanel() {
     }
   }
   if (course) {
+    const currentBody = sectionBodies[idx] ?? sectionBodies[0] ?? course.body
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12, minHeight: 0 }}>
         <button onClick={() => setSelected(null)} style={{ background: 'none', border: 'none', color: theme.color.textMuted, cursor: 'pointer', fontSize: 13, fontWeight: 700, textAlign: 'left', padding: 0 }}>← Retour au catalogue</button>
@@ -666,14 +670,15 @@ function CoursPanel() {
             {bannerText}
           </div>
         ) : null}
-        <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', minHeight: 0, maxHeight: 420, paddingRight: 2 }}>
-          <Markdown>{course.body}</Markdown>
+        <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, maxHeight: 420, paddingRight: 2 }}>
+          <Markdown>{currentBody}</Markdown>
         </div>
         {sections.length > 0 ? (
           <>
             <Divider />
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'space-between' }}>
               <Button label="Précédent" variant="ghost" onClick={() => jump(idx - 1)} isDisabled={idx === 0} />
+              <span style={{ fontSize: 12, color: theme.color.textMuted }}>{idx + 1} / {sections.length}</span>
               <Button label="Suivant" variant="ghost" onClick={() => jump(idx + 1)} isDisabled={idx === sections.length - 1} />
             </div>
           </>
