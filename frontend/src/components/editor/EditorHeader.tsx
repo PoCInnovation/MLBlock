@@ -23,11 +23,10 @@ export default function EditorHeader() {
   const savePipeline = useAppStore(s => s.savePipeline)
   const ensureDraft = useAppStore(s => s.ensureDraft)
   const showToast   = useAppStore(s => s.showToast)
-  // Run : isPending de la mutation = source de vérité (l'état serveur ne
-  // vit plus dans le store zustand).
-  const { onRun, onStop, onClear, isPending, jobId } = useBlockRunner()
-  // Un run est annulable pendant la mutation OU pendant le suivi du job.
-  const stopActive = isPending || jobId !== null
+  // Run : isPending = mutation + suivi job (start → terminal), isStopping = annulation en cours
+  const { onRun, onStop, onClear, isPending, isStopping } = useBlockRunner() as { onRun: () => void; onStop: () => void; onClear: () => void; isPending: boolean; isStopping: boolean; jobId: string | null }
+  // Arrêter actif tant qu'un run est en cours (isPending inclut jobId non terminal + stopping)
+  const stopActive = isPending
   // Sélecteur dérivé : re-render uniquement quand l'état dirty change
   const dirty = useAppStore(s => s.isDirty())
   const canUndo = useAppStore(s => s.canUndo())
@@ -165,7 +164,7 @@ export default function EditorHeader() {
           {dirty ? 'Sauvegarder' : 'Sauvegardé'}
         </button>
         <button onClick={onStop} disabled={!stopActive} style={{ ...actionBtn, background: 'rgba(224,112,95,.16)', color: theme.color.accentLight, border: '1px solid rgba(224,112,95,.4)', fontWeight: 800, opacity: stopActive ? 1 : 0.35, cursor: stopActive ? 'pointer' : 'default' }}>
-          <Square size={13} fill="currentColor" /> Arrêter
+          {isStopping ? <Loader2 size={13} style={{ animation: 'mlbSpin .8s linear infinite' }} /> : <Square size={13} fill="currentColor" />} {isStopping ? 'Arrêt…' : 'Arrêter'}
         </button>
         <button onClick={onRun} disabled={isPending} style={{ color: '#fff', border: 'none', padding: '9px 20px', borderRadius: theme.radius.md, fontWeight: 800, fontSize: 14, minHeight: 44, cursor: isPending ? 'default' : 'pointer', boxShadow: theme.shadow.btn, display: 'inline-flex', alignItems: 'center', gap: 8, background: theme.color.accent, opacity: isPending ? 0.6 : 1, transition: 'filter .15s ease, transform .15s ease' }}>
           {isPending ? <Loader2 size={15} style={{ animation: 'mlbSpin .8s linear infinite' }} /> : <Play size={15} fill="currentColor" />}
