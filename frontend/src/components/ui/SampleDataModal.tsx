@@ -1,32 +1,11 @@
 import { useEffect, useState } from 'react'
 import { http } from '../../api/client'
-import { theme } from '../../theme'
 import { FileUp } from 'lucide-react'
 import { Icon } from '@astryxdesign/core/Icon'
+import { Card, VStack, HStack, Button } from '@astryxdesign/core'
+import { Heading, Text } from '@astryxdesign/core/Text'
 import type { Sample } from '../../utils/samples'
 import { Dialog, DialogTitle } from './dialog'
-
-const sectionTitle: React.CSSProperties = {
-  fontSize: 13, fontWeight: 800, color: theme.color.textLight,
-  margin: '14px 0 10px', textTransform: 'uppercase', letterSpacing: '.5px',
-}
-const sampleCard: React.CSSProperties = {
-  display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
-  padding: '10px 14px', marginBottom: 8, borderRadius: theme.radius.md,
-  background: 'rgba(255,255,255,.05)', border: `1px solid ${theme.color.border}`,
-  color: theme.color.text,
-}
-const sampleMeta: React.CSSProperties = { fontSize: 11.5, color: theme.color.textMuted, fontWeight: 600, marginTop: 2 }
-const useBtn: React.CSSProperties = {
-  background: theme.color.accent, border: 'none', color: '#fff', borderRadius: theme.radius.sm,
-  padding: '6px 12px', fontWeight: 800, fontSize: 12.5, cursor: 'pointer', flexShrink: 0,
-}
-const uploadBtn: React.CSSProperties = {
-  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%',
-  padding: '13px 16px', borderRadius: theme.radius.md, cursor: 'pointer',
-  background: 'rgba(34,197,94,.12)', border: `1px dashed rgba(34,197,94,.5)`,
-  color: '#8fd1a8', fontWeight: 800, fontSize: 14,
-}
 
 export type SampleDataModalProps = {
   category: string
@@ -57,25 +36,29 @@ export default function SampleDataModal({ category, onPick, onChooseFile, onClos
     <Dialog isOpen={open} onOpenChange={(o) => { if (!o) onClose() }}>
       <DialogTitle>Données d'entraînement</DialogTitle>
 
-      <div style={sectionTitle}>Utiliser nos données</div>
-      {error && <div style={{ color: theme.color.errorLight, fontSize: 13, fontWeight: 700 }}>{error}</div>}
-      {!error && samples === null && <div style={{ color: theme.color.textMuted, fontSize: 13 }}>Chargement…</div>}
-      {!error && samples !== null && samples.length === 0 && (
-        <div style={{ color: theme.color.textMuted, fontSize: 13 }}>Aucune donnée d'exemple dans cette catégorie.</div>
-      )}
-      {samples?.map(s => (
-        <div key={s.id} style={sampleCard}>
-          <div>
-            <div style={{ fontWeight: 800, fontSize: 13.5 }}>{s.name}</div>
-            <div style={sampleMeta}>{s.description}</div>
-            <div style={sampleMeta}>{s.columns.length > 0 ? `${s.columns.length} colonnes · ` : ''}{s.rows} ligne(s)</div>
-          </div>
-          <button style={useBtn} onClick={() => onPick(s.url, s.name)}>Utiliser</button>
-        </div>
-      ))}
+      <VStack gap={2}>
+        <Text type="label" style={{ textTransform: 'uppercase', letterSpacing: '.5px' }}>Utiliser nos données</Text>
+        {error && <Text type="body" color="secondary" style={{ color: 'var(--color-error-light)' }}>{error}</Text>}
+        {!error && samples === null && <Text type="body" color="secondary">Chargement…</Text>}
+        {!error && samples !== null && samples.length === 0 && (
+          <Text type="body" color="secondary">Aucune donnée d'exemple dans cette catégorie.</Text>
+        )}
+        {samples?.map(s => (
+          <Card key={s.id} variant="muted" padding={2}>
+            <HStack gap={2} style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+              <VStack gap={1}>
+                <Heading level={5} style={{ fontSize: 13.5 }}>{s.name}</Heading>
+                <Text type="supporting" color="secondary">{s.description}</Text>
+                <Text type="supporting" color="secondary">{s.columns.length > 0 ? `${s.columns.length} colonnes · ` : ''}{s.rows} ligne(s)</Text>
+              </VStack>
+              <Button label="Utiliser" variant="primary" size="sm" onClick={() => onPick(s.url, s.name)} />
+            </HStack>
+          </Card>
+        ))}
 
-      <div style={sectionTitle}>Apporter vos données</div>
-      <button style={uploadBtn} onClick={onChooseFile}><Icon icon={FileUp} size="sm" /> Choisir un fichier</button>
+        <Text type="label" style={{ textTransform: 'uppercase', letterSpacing: '.5px' }}>Apporter vos données</Text>
+        <Button label="Choisir un fichier" variant="ghost" icon={<Icon icon={FileUp} size="sm" />} onClick={onChooseFile} style={{ width: '100%' } as never} />
+      </VStack>
     </Dialog>
   )
 }
