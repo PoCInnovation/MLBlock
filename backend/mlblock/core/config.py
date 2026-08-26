@@ -1,3 +1,6 @@
+"""Deprecated — ConfigLoader deleted per spec #4. Use mlblock.validation.validate.
+Kept as shim for CLI compat until __main__.py fully migrated (now uses Validation).
+"""
 import json
 from pathlib import Path
 from typing import Any

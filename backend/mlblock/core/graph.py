@@ -1,3 +1,7 @@
+"""Deprecated — Graph deleted per spec #4. Use mlblock.validation.validate (single deque topo + family table).
+This file remains as a thin shim for tests until test_graph.py → test_validation.py migration.
+Will be removed next commit.
+"""
 from __future__ import annotations
 
 from collections import deque
