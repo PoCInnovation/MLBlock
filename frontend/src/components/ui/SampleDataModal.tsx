@@ -53,7 +53,7 @@ export default function SampleDataModal({ category, onPick, onChooseFile, onClos
   }, [category])
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose() }}>
+    <Dialog isOpen={open} onOpenChange={(o) => { if (!o) onClose() }}>
       <DialogTitle>Données d'entraînement</DialogTitle>
 
       <div style={sectionTitle}>Utiliser nos données</div>

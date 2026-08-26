@@ -20,7 +20,7 @@ type Props = {
 /** Dialog partagé : modifications non sauvegardées (navigation, logout). */
 export default function UnsavedChangesDialog({ open, onSave, onDiscard, onCancel, busy = false }: Props) {
   return (
-    <Dialog open={open} onOpenChange={o => { if (!o && !busy) onCancel() }}>
+    <Dialog isOpen={open} onOpenChange={o => { if (!o && !busy) onCancel() }}>
       <DialogTitle>Modifications non sauvegardées</DialogTitle>
       <DialogDescription>
         Ton projet a changé (blocs ou nom) mais n'a pas été enregistré. Que veux-tu faire ?

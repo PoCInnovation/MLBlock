@@ -57,7 +57,7 @@ export default function ExportModal({ title, resolve, onClose }: ExportProps) {
   }
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose() }}>
+    <Dialog isOpen={open} onOpenChange={(o) => { if (!o) onClose() }}>
       <DialogTitle>{title}</DialogTitle>
       <button style={btnBase} onClick={() => doExport('json')} disabled={busy !== null}>
         <span>JSON de la pipeline</span>
