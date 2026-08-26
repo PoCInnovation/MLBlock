@@ -4,6 +4,7 @@ import useAppStore from '../../store/useAppStore'
 import ResultsPanel from './ResultsPanel'
 import { CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react'
 import { Icon } from '@astryxdesign/core/Icon'
+import { HStack } from '@astryxdesign/core'
 
 const COLORS: Record<string, string> = { sys: 'var(--color-text)', info: 'var(--color-info)', ok: 'var(--color-success-muted)', epoch: 'var(--color-warning)' }
 
@@ -40,8 +41,8 @@ const ConsolePanel = memo(function ConsolePanel() {
       willChange: 'height, opacity, transform',
       flexShrink: 0,
     }}>
-      <div className="console-header" style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 16px', borderBottom: collapsed ? 'none' : '1px solid rgba(255,255,255,.07)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+      <HStack gap={2} style={{ flexShrink: 0, justifyContent: 'space-between', padding: '11px 16px', borderBottom: collapsed ? 'none' : '1px solid rgba(255,255,255,.07)' }} className="console-header">
+        <HStack gap={2} style={{ alignItems: 'center' }}>
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: active ? theme.color.warning : theme.color.status, animation: active ? 'mlbBlink 1s ease-in-out infinite' : 'none', display: 'inline-block' }} />
           <span style={{ fontWeight: 800, fontSize: 13.5, letterSpacing: '.02em' }}>Ce qui se passe</span>
           {isLocal && (
@@ -63,9 +64,9 @@ const ConsolePanel = memo(function ConsolePanel() {
           >
             {collapsed ? <Icon icon={ChevronUp} size="md" /> : <Icon icon={ChevronDown} size="md" />}
           </button>
-        </div>
+        </HStack>
         {!collapsed && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.08)', padding: 3, borderRadius: 999 }}>
+          <HStack gap={2} style={{ alignItems: 'center', background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.08)', padding: 3, borderRadius: 999 }}>
             {(['console', 'results'] as const).map(t => (
               <button
                 key={t}
@@ -81,14 +82,14 @@ const ConsolePanel = memo(function ConsolePanel() {
                 {t === 'console' ? 'Console' : 'Résultats'}
               </button>
             ))}
-          </div>
+          </HStack>
         )}
         {!collapsed && done && (
           <div style={{ background: 'rgba(143,209,168,.16)', border: '1px solid rgba(143,209,168,.4)', color: 'var(--color-success-muted)', padding: '5px 12px', borderRadius: 999, fontWeight: 800, fontSize: 13 }}>
             <Icon icon={CheckCircle2} size="sm" /> Terminé
           </div>
         )}
-      </div>
+      </HStack>
       {!collapsed && (tab === 'results' ? (
         <ResultsPanel />
       ) : (
