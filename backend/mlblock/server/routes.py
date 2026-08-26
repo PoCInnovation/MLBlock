@@ -14,9 +14,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import JSONResponse, Response
 from sqlmodel import Session, select
 
-from mlblock.blocks.registry import BLOCK_REGISTRY
+from mlblock.blocks.registry import BLOCK_REGISTRY  # deprecated: use mlblock.catalog
 from mlblock.core.vast import VastAI
 from mlblock.core.graph import Graph
+from mlblock.validation import validate as validate_pipeline
 from mlblock.server.database import get_session
 from mlblock.server.auth import get_current_user
 from mlblock.server.gpu_auth import verify_gpu_key
@@ -690,27 +691,9 @@ def push_job_error(
 
 @validation_router.post("")
 def validate_graph(body: ValidationRequest) -> ValidationResponse:
-    errors = []
-    try:
-        graph_data = {
-            "nodes": [n.model_dump() for n in body.nodes],
-            "edges": [e.model_dump() for e in body.edges],
-        }
-        graph = Graph(graph_data)
-        graph.validate()
-    except ValueError as e:
-        errors.append(str(e))
-    try:
-        from mlblock.blocks.registry import BLOCK_REGISTRY
-        from mlblock.models.pipeline import PipelineDef
-
-        PipelineDef.model_validate(
-            {"nodes": body.nodes, "edges": body.edges},
-            context={"registry": BLOCK_REGISTRY},
-        )
-    except ValueError as e:
-        errors.append(str(e))
-    return ValidationResponse(valid=len(errors) == 0, errors=errors)
+    # Deep Validation owns both cycle and type checks (single family table, Graph deleted in next step)
+    _vr = validate_pipeline([n.model_dump() for n in body.nodes], [e.model_dump() for e in body.edges])
+    return ValidationResponse(valid=_vr.valid, errors=_vr.errors)
 
 
 @pipelines_router.post("/{pipeline_id}/build")

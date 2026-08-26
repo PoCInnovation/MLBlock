@@ -1,124 +1,72 @@
-# Repository Guidelines
+# AGENTS.md
 
-## Project Overview
+MLBlock — no-code block DAG builder for ML/RL/DL. React canvas (React 19 + Vite + TanStack Router + Astryx) + FastAPI + Pydantic v2 + SQLModel/Postgres (Supabase). Deploy: Render. GPU dispatch: Vast.ai REST only (no SSH).
 
-MLBlock is a no-code, block-based ML/RL/DL builder ("Scratch, but for AI"). Users compose pipelines as DAGs of blocks (neural layers, sklearn models, data loaders, RL environments) in a React canvas. Pipelines validate, run locally, code-generate into standalone Python scripts, and can dispatch to rented GPUs via Vast.ai. Backend: FastAPI + Pydantic v2 + SQLModel on PostgreSQL (Supabase). Frontend: React 18 + Vite + TypeScript. Deployed on Render.
+## Structure
 
-## Architecture & Data Flow
+- `backend/` — Python >=3.10, `uv` only (`uv.lock` committed). `pyproject.toml` is canonical; `requirements.txt` is stale — never edit it.
+- `frontend/` — `npm` only (`package-lock.json`). No `bun`/`pnpm`/`yarn`. No `.nvmrc`. Vite + `tanstackRouter` plugin + Tailwind v4.
+- `tutos/` + `frontend/src/content/cours/` — markdown tutorials.
 
-Two-layer system bridged at import time:
+## Commands
 
-```
-JSON config → ConfigLoader.validate() → Graph (DAG) → Pipeline
-                                                         ├→ run()            (execute blocks in topo order)
-                                                         └→ generate_code()  → standalone Python script
-```
-
-- **Core engine** (`backend/mlblock/core/`): dict-based `GraphNode`/`Edge`/`Graph`, Kahn's topological sort (cycle → `ValueError`), `BlockMeta`/`BlockRegistry` (class-level dict), `Pipeline` orchestration with param coercion, `CodeGenerator` (emits standalone Python), `VastAI` client (**REST only** — `requests`, Vast API v0 bundles/asks/instances, onstart gzip/base64 payload; no SSH).
-- **Server layer** (`backend/mlblock/server/`): FastAPI with 7 routers (catalog, samples, pipelines, validation, jobs, files, health). Sync `def` endpoints, `session: Session = Depends(get_session)`. `ValueError` → `HTTPException(400, detail=str(e))`. Dual auth: Supabase JWT (`server/auth.py`, JWKS TTL cache, `MLBLOCK_DEV_AUTH` bypass) + GPU bearer (`server/gpu_auth.py`, per-job `instance_api_key` with global `GPU_API_KEY` fallback). DB tables in `server/models.py`: `profiles`, `pipelines`, `jobs`, `job_outputs` (UUID PKs, JSON `nodes`/`edges`, FK CASCADE; the old `columns` field was dropped by migration — free mode only).
-- **Bridge**: `blocks/registry.py` `_discover()` runs at import time, scans `blocks/**/*.py` (dirs named `{category}-{HEXCOLOR}/`, e.g. `neural-4FC3F7/`), loads via `importlib.util.spec_from_file_location`, registers module-level functions into `BLOCK_REGISTRY` (server Pydantic models), `BLOCK_SOURCES` (source text), and legacy `BlockRegistry` (core execution dict).
-- **Frontend** (`frontend/src/`): `router.tsx` (`createBrowserRouter` + `RequireAuth`, 7 routes), `store/useAppStore.ts` (single Zustand store: reactflow `flowNodes`/`flowEdges`, `savedFingerprint` dirty detection, undo/redo 50-deep, `loadPipeline`/`savePipeline`/`ensureDraft`), `api/client.ts` (axios + Supabase session interceptor, zod-validated responses). UI: Tailwind v4 (`@theme` tokens in `index.css`) + JS tokens in `theme.ts`; Base UI dialog; **no shadcn**. Editor is free-mode only (grid/columns removed); mobile-first: palette drawer <768px, tap-to-add gated to mobile, handles ≥22px on `pointer: coarse`, header wraps ≤900px, landing hamburger nav; "Disposer" auto-layout button (dagre) in the ReactFlow Controls cluster.
-
-Execution flow: user saves pipeline → `POST /api/pipelines` → `POST /{id}/execute` creates `Job` row → local subprocess (`MLBLOCK_RUN_MODE=local`, dev) or Vast dispatch (`gpu`) → GPU runs generated code → HTTP callbacks `POST /api/jobs/{id}/status|output|error` → results in `jobs`/`job_outputs`.
-
-## Key Directories
-
-```
-backend/
-├── mlblock/
-│   ├── core/          # graph.py, pipeline.py, config.py, generator.py, block.py, vast.py
-│   ├── blocks/        # {category}-{HEX}/ dirs, one file per block; registry.py discovers
-│   ├── server/        # main.py, routes.py, auth.py, gpu_auth.py, database.py, models.py, schemas.py
-│   ├── models/        # pipeline.py only: PipelineDef/Node/Edge (v2 Pydantic)
-│   ├── configs/       # cnn_mnist.json and other pipeline JSON configs
-│   ├── scripts/       # generate_samples.py, validate_exercises.py
-│   └── tests/         # 7 pytest files (see Testing & QA)
-├── pyproject.toml     # canonical deps — uv
-└── requirements.txt   # STALE — drifts from pyproject (adds stable-baselines3, drops torchvision); uv ignores it
-frontend/
-└── src/
-    ├── api/           # client.ts (axios + zod)
-    ├── components/    # flow/ (FlowCanvas, BlockNode, FlowLink, FlowPalette), ui/ (dialog, dropdown-menu, card, hover-card, field, ConsolePanel, modals, Toast)
-    ├── pages/         # EditorPage.tsx (unsaved-changes guard), Login/Register, …
-    ├── store/         # useAppStore.ts (single Zustand store)
-    ├── schemas/       # auth.ts (RHF+zod)
-    └── utils/         # pending-stash.ts (localStorage dirty stash), fingerprint, layout.ts (dagre "Disposer"), tapGuard.ts (mobile tap-vs-drag), typeCheck, portResolution, exportImport
-.github/               # release-drafter.yml only — NO CI test workflow
-render.yaml            # backend web service + frontend static site
-backend/main.py        # GENERATED code output example — not a source file; ignore
-```
-
-## Development Commands
-
-All backend commands run from `backend/` with `uv`; frontend from `frontend/` with npm:
-
+Backend from `backend/`:
 ```bash
-uv sync                                   # Install deps (creates .venv)
-uv run python -m mlblock                  # Codegen from default config (configs/cnn_mnist.json)
-uv run python -m mlblock config.json --mode build   # Build + run model
-uv run python -m mlblock.server           # uvicorn on 127.0.0.1:8000
-uv run uvicorn mlblock.server.main:app --reload     # Dev server
-uv run pytest mlblock/tests               # All tests (tests skip without DATABASE_URL)
-uv run pytest mlblock/tests/test_graph.py # Single file
-uv run python scripts/generate_samples.py # Upsert French sample datasets to Supabase Storage
-npm install
-npm run dev                               # Vite dev server (no proxy — calls VITE_API_BASE_URL)
-npm run build                             # tsc --noEmit && vite build
-npm test                                  # vitest run (store + utils tests)
+uv sync                          # install (.venv)
+uv run python -m mlblock --mode generate   # codegen (default configs/cnn_mnist.json)
+uv run python -m mlblock config.json --mode build
+uv run uvicorn mlblock.server.main:app --reload  # dev server :8000
+uv run ruff check .              # lint (E,F only; blocks/** ignores E501)
+uv run pytest mlblock/tests -q              # all; add path for single file
+uv run pytest mlblock/tests/test_graph.py -v
 ```
 
-There is no CI test workflow: only `.github/workflows/release-drafter.yml` exists. No lint command exists for either stack (no eslint/prettier/ruff configured).
+Frontend from `frontend/`:
+```bash
+npm install
+npm run dev                      # Vite, no proxy — hits VITE_API_BASE_URL directly
+npm run build                    # tsc --noEmit && vite build
+npm run lint -- --max-warnings 0 # must pass zero warnings
+npm run knip                     # unused exports check (local only, not in CI)
+npm test                         # vitest run (node env, store/utils only)
+```
 
-## Code Conventions & Common Patterns
+CI (`.github/workflows/ci.yml`): backend `ruff check` + `pytest`; frontend `build` + `vitest` + `eslint --max-warnings 0`. Concurrency `ci-${ref}` cancels in-flight.
 
-- **Python >=3.10**, `from __future__ import annotations` in most core files. Pydantic v2 (`BaseModel`, `model_validator`, `Field`); `PipelineDef.model_validate(context={"registry": BLOCK_REGISTRY})`.
-- **Blocks are plain module-level functions** — no base class. File stem = registration key. Signature: first param `in_1`, outputs `out_1`, `out_2`, … Ports annotated as strings: `in_1: "torch.Tensor"`.
-- **Docstring contract**: line 1 = French label, line 2 = French summary; param metadata via suffix conventions: `(entre: min-max, pas: x)`, `(impair)`, `(choix: a|b)`, `(suggestions: s1|s2)`, `(format: ...)`, `(longueur: N)`.
-- **Import discipline**: `import torch`/`nn` at module level is fine (conv2d.py); sklearn/gymnasium/pandas/torchvision imported lazily inside the function body.
-- **Error handling**: `ValueError` in core validation, `HTTPException(400)` at FastAPI layer, `NotImplementedError` in `BlockMeta.execute()` when no builder registered.
-- **Async**: everything sync except FastAPI lifespan. Routes are `def`, not `async def`.
-- **French in user-facing strings** (UI labels, errors, docstrings), English in code and identifiers.
-- **Frontend state**: single Zustand store is the source of truth for the flow canvas; catalog fetched via TanStack Query → `setCatalog` backfills node `segs`. Never fork store state. Dirty check is `fingerprintOf(state) !== savedFingerprint` (semantic fields only).
-- **Editor canvas**: free mode only (no viewMode/columns). Tap-to-add is **mobile-only** — the desktop palette sidebar must never call `onAdd` (click stays inert; mobile drawer instance passes it). Handle sizing ≥22px lives in `@media (pointer: coarse)` inside `@layer utilities` (wins the cascade against `w-[14px]!`). "Disposer" (dagre auto-layout) is a custom `ControlButton` child of `<Controls>` — explicit action only, `commitUndoPoint()` before applying, never auto-run. Edge delete buttons: EdgeLabelRenderer + `getPointAtLength`, commit undo before remove.
-- **Frontend forms**: RHF + zod only on auth pages (`Controller` + `zodResolver`); editor param forms are segment-driven custom fields in `BlockNode`.
-- **Unsaved-changes guard**: `useBlocker(() => isDirty())` in EditorPage + Base UI `UnsavedChangesDialog` + `beforeunload` + localStorage stash (`mlblock-pending-{userId}`). Don't regress it.
+## Architecture
 
-## Important Files
+- **Block discovery** `backend/mlblock/blocks/registry.py:_discover()` runs at import. Scans `blocks/{category}-{HEXCOLOR}/*.py`, loads via `importlib.util.spec_from_file_location` (hyphens in dirs), registers module-level functions into `BLOCK_REGISTRY` + legacy `BlockRegistry`. File stem = block key.
+- **Execution**: `JSON {nodes,edges} -> ConfigLoader.validate() -> Graph (Kahn topo sort, cycle=ValueError) -> Pipeline.run() / generate_code()`. `generate_code()` emits standalone Python with `notify_status`/`notify_output(block_id)` callbacks (20k truncation).
+- **Server** `backend/mlblock/server/`: 7 routers (catalog, samples, pipelines, validation, jobs, files, health) in `routes.py`. Sync `def` endpoints (`session: Session = Depends(get_session)`). `ValueError -> HTTPException(400)`. `graph_data = raw.get("graph", raw)` shape.
+- **Auth**: Supabase JWT (`server/auth.py`, JWKS TTL cache, `MLBLOCK_DEV_AUTH` bypass in dev) + GPU bearer per-job `instance_api_key` (`server/gpu_auth.py`, fallback `GPU_API_KEY`).
+- **Jobs**: `POST /api/pipelines/{id}/execute` -> `Job` row -> local subprocess (`MLBLOCK_RUN_MODE=local`, default dev) or Vast.ai (`gpu`, `render.yaml`) with gzip/base64 `onstart`. GPU callbacks `POST /api/jobs/{id}/status|output|error` -> `job_outputs.block_id` (indexed) -> Supabase Realtime `postgres_changes` -> `hooks/useBlockRunner.ts` (poll 3s job / 2s outputs + Realtime) -> `store/jobOutputs`.
+- **Frontend routing**: file-based `src/routes/*` + `routeTree.gen.ts`; `main.tsx` is `createRouter(routeTree)` + QueryClient + Supabase auth listener with `pending-stash` localStorage. `router.tsx` is deprecated shim — don't use.
+- **State**: single Zustand store `store/useAppStore.ts` is canvas truth (`flowNodes`/`flowEdges`, `savedFingerprint` dirty check, undo/redo 50, `jobOutputs`/`results` synced). Never fork it.
+- **Vite**: no dev proxy. Frontend calls `VITE_API_BASE_URL` directly (`frontend/.env` -> `http://localhost:8000` locally; Render injects prod URL).
 
-| File | Role |
-|---|---|
-| `backend/mlblock/server/main.py` | FastAPI app factory, CORS, router includes |
-| `backend/mlblock/__main__.py` | CLI: `--mode generate|build` (default config `configs/cnn_mnist.json`) |
-| `backend/mlblock/blocks/registry.py` | Import-time block auto-discovery (`_discover()`) |
-| `backend/mlblock/core/pipeline.py` | `Pipeline.run()` / `generate_code()` orchestration |
-| `backend/mlblock/core/generator.py` | Standalone-script codegen (notify callbacks, `_self_destroy`) |
-| `backend/mlblock/core/config.py` | `ConfigLoader.load/validate` — config JSON → Graph |
-| `backend/mlblock/server/models.py` | SQLModel ORM: `profiles`, `pipelines`, `jobs`, `job_outputs` |
-| `backend/mlblock/server/auth.py` / `gpu_auth.py` | JWT verification / per-job GPU bearer keys |
-| `backend/mlblock/configs/cnn_mnist.json` | Reference config: `{graph: {nodes[], edges[]}}`, node `{id, type, params, ports{in/out[{name, dtype}]}}`, edge `{source, source_port, target, target_port}` |
-| `frontend/src/router.tsx` | `createBrowserRouter` + `RequireAuth` route table |
-| `frontend/src/store/useAppStore.ts` | Single Zustand store (canvas state, fingerprint, undo/redo) |
-| `frontend/src/api/client.ts` | Axios instance + Supabase session interceptor + zod response validation |
-| `frontend/src/utils/layout.ts` | Pure `arrangeGraph()` (dagre TB, ranksep 80 / nodesep 50, center→top-left) — "Disposer" button |
-| `frontend/src/utils/tapGuard.ts` | Mobile tap-vs-drag guard (`shouldIgnoreTap`, 8px threshold) |
-| `frontend/.env.example` | `VITE_API_BASE_URL` (default `http://localhost:8000`), `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` |
+## Conventions
 
-Env vars (backend): `DATABASE_URL` (Supabase pooler `:6543`, transaction mode, IPv4), `SUPABASE_URL`/`SUPABASE_PUBLISHABLE_KEY`/`SUPABASE_SECRET_KEY`/`JWKS_URL`/`JWT_SECRET`, `VAST_API_KEY`, `BACKEND_URL`, `GPU_API_KEY`, `MLBLOCK_RUN_MODE=local|gpu`, `MLBLOCK_DEV_AUTH`.
+- **Blocks**: plain functions, no base class. Port `in_1: "torch.Tensor"`, outputs `out_1` etc. `import torch/nn` at top OK; sklearn/gymnasium/pandas inside function. Docstring line1=French label, line2=French summary; param suffixes `(entre: min-max, pas: x)` `(impair)` `(choix: a|b)` `(suggestions:)` `(format:)` `(longueur:)`.
+- **Python**: `from __future__ import annotations`, Pydantic v2 `model_validate(context={"registry": BLOCK_REGISTRY})`, `NotImplementedError` if no builder.
+- **Frontend**: RHF+zod only on auth pages; editor params are segment-driven `BlockNode` fields. Styling is Astryx (`@astryxdesign/core` + `@stylexjs/stylex`) + Tailwind v4 — `index.css` layer order `reset,theme,base,astryx-base,astryx-theme,components,utilities`. Dark mode forced `data-theme="dark"`. Editor is free-mode only — don't reintroduce columns/grid. `TapGuard` + `tap-to-add` is mobile-only; "Disposer" (dagre) is explicit `ControlButton` — never auto-run.
+- **Unsaved guard**: `useBlocker` from `@tanstack/react-router` (not `react-router-dom`) + `beforeunload` + `mlblock-pending-{userId}` stash. Don't regress.
 
-## Runtime/Tooling Preferences
+## Testing
 
-- **Backend**: uv only (`backend/uv.lock` committed). Python `>=3.10` (Render pins 3.11). No `[project.scripts]`, no `.python-version`. `pyproject.toml` is canonical; `requirements.txt` is stale — never edit it as source of truth.
-- **Frontend**: npm is the only supported frontend package manager (`package-lock.json`; no bun/pnpm/yarn). Non-npm lockfiles (`bun.lock`, `pnpm-lock.yaml`, `yarn.lock`) must not be added. Node version **unpinned** (no `.nvmrc`). React 18 runtime with @types/react 19 — type/runtime skew is known. Build = type-check + bundle; no lint gate. Test = `vitest run` (node env, no jsdom — store/utils only, no component tests). Key deps beyond React: reactflow 11, zustand, @tanstack/react-query, @dagrejs/dagre.
-- **No Vite dev proxy**: frontend calls `VITE_API_BASE_URL` directly (set to `http://localhost:8000` in `frontend/.env` for local dev; Render build sets the deployed backend URL).
-- **tsconfig**: `strict: true`, `moduleResolution: bundler`, `noEmit`, no path aliases.
-- **DB**: real PostgreSQL required — **no SQLite fallback** in server code (tests skip, they don't fake it). Percent-encode special chars in pooler passwords (`?` → `%3F`, `@` → `%40`, `*` → `%2A`). Supabase free-tier project can pause and cause DB timeouts while auth logs look healthy.
-- **Render**: backend `uv sync` + `.venv/bin/uvicorn mlblock.server.main:app --host 0.0.0.0 --port $PORT`; frontend static from `dist` with SPA rewrite `/* → /index.html`.
+- Backend: `conftest.py` skips if `DATABASE_URL` absent (no SQLite fallback). `client` fixture creates real engine (`statement_timeout=10000`), overrides `get_session`/`get_current_user`/`verify_gpu_key`, creates one Supabase auth user via Admin API (`SUPABASE_URL`+`SUPABASE_SECRET_KEY`), purges that user's `pipelines` per-test (cascade jobs/outputs). `catalog_client` needs no DB. `BlockRegistry` is class-level and persists across tests; some tests register global blocks without cleanup.
+- Frontend: `vitest run` node env, no jsdom — only `store/*.test.ts` + `utils/*.test.ts`.
+- No `pytest` config in `pyproject.toml`; default discovery. `tsconfig` is `strict`, `moduleResolution: bundler`, no path aliases.
 
-## Testing & QA
+## Env & Gotchas
 
-- **pytest + httpx** (`fastapi.testclient.TestClient`), ~106 tests across 7 files in `backend/mlblock/tests/` (7 pre-existing failures on block/category/auth 404 routes — unrelated to feature work).
-- **Frontend vitest**: 6 files / 53 tests in `frontend/src/{store,utils}/*.test.ts` (useAppStore, layout, tapGuard, portResolution, typeCheck, exportImport) — pure logic only, node env, no component rendering (no jsdom/@testing-library installed). Component-level behavior is verified manually in the browser.
-- **DB/auth strategy** (`conftest.py`): reads `DATABASE_URL` and `pytest.skip("DATABASE_URL not set")` if absent; real engine with `statement_timeout=10000`; per-test purge of test user's rows; creates one shared test user via Supabase Admin API (`SUPABASE_URL` + `SUPABASE_SECRET_KEY`, skips if unset). Auth bypassed via `app.dependency_overrides` (`get_current_user` → fixed UUID, `verify_gpu_key` → `"gpu"`); `test_auth.py` exercises real Supabase JWT signup/signin instead.
-- **No pytest config in pyproject** — default discovery; no `testpaths`/env injection.
-- Coverage: registry, config, graph/topo sort, codegen text, type/port system, param metadata, pipeline CRUD/drafts/limits (20-project 409), validate/generate/build, jobs + GPU callback auth, samples manifest, real JWT, dagre layout, mobile tap guard. **Gaps**: VastAI client (only `FakeVast`), real GPU execution, Storage downloads, frontend components.
-- Gotchas: `mlblock/__init__.py` triggers block discovery at import — importing `mlblock` touches DB if `DATABASE_URL` is set. `BlockRegistry` is class-level; blocks persist across tests in a shared process (no teardown needed). Tests register global test blocks (`src2`, `coerce_test`, `dst1`) without unregistering — cross-file pollution risk if run order changes.
+- `DATABASE_URL` = Supabase pooler `:6543` transaction mode, IPv4. Percent-encode `?`->`%3F` `@`->`%40` `*`->`%2A`. Free-tier project can pause -> DB timeouts while auth looks healthy.
+- `MLBLOCK_RUN_MODE=local|gpu` (default `local`); `render.yaml` sets `gpu`. Mock Vast key (`mock-*`) forces local.
+- `VITE_SUPABASE_URL` / `VITE_SUPABASE_PUBLISHABLE_KEY` required in `frontend/.env` for auth. Backend needs `SUPABASE_URL/PUBLISHABLE_KEY/SECRET_KEY/JWKS_URL/JWT_SECRET`, `VAST_API_KEY`, `BACKEND_URL`, `GPU_API_KEY`.
+- `mlblock/__init__.py` triggers block discovery on import — importing touches FS even without DB.
+- `backend/main.py` is generated output — ignore.
+
+## Docs for agents
+
+- Issue tracker: GitHub Issues — `gh` CLI. See `docs/agents/issue-tracker.md`.
+- Triage labels: `needs-triage` / `needs-info` / `ready-for-agent` / `ready-for-human` / `wontfix`. See `docs/agents/triage-labels.md`.
+- Domain: single-context `CONTEXT.md` + `docs/adr/`. See `docs/agents/domain.md`.
