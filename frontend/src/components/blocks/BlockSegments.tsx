@@ -48,10 +48,6 @@ const removeBtn: React.CSSProperties = {
 const errStyle: React.CSSProperties = {
   color: theme.color.errorLight, fontSize: 12, fontWeight: 600, cursor: 'pointer',
 }
-/** Message d'erreur statique affiché sous un champ invalide (non cliquable). */
-const errMsgStyle: React.CSSProperties = {
-  color: theme.color.errorLight, fontSize: 12, fontWeight: 600, lineHeight: 1.3,
-}
 
 function fmtSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} o`
@@ -308,7 +304,7 @@ const BlockSegments = memo(function BlockSegments({ segs, fields, blockId, block
                       title={v.msg}
                       placeholder={placeholder}
                     />
-                    {invalid && <span role="alert" style={errMsgStyle}>{v.msg}</span>}
+                    {invalid && <Text role="alert" type="supporting" style={{ fontSize: 12, lineHeight: 1.3, color: theme.color.errorLight }}>{v.msg}</Text>}
                   </span></ParamInfo>
                 ), divider)}
                 <datalist id={dlId}>{s.opts!.map(o => <option key={o} value={o} />)}</datalist>
@@ -333,7 +329,7 @@ const BlockSegments = memo(function BlockSegments({ segs, fields, blockId, block
                     max={s.max}
                     step={s.step}
                   />
-                  {invalid && <span role="alert" style={errMsgStyle}>{v.msg}</span>}
+                  {invalid && <Text role="alert" type="supporting" style={{ fontSize: 12, lineHeight: 1.3, color: theme.color.errorLight }}>{v.msg}</Text>}
                 </span></ParamInfo>
               ), divider)}
             </>
@@ -359,7 +355,7 @@ const BlockSegments = memo(function BlockSegments({ segs, fields, blockId, block
                     title={v.msg}
                     placeholder={s.format ?? '[1, 2, 3]'}
                   />
-                  {invalid && <span role="alert" style={errMsgStyle}>{v.msg}</span>}
+                  {invalid && <Text role="alert" type="supporting" style={{ fontSize: 12, lineHeight: 1.3, color: theme.color.errorLight }}>{v.msg}</Text>}
                 </span></ParamInfo>
               ), divider)}
               {s.opts && s.opts.length > 0 && (
