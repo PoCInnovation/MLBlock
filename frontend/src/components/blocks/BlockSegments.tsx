@@ -6,7 +6,7 @@ import useAppStore from '../../store/useAppStore'
 import { theme } from '../../theme'
 import { ACCEPT_BY_BLOCK, DEFAULT_ACCEPT, SAMPLE_CATEGORY_BY_BLOCK } from '../../utils/samples'
 import SampleDataModal from '../ui/SampleDataModal'
-import { HoverCard, HoverCardTrigger, HoverCardContent } from '../ui/hover-card'
+import { HoverCard } from '@astryxdesign/core/HoverCard'
 
 const inputBase: React.CSSProperties = {
   background: 'rgba(255,255,255,.9)', border: 'none', borderRadius: theme.radius.sm,
@@ -65,21 +65,8 @@ function uploadPath(userId: string | undefined, blockId: string): string {
   return `${userId ?? 'anonymous'}/${blockId}_${Date.now()}.csv`
 }
 
-/** HoverCard d'un paramètre : description + métadonnées (type, défaut, bornes). */
+/** HoverCard d'un paramètre : description + métadonnées (type, défaut, bornes). — Astryx deep seam */
 function ParamInfo({ seg, children }: { seg: Exclude<Segment, { t: 'text' }>; children: React.ReactNode }) {
-  // Le middleware inline du PreviewCard ancre sur la LIGNE du champ (large) —
-  // on suit le X du pointeur pour aligner le popup dessus (alignOffset).
-  const [pointerX, setPointerX] = useState<number | null>(null)
-  const triggerRef = useRef<HTMLSpanElement | null>(null)
-  /* eslint-disable react-hooks/refs -- Mesure DOM volontaire au rendu : le
-     middleware inline du PreviewCard ne suit pas la souris, on aligne le popup
-     sur le X du pointeur via le rect du trigger (voir commentaire ci-dessus).
-     Une bascule vers useLayoutEffect introduirait un double rendu par mousemove. */
-  const alignOffset = pointerX != null && triggerRef.current
-    ? pointerX - (triggerRef.current.getBoundingClientRect().left + triggerRef.current.getBoundingClientRect().width / 2)
-    : 0
-  /* eslint-enable react-hooks/refs */
-  // Union de segments : lecture normalisée des métadonnées optionnelles.
   const p = seg as unknown as {
     k: string
     t: string
@@ -93,38 +80,26 @@ function ParamInfo({ seg, children }: { seg: Exclude<Segment, { t: 'text' }>; ch
     format?: string
   }
   return (
-    <HoverCard>
-      {/* display:contents n'a PAS de boîte (rect 0) — le popup retombait en
-          haut à gauche. inline garde la boîte pour le positionnement. */}
-      <HoverCardTrigger
-        render={
-          <span
-            ref={triggerRef}
-            onMouseMove={e => setPointerX(e.clientX)}
-            style={{ display: 'inline' }}
-          >
-            {children}
-          </span>
-        }
-      />
-      <HoverCardContent align="center" alignOffset={alignOffset}>
-        <div style={{ fontWeight: 800, fontSize: 13, marginBottom: 2, color: theme.color.textLight }}>
-          {p.k}
+    <HoverCard
+      placement="above"
+      content={
+        <div style={{ minWidth: 200 }}>
+          <div style={{ fontWeight: 800, fontSize: 13, marginBottom: 2, color: theme.color.textLight }}>{p.k}</div>
+          {p.desc && <div style={{ fontSize: 12, color: theme.color.textMuted, marginBottom: 8 }}>{p.desc}</div>}
+          <div style={{ fontSize: 12, color: theme.color.textDim, display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <span>Type : {p.t}</span>
+            {p.def !== undefined && p.def !== '' && <span>Défaut : {p.def}</span>}
+            {p.min != null && <span>Min : {p.min}</span>}
+            {p.max != null && <span>Max : {p.max}</span>}
+            {p.step != null && <span>Pas : {p.step}</span>}
+            {p.odd === true && <span>Valeurs impaires uniquement</span>}
+            {p.opts && p.opts.length > 0 && <span>Choix : {p.opts.join(', ')}</span>}
+            {p.format && <span>Format : {p.format}</span>}
+          </div>
         </div>
-        {p.desc && (
-          <div style={{ fontSize: 12, color: theme.color.textMuted, marginBottom: 8 }}>{p.desc}</div>
-        )}
-        <div style={{ fontSize: 12, color: theme.color.textDim, display: 'flex', flexDirection: 'column', gap: 3 }}>
-          <span>Type : {p.t}</span>
-          {p.def !== undefined && p.def !== '' && <span>Défaut : {p.def}</span>}
-          {p.min != null && <span>Min : {p.min}</span>}
-          {p.max != null && <span>Max : {p.max}</span>}
-          {p.step != null && <span>Pas : {p.step}</span>}
-          {p.odd === true && <span>Valeurs impaires uniquement</span>}
-          {p.opts && p.opts.length > 0 && <span>Choix : {p.opts.join(', ')}</span>}
-          {p.format && <span>Format : {p.format}</span>}
-        </div>
-      </HoverCardContent>
+      }
+    >
+      <span style={{ display: 'inline' }}>{children}</span>
     </HoverCard>
   )
 }
