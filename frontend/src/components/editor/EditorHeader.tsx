@@ -160,14 +160,14 @@ export default function EditorHeader() {
             cursor: dirty && !saving ? 'pointer' : 'default',
           }}
         >
-          {saving ? <Loader2 size={15} style={{ animation: 'mlbSpin .8s linear infinite' }} /> : dirty ? <Save size={15} /> : <Check size={15} />}
+          {saving ? <Loader2 size={15} className="keep-spin" style={{ animation: 'mlbSpin .8s linear infinite' }} /> : dirty ? <Save size={15} /> : <Check size={15} />}
           {dirty ? 'Sauvegarder' : 'Sauvegardé'}
         </button>
         <button onClick={onStop} disabled={!stopActive} style={{ ...actionBtn, background: 'rgba(224,112,95,.16)', color: theme.color.accentLight, border: '1px solid rgba(224,112,95,.4)', fontWeight: 800, opacity: stopActive ? 1 : 0.35, cursor: stopActive ? 'pointer' : 'default' }}>
-          {isStopping ? <Loader2 size={13} style={{ animation: 'mlbSpin .8s linear infinite' }} /> : <Square size={13} fill="currentColor" />} {isStopping ? 'Arrêt…' : 'Arrêter'}
+          {isStopping ? <Loader2 size={13} className="keep-spin" style={{ animation: 'mlbSpin .8s linear infinite' }} /> : <Square size={13} fill="currentColor" />} {isStopping ? 'Arrêt…' : 'Arrêter'}
         </button>
         <button onClick={onRun} disabled={isPending} style={{ color: '#fff', border: 'none', padding: '9px 20px', borderRadius: theme.radius.md, fontWeight: 800, fontSize: 14, minHeight: 44, cursor: isPending ? 'default' : 'pointer', boxShadow: theme.shadow.btn, display: 'inline-flex', alignItems: 'center', gap: 8, background: theme.color.accent, opacity: isPending ? 0.6 : 1, transition: 'filter .15s ease, transform .15s ease' }}>
-          {isPending ? <Loader2 size={15} style={{ animation: 'mlbSpin .8s linear infinite' }} /> : <Play size={15} fill="currentColor" />}
+          {isPending ? <Loader2 size={15} className="keep-spin" style={{ animation: 'mlbSpin .8s linear infinite' }} /> : <Play size={15} fill="currentColor" />}
           {isPending ? 'Exécution…' : 'Lancer'}
         </button>
         <DropdownMenu
