@@ -3,6 +3,7 @@ import type { Segment } from '../../types/catalog'
 import { uploadFile, supabase } from '../../services/supabase'
 import { FileUp, Loader2, TriangleAlert } from 'lucide-react'
 import { Icon } from '@astryxdesign/core/Icon'
+import { Text } from '@astryxdesign/core/Text'
 import useAppStore from '../../store/useAppStore'
 import { theme } from '../../theme'
 import { ACCEPT_BY_BLOCK, DEFAULT_ACCEPT, SAMPLE_CATEGORY_BY_BLOCK } from '../../utils/samples'
@@ -21,9 +22,6 @@ const selectBase: React.CSSProperties = {
 }
 const fieldPill: React.CSSProperties = {
   background: 'rgba(255,255,255,.85)', padding: '2px 8px', borderRadius: theme.radius.sm, fontWeight: 800,
-}
-const labelStyle: React.CSSProperties = {
-  fontSize: 12, fontWeight: 700, opacity: 0.85, whiteSpace: 'nowrap',
 }
 const fileCard: React.CSSProperties = {
   display: 'flex', alignItems: 'center', gap: 6, flexBasis: '100%',
@@ -189,9 +187,9 @@ const BlockSegments = memo(function BlockSegments({ segs, fields, blockId, block
   // Pas de gap-y : les cellules portent leur padding vertical, sinon le
   // séparateur serait segmenté aux gaps.
   const labelCell = (s: Exclude<Segment, { t: 'text' }>, row: number, divider: React.CSSProperties) => (
-    <span key={`l${row}`} style={{ gridColumn: 1, gridRow: row, justifySelf: 'end', alignSelf: 'center', padding: '3px 0', lineHeight: 1, ...labelStyle, ...divider }}>
+    <Text key={`l${row}`} type="label" color="secondary" style={{ gridColumn: 1, gridRow: row, justifySelf: 'end', alignSelf: 'center', padding: '3px 0', lineHeight: 1, ...divider }}>
       {s.k}:
-    </span>
+    </Text>
   )
   const fieldCell = (row: number, children: React.ReactNode, divider: React.CSSProperties) => (
     <span key={`f${row}`} style={{ gridColumn: 3, gridRow: row, justifySelf: 'start', padding: '3px 0', ...divider }}>
