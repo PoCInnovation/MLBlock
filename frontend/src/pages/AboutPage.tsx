@@ -1,7 +1,8 @@
 import { theme } from '../theme'
 import { useState, useRef, useEffect, CSSProperties } from 'react';
 import SiteLayout from '../components/landing/SiteLayout';
-import { Card } from '@astryxdesign/core';
+import { Card, Grid, Stack, VStack, HStack } from '@astryxdesign/core';
+import { Heading, Text } from '@astryxdesign/core/Text';
 
 type TeamMember = {
     name: string;
@@ -64,10 +65,10 @@ function TeamCard({ name, role, tagline, color, linkedin }: TeamMember) {
     };
 
     const inner = (
-        <>
+        <VStack gap={2} style={{ textAlign: 'center' }}>
             <div
                 style={{
-                    marginBottom: 18,
+                    marginBottom: 6,
                     display: 'flex',
                     justifyContent: 'center',
                 }}
@@ -99,57 +100,14 @@ function TeamCard({ name, role, tagline, color, linkedin }: TeamMember) {
                             justifyContent: 'center',
                         }}
                     >
-                        <span
-                            style={{
-                                fontFamily: "'Fredoka', sans-serif",
-                                fontWeight: 600,
-                                fontSize: 36,
-                                color: '#fff',
-                            }}
-                        >
-                            {name[0]}
-                        </span>
+                        <Heading level={2} style={{ color: '#fff', fontSize: 36 }}>{name[0]}</Heading>
                     </div>
                 )}
             </div>
-            <h3
-                style={{
-                    fontFamily: "'Fredoka', sans-serif",
-                    fontWeight: 600,
-                    fontSize: 21,
-                    margin: '0 0 4px',
-                    color: '#f0e9e3',
-                    textAlign: 'center',
-                }}
-            >
-                {name}
-            </h3>
-            <p
-                style={{
-                    color: color,
-                    fontSize: 13,
-                    fontWeight: 800,
-                    margin: '0 0 14px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '.05em',
-                    textAlign: 'center',
-                }}
-            >
-                {role}
-            </p>
-            <p
-                style={{
-                    color: '#948A81',
-                    fontSize: 14,
-                    fontWeight: 700,
-                    margin: 0,
-                    fontStyle: 'italic',
-                    textAlign: 'center',
-                }}
-            >
-                {tagline}
-            </p>
-        </>
+            <Heading level={4} style={{ textAlign: 'center' }}>{name}</Heading>
+            <Text type="label" style={{ color, textTransform: 'uppercase', letterSpacing: '.05em', textAlign: 'center' }}>{role}</Text>
+            <Text type="body" color="secondary" style={{ fontStyle: 'italic', textAlign: 'center' }}>{tagline}</Text>
+        </VStack>
     );
 
     if (linkedin) {
@@ -171,19 +129,7 @@ function TeamCard({ name, role, tagline, color, linkedin }: TeamMember) {
 function PocLogoSlot({ height }: { height?: number }) {
     const [logoFailed, setLogoFailed] = useState(false);
     if (logoFailed) {
-        return (
-            <span
-                style={{
-                    fontFamily: "'Fredoka', sans-serif",
-                    fontWeight: 700,
-                    fontSize: 28,
-                    color: '#2d2d2d',
-                    letterSpacing: '.04em',
-                }}
-            >
-                PoC
-            </span>
-        );
+        return <Heading level={2} style={{ color: '#2d2d2d', letterSpacing: '.04em' }}>PoC</Heading>;
     }
     return (
         <img
@@ -210,167 +156,48 @@ function PocSection() {
     }, []);
 
     return (
-        <section
-            style={{ maxWidth: 1240, margin: '0 auto', padding: '64px 48px' }}
-        >
-            <h2
-                style={{
-                    fontFamily: "'Fredoka', sans-serif",
-                    fontWeight: 600,
-                    fontSize: 34,
-                    letterSpacing: '-.01em',
-                    margin: '0 0 18px',
-                }}
-            >
-                Le projet, porté par PoC Innovation
-            </h2>
-            <div
-                style={{
-                    borderRadius: 20,
-                    background: '#fff',
-                    padding: '32px 36px',
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: 36,
-                }}
-            >
-                <div
-                    style={{
-                        flexShrink: 0,
-                        display: 'flex',
-                        alignItems: 'center',
-                    }}
-                >
-                    <PocLogoSlot height={logoHeight} />
-                </div>
-                <div
-                    ref={textRef}
-                    style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: 20,
-                    }}
-                >
-                    <p
-                        style={{
-                            fontSize: 16,
-                            lineHeight: 1.65,
-                            color: '#2d2d2d',
-                            fontWeight: 600,
-                            margin: 0,
-                        }}
-                    >
-                        MLBlock est un projet officiel de PoC Innovation, le centre de R&D étudiant d'Epitech. Fondé en 2017, ce centre réunit une quarantaine d'étudiants qui travaillent sur des projets open source autour de l'IA, la sécurité, la santé, l'AR/VR, le hardware et le software, à travers ateliers, bootcamps et hackathons.
-                    </p>
-                    <div>
-                        <a
-                            className="poc-btn"
-                            href="https://poc-innovation.fr/"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                        >
-                            Voir le site de PoC Innovation
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </section>
+        <Stack style={{ maxWidth: 1240, margin: '0 auto', padding: '64px 48px' }}>
+            <VStack gap={3}>
+                <Heading level={2}>Le projet, porté par PoC Innovation</Heading>
+                <Card variant="default" padding={4} style={{ background: '#fff' }}>
+                    <HStack gap={4} style={{ alignItems: 'flex-start' }}>
+                        <PocLogoSlot height={logoHeight} />
+                        <VStack gap={3} ref={textRef as never}>
+                            <Text type="body" style={{ color: '#2d2d2d', lineHeight: 1.65 }}>MLBlock est un projet officiel de PoC Innovation, le centre de R&D étudiant d'Epitech. Fondé en 2017, ce centre réunit une quarantaine d'étudiants qui travaillent sur des projets open source autour de l'IA, la sécurité, la santé, l'AR/VR, le hardware et le software, à travers ateliers, bootcamps et hackathons.</Text>
+                            <div>
+                                <a className="poc-btn" href="https://poc-innovation.fr/" target="_blank" rel="noopener noreferrer">Voir le site de PoC Innovation</a>
+                            </div>
+                        </VStack>
+                    </HStack>
+                </Card>
+            </VStack>
+        </Stack>
     );
 }
 
 export default function AboutPage() {
     return (
         <SiteLayout>
-            <section
-                style={{
-                    maxWidth: 1240,
-                    margin: '0 auto',
-                    padding: '64px 48px 0',
-                }}
-            >
-                <h1
-                    style={{
-                        fontFamily: "'Fredoka', sans-serif",
-                        fontWeight: 600,
-                        fontSize: 46,
-                        letterSpacing: '-.02em',
-                        margin: '0 0 18px',
-                    }}
-                >
-                    Qui sommes nous
-                </h1>
-                <h2
-                    style={{
-                        fontFamily: "'Fredoka', sans-serif",
-                        fontWeight: 600,
-                        fontSize: 28,
-                        margin: '0 0 14px',
-                        color: '#f0e9e3',
-                    }}
-                >
-                    Pourquoi MLBlock
-                </h2>
-                <p
-                    style={{
-                        fontSize: 17,
-                        lineHeight: 1.65,
-                        color: '#b7ada3',
-                        maxWidth: 680,
-                        margin: 0,
-                        fontWeight: 600,
-                    }}
-                >
-                    MLBlock existe pour que des élèves comprennent visuellement comment fonctionne un pipeline d'IA, sans écrire de code.
-                </p>
-            </section>
+            <Stack style={{ maxWidth: 1240, margin: '0 auto', padding: '64px 48px 0' }}>
+                <VStack gap={3}>
+                    <Heading level={1}>Qui sommes nous</Heading>
+                    <Heading level={3} style={{ color: '#f0e9e3' }}>Pourquoi MLBlock</Heading>
+                    <Text type="body" color="secondary" style={{ maxWidth: 680 }}>MLBlock existe pour que des élèves comprennent visuellement comment fonctionne un pipeline d'IA, sans écrire de code.</Text>
+                </VStack>
+            </Stack>
 
-            <section
-                style={{
-                    background: '#1f1916',
-                    borderTop: '1px solid rgba(255,255,255,.05)',
-                    marginTop: 56,
-                }}
-            >
-                <div
-                    style={{
-                        maxWidth: 1240,
-                        margin: '0 auto',
-                        padding: '64px 48px',
-                    }}
-                >
-                    <h2
-                        style={{
-                            fontFamily: "'Fredoka', sans-serif",
-                            fontWeight: 600,
-                            fontSize: 34,
-                            letterSpacing: '-.01em',
-                            margin: '0 0 8px',
-                        }}
-                    >
-                        L'équipe
-                    </h2>
-                    <p
-                        style={{
-                            color: '#b7ada3',
-                            fontSize: 17,
-                            fontWeight: 600,
-                            margin: '0 0 44px',
-                        }}
-                    >
-                        Quatre étudiants Epitech derrière le projet.
-                    </p>
-                    <div
-                        style={{
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(4, 1fr)',
-                            gap: 22,
-                        }}
-                    >
-                        {TEAM.map((m) => (
-                            <TeamCard key={m.name} {...m} />
-                        ))}
-                    </div>
-                </div>
+            <section style={{ background: '#1f1916', borderTop: '1px solid rgba(255,255,255,.05)', marginTop: 56 }}>
+                <Stack style={{ maxWidth: 1240, margin: '0 auto', padding: '64px 48px' }}>
+                    <VStack gap={3}>
+                        <Heading level={2}>L'équipe</Heading>
+                        <Text type="body" color="secondary">Quatre étudiants Epitech derrière le projet.</Text>
+                        <Grid columns={4} gap={3}>
+                            {TEAM.map((m) => (
+                                <TeamCard key={m.name} {...m} />
+                            ))}
+                        </Grid>
+                    </VStack>
+                </Stack>
             </section>
 
             <PocSection />
