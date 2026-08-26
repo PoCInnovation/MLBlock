@@ -82,18 +82,18 @@ function ParamInfo({ seg, children }: { seg: Exclude<Segment, { t: 'text' }>; ch
     <HoverCard
       placement="above"
       content={
-        <div style={{ minWidth: 200 }}>
-          <div style={{ fontWeight: 800, fontSize: 13, marginBottom: 2, color: theme.color.textLight }}>{p.k}</div>
-          {p.desc && <div style={{ fontSize: 12, color: theme.color.textMuted, marginBottom: 8 }}>{p.desc}</div>}
-          <div style={{ fontSize: 12, color: theme.color.textDim, display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <span>Type : {p.t}</span>
-            {p.def !== undefined && p.def !== '' && <span>Défaut : {p.def}</span>}
-            {p.min != null && <span>Min : {p.min}</span>}
-            {p.max != null && <span>Max : {p.max}</span>}
-            {p.step != null && <span>Pas : {p.step}</span>}
-            {p.odd === true && <span>Valeurs impaires uniquement</span>}
-            {p.opts && p.opts.length > 0 && <span>Choix : {p.opts.join(', ')}</span>}
-            {p.format && <span>Format : {p.format}</span>}
+        <div style={{ minWidth: 200, display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <Text type="label">{p.k}</Text>
+          {p.desc && <Text type="body" color="secondary" style={{ fontSize: 12 }}>{p.desc}</Text>}
+          <div style={{ fontSize: 12, color: 'var(--color-text-dim)', display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <Text type="supporting">Type : {p.t}</Text>
+            {p.def !== undefined && p.def !== '' && <Text type="supporting">Défaut : {p.def}</Text>}
+            {p.min != null && <Text type="supporting">Min : {p.min}</Text>}
+            {p.max != null && <Text type="supporting">Max : {p.max}</Text>}
+            {p.step != null && <Text type="supporting">Pas : {p.step}</Text>}
+            {p.odd === true && <Text type="supporting">Valeurs impaires uniquement</Text>}
+            {p.opts && p.opts.length > 0 && <Text type="supporting">Choix : {p.opts.join(', ')}</Text>}
+            {p.format && <Text type="supporting">Format : {p.format}</Text>}
           </div>
         </div>
       }
