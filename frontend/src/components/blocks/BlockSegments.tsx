@@ -4,6 +4,7 @@ import { uploadFile, supabase } from '../../services/supabase'
 import { FileUp, Loader2, TriangleAlert } from 'lucide-react'
 import { Icon } from '@astryxdesign/core/Icon'
 import { Text } from '@astryxdesign/core/Text'
+import { Badge } from '@astryxdesign/core/Badge'
 import useAppStore from '../../store/useAppStore'
 import { theme } from '../../theme'
 import { ACCEPT_BY_BLOCK, DEFAULT_ACCEPT, SAMPLE_CATEGORY_BY_BLOCK } from '../../utils/samples'
@@ -19,9 +20,6 @@ const selectBase: React.CSSProperties = {
   background: 'rgba(255,255,255,.9)', border: 'none', borderRadius: theme.radius.sm,
   padding: '3px 6px', color: theme.color.textInput, fontWeight: 800, fontSize: 13,
   cursor: 'pointer',
-}
-const fieldPill: React.CSSProperties = {
-  background: 'rgba(255,255,255,.85)', padding: '2px 8px', borderRadius: theme.radius.sm, fontWeight: 800,
 }
 const fileCard: React.CSSProperties = {
   display: 'flex', alignItems: 'center', gap: 6, flexBasis: '100%',
@@ -209,7 +207,7 @@ const BlockSegments = memo(function BlockSegments({ segs, fields, blockId, block
           return (
             <>
               {labelCell(s, row, i === 0 ? dividerStyle : {})}
-              {fieldCell(row, <span style={fieldPill}>{s.def}</span>, i === 0 ? dividerStyle : {})}
+              {fieldCell(row, <Badge variant="neutral" label={s.def ?? ''} />, i === 0 ? dividerStyle : {})}
             </>
           )
         }
