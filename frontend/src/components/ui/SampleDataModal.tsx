@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { http } from '../../api/client'
 import { theme } from '../../theme'
 import { FileUp } from 'lucide-react'
+import { Icon } from '@astryxdesign/core/Icon'
 import type { Sample } from '../../utils/samples'
 import { Dialog, DialogTitle } from './dialog'
 
@@ -74,7 +75,7 @@ export default function SampleDataModal({ category, onPick, onChooseFile, onClos
       ))}
 
       <div style={sectionTitle}>Apporter vos données</div>
-      <button style={uploadBtn} onClick={onChooseFile}><FileUp size={15} /> Choisir un fichier</button>
+      <button style={uploadBtn} onClick={onChooseFile}><Icon icon={FileUp} size="sm" /> Choisir un fichier</button>
     </Dialog>
   )
 }

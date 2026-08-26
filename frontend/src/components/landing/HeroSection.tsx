@@ -1,5 +1,6 @@
 import { useNavigate } from '@tanstack/react-router'
 import { Play } from 'lucide-react'
+import { Icon } from '@astryxdesign/core/Icon'
 import HeroBlockStack from './HeroBlockStack'
 import { theme } from '../../theme'
 import { Button, HStack } from '@astryxdesign/core'

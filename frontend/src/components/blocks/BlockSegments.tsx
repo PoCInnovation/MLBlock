@@ -2,6 +2,7 @@ import React, { memo, useRef, useState } from 'react'
 import type { Segment } from '../../types/catalog'
 import { uploadFile, supabase } from '../../services/supabase'
 import { FileUp, Loader2, TriangleAlert } from 'lucide-react'
+import { Icon } from '@astryxdesign/core/Icon'
 import useAppStore from '../../store/useAppStore'
 import { theme } from '../../theme'
 import { ACCEPT_BY_BLOCK, DEFAULT_ACCEPT, SAMPLE_CATEGORY_BY_BLOCK } from '../../utils/samples'
@@ -386,7 +387,7 @@ const BlockSegments = memo(function BlockSegments({ segs, fields, blockId, block
               {fieldCell(row, (
                 <span style={fileCard}>
                   <span style={fileNameStyle}>{meta?.name ?? 'Upload…'}</span>
-                  <span style={fileMeta}><Loader2 size={12} style={{ animation: 'mlbSpin .8s linear infinite' }} /></span>
+                  <span style={fileMeta}><Loader2 size="xsm" style={{ animation: 'mlbSpin .8s linear infinite' }} /></span>
                 </span>
               ), divider)}
             </>
@@ -397,7 +398,7 @@ const BlockSegments = memo(function BlockSegments({ segs, fields, blockId, block
               {labelCell(s, row, divider)}
               {fieldCell(row, (
                 <span style={fileCard}>
-                  <span style={{ ...errStyle, display: 'inline-flex', alignItems: 'center', gap: 4 }}><TriangleAlert size={12} /> Échec</span>
+                  <span style={{ ...errStyle, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Icon icon={TriangleAlert} size="xsm" /> Échec</span>
                   <button type="button" style={{ ...errStyle, background: 'none', border: 'none', padding: 0, fontFamily: 'inherit' }} onClick={() => inputRefs.current[s.k]?.click()}>Réessayer</button>
                   <input ref={el => { inputRefs.current[s.k] = el }} type="file" accept={fileAccept} style={{ display: 'none' }} onChange={e => handleFile(s.k, e)} />
                 </span>
@@ -426,7 +427,7 @@ const BlockSegments = memo(function BlockSegments({ segs, fields, blockId, block
                 <span style={{ display: 'flex' }}>
                   <input ref={el => { inputRefs.current[s.k] = el }} type="file" accept={fileAccept} style={{ display: 'none' }} onChange={e => handleFile(s.k, e)} />
                   <button type="button" onClick={() => sampleCat ? setSampleOpen(s.k) : inputRefs.current[s.k]?.click()} style={{ ...fileBtn, fontFamily: 'inherit' }} title={s.desc}>
-                    <FileUp size={13} /> {sampleCat ? 'Données' : 'CSV'}
+                    <Icon icon={FileUp} size="xsm" /> {sampleCat ? 'Données' : 'CSV'}
                   </button>
                 </span>
               ), divider)}

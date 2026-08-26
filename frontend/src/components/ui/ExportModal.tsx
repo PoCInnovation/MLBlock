@@ -5,6 +5,7 @@ import type { PipelineDetail } from '../../types/catalog'
 import { generatePipelineCode } from '../../api/client'
 import { downloadFile, pipelineToJson, slugify } from '../../utils/exportImport'
 import { FileText, FileCode2 } from 'lucide-react'
+import { Icon } from '@astryxdesign/core/Icon'
 import { Dialog, DialogTitle, DialogFooter } from './dialog'
 
 const btnBase: React.CSSProperties = {
@@ -61,12 +62,12 @@ export default function ExportModal({ title, resolve, onClose }: ExportProps) {
       <DialogTitle>{title}</DialogTitle>
       <button style={btnBase} onClick={() => doExport('json')} disabled={busy !== null}>
         <span>JSON de la pipeline</span>
-        <FileText size={18} color={theme.color.file} />
+        <Icon icon={FileText} size="md" />
         <div style={hint} />
       </button>
       <button style={btnBase} onClick={() => doExport('code')} disabled={busy !== null}>
         <span>Code (main.py)</span>
-        <FileCode2 size={18} color={theme.color.accentLight} />
+        <Icon icon={FileCode2} size="md" />
         <div style={hint} />
       </button>
       {error && <div style={{ color: theme.color.error, fontSize: 13, fontWeight: 700 }}>{error}</div>}

@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { Save, Play, Loader2, Upload, Download, Square, MoreVertical, FolderKanban, Trash2, LogOut, Check, Undo2, Redo2 } from 'lucide-react'
+import { Icon } from '@astryxdesign/core/Icon'
 import { DropdownMenu } from '../ui/dropdown-menu'
 import { useNavigate } from '@tanstack/react-router'
 import useAppStore from '../../store/useAppStore'
@@ -135,7 +136,7 @@ export default function EditorHeader() {
           aria-label="Annuler"
           style={{ ...ghostBtn, padding: '9px 10px', opacity: canUndo ? 1 : 0.35, cursor: canUndo ? 'pointer' : 'default' }}
         >
-          <Undo2 size={16} />
+          <Icon icon={Undo2} size="md" />
         </button>
         <button
           onClick={redo}
@@ -144,7 +145,7 @@ export default function EditorHeader() {
           aria-label="Rétablir"
           style={{ ...ghostBtn, padding: '9px 10px', opacity: canRedo ? 1 : 0.35, cursor: canRedo ? 'pointer' : 'default' }}
         >
-          <Redo2 size={16} />
+          <Icon icon={Redo2} size="md" />
         </button>
         <button
           onClick={onSave}
@@ -160,26 +161,26 @@ export default function EditorHeader() {
             cursor: dirty && !saving ? 'pointer' : 'default',
           }}
         >
-          {saving ? <Loader2 size={15} className="keep-spin" style={{ animation: 'mlbSpin .8s linear infinite' }} /> : dirty ? <Save size={15} /> : <Check size={15} />}
+          {saving ? <Loader2 size="sm" className="keep-spin" style={{ animation: 'mlbSpin .8s linear infinite' }} /> : dirty ? <Icon icon={Save} size="sm" /> : <Icon icon="check" size="sm" />}
           {dirty ? 'Sauvegarder' : 'Sauvegardé'}
         </button>
         <button onClick={onStop} disabled={!stopActive} style={{ ...actionBtn, background: 'rgba(224,112,95,.16)', color: theme.color.accentLight, border: '1px solid rgba(224,112,95,.4)', fontWeight: 800, opacity: stopActive ? 1 : 0.35, cursor: stopActive ? 'pointer' : 'default' }}>
-          {isStopping ? <Loader2 size={13} className="keep-spin" style={{ animation: 'mlbSpin .8s linear infinite' }} /> : <Square size={13} fill="currentColor" />} {isStopping ? 'Arrêt…' : 'Arrêter'}
+          {isStopping ? <Loader2 size="xsm" className="keep-spin" style={{ animation: 'mlbSpin .8s linear infinite' }} /> : <Square size="xsm" fill="currentColor" />} {isStopping ? 'Arrêt…' : 'Arrêter'}
         </button>
         <button onClick={onRun} disabled={isPending} style={{ color: '#fff', border: 'none', padding: '9px 20px', borderRadius: theme.radius.md, fontWeight: 800, fontSize: 14, minHeight: 44, cursor: isPending ? 'default' : 'pointer', boxShadow: theme.shadow.btn, display: 'inline-flex', alignItems: 'center', gap: 8, background: theme.color.accent, opacity: isPending ? 0.6 : 1, transition: 'filter .15s ease, transform .15s ease' }}>
-          {isPending ? <Loader2 size={15} className="keep-spin" style={{ animation: 'mlbSpin .8s linear infinite' }} /> : <Play size={15} fill="currentColor" />}
+          {isPending ? <Loader2 size="sm" className="keep-spin" style={{ animation: 'mlbSpin .8s linear infinite' }} /> : <Play size="sm" fill="currentColor" />}
           {isPending ? 'Exécution…' : 'Lancer'}
         </button>
         <DropdownMenu
-          button={{ label: 'Menu du projet', icon: <MoreVertical size={17} />, isIconOnly: true, variant: 'secondary' }}
+          button={{ label: 'Menu du projet', icon: <Icon icon={MoreVertical} size="md" />, isIconOnly: true, variant: 'secondary' }}
           items={[
-            { label: 'Importer', icon: <Upload size={15} />, onClick: () => fileRef.current?.click() },
-            { label: 'Exporter', icon: <Download size={15} />, onClick: () => setExportOpen(true) },
+            { label: 'Importer', icon: <Icon icon={Upload} size="sm" />, onClick: () => fileRef.current?.click() },
+            { label: 'Exporter', icon: <Icon icon={Download} size="sm" />, onClick: () => setExportOpen(true) },
             { type: 'divider' },
-            { label: 'Mes projets', icon: <FolderKanban size={15} />, onClick: () => navigate({ to: '/projets' }) },
-            { label: 'Tout effacer', icon: <Trash2 size={15} />, onClick: onClear },
+            { label: 'Mes projets', icon: <Icon icon={FolderKanban} size="sm" />, onClick: () => navigate({ to: '/projets' }) },
+            { label: 'Tout effacer', icon: <Icon icon={Trash2} size="sm" />, onClick: onClear },
             { type: 'divider' },
-            { label: 'Déconnexion', icon: <LogOut size={15} />, variant: 'destructive', onClick: () => {
+            { label: 'Déconnexion', icon: <Icon icon={LogOut} size="sm" />, variant: 'destructive', onClick: () => {
                 const s = useAppStore.getState()
                 if (s.isDirty() && s.user) setLogoutOpen(true)
                 else { void signOut().then(() => { setUser(null); navigate({ to: '/' }) }) }

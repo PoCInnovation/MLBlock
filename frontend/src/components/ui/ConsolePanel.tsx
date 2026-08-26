@@ -3,6 +3,7 @@ import { theme } from '../../theme'
 import useAppStore from '../../store/useAppStore'
 import ResultsPanel from './ResultsPanel'
 import { CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react'
+import { Icon } from '@astryxdesign/core/Icon'
 
 const COLORS: Record<string, string> = { sys: 'var(--color-text)', info: 'var(--color-info)', ok: 'var(--color-success-muted)', epoch: 'var(--color-warning)' }
 
@@ -60,7 +61,7 @@ const ConsolePanel = memo(function ConsolePanel() {
               borderRadius: 999,
             }}
           >
-            {collapsed ? <ChevronUp size={17} /> : <ChevronDown size={17} />}
+            {collapsed ? <Icon icon={ChevronUp} size="md" /> : <Icon icon={ChevronDown} size="md" />}
           </button>
         </div>
         {!collapsed && (
@@ -84,7 +85,7 @@ const ConsolePanel = memo(function ConsolePanel() {
         )}
         {!collapsed && done && (
           <div style={{ background: 'rgba(143,209,168,.16)', border: '1px solid rgba(143,209,168,.4)', color: 'var(--color-success-muted)', padding: '5px 12px', borderRadius: 999, fontWeight: 800, fontSize: 13 }}>
-            <CheckCircle2 size={14} /> Terminé
+            <Icon icon={CheckCircle2} size="sm" /> Terminé
           </div>
         )}
       </div>

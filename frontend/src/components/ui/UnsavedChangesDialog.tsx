@@ -1,5 +1,6 @@
 import { Dialog, DialogTitle, DialogDescription, DialogFooter } from './dialog'
 import { Save, LogOut, X } from 'lucide-react'
+import { Icon } from '@astryxdesign/core/Icon'
 import { theme } from '../../theme'
 
 const btnBase: React.CSSProperties = {
@@ -31,17 +32,17 @@ export default function UnsavedChangesDialog({ open, onSave, onDiscard, onCancel
           disabled={busy}
           style={{ ...btnBase, background: 'rgba(34,197,94,.18)', color: theme.color.successMuted, border: `1px solid rgba(34,197,94,.4)`, opacity: busy ? 0.6 : 1 }}
         >
-          <Save size={15} /> Sauvegarder et quitter
+          <Icon icon={Save} size="sm" /> Sauvegarder et quitter
         </button>
         <button
           onClick={onDiscard}
           disabled={busy}
           style={{ ...btnBase, background: 'rgba(224,112,95,.16)', color: theme.color.errorLight, border: `1px solid rgba(224,112,95,.4)`, opacity: busy ? 0.6 : 1 }}
         >
-          <LogOut size={15} /> Quitter sans sauvegarder
+          <Icon icon={LogOut} size="sm" /> Quitter sans sauvegarder
         </button>
         <button onClick={onCancel} disabled={busy} style={{ ...btnBase, background: 'rgba(255,255,255,.06)', color: theme.color.textLight, border: `1px solid ${theme.color.border}` }}>
-          <X size={15} /> Rester
+          <Icon icon={X} size="sm" /> Rester
         </button>
       </DialogFooter>
     </Dialog>
