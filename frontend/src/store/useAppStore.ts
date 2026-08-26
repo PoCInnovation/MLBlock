@@ -48,6 +48,7 @@ type AppState = {
   pipelineId: string | null
   projectName: string
   lastJobId: string | null
+  lastJobInstanceId: string | null
   jobStatus: JobStatus | null
   results: JobOutput[]
   jobOutputs: JobOutput[]
@@ -112,6 +113,7 @@ const useAppStore = create<AppState>((set, get) => ({
   pipelineId: null,
   projectName: 'mon-premier-modèle',
   lastJobId: null,
+  lastJobInstanceId: null,
   jobStatus: null,
   results: [],
   jobOutputs: [],
@@ -149,7 +151,7 @@ const useAppStore = create<AppState>((set, get) => ({
 
   appendConsoleLines: (lines) => set((s) => ({ consoleLines: [...s.consoleLines, ...lines] })),
 
-  clearAll: () => set({ flowNodes: [], flowEdges: [], consoleLines: [], lastJobId: null, jobStatus: null, results: [], jobOutputs: [] }),
+  clearAll: () => set({ flowNodes: [], flowEdges: [], consoleLines: [], lastJobId: null, lastJobInstanceId: null, jobStatus: null, results: [], jobOutputs: [] }),
 
 
   setCatalog: (catalog) => set((s) => {
@@ -278,7 +280,7 @@ const useAppStore = create<AppState>((set, get) => ({
     return created.id
   },
 
-  setLastJob: (job) => set({ lastJobId: job.id, jobStatus: job.status }),
+  setLastJob: (job) => set({ lastJobId: job.id, lastJobInstanceId: (job as { vast_instance_id?: string }).vast_instance_id ?? null, jobStatus: job.status }),
   setJobStatus: (status) => set({ jobStatus: status }),
   setResults: (outputs) => set({ results: outputs, jobOutputs: outputs }),
   setJobOutputs: (outputs) => set({ jobOutputs: outputs, results: outputs }),

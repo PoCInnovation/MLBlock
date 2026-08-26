@@ -38,7 +38,7 @@ class LocalBackend:
             "BACKEND_TIMEOUT": os.environ.get("BACKEND_TIMEOUT", "90"),
         })
         subprocess.Popen([sys.executable, path], env=env, start_new_session=True)
-        return {"id": "mock-instance-id", "api_key": ""}
+        return {"id": "local-instance-id", "api_key": ""}
 
     def destroy(self, instance_id: str) -> None:
         return None
@@ -66,6 +66,8 @@ class VastBackend:
         return instance
 
     def destroy(self, instance_id: str) -> None:
+        if instance_id in ("local-instance-id", "mock-instance-id"):
+            return
         try:
             self._vast.destroy_instance(instance_id)
         except Exception:
@@ -122,7 +124,7 @@ def cleanup_pipeline_files(pipeline_id: UUID) -> None:
 
 def schedule_orphan_cleanup(job_id: UUID, instance_id: str, pipeline_id: UUID) -> None:
     """Single place for Timer + destroy + storage cleanup (locality)."""
-    if not instance_id or instance_id == "mock-instance-id":
+    if not instance_id or instance_id in ("local-instance-id", "mock-instance-id"):
         return
     gpu_timeout = int(os.environ.get("MLBLOCK_GPU_TIMEOUT", "1800"))
 

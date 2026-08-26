@@ -9,12 +9,14 @@ const COLORS: Record<string, string> = { sys: 'var(--color-text)', info: 'var(--
 const ConsolePanel = memo(function ConsolePanel() {
   const consoleLines = useAppStore(s => s.consoleLines)
   const jobStatus    = useAppStore(s => s.jobStatus)
+  const lastJobInstanceId = useAppStore(s => (s as unknown as { lastJobInstanceId?: string | null }).lastJobInstanceId ?? null)
   const [tab, setTab] = useState<'console' | 'results'>('console')
   const [collapsed, setCollapsed] = useState(false)
   const scrollRef    = useRef<HTMLDivElement>(null)
 
   const active = jobStatus === 'queued' || jobStatus === 'dispatched' || jobStatus === 'running'
   const done   = jobStatus === 'done'
+  const isLocal = lastJobInstanceId === 'local-instance-id'
 
   useEffect(() => {
     if (active && scrollRef.current) {
@@ -41,6 +43,12 @@ const ConsolePanel = memo(function ConsolePanel() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: active ? theme.color.warning : theme.color.status, animation: active ? 'mlbBlink 1s ease-in-out infinite' : 'none', display: 'inline-block' }} />
           <span style={{ fontWeight: 800, fontSize: 13.5, letterSpacing: '.02em' }}>Ce qui se passe</span>
+          {isLocal && (
+            <span style={{ background: 'rgba(125,175,234,.18)', border: '1px solid rgba(125,175,234,.35)', color: theme.color.sky, padding: '3px 8px', borderRadius: 999, fontWeight: 800, fontSize: 11, letterSpacing: '.02em' }}>Local</span>
+          )}
+          {!isLocal && lastJobInstanceId && lastJobInstanceId !== 'local-instance-id' && (
+            <span style={{ background: 'rgba(232,199,122,.16)', border: '1px solid rgba(232,199,122,.35)', color: theme.color.warning, padding: '3px 8px', borderRadius: 999, fontWeight: 800, fontSize: 11, letterSpacing: '.02em' }}>GPU</span>
+          )}
           <button
             onClick={() => setCollapsed(c => !c)}
             aria-label={collapsed ? 'Déplier la console' : 'Replier la console'}

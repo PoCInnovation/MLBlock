@@ -440,7 +440,7 @@ def execute_pipeline(
         # Mode local : exécute réellement le code en subprocess — les callbacks
         # (status/output/error) alimentent le job comme sur un vrai GPU.
         _run_local(code, job.id)
-        job.vast_instance_id = "mock-instance-id"
+        job.vast_instance_id = "local-instance-id"
         job.status = "dispatched"
         session.add(job)
         session.commit()
@@ -491,7 +491,7 @@ def execute_pipeline(
     job_id = job.id
     instance_id = job.vast_instance_id
 
-    if _is_mock_vast():
+    if instance_id in ("local-instance-id", "mock-instance-id") or _is_mock_vast():
         session.refresh(job)  # expire_on_commit vide le __dict__ — sinon la réponse est {}
         return job
 
@@ -585,7 +585,7 @@ def update_job_status(
         job.started_at = datetime.now(timezone.utc)
     if body.status in ("done", "error"):
         job.completed_at = datetime.now(timezone.utc)
-        if job.vast_instance_id:
+        if job.vast_instance_id and job.vast_instance_id not in ("local-instance-id", "mock-instance-id"):
             try:
                 vast = VastAI(api_key=os.environ.get("VAST_API_KEY", "mock-vast-key"))
                 vast.destroy_instance(job.vast_instance_id)
@@ -633,7 +633,7 @@ def push_job_error(
     job.status = "error"
     job.error = body.error
     job.completed_at = datetime.now(timezone.utc)
-    if job.vast_instance_id:
+    if job.vast_instance_id and job.vast_instance_id not in ("local-instance-id", "mock-instance-id"):
         try:
             vast = VastAI(api_key=os.environ.get("VAST_API_KEY", "mock-vast-key"))
             vast.destroy_instance(job.vast_instance_id)
