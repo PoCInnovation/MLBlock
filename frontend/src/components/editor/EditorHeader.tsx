@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { Save, Play, Loader2, Upload, Download, Square, MoreVertical, FolderKanban, Trash2, LogOut, Check, Undo2, Redo2 } from 'lucide-react'
 import { Icon } from '@astryxdesign/core/Icon'
-import { HStack } from '@astryxdesign/core'
+import { HStack, IconButton } from '@astryxdesign/core'
 import { DropdownMenu } from '../ui/dropdown-menu'
 import { useNavigate } from '@tanstack/react-router'
 import useAppStore from '../../store/useAppStore'
@@ -130,24 +130,22 @@ export default function EditorHeader() {
         </HStack>
       </HStack>
       <HStack gap={2} className="header-actions" style={{ alignItems: 'center' }}>
-        <button
+        <IconButton
+          label="Annuler (Ctrl+Z)"
+          icon={<Icon icon={Undo2} size="sm" />}
+          variant="ghost"
+          size="sm"
+          isDisabled={!canUndo}
           onClick={undo}
-          disabled={!canUndo}
-          title="Annuler (Ctrl+Z)"
-          aria-label="Annuler"
-          style={{ ...ghostBtn, padding: '9px 10px', opacity: canUndo ? 1 : 0.35, cursor: canUndo ? 'pointer' : 'default' }}
-        >
-          <Icon icon={Undo2} size="sm" />
-        </button>
-        <button
+        />
+        <IconButton
+          label="Rétablir (Ctrl+Shift+Z)"
+          icon={<Icon icon={Redo2} size="sm" />}
+          variant="ghost"
+          size="sm"
+          isDisabled={!canRedo}
           onClick={redo}
-          disabled={!canRedo}
-          title="Rétablir (Ctrl+Shift+Z)"
-          aria-label="Rétablir"
-          style={{ ...ghostBtn, padding: '9px 10px', opacity: canRedo ? 1 : 0.35, cursor: canRedo ? 'pointer' : 'default' }}
-        >
-          <Icon icon={Redo2} size="sm" />
-        </button>
+        />
         <button
           onClick={onSave}
           disabled={!dirty || saving}
