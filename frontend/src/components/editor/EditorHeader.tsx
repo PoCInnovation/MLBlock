@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { Save, Play, Loader2, Upload, Download, Square, MoreVertical, FolderKanban, Trash2, LogOut, Check, Undo2, Redo2 } from 'lucide-react'
 import { Icon } from '@astryxdesign/core/Icon'
+import { HStack } from '@astryxdesign/core'
 import { DropdownMenu } from '../ui/dropdown-menu'
 import { useNavigate } from '@tanstack/react-router'
 import useAppStore from '../../store/useAppStore'
@@ -92,7 +93,7 @@ export default function EditorHeader() {
         willChange: 'transform, opacity',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0 }}>
+      <HStack gap={3} style={{ minWidth: 0, alignItems: 'center' }}>
         <button type="button" onClick={() => navigate({ to: '/' })} aria-label="Retour à l'accueil" style={{ display: 'flex', alignItems: 'center', gap: 9, cursor: 'pointer', background: 'none', border: 'none', padding: 0, margin: 0 }}>
           <div style={{ width: 30, height: 30, borderRadius: 9, background: theme.color.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: theme.shadow.btn }}>
             <div style={{ width: 11, height: 11, background: '#fff', borderRadius: 3 }} />
@@ -100,7 +101,7 @@ export default function EditorHeader() {
           <span style={{ fontFamily: theme.font.heading, fontWeight: 600, fontSize: 19 }}>MLBlock</span>
         </button>
         <div style={{ width: 1, height: 26, background: theme.color.border }} />
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: theme.color.surface3, border: `1px solid ${theme.color.border}`, padding: '6px 12px', borderRadius: theme.radius.md, minWidth: 0 }}>
+        <HStack gap={2} style={{ alignItems: 'center', background: theme.color.surface3, border: `1px solid ${theme.color.border}`, padding: '6px 12px', borderRadius: theme.radius.md, minWidth: 0 }}>
           <span style={{ width: 7, height: 7, borderRadius: '50%', background: theme.color.status, display: 'inline-block', flexShrink: 0 }} />
           {editingName ? (
             <input
@@ -126,9 +127,9 @@ export default function EditorHeader() {
               {projectName}
             </button>
           )}
-        </div>
-      </div>
-      <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+        </HStack>
+      </HStack>
+      <HStack gap={2} className="header-actions" style={{ alignItems: 'center' }}>
         <button
           onClick={undo}
           disabled={!canUndo}
@@ -187,7 +188,7 @@ export default function EditorHeader() {
               } },
           ]}
         />
-      </div>
+      </HStack>
 
       <input ref={fileRef} type="file" accept=".json,application/json" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) onImportPicked(f); e.target.value = '' }} />
 
