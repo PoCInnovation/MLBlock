@@ -20,8 +20,9 @@ import { AlignVerticalJustifyCenter, Menu, PanelLeft, PanelRight, ChevronLeft, C
 import { useShallow } from 'zustand/react/shallow'
 import useAppStore from '../../store/useAppStore'
 import { theme } from '../../theme'
-import { IconButton, ToggleButtonGroup, ToggleButton, TextInput, Grid, ClickableCard, Button, Divider, Switch, HStack } from '@astryxdesign/core'
+import { IconButton, ToggleButtonGroup, ToggleButton, TextInput, Grid, ClickableCard, Button, Divider, Switch, HStack, VStack, Stack } from '@astryxdesign/core'
 import { Markdown } from '@astryxdesign/core'
+import { Text, Heading } from '@astryxdesign/core/Text'
 import { courses, getCourse } from '../../content/cours'
 import BlockNode from './BlockNode'
 import FlowLink from './FlowLink'
@@ -662,17 +663,17 @@ function CoursPanel() {
   if (course) {
     const currentBody = sectionBodies[idx] ?? sectionBodies[0] ?? course.body
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, minHeight: 0 }}>
+      <VStack gap={3} style={{ minHeight: 0 }}>
         <button onClick={() => setSelected(null)} style={{ background: 'none', border: 'none', color: theme.color.textMuted, cursor: 'pointer', fontSize: 13, fontWeight: 700, textAlign: 'left', padding: 0 }}>← Retour au catalogue</button>
-        <div style={{ fontWeight: 800, fontSize: 14, color: theme.color.text }}>{course.title}</div>
+        <Heading level={4}>{course.title}</Heading>
         {bannerText ? (
           <div style={{ background: `${theme.color.warning}18`, border: `1px solid ${theme.color.warning}`, borderRadius: 10, padding: '8px 10px', color: theme.color.warning, fontSize: 12, fontWeight: 700, lineHeight: 1.4 }}>
             {bannerText}
           </div>
         ) : null}
-        <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, maxHeight: 420, paddingRight: 2 }}>
+        <Stack style={{ flex: 1, overflowY: 'auto', minHeight: 0, maxHeight: 420, paddingRight: 2 }}>
           <Markdown>{currentBody}</Markdown>
-        </div>
+        </Stack>
         {sections.length > 0 ? (
           <>
             <Divider />
@@ -686,11 +687,11 @@ function CoursPanel() {
         <HStack gap={2} style={{ alignItems: 'center', paddingTop: 4 }}>
           <Switch label={`Indices: ${hintsEnabled ? 'ON' : 'OFF'}`} value={hintsEnabled} onChange={setHintsEnabled} size="sm" />
         </HStack>
-      </div>
+      </VStack>
     )
   }
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+    <VStack gap={2}>
       <TextInput label="Rechercher un cours" isLabelHidden value={query} onChange={setQuery} placeholder="Rechercher un cours…" />
       <ToggleButtonGroup type="single" label="Difficulté" value={difficulty} onChange={v => setDifficulty((v as string) || 'Tous')} size="sm">
         <Grid columns={2} gap={1.5}>
@@ -705,7 +706,7 @@ function CoursPanel() {
       ) : filtered.length === 0 ? (
         <div style={{ color: theme.color.textMuted, fontSize: 13, fontWeight: 600, textAlign: 'center', padding: '18px 6px' }}>Aucun cours trouvé</div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <VStack gap={2}>
           {filtered.map(c => (
             <ClickableCard key={c.slug} label={c.title} onClick={() => setSelected(c.slug)} padding={2}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 2, textAlign: 'left' }}>
@@ -715,9 +716,9 @@ function CoursPanel() {
               </div>
             </ClickableCard>
           ))}
-        </div>
+        </VStack>
       )}
-    </div>
+    </VStack>
   )
 }
 
