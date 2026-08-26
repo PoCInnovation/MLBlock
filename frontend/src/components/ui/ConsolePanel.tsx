@@ -4,7 +4,7 @@ import useAppStore from '../../store/useAppStore'
 import ResultsPanel from './ResultsPanel'
 import { CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react'
 import { Icon } from '@astryxdesign/core/Icon'
-import { HStack } from '@astryxdesign/core'
+import { HStack, ToggleButton, ToggleButtonGroup } from '@astryxdesign/core'
 
 const COLORS: Record<string, string> = { sys: 'var(--color-text)', info: 'var(--color-info)', ok: 'var(--color-success-muted)', epoch: 'var(--color-warning)' }
 
@@ -66,23 +66,10 @@ const ConsolePanel = memo(function ConsolePanel() {
           </button>
         </HStack>
         {!collapsed && (
-          <HStack gap={2} style={{ alignItems: 'center', background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.08)', padding: 3, borderRadius: 999 }}>
-            {(['console', 'results'] as const).map(t => (
-              <button
-                key={t}
-                onClick={() => setTab(t)}
-                style={{
-                  background: tab === t ? theme.color.surface3 : 'transparent',
-                  color: tab === t ? theme.color.text : theme.color.textMuted,
-                  border: 'none', padding: '4px 12px', borderRadius: 999,
-                  fontWeight: 800, fontSize: 12.5, cursor: 'pointer',
-                  minHeight: 44, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                }}
-              >
-                {t === 'console' ? 'Console' : 'Résultats'}
-              </button>
-            ))}
-          </HStack>
+          <ToggleButtonGroup type="single" label="Console tabs" value={tab} onChange={v => setTab(v as typeof tab)}>
+            <ToggleButton value="console" label="Console" size="sm" />
+            <ToggleButton value="results" label="Résultats" size="sm" />
+          </ToggleButtonGroup>
         )}
         {!collapsed && done && (
           <div style={{ background: 'rgba(143,209,168,.16)', border: '1px solid rgba(143,209,168,.4)', color: 'var(--color-success-muted)', padding: '5px 12px', borderRadius: 999, fontWeight: 800, fontSize: 13 }}>

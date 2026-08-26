@@ -4,26 +4,21 @@ import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { signUp } from '../services/auth'
 import SiteLayout from '../components/landing/SiteLayout'
-import { Field, FieldError, FieldLabel, FormLayout } from '../components/ui/field'
+import { FormLayout } from '../components/ui/field'
 import { CheckCircle2, Circle } from 'lucide-react'
-import { Card, Button } from '@astryxdesign/core'
+import { Card, Button, TextInput } from '@astryxdesign/core'
 import { registerSchema, type RegisterInput } from '../schemas/auth'
 import { mapSupabaseError } from '../schemas/errors'
 
 const s: Record<string, string> = {
   wrapper: 'flex items-center justify-center min-h-[60vh] px-5 py-10',
   title: 'text-2xl font-bold mb-6 text-center text-text',
-  input: 'w-full px-3.5 py-2.5 mb-4 rounded-[8px] border border-border bg-input-bg text-text text-sm',
   error: 'text-error text-[13px] mb-3 text-center',
   link: 'text-[#E8915F] cursor-pointer text-center mt-3 text-sm',
 }
 
 const ruleStyle = (ok: boolean): string =>
   `${ok ? 'text-success' : 'text-text-dim'} text-xs font-bold mb-1`
-
-const regEmailErrorId = 'register-email-error'
-const regPwErrorId = 'register-password-error'
-const regConfirmErrorId = 'register-confirm-error'
 
 export default function RegisterPage() {
   const [error, setError] = useState('')
@@ -78,42 +73,28 @@ export default function RegisterPage() {
                 name="email"
                 control={form.control}
                 render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="register-email">Email *</FieldLabel>
-                    <input
-                      {...field}
-                      id="register-email"
-                      type="email"
-                      autoComplete="email"
-                      placeholder="exemple@mail.com"
-                      aria-invalid={fieldState.invalid}
-                      aria-describedby={fieldState.invalid ? regEmailErrorId : undefined}
-                      className={s.input}
-                      style={{ borderColor: fieldState.invalid ? 'var(--color-error)' : undefined }}
-                    />
-                    {fieldState.invalid && <div id={regEmailErrorId}><FieldError errors={[fieldState.error]} /></div>}
-                  </Field>
+                  <TextInput
+                    label="Email *"
+                    type="email"
+                    placeholder="exemple@mail.com"
+                    value={field.value}
+                    onChange={v => field.onChange(v)}
+                    status={fieldState.invalid ? { type: 'error', message: fieldState.error?.message } : undefined}
+                  />
                 )}
               />
               <Controller
                 name="password"
                 control={form.control}
                 render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="register-password">Mot de passe *</FieldLabel>
-                    <input
-                      {...field}
-                      id="register-password"
-                      type="password"
-                      autoComplete="new-password"
-                      placeholder="••••••"
-                      aria-invalid={fieldState.invalid}
-                      aria-describedby={fieldState.invalid ? regPwErrorId : undefined}
-                      className={s.input}
-                      style={{ borderColor: fieldState.invalid ? 'var(--color-error)' : undefined }}
-                    />
-                    {fieldState.invalid && <div id={regPwErrorId}><FieldError errors={[fieldState.error]} /></div>}
-                  </Field>
+                  <TextInput
+                    label="Mot de passe *"
+                    type="password"
+                    placeholder="••••••"
+                    value={field.value}
+                    onChange={v => field.onChange(v)}
+                    status={fieldState.invalid ? { type: 'error', message: fieldState.error?.message } : undefined}
+                  />
                 )}
               />
               <div className="-mt-2 mb-3">
@@ -125,21 +106,14 @@ export default function RegisterPage() {
                 name="confirm"
                 control={form.control}
                 render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="register-confirm">Confirmer le mot de passe *</FieldLabel>
-                    <input
-                      {...field}
-                      id="register-confirm"
-                      type="password"
-                      autoComplete="new-password"
-                      placeholder="••••••"
-                      aria-invalid={fieldState.invalid}
-                      aria-describedby={fieldState.invalid ? regConfirmErrorId : undefined}
-                      className={s.input}
-                      style={{ borderColor: fieldState.invalid ? 'var(--color-error)' : undefined }}
-                    />
-                    {fieldState.invalid && <div id={regConfirmErrorId}><FieldError errors={[fieldState.error]} /></div>}
-                  </Field>
+                  <TextInput
+                    label="Confirmer le mot de passe *"
+                    type="password"
+                    placeholder="••••••"
+                    value={field.value}
+                    onChange={v => field.onChange(v)}
+                    status={fieldState.invalid ? { type: 'error', message: fieldState.error?.message } : undefined}
+                  />
                 )}
               />
               <Button label={loading ? 'Création…' : 'Créer un compte'} variant="primary" type="submit" isLoading={loading} width="100%" />

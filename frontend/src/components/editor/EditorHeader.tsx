@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { Save, Play, Loader2, Upload, Download, Square, MoreVertical, FolderKanban, Trash2, LogOut, Check, Undo2, Redo2 } from 'lucide-react'
 import { Icon } from '@astryxdesign/core/Icon'
-import { HStack, IconButton } from '@astryxdesign/core'
+import { HStack, IconButton, Button } from '@astryxdesign/core'
 import { DropdownMenu } from '../ui/dropdown-menu'
 import { useNavigate } from '@tanstack/react-router'
 import useAppStore from '../../store/useAppStore'
@@ -13,9 +13,6 @@ import ExportModal from '../ui/ExportModal'
 import UnsavedChangesDialog from '../ui/UnsavedChangesDialog'
 import { clearStash } from '../../utils/pending-stash'
 import { theme } from '../../theme'
-
-const ghostBtn: React.CSSProperties = { background: theme.color.surface3, color: theme.color.textLight, border: `1px solid ${theme.color.border}`, padding: '8px 14px', borderRadius: theme.radius.md, fontWeight: 700, fontSize: 13.5, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7, minHeight: 44, transition: 'background .15s ease, transform .15s ease' }
-const actionBtn: React.CSSProperties = { ...ghostBtn, color: '#cfc6bd', padding: '9px 14px' }
 
 export default function EditorHeader() {
   const navigate    = useNavigate()
@@ -146,30 +143,33 @@ export default function EditorHeader() {
           isDisabled={!canRedo}
           onClick={redo}
         />
-        <button
+        <Button
+          label={dirty ? 'Sauvegarder' : 'Sauvegardé'}
+          variant={dirty ? 'primary' : 'secondary'}
+          size="sm"
+          isDisabled={!dirty || saving}
+          isLoading={saving}
+          icon={saving ? undefined : dirty ? <Icon icon={Save} size="sm" /> : <Icon icon={Check} size="sm" />}
           onClick={onSave}
-          disabled={!dirty || saving}
-          title={dirty ? 'Sauvegarder les modifications' : 'Aucune modification à sauvegarder'}
-          style={{
-            ...actionBtn,
-            background: dirty ? 'rgba(34,197,94,.14)' : theme.color.surface3,
-            color: dirty ? '#8fd1a8' : theme.color.textDim,
-            border: dirty ? '1px solid rgba(34,197,94,.35)' : `1px solid ${theme.color.border}`,
-            fontWeight: 800,
-            opacity: saving ? 0.6 : 1,
-            cursor: dirty && !saving ? 'pointer' : 'default',
-          }}
-        >
-          {saving ? <Loader2 size="sm" className="keep-spin" style={{ animation: 'mlbSpin .8s linear infinite' }} /> : dirty ? <Icon icon={Save} size="sm" /> : <Icon icon="check" size="sm" />}
-          {dirty ? 'Sauvegarder' : 'Sauvegardé'}
-        </button>
-        <button onClick={onStop} disabled={!stopActive} style={{ ...actionBtn, background: 'rgba(224,112,95,.16)', color: theme.color.accentLight, border: '1px solid rgba(224,112,95,.4)', fontWeight: 800, opacity: stopActive ? 1 : 0.35, cursor: stopActive ? 'pointer' : 'default' }}>
-          {isStopping ? <Loader2 size={12} className="keep-spin" style={{ animation: 'mlbSpin .8s linear infinite' }} /> : <Square size={12} fill="currentColor" />} {isStopping ? 'Arrêt…' : 'Arrêter'}
-        </button>
-        <button onClick={onRun} disabled={isPending} style={{ color: '#fff', border: 'none', padding: '9px 20px', borderRadius: theme.radius.md, fontWeight: 800, fontSize: 14, minHeight: 44, cursor: isPending ? 'default' : 'pointer', boxShadow: theme.shadow.btn, display: 'inline-flex', alignItems: 'center', gap: 8, background: theme.color.accent, opacity: isPending ? 0.6 : 1, transition: 'filter .15s ease, transform .15s ease' }}>
-          {isPending ? <Loader2 size={12} className="keep-spin" style={{ animation: 'mlbSpin .8s linear infinite' }} /> : <Play size={12} fill="currentColor" />}
-          {isPending ? 'Exécution…' : 'Lancer'}
-        </button>
+        />
+        <Button
+          label={isStopping ? 'Arrêt…' : 'Arrêter'}
+          variant="destructive"
+          size="sm"
+          isDisabled={!stopActive}
+          isLoading={isStopping}
+          icon={!isStopping ? <Icon icon={Square} size="sm" /> : undefined}
+          onClick={onStop}
+        />
+        <Button
+          label={isPending ? 'Exécution…' : 'Lancer'}
+          variant="primary"
+          size="sm"
+          isDisabled={isPending}
+          isLoading={isPending}
+          icon={!isPending ? <Icon icon={Play} size="sm" /> : undefined}
+          onClick={onRun}
+        />
         <DropdownMenu
           button={{ label: 'Menu du projet', icon: <Icon icon={MoreVertical} size="sm" />, isIconOnly: true, variant: 'secondary' }}
           items={[

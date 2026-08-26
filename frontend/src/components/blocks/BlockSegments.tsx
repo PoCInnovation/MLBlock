@@ -380,7 +380,7 @@ const BlockSegments = memo(function BlockSegments({ segs, fields, blockId, block
               {fieldCell(row, (
                 <HStack gap={1} style={fileCard as never}>
                   <Text style={fileNameStyle}>{meta?.name ?? 'Upload…'}</Text>
-                  <Text style={fileMeta}><Loader2 size="xsm" style={{ animation: 'mlbSpin .8s linear infinite' }} /></Text>
+                  <Text style={fileMeta}><Icon icon={Loader2} size="xsm" style={{ animation: 'mlbSpin .8s linear infinite' }} /></Text>
                 </HStack>
               ), divider)}
             </>
