@@ -62,7 +62,7 @@ const ConsolePanel = memo(function ConsolePanel() {
               borderRadius: 999,
             }}
           >
-            {collapsed ? <Icon icon={ChevronUp} size="md" /> : <Icon icon={ChevronDown} size="md" />}
+            {collapsed ? <Icon icon={ChevronUp} size="sm" /> : <Icon icon={ChevronDown} size="sm" />}
           </button>
         </HStack>
         {!collapsed && (
