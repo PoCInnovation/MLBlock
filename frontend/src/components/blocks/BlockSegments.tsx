@@ -5,6 +5,7 @@ import { FileUp, Loader2, TriangleAlert } from 'lucide-react'
 import { Icon } from '@astryxdesign/core/Icon'
 import { Text } from '@astryxdesign/core/Text'
 import { Badge } from '@astryxdesign/core/Badge'
+import { HStack } from '@astryxdesign/core'
 import useAppStore from '../../store/useAppStore'
 import { theme } from '../../theme'
 import { ACCEPT_BY_BLOCK, DEFAULT_ACCEPT, SAMPLE_CATEGORY_BY_BLOCK } from '../../utils/samples'
@@ -377,10 +378,10 @@ const BlockSegments = memo(function BlockSegments({ segs, fields, blockId, block
             <>
               {labelCell(s, row, divider)}
               {fieldCell(row, (
-                <span style={fileCard}>
-                  <span style={fileNameStyle}>{meta?.name ?? 'Upload…'}</span>
-                  <span style={fileMeta}><Loader2 size="xsm" style={{ animation: 'mlbSpin .8s linear infinite' }} /></span>
-                </span>
+                <HStack gap={1} style={fileCard as never}>
+                  <Text style={fileNameStyle}>{meta?.name ?? 'Upload…'}</Text>
+                  <Text style={fileMeta}><Loader2 size="xsm" style={{ animation: 'mlbSpin .8s linear infinite' }} /></Text>
+                </HStack>
               ), divider)}
             </>
           )
@@ -389,11 +390,11 @@ const BlockSegments = memo(function BlockSegments({ segs, fields, blockId, block
             <>
               {labelCell(s, row, divider)}
               {fieldCell(row, (
-                <span style={fileCard}>
-                  <span style={{ ...errStyle, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Icon icon={TriangleAlert} size="xsm" /> Échec</span>
+                <HStack gap={1} style={fileCard as never}>
+                  <Text style={{ ...errStyle, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Icon icon={TriangleAlert} size="xsm" /> Échec</Text>
                   <button type="button" style={{ ...errStyle, background: 'none', border: 'none', padding: 0, fontFamily: 'inherit' }} onClick={() => inputRefs.current[s.k]?.click()}>Réessayer</button>
                   <input ref={el => { inputRefs.current[s.k] = el }} type="file" accept={fileAccept} style={{ display: 'none' }} onChange={e => handleFile(s.k, e)} />
-                </span>
+                </HStack>
               ), divider)}
             </>
           )
@@ -402,12 +403,12 @@ const BlockSegments = memo(function BlockSegments({ segs, fields, blockId, block
             <>
               {labelCell(s, row, divider)}
               {fieldCell(row, (
-                <span style={fileCard}>
-                  <span style={fileNameStyle}>{fname}</span>
-                  {fsize && <span style={fileMeta}>{fmtSize(fsize)}</span>}
+                <HStack gap={1} style={fileCard as never}>
+                  <Text style={fileNameStyle}>{fname}</Text>
+                  {fsize && <Text style={fileMeta}>{fmtSize(fsize)}</Text>}
                   <button style={removeBtn} onClick={() => { onUpdate(blockId!, s.k, ''); setFileMetaState(m => { const n = { ...m }; delete n[s.k]; return n }) }}>×</button>
                   <input ref={el => { inputRefs.current[s.k] = el }} type="file" accept={fileAccept} style={{ display: 'none' }} onChange={e => handleFile(s.k, e)} />
-                </span>
+                </HStack>
               ), divider)}
             </>
           )
