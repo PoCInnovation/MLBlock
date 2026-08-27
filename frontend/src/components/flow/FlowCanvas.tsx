@@ -85,7 +85,7 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
   const [paletteOpen, setPaletteOpen] = useState(false)
   const [leftCollapsed, setLeftCollapsed] = useState(false)
   const [rightCollapsed, setRightCollapsed] = useState(false)
-  const [rightMode, setRightMode] = useState<'cours' | 'inspecteur'>('inspecteur')
+  const [rightMode, setRightMode] = useState<'cours' | 'inspecteur' | 'journal'>('inspecteur')
   const hasOutputs = useAppStore(s => s.results.length > 0)
   // Compteur de taps : décale les ajouts successifs pour éviter l'empilement
   // exact au centre (le premier reste centré).
@@ -511,7 +511,7 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
             onToggleCollapse={() => setRightCollapsed(true)}
             rightMode={rightMode}
             onChangeMode={v => {
-              if (v) setRightMode(v as 'cours' | 'inspecteur')
+              if (v) setRightMode(v as 'cours' | 'inspecteur' | 'journal')
             }}
             hasOutputs={hasOutputs}
           />
@@ -722,6 +722,17 @@ function CoursPanel() {
   )
 }
 
+function JournalPanelPlaceholder() {
+  return (
+    <VStack gap={2}>
+      <Heading level={5}>Journal</Heading>
+      <Text type="body" color="secondary" style={{ textAlign: 'center', padding: '18px 6px' }}>
+        Historique des exécutions — à venir
+      </Text>
+    </VStack>
+  )
+}
+
 function InspectorPanel({
   onToggleCollapse,
   rightMode = 'inspecteur',
@@ -729,7 +740,7 @@ function InspectorPanel({
   hasOutputs = false,
 }: {
   onToggleCollapse?: () => void
-  rightMode?: 'cours' | 'inspecteur'
+  rightMode?: 'cours' | 'inspecteur' | 'journal'
   onChangeMode?: (v: string | null) => void
   hasOutputs?: boolean
 }) {
@@ -798,6 +809,7 @@ function InspectorPanel({
         >
           <ToggleButton label="Cours" value="cours" />
           <ToggleButton label={inspecteurLabel} value="inspecteur" />
+          <ToggleButton label="Journal" value="journal" />
         </ToggleButtonGroup>
       </div>
       <div
@@ -807,7 +819,9 @@ function InspectorPanel({
           overflowY: 'auto',
         }}
       >
-        {rightMode === 'cours' ? (
+        {rightMode === 'journal' ? (
+          <JournalPanelPlaceholder />
+        ) : rightMode === 'cours' ? (
           <CoursPanel />
         ) : !selected ? (
           <Text type="body" color="secondary" style={{ textAlign: 'center', padding: '18px 6px' }}>
