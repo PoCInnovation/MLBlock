@@ -173,24 +173,7 @@ export default function EditorPage() {
   return (
     <main id="main" style={{ height: '100vh', background: theme.color.bg, color: theme.color.text, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <SkipLink />
-      <div
-        className="editor-outer"
-        style={{
-          maxWidth: 1440,
-          margin: '0 auto',
-          padding: 16,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 16,
-          height: '100vh',
-          maxHeight: '100vh',
-          overflow: 'hidden',
-          width: '100%',
-          boxSizing: 'border-box',
-          flex: 1,
-          minHeight: 0,
-        }}
-      >
+      <div className="editor-outer">
         <EditorHeader />
         {restoredWork && (
           <div className="flex items-center justify-between gap-3 px-4 py-[9px] bg-[rgba(143,209,168,.13)] border border-[rgba(143,209,168,.35)] text-success-muted text-[13px] font-bold shrink-0" style={{ borderRadius: theme.radius.xl }}>

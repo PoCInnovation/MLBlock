@@ -59,9 +59,9 @@ export default function JournalPanel() {
     try {
       const snap = await getPipeline(pipelineId)
       store.loadPipeline(snap.nodes, snap.edges, snap.id, snap.name)
-      store.showToast({ kind: 'success', message: 'Pipeline restaurée' } as never)
+      store.showToast({ kind: 'success', message: 'Pipeline restaurée' })
     } catch {
-      store.showToast({ kind: 'error', message: 'Échec restauration' } as never)
+      store.showToast({ kind: 'error', message: 'Échec restauration' })
     }
   }
 
@@ -86,7 +86,7 @@ export default function JournalPanel() {
           <Text type="label" color="secondary">Exécutions</Text>
           <VStack gap={1}>
             {jobs.map(j => (
-              <Card key={j.id} variant={selectedId === j.id ? 'default' : 'muted'} padding={2} style={{ cursor: 'pointer' } as never} onClick={() => setSelectedJobId(j.id)}>
+              <Card key={j.id} variant={selectedId === j.id ? 'default' : 'muted'} padding={2} className="cursor-pointer" onClick={() => setSelectedJobId(j.id)}>
                 <HStack gap={2} style={{ justifyContent: 'space-between', alignItems: 'center' }}>
                   <Text type="body" style={{ fontWeight: 700 }}>{fmtTime(j.created_at)}</Text>
                   <Text type="supporting" color="secondary">{j.status}</Text>
