@@ -88,6 +88,19 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
   const [rightCollapsed, setRightCollapsed] = useState(false)
   const [rightMode, setRightMode] = useState<'cours' | 'inspecteur' | 'journal'>('inspecteur')
   const hasOutputs = useAppStore(s => s.results.length > 0)
+  const jobStatus = useAppStore(s => s.jobStatus)
+  // Auto-switch to Inspecteur and select last Block on run
+  useEffect(() => {
+    if (jobStatus !== 'running') return
+    setRightMode('inspecteur')
+    setRightCollapsed(false)
+    const { flowNodes, flowEdges } = useAppStore.getState()
+    const last = flowNodes.filter(n => !flowEdges.some(e => e.source === n.id)).pop()
+    if (last) {
+      const store = useAppStore.getState()
+      store.setFlowNodes(flowNodes.map(n => ({ ...n, selected: n.id === last.id })))
+    }
+  }, [jobStatus])
   // Compteur de taps : décale les ajouts successifs pour éviter l'empilement
   // exact au centre (le premier reste centré).
   const tapSeq = useRef(0)
