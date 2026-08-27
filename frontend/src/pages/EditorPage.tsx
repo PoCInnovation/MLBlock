@@ -118,13 +118,15 @@ export default function EditorPage() {
   }, [pipelineQuery.data])
 
   // Miroir zustand → URL : le pipeline ouvert est partageable
+  // pony: ne pas effacer ?pipeline=xxx au refresh tant que le store est vide (la query charge encore)
   useEffect(() => {
+    if (urlPipelineId && !pipelineId) return
     const nextSearch = pipelineId ? { pipeline: pipelineId } : {}
     const curr = (search.pipeline as string | undefined) ?? null
     if (curr !== pipelineId) {
       navigate({ search: nextSearch as never, replace: true })
     }
-  }, [pipelineId, navigate, search.pipeline])
+  }, [pipelineId, urlPipelineId, navigate, search.pipeline])
 
   // Projet ouvert : recharge les résultats du dernier run (persistés en db)
   useEffect(() => {
