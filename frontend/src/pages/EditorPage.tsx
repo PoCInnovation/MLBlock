@@ -185,12 +185,14 @@ export default function EditorPage() {
           className="floating-panel floating-canvas"
           style={{
             flex: 1,
+            height: '100%',
+            minHeight: 0,
+            alignSelf: 'stretch',
             borderRadius: theme.radius.xl,
             overflow: 'hidden',
             boxShadow: '0 8px 32px rgba(0,0,0,.12)',
             display: 'flex',
             flexDirection: 'column',
-            minHeight: 0,
             background: theme.color.canvas,
           }}
         >

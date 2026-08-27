@@ -398,7 +398,7 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
   )
 
   return (
-    <div style={{ flex: 1, position: 'relative', display: 'flex', gap: 16, minWidth: 0, minHeight: 0, height: '100%' }}>
+    <div style={{ flex: 1, position: 'relative', display: 'flex', gap: 16, minWidth: 0, minHeight: 0, height: '100%', alignItems: 'stretch' }}>
       {/* Palette gauche : bouton repli en haut à droite *dans* la sidebar, instant */}
       <div
         className="flow-palette"
@@ -410,6 +410,9 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
           overflow: 'hidden',
           transition: 'none',
           position: 'relative',
+          height: '100%',
+          alignSelf: 'stretch',
+          minHeight: 0,
         }}
       >
         <div
@@ -435,7 +438,10 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
           style={{
             flex: 1,
             minHeight: 0,
+            height: '100%',
             display: leftCollapsed ? 'none' : 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
           }}
         >
           <FlowPalette onDragStart={onDragStart} onToggleCollapse={() => setLeftCollapsed(true)} />
@@ -447,7 +453,7 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
         style={{
           flex: 1,
           alignSelf: 'stretch',
-          height: 'auto',
+          height: '100%',
           minHeight: 0,
           borderRadius: theme.radius.xl,
           overflow: 'hidden',
@@ -512,6 +518,9 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
           overflow: 'hidden',
           transition: 'none',
           position: 'relative',
+          height: '100%',
+          alignSelf: 'stretch',
+          minHeight: 0,
         }}
       >
         <div
@@ -537,7 +546,10 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
           style={{
             flex: 1,
             minHeight: 0,
+            height: '100%',
             display: rightCollapsed ? 'none' : 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
           }}
         >
           <InspectorPanel
@@ -696,7 +708,7 @@ function CoursPanel() {
   if (course) {
     const currentBody = sectionBodies[idx] ?? sectionBodies[0] ?? course.body
     return (
-      <VStack gap={3} style={{ minHeight: 0 }}>
+      <VStack gap={3} style={{ minHeight: 0, flex: 1, height: '100%', overflow: 'hidden' }}>
         <button onClick={() => setSelected(null)} style={{ background: 'none', border: 'none', color: theme.color.textMuted, cursor: 'pointer', fontSize: 13, fontWeight: 700, textAlign: 'left', padding: 0 }}>← Retour au catalogue</button>
         <Heading level={4}>{course.title}</Heading>
         {bannerText ? (
@@ -704,7 +716,7 @@ function CoursPanel() {
             {bannerText}
           </div>
         ) : null}
-        <Stack style={{ flex: 1, overflowY: 'auto', minHeight: 0, maxHeight: 420, paddingRight: 2 }}>
+        <Stack style={{ flex: 1, overflowY: 'auto', minHeight: 0, paddingRight: 2 }}>
           <Markdown>{currentBody}</Markdown>
         </Stack>
         {sections.length > 0 ? (
@@ -724,7 +736,7 @@ function CoursPanel() {
     )
   }
   return (
-    <VStack gap={2}>
+    <VStack gap={2} style={{ minHeight: 0, flex: 1, height: '100%', overflow: 'hidden' }}>
       <TextInput label="Rechercher un cours" isLabelHidden value={query} onChange={setQuery} placeholder="Rechercher un cours…" />
       <ToggleButtonGroup type="single" label="Difficulté" value={difficulty} onChange={v => setDifficulty((v as string) || 'Tous')} size="sm">
         <Grid columns={2} gap={1.5}>
@@ -739,7 +751,7 @@ function CoursPanel() {
       ) : filtered.length === 0 ? (
         <div style={{ color: theme.color.textMuted, fontSize: 13, fontWeight: 600, textAlign: 'center', padding: '18px 6px' }}>Aucun cours trouvé</div>
       ) : (
-        <VStack gap={2}>
+        <VStack gap={2} style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: 2 }}>
           {filtered.map(c => (
             <ClickableCard key={c.slug} label={c.title} onClick={() => setSelected(c.slug)} padding={2}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 2, textAlign: 'left' }}>
@@ -787,7 +799,10 @@ function InspectorPanel({
     <div
       className="floating-panel inspector-panel"
       style={{
-        width: 260,
+        width: '100%',
+        height: '100%',
+        flex: 1,
+        alignSelf: 'stretch',
         flexShrink: 0,
         background: theme.color.surface2,
         border: `1px solid ${theme.color.border}`,
@@ -837,8 +852,12 @@ function InspectorPanel({
       <div
         style={{
           flex: 1,
+          minHeight: 0,
+          height: '100%',
           padding: 16,
           overflowY: 'auto',
+          display: 'flex',
+          flexDirection: 'column',
         }}
       >
         {rightMode === 'journal' ? (

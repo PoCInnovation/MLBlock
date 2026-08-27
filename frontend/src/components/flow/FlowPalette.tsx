@@ -7,13 +7,13 @@ import { theme } from '../../theme'
 import { ToggleButtonGroup, ToggleButton, Grid, ClickableCard, IconButton, TextInput } from '@astryxdesign/core'
 
 const paletteStyle: React.CSSProperties = {
-  width: 280,
-  flexShrink: 0,
+  width: '100%',
+  height: '100%',
+  flex: 1,
+  alignSelf: 'stretch',
   display: 'flex',
   flexDirection: 'column',
   minHeight: 0,
-  maxHeight: 'calc(100vh - 220px)',
-  height: 'calc(100vh - 220px)',
   background: theme.color.surface2,
   border: `1px solid ${theme.color.border}`,
   borderRadius: theme.radius.xl,

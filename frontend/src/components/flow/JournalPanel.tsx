@@ -123,7 +123,7 @@ export default function JournalPanel() {
     })()
 
     return (
-      <VStack gap={3} style={{ minHeight: 0 }}>
+      <VStack gap={3} style={{ minHeight: 0, flex: 1, height: '100%', overflow: 'hidden' }}>
         <button
           onClick={() => setSelectedJobId(null)}
           style={{
@@ -154,7 +154,7 @@ export default function JournalPanel() {
         </ToggleButtonGroup>
         <Button label="Restaurer cette version" variant="primary" size="sm" onClick={handleRestore} isDisabled={!selectedJobId} />
         <Divider />
-        <VStack gap={2} style={{ maxHeight: 320, overflowY: 'auto', paddingRight: 2 }}>
+        <VStack gap={2} style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: 2 }}>
           {fused.length === 0 ? (
             <Text type="body" color="secondary" style={{ textAlign: 'center', padding: '10px 6px' }}>
               Aucune donnée
@@ -181,12 +181,12 @@ export default function JournalPanel() {
 
   // List view: all Jobs
   return (
-    <VStack gap={3} style={{ minHeight: 0 }}>
+    <VStack gap={3} style={{ minHeight: 0, flex: 1, height: '100%', overflow: 'hidden' }}>
       <Heading level={5}>Journal</Heading>
       <Text type="label" color="secondary">
         Exécutions
       </Text>
-      <VStack gap={1}>
+      <VStack gap={1} style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: 2 }}>
         {jobs.map(j => (
           <Card key={j.id} variant="muted" padding={2} className="cursor-pointer" onClick={() => setSelectedJobId(j.id)}>
             <HStack gap={2} style={{ justifyContent: 'space-between', alignItems: 'center' }}>
