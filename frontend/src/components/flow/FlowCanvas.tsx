@@ -27,6 +27,7 @@ import { courses, getCourse } from '../../content/cours'
 import BlockNode from './BlockNode'
 import FlowLink from './FlowLink'
 import FlowPalette from './FlowPalette'
+import JournalPanel from './JournalPanel'
 import { segsToFields } from '../../utils/flowConversion'
 import { buildConversionGraph, classifyEdge, converterFor, portDtype } from '../../utils/typeCheck'
 import { resolveConnection, type ResolvedConnection } from '../../utils/portResolution'
@@ -722,17 +723,6 @@ function CoursPanel() {
   )
 }
 
-function JournalPanelPlaceholder() {
-  return (
-    <VStack gap={2}>
-      <Heading level={5}>Journal</Heading>
-      <Text type="body" color="secondary" style={{ textAlign: 'center', padding: '18px 6px' }}>
-        Historique des exécutions — à venir
-      </Text>
-    </VStack>
-  )
-}
-
 function InspectorPanel({
   onToggleCollapse,
   rightMode = 'inspecteur',
@@ -820,7 +810,7 @@ function InspectorPanel({
         }}
       >
         {rightMode === 'journal' ? (
-          <JournalPanelPlaceholder />
+          <JournalPanel />
         ) : rightMode === 'cours' ? (
           <CoursPanel />
         ) : !selected ? (
