@@ -89,13 +89,32 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
   const [rightMode, setRightMode] = useState<'cours' | 'inspecteur' | 'journal'>('inspecteur')
   const hasOutputs = useAppStore(s => s.results.length > 0)
   const jobStatus = useAppStore(s => s.jobStatus)
-  // Auto-switch to Inspecteur and select last Block on run
+  // Auto-switch to Inspecteur and select last Block on run (Kahn topo)
   useEffect(() => {
     if (jobStatus !== 'running') return
     setRightMode('inspecteur')
     setRightCollapsed(false)
     const { flowNodes, flowEdges } = useAppStore.getState()
-    const last = flowNodes.filter(n => !flowEdges.some(e => e.source === n.id)).pop()
+    if (flowNodes.length === 0) return
+    const indeg = new Map<string, number>(flowNodes.map(n => [n.id, 0]))
+    const adj = new Map<string, string[]>(flowNodes.map(n => [n.id, []]))
+    for (const e of flowEdges) {
+      indeg.set(e.target, (indeg.get(e.target) ?? 0) + 1)
+      adj.get(e.source)?.push(e.target)
+    }
+    const q = flowNodes.filter(n => (indeg.get(n.id) ?? 0) === 0).map(n => n.id)
+    const order: string[] = []
+    while (q.length) {
+      const id = q.shift()!
+      order.push(id)
+      for (const nb of adj.get(id) ?? []) {
+        indeg.set(nb, (indeg.get(nb) ?? 0) - 1)
+        if ((indeg.get(nb) ?? 0) === 0) q.push(nb)
+      }
+    }
+    const sinks = order.filter(id => (adj.get(id)?.length ?? 0) === 0)
+    const lastId = sinks.length ? sinks[sinks.length - 1] : order[order.length - 1]
+    const last = flowNodes.find(n => n.id === lastId)
     if (last) {
       const store = useAppStore.getState()
       store.setFlowNodes(flowNodes.map(n => ({ ...n, selected: n.id === last.id })))

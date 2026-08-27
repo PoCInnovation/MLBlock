@@ -9,6 +9,8 @@ type Filter = 'logs' | 'outputs' | 'mixte'
 
 export default function JournalPanel() {
   const pipelineId = useAppStore(s => s.pipelineId)
+  const consoleLines = useAppStore(s => s.consoleLines)
+  const lastJobId = useAppStore(s => s.lastJobId)
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null)
   const [filter, setFilter] = useState<Filter>('mixte')
 
@@ -35,17 +37,21 @@ export default function JournalPanel() {
     } catch { return iso }
   }
 
-  // Fused timeline: outputs + job log entries (if any)
+  // Fused timeline: outputs + job log entries + live consoleLines for current Job
   const fused = (() => {
     const items: Array<{ id: string; at: number; kind: 'log' | 'output'; text: string; block?: string }> = []
-    // outputs as chronologically sorted
     for (const o of [...outputs].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())) {
       items.push({ id: o.block_id ?? o.block_name, at: new Date(o.created_at).getTime(), kind: 'output', text: o.output, block: o.block_name })
     }
-    // if selected job has global output/error, add as log
     const sel = jobs.find(j => j.id === selectedId)
     if (sel?.output) items.push({ id: 'job-log', at: new Date(sel.created_at).getTime(), kind: 'log', text: sel.output })
     if (sel?.error) items.push({ id: 'job-error', at: new Date(sel.completed_at ?? sel.created_at).getTime(), kind: 'log', text: sel.error })
+    // live consoleLines for the selected Job if it is the current running Job
+    if (selectedId && selectedId === lastJobId) {
+      for (const [idx, line] of consoleLines.entries()) {
+        items.push({ id: `console-${idx}`, at: Date.now() + idx, kind: 'log', text: line.t })
+      }
+    }
     items.sort((a, b) => a.at - b.at)
     if (filter === 'logs') return items.filter(i => i.kind === 'log')
     if (filter === 'outputs') return items.filter(i => i.kind === 'output')
