@@ -1,3 +1,5 @@
-// Deprecated — routing migrated to TanStack Router file-based routes (src/routes/*).
-// Kept as shim to avoid import errors if any stray import remains. No react-router-dom.
-export {}
+// ponytail: Start migration — AGENTS.md still says router.tsx is shim, but spec #13 requires getRouter for prerender
+import { createRouter } from '@tanstack/react-router'
+import { routeTree } from './routeTree.gen'
+
+export const getRouter = () => createRouter({ routeTree, scrollRestoration: true })

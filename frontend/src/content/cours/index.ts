@@ -171,6 +171,23 @@ export function getCourse(slug: string): CourseMeta | undefined {
   return courses.find(c => c.slug === slug || c.id === slug)
 }
 
+/**
+ * Deduplicated helper for TreeList: groups courses by difficulty.
+ * Returns items with `href` so TreeList renders anchor links (SEO/crawlable)
+ * without Feature Envy — no navigate callback is needed.
+ */
+export function courseTreeItems(list: CourseMeta[]) {
+  const groupByDifficulty = (difficulty: Difficulty) =>
+    list
+      .filter(c => c.difficulty === difficulty)
+      .map(c => ({ id: c.slug, label: c.title, href: `/cours/${c.slug}` }))
+  return [
+    { id: 'facile', label: 'Facile', isExpanded: true, children: groupByDifficulty('facile') },
+    { id: 'moyen', label: 'Moyen', isExpanded: true, children: groupByDifficulty('moyen') },
+    { id: 'difficile', label: 'Difficile', isExpanded: true, children: groupByDifficulty('difficile') },
+  ]
+}
+
 function searchCourses(q: string, difficulty?: string): CourseMeta[] {
   const query = q.trim().toLowerCase()
   return courses.filter(c => {

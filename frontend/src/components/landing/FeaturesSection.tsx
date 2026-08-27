@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router'
 import { theme } from '../../theme'
 import { Play } from 'lucide-react'
 import { Icon } from '@astryxdesign/core/Icon'
@@ -164,7 +165,7 @@ export default function FeaturesSection() {
                     ))}
                 </div>
                 <div style={{ textAlign: 'center', marginTop: 36 }}>
-                    <a href="/cours" className="poc-btn" style={{ textDecoration: 'none' }}>Tous les cours →</a>
+                    <Link to="/cours" className="poc-btn" style={{ textDecoration: 'none' }} aria-label="Tous les cours">Tous les cours →</Link>
                 </div>
             </div>
         </section>
