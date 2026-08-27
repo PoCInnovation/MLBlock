@@ -13,7 +13,6 @@ import UnsavedChangesDialog from '../components/ui/UnsavedChangesDialog'
 import Toast from '../components/ui/Toast'
 import { CheckCircle2 } from 'lucide-react'
 import FlowCanvas from '../components/flow/FlowCanvas'
-import ConsolePanel from '../components/ui/ConsolePanel'
 import { theme } from '../theme'
 function stashIfDirty(): void {
   const s = useAppStore.getState()
@@ -172,23 +171,9 @@ export default function EditorPage() {
     )
   }
   return (
-    <main id="main" style={{ minHeight: '100vh', background: theme.color.bg, color: theme.color.text, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <main id="main" style={{ height: '100vh', background: theme.color.bg, color: theme.color.text, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <SkipLink />
-      <div
-        className="editor-outer"
-        style={{
-          maxWidth: 1440,
-          margin: '0 auto',
-          padding: 16,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 16,
-          minHeight: '100vh',
-          width: '100%',
-          boxSizing: 'border-box',
-          flex: 1,
-        }}
-      >
+      <div className="editor-outer">
         <EditorHeader />
         {restoredWork && (
           <div className="flex items-center justify-between gap-3 px-4 py-[9px] bg-[rgba(143,209,168,.13)] border border-[rgba(143,209,168,.35)] text-success-muted text-[13px] font-bold shrink-0" style={{ borderRadius: theme.radius.xl }}>
@@ -200,18 +185,19 @@ export default function EditorPage() {
           className="floating-panel floating-canvas"
           style={{
             flex: 1,
+            height: '100%',
+            minHeight: 0,
+            alignSelf: 'stretch',
             borderRadius: theme.radius.xl,
             overflow: 'hidden',
             boxShadow: '0 8px 32px rgba(0,0,0,.12)',
             display: 'flex',
             flexDirection: 'column',
-            minHeight: 0,
             background: theme.color.canvas,
           }}
         >
           <FlowCanvas />
         </div>
-        <ConsolePanel />
       </div>
       <Toast />
       <UnsavedChangesDialog

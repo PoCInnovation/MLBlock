@@ -11,17 +11,12 @@ import { theme } from '../../theme'
 import { ACCEPT_BY_BLOCK, DEFAULT_ACCEPT, SAMPLE_CATEGORY_BY_BLOCK } from '../../utils/samples'
 import SampleDataModal from '../ui/SampleDataModal'
 import { HoverCard } from '@astryxdesign/core/HoverCard'
+import { NumberInput } from '@astryxdesign/core/NumberInput'
+import { TextInput } from '@astryxdesign/core/TextInput'
+import { CheckboxInput } from '@astryxdesign/core/CheckboxInput'
+import { Selector } from '@astryxdesign/core/Selector'
+import { FileInput } from '@astryxdesign/core/FileInput'
 
-const inputBase: React.CSSProperties = {
-  background: 'rgba(255,255,255,.9)', border: 'none', borderRadius: theme.radius.sm,
-  padding: '3px 5px', textAlign: 'center', color: theme.color.textInput,
-  fontWeight: 800, fontSize: 13,
-}
-const selectBase: React.CSSProperties = {
-  background: 'rgba(255,255,255,.9)', border: 'none', borderRadius: theme.radius.sm,
-  padding: '3px 6px', color: theme.color.textInput, fontWeight: 800, fontSize: 13,
-  cursor: 'pointer',
-}
 const fileCard: React.CSSProperties = {
   display: 'flex', alignItems: 'center', gap: 6, flexBasis: '100%',
   background: 'rgba(99,102,241,.15)', borderRadius: 8,
@@ -125,13 +120,6 @@ function validateSeg(seg: Segment, value: string): { ok: boolean; msg?: string }
   return { ok: true }
 }
 
-function validBorder(v: { ok: boolean; msg?: string }, filled: boolean): React.CSSProperties {
-  if (!filled) return {}
-  // box-shadow inset plutôt que border : ne prend aucune place, donc aucun
-  // décalage du champ (texte/alignement) quand la valeur change d'état.
-  return { boxShadow: `inset 0 0 0 1px ${v.ok ? theme.color.success : theme.color.error}` }
-}
-
 type BlockSegmentsProps = {
   segs: Segment[]
   fields?: Record<string, string>
@@ -161,7 +149,28 @@ const BlockSegments = memo(function BlockSegments({ segs, fields, blockId, block
       const url = await uploadFile(file, 'user-uploads', path)
       if (url) {
         onUpdate(blockId, k, url)
-        setUploadState(s => ({ ...s, [k]: 'uploading' }))
+        setUploadState(s => {
+          const next = { ...s }
+          delete next[k]
+          return next
+        })
+      }
+    } catch {
+      setUploadState(s => ({ ...s, [k]: 'error' }))
+    }
+  }
+
+  const handleFilePicked = async (k: string, files: File | File[] | null) => {
+    const file = Array.isArray(files) ? files[0] : files
+    if (!file || !onUpdate || !blockId) return
+    setUploadState(s => ({ ...s, [k]: 'uploading' }))
+    setFileMetaState(s => ({ ...s, [k]: { name: file.name, size: file.size } }))
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      const path = uploadPath(user?.id, blockId)
+      const url = await uploadFile(file, 'user-uploads', path)
+      if (url) {
+        onUpdate(blockId, k, url)
         setUploadState(s => {
           const next = { ...s }
           delete next[k]
@@ -225,15 +234,19 @@ const BlockSegments = memo(function BlockSegments({ segs, fields, blockId, block
             <>
               {labelCell(s, row, divider)}
               {fieldCell(row, (
-                <ParamInfo seg={s}><input
-                  list={dlId}
-                  type="text"
-                  value={value}
-                  onChange={e => onUpdate(blockId!, s.k, e.target.value)}
-                  onFocus={() => useAppStore.getState().commitUndoPoint()}
-                  style={{ ...inputBase, width: 110 }}
-                  placeholder={cols ? 'colonne…' : undefined}
-                /></ParamInfo>
+                <ParamInfo seg={s}>
+                  <TextInput
+                    label={s.k}
+                    isLabelHidden
+                    value={value}
+                    onChange={(v) => onUpdate(blockId!, s.k, v)}
+                    onFocus={() => useAppStore.getState().commitUndoPoint()}
+                    placeholder={cols ? 'colonne…' : undefined}
+                    width={110}
+                    size="sm"
+                    {...({ list: dlId } as unknown as Record<string, unknown>)}
+                  />
+                </ParamInfo>
               ), divider)}
               <datalist id={dlId}>{opts.map(o => <option key={o} value={o} />)}</datalist>
             </>
@@ -246,14 +259,18 @@ const BlockSegments = memo(function BlockSegments({ segs, fields, blockId, block
             <>
               {labelCell(s, row, divider)}
               {fieldCell(row, (
-                <ParamInfo seg={s}><select
-                  value={value}
-                  onChange={e => onUpdate(blockId!, s.k, e.target.value)}
-                  onFocus={() => useAppStore.getState().commitUndoPoint()}
-                  style={selectBase}
-                >
-                  {s.opts.map(o => <option key={o} value={o}>{o}</option>)}
-                </select></ParamInfo>
+                <ParamInfo seg={s}>
+                  <Selector
+                    label={s.k}
+                    isLabelHidden
+                    value={value}
+                    onChange={(v) => onUpdate(blockId!, s.k, v)}
+                    options={s.opts}
+                    size="sm"
+                    width={130}
+                    {...({ onFocus: () => useAppStore.getState().commitUndoPoint() } as unknown as Record<string, unknown>)}
+                  />
+                </ParamInfo>
               ), divider)}
             </>
           )
@@ -266,13 +283,16 @@ const BlockSegments = memo(function BlockSegments({ segs, fields, blockId, block
             <>
               {labelCell(s, row, divider)}
               {fieldCell(row, (
-                <ParamInfo seg={s}><input
-                  type="checkbox"
-                  checked={checked}
-                  onChange={e => onUpdate(blockId!, s.k, e.target.checked ? 'true' : 'false')}
-                  onFocus={() => useAppStore.getState().commitUndoPoint()}
-                  style={{ cursor: 'pointer', accentColor: '#2a211c' }}
-                /></ParamInfo>
+                <ParamInfo seg={s}>
+                  <CheckboxInput
+                    label={s.k}
+                    isLabelHidden
+                    value={checked}
+                    onChange={(c) => onUpdate(blockId!, s.k, c ? 'true' : 'false')}
+                    onFocus={() => useAppStore.getState().commitUndoPoint()}
+                    size="sm"
+                  />
+                </ParamInfo>
               ), divider)}
             </>
           )
@@ -281,55 +301,56 @@ const BlockSegments = memo(function BlockSegments({ segs, fields, blockId, block
         if (s.t === 'num') {
           const v = validateSeg(s, value)
           const placeholder = s.min != null && s.max != null ? `entre ${s.min} et ${s.max}` : undefined
-          const isNumeric = s.min != null || s.max != null || s.step != null
-          // datalist incompatible avec type=number → text quand suggestions
+          // datalist incompatible avec NumberInput → TextInput quand suggestions
           const useText = !!s.opts && s.opts.length > 0
           const divider = i === 0 ? dividerStyle : {}
           if (useText) {
             const dlId = `mlb-dl-${blockId}-${s.k}`
-            const invalid = !v.ok && value.trim() !== ''
             return (
               <>
                 {labelCell(s, row, divider)}
                 {fieldCell(row, (
-                  <ParamInfo seg={s}><span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <input
-                      list={dlId}
-                      type="text"
+                  <ParamInfo seg={s}>
+                    <TextInput
+                      label={s.k}
+                      isLabelHidden
                       value={value}
-                      onChange={e => onUpdate(blockId!, s.k, e.target.value)}
+                      onChange={(val) => onUpdate(blockId!, s.k, val)}
                       onFocus={() => useAppStore.getState().commitUndoPoint()}
-                      style={{ ...inputBase, width: (s.w || 60) + 'px', ...validBorder(v, value.trim() !== '') }}
-                      title={v.msg}
                       placeholder={placeholder}
+                      status={!v.ok && value.trim() !== '' ? { type: 'error', message: v.msg } : undefined}
+                      width={s.w ?? 90}
+                      size="sm"
+                      {...({ list: dlId } as unknown as Record<string, unknown>)}
                     />
-                    {invalid && <Text role="alert" type="supporting" style={{ fontSize: 12, lineHeight: 1.3, color: theme.color.errorLight }}>{v.msg}</Text>}
-                  </span></ParamInfo>
+                  </ParamInfo>
                 ), divider)}
                 <datalist id={dlId}>{s.opts!.map(o => <option key={o} value={o} />)}</datalist>
               </>
             )
           }
-          const invalid = !v.ok && value.trim() !== ''
           return (
             <>
               {labelCell(s, row, divider)}
               {fieldCell(row, (
-                <ParamInfo seg={s}><span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  <input
-                    type={isNumeric ? 'number' : 'text'}
+                <ParamInfo seg={s}>
+                  <NumberInput
+                    label={s.k}
+                    isLabelHidden
+                    value={value.trim() === '' || Number.isNaN(Number(value)) ? null : Number(value) ?? null}
+                    onChange={(val: number | null) => onUpdate(blockId!, s.k, val == null ? '' : String(val))}
                     onFocus={() => useAppStore.getState().commitUndoPoint()}
-                    value={value}
-                    onChange={e => onUpdate(blockId!, s.k, e.target.value)}
-                    style={{ ...inputBase, width: (s.w || (isNumeric ? 60 : 90)) + 'px', ...validBorder(v, value.trim() !== '') }}
-                    title={v.msg}
+                    min={s.min ?? null}
+                    max={s.max ?? null}
+                    step={s.step ?? null}
+                    status={!v.ok ? { type: 'error', message: v.msg } : undefined}
                     placeholder={placeholder}
-                    min={s.min}
-                    max={s.max}
-                    step={s.step}
+                    isWheelEnabled={false}
+                    hasClear
+                    width={s.w ?? 90}
+                    size="sm"
                   />
-                  {invalid && <Text role="alert" type="supporting" style={{ fontSize: 12, lineHeight: 1.3, color: theme.color.errorLight }}>{v.msg}</Text>}
-                </span></ParamInfo>
+                </ParamInfo>
               ), divider)}
             </>
           )
@@ -338,24 +359,25 @@ const BlockSegments = memo(function BlockSegments({ segs, fields, blockId, block
         if (s.t === 'list') {
           const v = validateSeg(s, value)
           const dlId = `mlb-dl-${blockId}-${s.k}`
-          const invalid = !v.ok && value.trim() !== ''
           const divider = i === 0 ? dividerStyle : {}
           return (
             <>
               {labelCell(s, row, divider)}
               {fieldCell(row, (
-                <ParamInfo seg={s}><span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  <input
-                    list={s.opts && s.opts.length > 0 ? dlId : undefined}
-                    type="text"
+                <ParamInfo seg={s}>
+                  <TextInput
+                    label={s.k}
+                    isLabelHidden
                     value={value}
-                    onChange={e => onUpdate(blockId!, s.k, e.target.value)}
-                    style={{ ...inputBase, width: 110, ...validBorder(v, value.trim() !== '') }}
-                    title={v.msg}
+                    onChange={(val) => onUpdate(blockId!, s.k, val)}
+                    onFocus={() => useAppStore.getState().commitUndoPoint()}
                     placeholder={s.format ?? '[1, 2, 3]'}
+                    status={!v.ok && value.trim() !== '' ? { type: 'error', message: v.msg } : undefined}
+                    width={110}
+                    size="sm"
+                    {...(s.opts && s.opts.length > 0 ? ({ list: dlId } as unknown as Record<string, unknown>) : {})}
                   />
-                  {invalid && <Text role="alert" type="supporting" style={{ fontSize: 12, lineHeight: 1.3, color: theme.color.errorLight }}>{v.msg}</Text>}
-                </span></ParamInfo>
+                </ParamInfo>
               ), divider)}
               {s.opts && s.opts.length > 0 && (
                 <datalist id={dlId}>{s.opts.map(o => <option key={o} value={o} />)}</datalist>
@@ -378,7 +400,7 @@ const BlockSegments = memo(function BlockSegments({ segs, fields, blockId, block
             <>
               {labelCell(s, row, divider)}
               {fieldCell(row, (
-                <HStack gap={1} style={fileCard as never}>
+                <HStack gap={1} style={fileCard}>
                   <Text style={fileNameStyle}>{meta?.name ?? 'Upload…'}</Text>
                   <Text style={fileMeta}><Icon icon={Loader2} size="xsm" style={{ animation: 'mlbSpin .8s linear infinite' }} /></Text>
                 </HStack>
@@ -390,7 +412,7 @@ const BlockSegments = memo(function BlockSegments({ segs, fields, blockId, block
             <>
               {labelCell(s, row, divider)}
               {fieldCell(row, (
-                <HStack gap={1} style={fileCard as never}>
+                <HStack gap={1} style={fileCard}>
                   <Text style={{ ...errStyle, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Icon icon={TriangleAlert} size="xsm" /> Échec</Text>
                   <button type="button" style={{ ...errStyle, background: 'none', border: 'none', padding: 0, fontFamily: 'inherit' }} onClick={() => inputRefs.current[s.k]?.click()}>Réessayer</button>
                   <input ref={el => { inputRefs.current[s.k] = el }} type="file" accept={fileAccept} style={{ display: 'none' }} onChange={e => handleFile(s.k, e)} />
@@ -403,7 +425,7 @@ const BlockSegments = memo(function BlockSegments({ segs, fields, blockId, block
             <>
               {labelCell(s, row, divider)}
               {fieldCell(row, (
-                <HStack gap={1} style={fileCard as never}>
+                <HStack gap={1} style={fileCard}>
                   <Text style={fileNameStyle}>{fname}</Text>
                   {fsize && <Text style={fileMeta}>{fmtSize(fsize)}</Text>}
                   <button style={removeBtn} onClick={() => { onUpdate(blockId!, s.k, ''); setFileMetaState(m => { const n = { ...m }; delete n[s.k]; return n }) }}>×</button>
@@ -413,16 +435,36 @@ const BlockSegments = memo(function BlockSegments({ segs, fields, blockId, block
             </>
           )
 
+          // Sample-enabled blocks keep the sample picker button; otherwise use Astryx FileInput
+          if (sampleCat) {
+            return (
+              <>
+                {labelCell(s, row, divider)}
+                {fieldCell(row, (
+                  <span style={{ display: 'flex' }}>
+                    <input ref={el => { inputRefs.current[s.k] = el }} type="file" accept={fileAccept} style={{ display: 'none' }} onChange={e => handleFile(s.k, e)} />
+                    <button type="button" onClick={() => setSampleOpen(s.k)} style={{ ...fileBtn, fontFamily: 'inherit' }} title={s.desc}>
+                      <Icon icon={FileUp} size="xsm" /> Données
+                    </button>
+                  </span>
+                ), divider)}
+              </>
+            )
+          }
+
           return (
             <>
               {labelCell(s, row, divider)}
               {fieldCell(row, (
-                <span style={{ display: 'flex' }}>
-                  <input ref={el => { inputRefs.current[s.k] = el }} type="file" accept={fileAccept} style={{ display: 'none' }} onChange={e => handleFile(s.k, e)} />
-                  <button type="button" onClick={() => sampleCat ? setSampleOpen(s.k) : inputRefs.current[s.k]?.click()} style={{ ...fileBtn, fontFamily: 'inherit' }} title={s.desc}>
-                    <Icon icon={FileUp} size="xsm" /> {sampleCat ? 'Données' : 'CSV'}
-                  </button>
-                </span>
+                <FileInput
+                  label={s.k}
+                  isLabelHidden
+                  value={null}
+                  onChange={(files) => handleFilePicked(s.k, files)}
+                  accept={fileAccept}
+                  placeholder="CSV"
+                  width={140}
+                />
               ), divider)}
             </>
           )
