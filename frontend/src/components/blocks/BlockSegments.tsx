@@ -11,6 +11,7 @@ import { theme } from '../../theme'
 import { ACCEPT_BY_BLOCK, DEFAULT_ACCEPT, SAMPLE_CATEGORY_BY_BLOCK } from '../../utils/samples'
 import SampleDataModal from '../ui/SampleDataModal'
 import { HoverCard } from '@astryxdesign/core/HoverCard'
+import { NumberInput } from '@astryxdesign/core/NumberInput'
 
 const inputBase: React.CSSProperties = {
   background: 'rgba(255,255,255,.9)', border: 'none', borderRadius: theme.radius.sm,
@@ -281,8 +282,7 @@ const BlockSegments = memo(function BlockSegments({ segs, fields, blockId, block
         if (s.t === 'num') {
           const v = validateSeg(s, value)
           const placeholder = s.min != null && s.max != null ? `entre ${s.min} et ${s.max}` : undefined
-          const isNumeric = s.min != null || s.max != null || s.step != null
-          // datalist incompatible avec type=number → text quand suggestions
+          // datalist incompatible avec NumberInput → text quand suggestions
           const useText = !!s.opts && s.opts.length > 0
           const divider = i === 0 ? dividerStyle : {}
           if (useText) {
@@ -310,26 +310,28 @@ const BlockSegments = memo(function BlockSegments({ segs, fields, blockId, block
               </>
             )
           }
-          const invalid = !v.ok && value.trim() !== ''
           return (
             <>
               {labelCell(s, row, divider)}
               {fieldCell(row, (
-                <ParamInfo seg={s}><span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  <input
-                    type={isNumeric ? 'number' : 'text'}
+                <ParamInfo seg={s}>
+                  <NumberInput
+                    label={s.k}
+                    isLabelHidden
+                    value={value.trim() === '' || Number.isNaN(Number(value)) ? null : Number(value) ?? null}
+                    onChange={(val: number | null) => onUpdate(blockId!, s.k, val == null ? '' : String(val))}
                     onFocus={() => useAppStore.getState().commitUndoPoint()}
-                    value={value}
-                    onChange={e => onUpdate(blockId!, s.k, e.target.value)}
-                    style={{ ...inputBase, width: (s.w || (isNumeric ? 60 : 90)) + 'px', ...validBorder(v, value.trim() !== '') }}
-                    title={v.msg}
+                    min={s.min ?? null}
+                    max={s.max ?? null}
+                    step={s.step ?? null}
+                    status={!v.ok ? { type: 'error', message: v.msg } : undefined}
                     placeholder={placeholder}
-                    min={s.min}
-                    max={s.max}
-                    step={s.step}
+                    isWheelEnabled={false}
+                    hasClear
+                    width={s.w ?? 90}
+                    size="sm"
                   />
-                  {invalid && <Text role="alert" type="supporting" style={{ fontSize: 12, lineHeight: 1.3, color: theme.color.errorLight }}>{v.msg}</Text>}
-                </span></ParamInfo>
+                </ParamInfo>
               ), divider)}
             </>
           )
@@ -378,7 +380,7 @@ const BlockSegments = memo(function BlockSegments({ segs, fields, blockId, block
             <>
               {labelCell(s, row, divider)}
               {fieldCell(row, (
-                <HStack gap={1} style={fileCard as never}>
+                <HStack gap={1} style={fileCard}>
                   <Text style={fileNameStyle}>{meta?.name ?? 'Upload…'}</Text>
                   <Text style={fileMeta}><Icon icon={Loader2} size="xsm" style={{ animation: 'mlbSpin .8s linear infinite' }} /></Text>
                 </HStack>
@@ -390,7 +392,7 @@ const BlockSegments = memo(function BlockSegments({ segs, fields, blockId, block
             <>
               {labelCell(s, row, divider)}
               {fieldCell(row, (
-                <HStack gap={1} style={fileCard as never}>
+                <HStack gap={1} style={fileCard}>
                   <Text style={{ ...errStyle, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Icon icon={TriangleAlert} size="xsm" /> Échec</Text>
                   <button type="button" style={{ ...errStyle, background: 'none', border: 'none', padding: 0, fontFamily: 'inherit' }} onClick={() => inputRefs.current[s.k]?.click()}>Réessayer</button>
                   <input ref={el => { inputRefs.current[s.k] = el }} type="file" accept={fileAccept} style={{ display: 'none' }} onChange={e => handleFile(s.k, e)} />
@@ -403,7 +405,7 @@ const BlockSegments = memo(function BlockSegments({ segs, fields, blockId, block
             <>
               {labelCell(s, row, divider)}
               {fieldCell(row, (
-                <HStack gap={1} style={fileCard as never}>
+                <HStack gap={1} style={fileCard}>
                   <Text style={fileNameStyle}>{fname}</Text>
                   {fsize && <Text style={fileMeta}>{fmtSize(fsize)}</Text>}
                   <button style={removeBtn} onClick={() => { onUpdate(blockId!, s.k, ''); setFileMetaState(m => { const n = { ...m }; delete n[s.k]; return n }) }}>×</button>
