@@ -87,7 +87,11 @@ class VastAI:
         return base64.b64encode(gzip.compress(script.encode())).decode()
 
     def start_instance(self, instance_id: str) -> None:
-        if not self.api_key or self.api_key.startswith("mock") or instance_id == "dummy-instance-id":
+        if not self.api_key or self.api_key.startswith("mock") or instance_id in (  # noqa: E501
+            "dummy-instance-id",
+            "local-instance-id",
+            "mock-instance-id",
+        ):
             return
         # PUT /instances/{id} avec body {"state": "running"} (manage instance)
         url = f"{self.base_url}/instances/{instance_id}"
@@ -98,7 +102,11 @@ class VastAI:
             print(f"Error starting Vast.ai instance: {e}")
 
     def destroy_instance(self, instance_id: str) -> None:
-        if not self.api_key or self.api_key.startswith("mock") or instance_id == "dummy-instance-id":
+        if not self.api_key or self.api_key.startswith("mock") or instance_id in (  # noqa: E501
+            "dummy-instance-id",
+            "local-instance-id",
+            "mock-instance-id",
+        ):
             return
         url = f"{self.base_url}/instances/{instance_id}"
         try:

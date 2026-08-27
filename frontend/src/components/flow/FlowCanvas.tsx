@@ -20,8 +20,9 @@ import { AlignVerticalJustifyCenter, Menu, PanelLeft, PanelRight, ChevronLeft, C
 import { useShallow } from 'zustand/react/shallow'
 import useAppStore from '../../store/useAppStore'
 import { theme } from '../../theme'
-import { IconButton, ToggleButtonGroup, ToggleButton, TextInput, Grid, ClickableCard, Button, Divider, Switch, HStack } from '@astryxdesign/core'
+import { IconButton, ToggleButtonGroup, ToggleButton, TextInput, Grid, ClickableCard, Button, Card, Divider, Switch, HStack, VStack, Stack } from '@astryxdesign/core'
 import { Markdown } from '@astryxdesign/core'
+import { Text, Heading } from '@astryxdesign/core/Text'
 import { courses, getCourse } from '../../content/cours'
 import BlockNode from './BlockNode'
 import FlowLink from './FlowLink'
@@ -662,17 +663,17 @@ function CoursPanel() {
   if (course) {
     const currentBody = sectionBodies[idx] ?? sectionBodies[0] ?? course.body
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, minHeight: 0 }}>
+      <VStack gap={3} style={{ minHeight: 0 }}>
         <button onClick={() => setSelected(null)} style={{ background: 'none', border: 'none', color: theme.color.textMuted, cursor: 'pointer', fontSize: 13, fontWeight: 700, textAlign: 'left', padding: 0 }}>← Retour au catalogue</button>
-        <div style={{ fontWeight: 800, fontSize: 14, color: theme.color.text }}>{course.title}</div>
+        <Heading level={4}>{course.title}</Heading>
         {bannerText ? (
           <div style={{ background: `${theme.color.warning}18`, border: `1px solid ${theme.color.warning}`, borderRadius: 10, padding: '8px 10px', color: theme.color.warning, fontSize: 12, fontWeight: 700, lineHeight: 1.4 }}>
             {bannerText}
           </div>
         ) : null}
-        <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, maxHeight: 420, paddingRight: 2 }}>
+        <Stack style={{ flex: 1, overflowY: 'auto', minHeight: 0, maxHeight: 420, paddingRight: 2 }}>
           <Markdown>{currentBody}</Markdown>
-        </div>
+        </Stack>
         {sections.length > 0 ? (
           <>
             <Divider />
@@ -686,11 +687,11 @@ function CoursPanel() {
         <HStack gap={2} style={{ alignItems: 'center', paddingTop: 4 }}>
           <Switch label={`Indices: ${hintsEnabled ? 'ON' : 'OFF'}`} value={hintsEnabled} onChange={setHintsEnabled} size="sm" />
         </HStack>
-      </div>
+      </VStack>
     )
   }
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+    <VStack gap={2}>
       <TextInput label="Rechercher un cours" isLabelHidden value={query} onChange={setQuery} placeholder="Rechercher un cours…" />
       <ToggleButtonGroup type="single" label="Difficulté" value={difficulty} onChange={v => setDifficulty((v as string) || 'Tous')} size="sm">
         <Grid columns={2} gap={1.5}>
@@ -705,7 +706,7 @@ function CoursPanel() {
       ) : filtered.length === 0 ? (
         <div style={{ color: theme.color.textMuted, fontSize: 13, fontWeight: 600, textAlign: 'center', padding: '18px 6px' }}>Aucun cours trouvé</div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <VStack gap={2}>
           {filtered.map(c => (
             <ClickableCard key={c.slug} label={c.title} onClick={() => setSelected(c.slug)} padding={2}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 2, textAlign: 'left' }}>
@@ -715,9 +716,9 @@ function CoursPanel() {
               </div>
             </ClickableCard>
           ))}
-        </div>
+        </VStack>
       )}
-    </div>
+    </VStack>
   )
 }
 
@@ -809,39 +810,39 @@ function InspectorPanel({
         {rightMode === 'cours' ? (
           <CoursPanel />
         ) : !selected ? (
-          <div style={{ color: theme.color.textMuted, fontSize: 13, fontWeight: 600, textAlign: 'center', padding: '18px 6px' }}>
+          <Text type="body" color="secondary" style={{ textAlign: 'center', padding: '18px 6px' }}>
             Sélectionne un bloc
-          </div>
+          </Text>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <div style={{ fontWeight: 800, fontSize: 15, color: theme.color.text }}>{data?.label ?? selected.id}</div>
-            {data?.type && <div style={{ fontSize: 12, color: theme.color.textMuted }}>{data.type}</div>}
-            {data?.category && <div style={{ fontSize: 12, color: theme.color.textMuted }}>Catégorie : {data.category}</div>}
-            {def?.description && <div style={{ fontSize: 13, color: theme.color.textLight, lineHeight: 1.5 }}>{def.description}</div>}
+          <VStack gap={2}>
+            <Heading level={5}>{data?.label ?? selected.id}</Heading>
+            {data?.type && <Text type="supporting" color="secondary">{data.type}</Text>}
+            {data?.category && <Text type="supporting" color="secondary">Catégorie : {data.category}</Text>}
+            {def?.description && <Text type="body" color="secondary" style={{ lineHeight: 1.5 }}>{def.description}</Text>}
             {def?.inputs?.length ? (
-              <div>
-                <div style={{ fontWeight: 700, fontSize: 12, color: theme.color.textMuted, marginBottom: 4 }}>Entrées</div>
+              <VStack gap={1}>
+                <Text type="label" color="secondary">Entrées</Text>
                 {def.inputs.map(p => (
-                  <div key={p.name} style={{ fontSize: 12, color: theme.color.textLight }}>{p.name} · {p.dtype}</div>
+                  <Text key={p.name} type="body" style={{ fontSize: 12 }}>{p.name} · {p.dtype}</Text>
                 ))}
-              </div>
+              </VStack>
             ) : null}
             {def?.outputs?.length ? (
-              <div>
-                <div style={{ fontWeight: 700, fontSize: 12, color: theme.color.textMuted, marginBottom: 4 }}>Sorties</div>
+              <VStack gap={1}>
+                <Text type="label" color="secondary">Sorties</Text>
                 {def.outputs.map(p => (
-                  <div key={p.name} style={{ fontSize: 12, color: theme.color.textLight }}>{p.name} · {p.dtype}</div>
+                  <Text key={p.name} type="body" style={{ fontSize: 12 }}>{p.name} · {p.dtype}</Text>
                 ))}
-              </div>
+              </VStack>
             ) : null}
             <Divider />
             {selectedOutputs.length === 0 ? (
-              <div style={{ color: theme.color.textMuted, fontSize: 13, fontWeight: 600, textAlign: 'center', padding: '10px 6px' }}>
+              <Text type="body" color="secondary" style={{ textAlign: 'center', padding: '10px 6px' }}>
                 En attente…
-              </div>
+              </Text>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <div style={{ fontWeight: 700, fontSize: 12, color: theme.color.textMuted }}>Sortie</div>
+              <VStack gap={2}>
+                <Text type="label" color="secondary">Sortie</Text>
                 {selectedOutputs.map((o, i) => {
                   let parsed: unknown
                   try { parsed = JSON.parse(o.output) } catch { parsed = null }
@@ -860,7 +861,8 @@ function InspectorPanel({
                   const isMetrics = typed?.type === 'metrics' && typed.values
                   const isMetric = typed?.type === 'metric' && typeof typed.value === 'number'
                   return (
-                    <div key={`${o.block_id ?? o.block_name}-${i}`} style={{ background: 'rgba(255,255,255,.04)', border: `1px solid ${theme.color.border}`, borderRadius: 10, padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <Card key={`${o.block_id ?? o.block_name}-${i}`} variant="muted" padding={2}>
+                      <VStack gap={2}>
                       {isImage ? (
                         <img src={`data:${typed.mime ?? 'image/png'};base64,${typed.data}`} alt={o.block_name} style={{ maxWidth: '100%', maxHeight: 180, borderRadius: 6, display: 'block' }} />
                       ) : isCurve ? (
@@ -880,12 +882,13 @@ function InspectorPanel({
                       <pre style={{ margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: 11, lineHeight: 1.4, color: theme.color.textLight, maxHeight: 220, overflowY: 'auto' }}>{pretty.slice(0, 4000)}{pretty.length > 4000 ? '\n…[tronqué]' : ''}</pre>
                       <div style={{ fontSize: 10, color: theme.color.textMuted }}>{new Date(o.created_at).toLocaleTimeString()}</div>
                       {i < selectedOutputs.length - 1 ? <Divider /> : null}
-                    </div>
+                      </VStack>
+                    </Card>
                   )
                 })}
-              </div>
+              </VStack>
             )}
-          </div>
+          </VStack>
         )}
       </div>
     </div>

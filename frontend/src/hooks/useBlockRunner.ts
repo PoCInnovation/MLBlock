@@ -19,6 +19,7 @@ export function useBlockRunner() {
   // Job lancé par CE hook (un seul à la fois) — la source du suivi. Tant qu'il
   // est null, les queries de suivi sont désactivées (enabled: false).
   const [jobId, setJobId] = useState<string | null>(null)
+  const [isStopping, setIsStopping] = useState(false)
   const cancelledRef = useRef(false)
   const stoppedFor = useRef<string | null>(null)
   const handledFor = useRef<string | null>(null)
@@ -215,20 +216,29 @@ export function useBlockRunner() {
     },
   })
 
+  const isRunning = runMutation.isPending || (jobId !== null && !terminal) || isStopping
+
+  // Reset stopping flag once jobId is cleared
+  useEffect(() => {
+    if (jobId === null && isStopping) setIsStopping(false)
+  }, [jobId, isStopping])
+
   const onRun = useCallback(() => {
-    if (runMutation.isPending) return // double lancement bloqué par isPending
+    if (isRunning) return // double lancement bloqué tant que le run est actif
     cancelledRef.current = false
     runMutation.mutate()
-  }, [runMutation])
+  }, [isRunning, runMutation])
 
   const onStop = useCallback(() => {
-    if (!runMutation.isPending && !jobId) return
+    if (!isRunning) return
+    setIsStopping(true)
     // Annule l'attente : isPending → false (reset) et suivi arrêté (enabled: false)
     cancelledRef.current = true
     runMutation.reset()
     setJobId(null)
     useAppStore.getState().appendConsoleLines([{ k: 'sys', t: 'Arrêté' }])
-  }, [runMutation, jobId])
+    // isStopping reste true jusqu'à ce que jobId passe à null (effet ci-dessus)
+  }, [isRunning, runMutation, jobId])
 
   const onClear = useCallback(() => {
     const s = useAppStore.getState()
@@ -236,5 +246,5 @@ export function useBlockRunner() {
     s.clearAll()
   }, [])
 
-  return { onRun, onStop, onClear, isPending: runMutation.isPending, isError: runMutation.isError, jobId, status }
+  return { onRun, onStop, onClear, isPending: isRunning, isStopping, isError: runMutation.isError, jobId, status }
 }

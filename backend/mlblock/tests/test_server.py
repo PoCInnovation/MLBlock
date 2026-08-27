@@ -528,7 +528,7 @@ def test_gpu_job_instance_endpoint(client: TestClient):
         headers={"Authorization": f"Bearer {GLOBAL_KEY}"},
     )
     assert r.status_code == 200
-    assert r.json() == {"instance_id": "mock-instance-id"}
+    assert r.json() == {"instance_id": "local-instance-id"}
 
     # Job inexistant : Bearer global (pas de clé d'instance à vérifier) → 404
     r404 = client.get(

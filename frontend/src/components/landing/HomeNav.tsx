@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { useLocation, useNavigate } from '@tanstack/react-router'
 import { Menu, X } from 'lucide-react'
+import { Icon } from '@astryxdesign/core/Icon'
 import useAppStore from '../../store/useAppStore'
 import { signOut } from '../../services/auth'
 import { theme } from '../../theme'
@@ -101,7 +102,7 @@ export default function HomeNav() {
           aria-label={open ? 'Fermer le menu' : 'Ouvrir le menu'}
           aria-expanded={open}
         >
-          {open ? <X size={22} /> : <Menu size={22} />}
+          {open ? <Icon icon={X} size="lg" /> : <Icon icon={Menu} size="lg" />}
         </button>
       </nav>
       {open && (

@@ -4,7 +4,7 @@ import useAppStore from '../../store/useAppStore'
 import { colorFor } from '../../utils/blockHelpers'
 import { shouldIgnoreTap } from '../../utils/tapGuard'
 import { theme } from '../../theme'
-import { ToggleButtonGroup, ToggleButton, Grid, ClickableCard, IconButton } from '@astryxdesign/core'
+import { ToggleButtonGroup, ToggleButton, Grid, ClickableCard, IconButton, TextInput } from '@astryxdesign/core'
 
 const paletteStyle: React.CSSProperties = {
   width: 280,
@@ -33,17 +33,6 @@ const headerStyle: React.CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'stretch',
-}
-
-const searchInputStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '8px 12px',
-  marginTop: 10,
-  borderRadius: theme.radius.md,
-  border: `1px solid ${theme.color.border}`,
-  background: theme.color.surface3,
-  color: theme.color.text,
-  fontSize: 13,
 }
 
 const chipsStyle: React.CSSProperties = {
@@ -203,11 +192,12 @@ const FlowPalette = memo(function FlowPalette({ onDragStart, onAdd, onClose, onT
             )}
           </div>
         </div>
-        <input
+        <TextInput
+          label="Rechercher un bloc"
+          isLabelHidden
           value={query}
-          onChange={e => setQuery(e.target.value)}
+          onChange={setQuery}
           placeholder="Rechercher un bloc…"
-          style={searchInputStyle}
         />
         <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{ fontSize: 12, fontWeight: 700, color: theme.color.textMuted }}>Filtres</span>

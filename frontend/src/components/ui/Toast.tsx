@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import useAppStore from '../../store/useAppStore'
 import { CheckCircle2, XCircle, Zap } from 'lucide-react'
+import { Icon } from '@astryxdesign/core/Icon'
 import { theme } from '../../theme'
 
 const style: React.CSSProperties = {
@@ -35,9 +36,10 @@ export default function Toast() {
   if (!toast) return null
 
   const color = toast.kind === 'error' ? theme.color.error : theme.color.convert
+  const iconColor = toast.kind === 'error' ? 'error' as const : toast.kind === 'success' ? 'success' as const : 'warning' as const
   return (
     <div role="alert" style={{ ...style, borderColor: color }}>
-      {toast.kind === 'error' ? <XCircle size={17} color={color} /> : toast.kind === 'success' ? <CheckCircle2 size={17} color={color} /> : <Zap size={17} color={color} />}
+      {toast.kind === 'error' ? <Icon icon={XCircle} size="md" color={iconColor} /> : toast.kind === 'success' ? <Icon icon={CheckCircle2} size="md" color={iconColor} /> : <Icon icon={Zap} size="md" color={iconColor} />}
       <span style={{ flex: 1 }}>{toast.message}</span>
       {toast.action && (
         <button

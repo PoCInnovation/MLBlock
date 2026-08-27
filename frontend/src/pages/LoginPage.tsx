@@ -4,23 +4,19 @@ import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { signInWithEmail, signInWithMagicLink, signInWithGoogle, signInWithMicrosoft } from '../services/auth'
 import SiteLayout from '../components/landing/SiteLayout'
-import { Field, FieldError, FieldLabel, FormLayout } from '../components/ui/field'
-import { Button, Card } from '@astryxdesign/core'
+import { FormLayout } from '../components/ui/field'
+import { Button, Card, TextInput } from '@astryxdesign/core'
 import { loginSchema, type LoginInput } from '../schemas/auth'
 import { mapSupabaseError } from '../schemas/errors'
 
 const s: Record<string, string> = {
   wrapper: 'flex items-center justify-center min-h-[60vh] px-5 py-10',
   title: 'text-2xl font-bold mb-6 text-center text-text',
-  input: 'w-full px-3.5 py-2.5 mb-4 rounded-[8px] border border-border bg-input-bg text-text text-sm',
   divider: 'flex items-center gap-3 my-4 text-divider text-[13px]',
   line: 'flex-1 h-px bg-border',
   error: 'text-error text-[13px] mb-3 text-center',
   link: 'text-[#E8915F] cursor-pointer text-center mt-3 text-sm',
 }
-
-const errorId = 'login-email-error'
-const pwErrorId = 'login-password-error'
 
 export default function LoginPage() {
   const [error, setError] = useState('')
@@ -107,42 +103,28 @@ export default function LoginPage() {
                 name="email"
                 control={form.control}
                 render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="login-email">Email *</FieldLabel>
-                    <input
-                      {...field}
-                      id="login-email"
-                      type="email"
-                      autoComplete="email"
-                      placeholder="exemple@mail.com"
-                      aria-invalid={fieldState.invalid}
-                      aria-describedby={fieldState.invalid ? errorId : undefined}
-                      className={s.input}
-                      style={{ borderColor: fieldState.invalid ? 'var(--color-error)' : undefined }}
-                    />
-                    {fieldState.invalid && <div id={errorId}><FieldError errors={[fieldState.error]} /></div>}
-                  </Field>
+                  <TextInput
+                    label="Email *"
+                    type="email"
+                    placeholder="exemple@mail.com"
+                    value={field.value}
+                    onChange={v => field.onChange(v)}
+                    status={fieldState.invalid ? { type: 'error', message: fieldState.error?.message } : undefined}
+                  />
                 )}
               />
               <Controller
                 name="password"
                 control={form.control}
                 render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="login-password">Mot de passe *</FieldLabel>
-                    <input
-                      {...field}
-                      id="login-password"
-                      type="password"
-                      autoComplete="current-password"
-                      placeholder="••••••"
-                      aria-invalid={fieldState.invalid}
-                      aria-describedby={fieldState.invalid ? pwErrorId : undefined}
-                      className={s.input}
-                      style={{ borderColor: fieldState.invalid ? 'var(--color-error)' : undefined }}
-                    />
-                    {fieldState.invalid && <div id={pwErrorId}><FieldError errors={[fieldState.error]} /></div>}
-                  </Field>
+                  <TextInput
+                    label="Mot de passe *"
+                    type="password"
+                    placeholder="••••••"
+                    value={field.value}
+                    onChange={v => field.onChange(v)}
+                    status={fieldState.invalid ? { type: 'error', message: fieldState.error?.message } : undefined}
+                  />
                 )}
               />
               <Button label={loading ? 'Connexion…' : 'Se connecter'} variant="primary" type="submit" isLoading={loading} width="100%" />

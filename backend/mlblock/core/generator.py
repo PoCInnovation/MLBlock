@@ -1,27 +1,57 @@
 from mlblock.server.schemas import PipelineNode, PipelineEdge
 
 
+TRUNCATE_AT = 20000  # single owner for truncation (was duplicated 3×)
+
+# Canonical serialize shape — single owner (was duplicated in generator string + InspectorPanel)
+def _serialize_value(v: object) -> dict:
+    """Python-side helper for tests — mirrors the string-emitted _serialize_output."""
+    import base64
+
+    def is_nums(x: object) -> bool:
+        return isinstance(x, (list, tuple)) and len(x) > 0 and all(
+            isinstance(i, (int, float)) and not isinstance(i, bool) for i in x  # type: ignore
+        )
+
+    if isinstance(v, bytes):
+        return {"type": "image", "mime": "image/png", "data": base64.b64encode(v).decode("ascii")}
+    if is_nums(v):
+        return {"type": "curve", "points": [float(x) for x in v]}  # type: ignore
+    if isinstance(v, dict):
+        h = v.get("history")  # type: ignore
+        if is_nums(h):
+            return {"type": "curve", "points": [float(x) for x in h]}  # type: ignore
+        scalars = {k: x for k, x in v.items() if isinstance(x, (int, float, str, bool))}  # type: ignore
+        if scalars:
+            return {
+                "type": "metrics",
+                "values": {k: (float(x) if isinstance(x, (int, float)) else x) for k, x in scalars.items()},
+            }
+    if isinstance(v, (int, float)) and not isinstance(v, bool):
+        return {"type": "metric", "value": float(v)}
+    return {"type": "text", "text": str(v)}
+
+
 def _topological_sort(nodes: list[PipelineNode], edges: list[PipelineEdge]) -> list[str]:
-    graph: dict[str, list[str]] = {n.id: [] for n in nodes}
-    in_degree: dict[str, int] = {n.id: 0 for n in nodes}
-    for edge in edges:
-        graph.setdefault(edge.source, []).append(edge.target)
-        in_degree[edge.target] = in_degree.get(edge.target, 0) + 1
-    queue = [nid for nid, deg in in_degree.items() if deg == 0]
-    order = []
-    while queue:
-        nid = queue.pop(0)
-        order.append(nid)
-        for t in graph.get(nid, []):
-            in_degree[t] -= 1
-            if in_degree[t] == 0:
-                queue.append(t)
+    # Delegate to Validation's single deque implementation (one topo, not two)
+    from mlblock.validation import _topological_sort as _val_topo
+
+    # Validation topo works on dicts — adapt
+    node_dicts = [{"id": n.id} for n in nodes]
+    edge_dicts = [{"source": e.source, "target": e.target} for e in edges]
+    order, _ = _val_topo(node_dicts, edge_dicts)
     return order
 
 
 def _source_for(block_name: str) -> str:
-    from mlblock.blocks.registry import BLOCK_SOURCES
-    return BLOCK_SOURCES.get(block_name, "")
+    try:
+        from mlblock.catalog import catalog
+
+        return catalog.get_source(block_name)
+    except Exception:
+        from mlblock.blocks.registry import BLOCK_SOURCES
+
+        return BLOCK_SOURCES.get(block_name, "")
 
 
 def generate_code(nodes: list[PipelineNode], edges: list[PipelineEdge]) -> str:
@@ -195,7 +225,7 @@ def generate_code(nodes: list[PipelineNode], edges: list[PipelineEdge]) -> str:
             output_counter += 1
             output_map[node_id] = output_counter
             lines.append(f"        out_{output_counter} = {node.type}({args})")
-            lines.append(f"        notify_output({node.type!r}, json.dumps(_serialize_output(out_{output_counter})), {bid})")
+            lines.append(f"        notify_output({node.type!r}, json.dumps(_serialize_output(out_{output_counter})), {bid})")  # noqa: E501
         else:
             targets = []
             for o in block.outputs:
@@ -218,7 +248,41 @@ def generate_code(nodes: list[PipelineNode], edges: list[PipelineEdge]) -> str:
     return "\n".join(lines)
 
 
+def generate_with_ir(nodes: list[PipelineNode], edges: list[PipelineEdge]) -> dict:
+    """Deep Codegen: returns {code, ir} — interface is the test surface (IR, not string)."""
+    code = generate_code(nodes, edges)
+    order = _topological_sort(nodes, edges)
+    # Build minimal IR: order + outputMap + perNode
+    from mlblock.catalog import catalog
+
+    output_counter = 0
+    output_map: dict = {}
+    per_node = []
+    for nid in order:
+        n = next((x for x in nodes if x.id == nid), None)
+        if not n:
+            continue
+        block = catalog.get(n.type)
+        if not block:
+            continue
+        if len(block.outputs) <= 1:
+            output_counter += 1
+            output_map[nid] = output_counter
+            per_node.append({"id": nid, "type": n.type, "out": f"out_{output_counter}"})
+        else:
+            for o in block.outputs:
+                output_counter += 1
+                output_map[(nid, o["name"])] = output_counter  # type: ignore
+            per_node.append({"id": nid, "type": n.type, "outs": list(output_map.values())[-len(block.outputs):]})
+    return {
+        "code": code,
+        "ir": {"order": order, "outputMap": output_map, "perNode": per_node, "truncateAt": TRUNCATE_AT},
+    }
+
+
 class CodeGenerator:
+    """Deprecated shim — kept for pipeline.py compatibility until total deletion. Use generate_code/generate_with_ir."""
+
     def __init__(self, graph):
         self.graph = graph
 

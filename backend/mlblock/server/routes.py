@@ -4,7 +4,6 @@ import hashlib
 import json
 import os
 import re
-import threading
 from datetime import datetime, timezone
 from uuid import UUID
 
@@ -14,9 +13,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import JSONResponse, Response
 from sqlmodel import Session, select
 
-from mlblock.blocks.registry import BLOCK_REGISTRY
+from mlblock.blocks.registry import BLOCK_REGISTRY  # deprecated: use mlblock.catalog
 from mlblock.core.vast import VastAI
-from mlblock.core.graph import Graph
+from mlblock.validation import validate as validate_pipeline
 from mlblock.server.database import get_session
 from mlblock.server.auth import get_current_user
 from mlblock.server.gpu_auth import verify_gpu_key
@@ -203,37 +202,17 @@ def get_file_columns(url: str) -> dict:
 
 
 def _is_mock_vast() -> bool:
-    """Mode d'exécution : MLBLOCK_RUN_MODE (défaut 'local' — le dev exécute
-    réellement le pipeline en subprocess local). 'gpu' (Render, render.yaml)
-    active le dispatch Vast.ai. Une clé mock/absente force toujours le local."""
-    mode = os.environ.get("MLBLOCK_RUN_MODE", "local").lower()
-    if mode == "gpu":
-        return False
-    if mode == "local":
-        return True
-    key = os.environ.get("VAST_API_KEY", "mock-vast-key")
-    return not key or key.startswith("mock")
+    """Deprecated shim — delegates to execution.get_backend(). Kept for tests."""
+    from mlblock.execution import get_backend, LocalBackend
+
+    return isinstance(get_backend(), LocalBackend)
 
 
 def _run_local(code: str, job_id: UUID) -> None:
-    """Exécute le code généré en subprocess local (mode mock, sans GPU)."""
-    import subprocess
-    import sys
-    import tempfile
+    """Deprecated shim — delegates to execution.LocalBackend."""
+    from mlblock.execution import LocalBackend
 
-    fd, path = tempfile.mkstemp(suffix=".py", prefix="mlblock_run_")
-    with os.fdopen(fd, "w") as f:
-        f.write(code)
-    env = dict(os.environ)
-    # Le subprocess doit joindre le serveur LOCAL (le BACKEND_URL du .env pointe
-    # vers Render/prod — les callbacks du run local doivent revenir ici).
-    env.update({
-        "BACKEND_URL": "http://localhost:8000",
-        "JOB_ID": str(job_id),
-        "GPU_API_KEY": os.environ.get("GPU_API_KEY", "mock-gpu-key"),
-        "BACKEND_TIMEOUT": os.environ.get("BACKEND_TIMEOUT", "90"),
-    })
-    subprocess.Popen([sys.executable, path], env=env, start_new_session=True)
+    LocalBackend().launch(code, job_id)
 
 
 # ── Pipelines ───────────────────────────────────────────────────────
@@ -305,12 +284,10 @@ def create_pipeline(
     except ValueError as e:
         raise HTTPException(400, detail=str(e))
 
-    # Enforce topological cycle check
-    graph_data = {
-        "nodes": [n.model_dump() for n in body.nodes],
-        "edges": [e.model_dump() for e in body.edges],
-    }
-    Graph(graph_data)  # raises ValueError on cycle
+    # Enforce topological cycle check via deep Validation (Graph deleted)
+    _vr_cycle = validate_pipeline([n.model_dump() for n in body.nodes], [e.model_dump() for e in body.edges])
+    if not _vr_cycle.valid and any("cycle" in e.lower() for e in _vr_cycle.errors):
+        raise HTTPException(400, detail="Graph contains a cycle")
 
     user_uuid = UUID(user_id)
 
@@ -463,7 +440,7 @@ def execute_pipeline(
         # Mode local : exécute réellement le code en subprocess — les callbacks
         # (status/output/error) alimentent le job comme sur un vrai GPU.
         _run_local(code, job.id)
-        job.vast_instance_id = "mock-instance-id"
+        job.vast_instance_id = "local-instance-id"
         job.status = "dispatched"
         session.add(job)
         session.commit()
@@ -514,27 +491,14 @@ def execute_pipeline(
     job_id = job.id
     instance_id = job.vast_instance_id
 
-    if _is_mock_vast():
+    if instance_id in ("local-instance-id", "mock-instance-id") or _is_mock_vast():
         session.refresh(job)  # expire_on_commit vide le __dict__ — sinon la réponse est {}
         return job
 
-    gpu_timeout = int(os.environ.get("MLBLOCK_GPU_TIMEOUT", "1800"))  # 30 min par défaut
+    # Deep PipelineExecution owns orphan policy (single owner)
+    from mlblock.execution import schedule_orphan_cleanup
 
-    def _timeout_cleanup():
-        from mlblock.server.database import _get_engine
-        from sqlmodel import Session as SqlSession
-        with SqlSession(_get_engine()) as s:
-            j = s.get(Job, job_id)
-            if j and j.status not in ("done", "error"):
-                j.status = "error"
-                j.error = f"GPU TIMEOUT: job did not complete within {gpu_timeout}s"
-                j.completed_at = datetime.now(timezone.utc)
-                s.add(j)
-                s.commit()
-                VastAI(api_key=os.environ.get("VAST_API_KEY", "mock-vast-key")).destroy_instance(instance_id)
-                _cleanup_pipeline_files(j.pipeline_id)
-
-    threading.Timer(gpu_timeout, _timeout_cleanup).start()
+    schedule_orphan_cleanup(job_id, instance_id, pipeline_id)
 
     session.refresh(job)  # expire_on_commit vide le __dict__ — sinon la réponse est {}
     return job
@@ -621,7 +585,7 @@ def update_job_status(
         job.started_at = datetime.now(timezone.utc)
     if body.status in ("done", "error"):
         job.completed_at = datetime.now(timezone.utc)
-        if job.vast_instance_id:
+        if job.vast_instance_id and job.vast_instance_id not in ("local-instance-id", "mock-instance-id"):
             try:
                 vast = VastAI(api_key=os.environ.get("VAST_API_KEY", "mock-vast-key"))
                 vast.destroy_instance(job.vast_instance_id)
@@ -669,7 +633,7 @@ def push_job_error(
     job.status = "error"
     job.error = body.error
     job.completed_at = datetime.now(timezone.utc)
-    if job.vast_instance_id:
+    if job.vast_instance_id and job.vast_instance_id not in ("local-instance-id", "mock-instance-id"):
         try:
             vast = VastAI(api_key=os.environ.get("VAST_API_KEY", "mock-vast-key"))
             vast.destroy_instance(job.vast_instance_id)
@@ -690,27 +654,9 @@ def push_job_error(
 
 @validation_router.post("")
 def validate_graph(body: ValidationRequest) -> ValidationResponse:
-    errors = []
-    try:
-        graph_data = {
-            "nodes": [n.model_dump() for n in body.nodes],
-            "edges": [e.model_dump() for e in body.edges],
-        }
-        graph = Graph(graph_data)
-        graph.validate()
-    except ValueError as e:
-        errors.append(str(e))
-    try:
-        from mlblock.blocks.registry import BLOCK_REGISTRY
-        from mlblock.models.pipeline import PipelineDef
-
-        PipelineDef.model_validate(
-            {"nodes": body.nodes, "edges": body.edges},
-            context={"registry": BLOCK_REGISTRY},
-        )
-    except ValueError as e:
-        errors.append(str(e))
-    return ValidationResponse(valid=len(errors) == 0, errors=errors)
+    # Deep Validation owns both cycle and type checks (single family table, Graph deleted in next step)
+    _vr = validate_pipeline([n.model_dump() for n in body.nodes], [e.model_dump() for e in body.edges])
+    return ValidationResponse(valid=_vr.valid, errors=_vr.errors)
 
 
 @pipelines_router.post("/{pipeline_id}/build")
@@ -723,74 +669,82 @@ def build_pipeline_model(
     if row is None:
         raise HTTPException(404, "Pipeline not found")
 
-    from mlblock.core.graph import Graph as CoreGraph
-    from mlblock.core.pipeline import Pipeline as CorePipeline
-
     nodes = [PipelineNode(**n) if isinstance(n, dict) else n for n in row.nodes]
     edges = [PipelineEdge(**e) if isinstance(e, dict) else e for e in row.edges]
 
-    # Fail fast on type-incompatible graphs (same gate as /api/validate)
-    try:
-        from mlblock.blocks.registry import BLOCK_REGISTRY
-        from mlblock.models.pipeline import PipelineDef
-
-        PipelineDef.model_validate(
-            {"nodes": nodes, "edges": edges},
-            context={"registry": BLOCK_REGISTRY},
-        )
-    except ValueError as e:
-        raise HTTPException(400, detail=str(e))
-
-    graph_data = {
-        "nodes": [n.model_dump() for n in nodes],
-        "edges": [e.model_dump() for e in edges],
-    }
-    graph = CoreGraph(graph_data)
+    # Fail fast via deep Validation (single family table, deque topo) — Graph deleted
+    _vr = validate_pipeline([n.model_dump() for n in nodes], [e.model_dump() for e in edges])
+    if not _vr.valid:
+        raise HTTPException(400, detail="; ".join(_vr.errors))
+    order = _vr.order
 
     import torch
     import torch.nn as nn
+    from mlblock.core.block import BlockRegistry
 
-    # Pre-populate root nodes (no incoming edges) with dummy tensors
-    incoming = {e.target for e in graph.edges}
-    for node_id in graph.topological_sort():
-        node = graph.nodes[node_id]
-        if node_id not in incoming and node.block and node.block.can_build():
-            # String params (frontend) must be typed before shape inference
-            node.block.coerce_params(node.params)
-            # N'injecte in_1 que si le bloc attend un input REQUIS. Les
-            # constructeurs de couches (*_layer) ont in_1 optionnel : le build
-            # les exécute sans source (nn.Sequential(tensor, ...) crasherait).
-            first_name = node.block.inputs[0].get("name", "in_1") if node.block.inputs else None
-            first_param = node.block.params.get(first_name, {}) if first_name else {}
-            if node.block.inputs and first_param.get("required", True):
-                # Racine image (resize/normalize sans source) : tenseur CHW factice
-                from mlblock.core.types import family_of
-                first_in = node.block.inputs[0].get("dtype", "")
-                if family_of(first_in) == "image":
-                    node.params["in_1"] = torch.randn(3, 224, 224)
-                    continue
-                # Infer input shape from params or default to [1, 1, 28, 28]
-                shape = node.params.get("shape", node.params.get("in_channels", [1, 1, 28, 28]))
-                if isinstance(shape, int):
-                    shape = [1, shape, 28, 28]
-                elif isinstance(shape, list):
-                    shape = [1] + shape if len(shape) < 4 else shape
-                node.params["in_1"] = torch.randn(*shape)
+    nodes_by_id = {n.id: n for n in nodes}
+    params_by_id: dict[str, dict] = {n.id: dict(n.params) for n in nodes}
+    incoming = {e.target for e in edges}
 
-    pipeline = CorePipeline(graph)
+    # Pre-populate root nodes (no incoming edges) with dummy tensors — same logic, no Graph
+    for node_id in order:
+        if node_id not in incoming:
+            n = nodes_by_id[node_id]
+            legacy = BlockRegistry.get(n.type)
+            if legacy and legacy.can_build():
+                legacy.coerce_params(params_by_id[node_id])
+                first_name = legacy.inputs[0].get("name", "in_1") if legacy.inputs else None
+                first_param = legacy.params.get(first_name, {}) if first_name else {}
+                if legacy.inputs and first_param.get("required", True):
+                    from mlblock.core.types import family_of
 
-    try:
-        outputs = pipeline.run()
-    except Exception as e:
-        raise HTTPException(400, detail=str(e))
+                    first_in = legacy.inputs[0].get("dtype", "")
+                    if family_of(first_in) == "image":
+                        params_by_id[node_id]["in_1"] = torch.randn(3, 224, 224)
+                        continue
+                    shape = params_by_id[node_id].get("shape", params_by_id[node_id].get("in_channels", [1, 1, 28, 28]))
+                    if isinstance(shape, int):
+                        shape = [1, shape, 28, 28]
+                    elif isinstance(shape, list):
+                        shape = [1] + shape if len(shape) < 4 else shape
+                    params_by_id[node_id]["in_1"] = torch.randn(*shape)
+
+    # Execute in topo order, resolving inputs via edges (same as Pipeline.run, no Graph)
+    outputs: dict[str, object] = {}
+    for node_id in order:
+        n = nodes_by_id[node_id]
+        legacy = BlockRegistry.get(n.type)
+        if legacy is None:
+            continue
+        inputs: dict[str, object] = {}
+        for e in edges:
+            if e.target == node_id:
+                src_val = outputs.get(e.source)
+                if isinstance(src_val, dict) and e.source_port in src_val:  # type: ignore
+                    val = src_val[e.source_port]  # type: ignore
+                else:
+                    val = src_val
+                if val is not None:
+                    inputs[e.target_port] = val
+        call_params = dict(params_by_id[node_id])
+        if inputs:
+            call_params["_inputs"] = inputs
+        try:
+            result = legacy.execute(call_params)
+            if result is not None:
+                outputs[node_id] = result
+        except NotImplementedError:
+            pass
+        except Exception as e:
+            raise HTTPException(400, detail=str(e))
 
     if not outputs:
         raise HTTPException(400, detail="Pipeline produced no outputs")
 
-    layers = []
-    for node_id in graph.topological_sort():
-        node = graph.nodes[node_id]
-        if node.block and node.block.can_build():
+    layers: list[nn.Module] = []
+    for node_id in order:
+        legacy = BlockRegistry.get(nodes_by_id[node_id].type)
+        if legacy and legacy.can_build():
             try:
                 result = outputs.get(node_id)
                 if isinstance(result, dict):
@@ -804,10 +758,8 @@ def build_pipeline_model(
 
     last_output = list(outputs.values())[-1]
     if isinstance(last_output, dict):
-        last_output = list(last_output.values())[-1]
+        last_output = list(last_output.values())[-1]  # type: ignore
 
-    # Pipeline non-neural (sklearn, data) : exécutable mais sans tensor de
-    # sortie — le build reste un succès (le run se charge de l'exécution).
     if not isinstance(last_output, torch.Tensor):
         return {
             "success": True,
@@ -817,10 +769,12 @@ def build_pipeline_model(
 
     return {
         "success": True,
-        "output_shape": list(last_output.shape),
+        "output_shape": list(last_output.shape),  # type: ignore
         "layer_count": (
             len(layers)
             if layers
-            else len([n for n in graph.topological_sort() if graph.nodes[n].block and graph.nodes[n].block.can_build()])
+            else len(  # noqa: E501
+                [n for n in order if BlockRegistry.get(nodes_by_id[n].type) and BlockRegistry.get(nodes_by_id[n].type).can_build()]  # type: ignore  # noqa: E501
+            )
         ),
     }

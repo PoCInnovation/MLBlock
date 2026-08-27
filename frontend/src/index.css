@@ -189,12 +189,16 @@
 .hover-btn:hover { background: rgba(255,255,255,.11) !important; }
 
 /* Accessibilité : neutralise animations et transitions quand l'utilisateur
-   demande moins de mouvement (WCAG 2.3.3). */
+   demande moins de mouvement (WCAG 2.3.3). — les spinners gardent leur rotation (feedback essentiel). */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+  .keep-spin, .keep-spin * {
+    animation-duration: .8s !important;
+    animation-iteration-count: infinite !important;
   }
 }
 }

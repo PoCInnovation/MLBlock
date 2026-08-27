@@ -1,8 +1,11 @@
 import { create } from 'zustand'
-import { toServerPayload } from '../utils/blockHelpers'
+import { toServerPayload as _toServerPayload, fingerprintOf as _fingerprintOf, backfillNodes } from './pipelineDocument'
 import type { InternalCatalog } from '../types/catalog'
 import type { PipelineNode, PipelineEdge, Job, JobOutput, JobStatus } from '../types/catalog'
 import { createPipeline, updatePipeline } from '../api/client'
+// Deep PipelineDocument owns fingerprint/backfill/undo; store is thin glue.
+// toServerPayload re-exported via pipelineDocument for single owner (was utils/blockHelpers + flowConversion)
+const toServerPayload = _toServerPayload
 import type { Node, Edge, NodeChange, EdgeChange } from '@xyflow/react'
 import { applyNodeChanges, applyEdgeChanges } from '@xyflow/react'
 
@@ -45,6 +48,7 @@ type AppState = {
   pipelineId: string | null
   projectName: string
   lastJobId: string | null
+  lastJobInstanceId: string | null
   jobStatus: JobStatus | null
   results: JobOutput[]
   jobOutputs: JobOutput[]
@@ -93,27 +97,8 @@ type AppState = {
 
 
 
-/** Empreinte du canvas : données sémantiques uniquement — les métadonnées
-    ReactFlow (measured, selected, dragging…) sont volatiles et ne doivent pas
-    rendre le projet "modifié". */
-export function fingerprintOf(s: { flowNodes: Node[]; flowEdges: Edge[]; projectName: string }): string {
-  return JSON.stringify({
-    nodes: s.flowNodes.map(n => ({
-      id: n.id,
-      type: (n.data as { type?: string } | undefined)?.type,
-      fields: (n.data as { fields?: Record<string, string> } | undefined)?.fields,
-      segs: (n.data as { segs?: unknown } | undefined)?.segs,
-      position: n.position,
-    })),
-    edges: s.flowEdges.map(e => ({
-      source: e.source,
-      target: e.target,
-      sourceHandle: e.sourceHandle,
-      targetHandle: e.targetHandle,
-    })),
-    projectName: s.projectName,
-  })
-}
+/** Empreinte du canvas : delegates to deep PipelineDocument (single owner). */
+export const fingerprintOf = _fingerprintOf
 
 const useAppStore = create<AppState>((set, get) => ({
   category: 'data',
@@ -128,6 +113,7 @@ const useAppStore = create<AppState>((set, get) => ({
   pipelineId: null,
   projectName: 'mon-premier-modèle',
   lastJobId: null,
+  lastJobInstanceId: null,
   jobStatus: null,
   results: [],
   jobOutputs: [],
@@ -165,43 +151,18 @@ const useAppStore = create<AppState>((set, get) => ({
 
   appendConsoleLines: (lines) => set((s) => ({ consoleLines: [...s.consoleLines, ...lines] })),
 
-  clearAll: () => set({ flowNodes: [], flowEdges: [], consoleLines: [], lastJobId: null, jobStatus: null, results: [], jobOutputs: [] }),
+  clearAll: () => set({ flowNodes: [], flowEdges: [], consoleLines: [], lastJobId: null, lastJobInstanceId: null, jobStatus: null, results: [], jobOutputs: [] }),
 
 
   setCatalog: (catalog) => set((s) => {
     const firstCat = catalog.categories[0]?.id ?? 'data'
     const catExists = catalog.categories.some(c => c.id === s.category)
-    // Pipeline chargé avant le catalogue (ouverture depuis /projets) :
-    // enrichit les nodes avec segs/inputs/outputs une fois le catalogue dispo.
-    let flowNodes = s.flowNodes
-    let savedFingerprint = s.savedFingerprint
-    // ![] est false en JS : vérifier la LONGUEUR (un nœud chargé sans catalogue
-    // a segs=[] — il DOIT être backfillé, sinon le bloc reste sans champs).
-    const needsBackfill = flowNodes.length > 0 && flowNodes.some(n => !((n.data as { segs?: unknown[] } | undefined)?.segs?.length))
-    if (needsBackfill) {
-      flowNodes = flowNodes.map(n => {
-        const d = n.data as { type?: string; fields?: Record<string, string>; segs?: unknown[] } | undefined
-        // Piège ![] : un array VIDE est truthy en JS — vérifier la LONGUEUR,
-        // sinon les nœuds chargés sans catalogue (segs=[]) ne sont jamais backfillés.
-        if (d?.segs?.length) return n
-        const def = d?.type ? catalog.blocks[d.type] : undefined
-        const first = def?.segs[0]
-        return {
-          ...n,
-          data: {
-            type: d?.type ?? '',
-            label: first?.t === 'text' ? first.v : (d?.type ?? ''),
-            category: def?.cat ?? 'unknown',
-            categoryColor: catalog.categories.find(c => c.id === def?.cat)?.color ?? '#888',
-            segs: def?.segs ?? [],
-            fields: d?.fields ?? {},
-            inputs: def?.inputs ?? [],
-            outputs: def?.outputs ?? [],
-          },
-        }
-      })
-      savedFingerprint = fingerprintOf({ flowNodes, flowEdges: s.flowEdges, projectName: s.projectName })
-    }
+    // Deep PipelineDocument owns backfill (single owner, was inline + duplicated)
+    const flowNodes = backfillNodes(s.flowNodes, catalog)
+    const needsBackfill = flowNodes !== s.flowNodes
+    const savedFingerprint = needsBackfill
+      ? fingerprintOf({ flowNodes, flowEdges: s.flowEdges, projectName: s.projectName })
+      : s.savedFingerprint
     return { catalog, category: catExists ? s.category : firstCat, flowNodes, savedFingerprint }
   }),
 
@@ -319,7 +280,7 @@ const useAppStore = create<AppState>((set, get) => ({
     return created.id
   },
 
-  setLastJob: (job) => set({ lastJobId: job.id, jobStatus: job.status }),
+  setLastJob: (job) => set({ lastJobId: job.id, lastJobInstanceId: (job as { vast_instance_id?: string }).vast_instance_id ?? null, jobStatus: job.status }),
   setJobStatus: (status) => set({ jobStatus: status }),
   setResults: (outputs) => set({ results: outputs, jobOutputs: outputs }),
   setJobOutputs: (outputs) => set({ jobOutputs: outputs, results: outputs }),

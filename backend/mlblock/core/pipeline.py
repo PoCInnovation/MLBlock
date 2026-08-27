@@ -1,3 +1,6 @@
+"""Deprecated — Pipeline(Graph) deleted per spec #4. Use mlblock.validation + generate_code directly.
+Kept as shim for tests until test_pipeline.py migrated.
+"""
 from __future__ import annotations
 
 from typing import Any

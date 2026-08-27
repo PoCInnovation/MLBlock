@@ -3,19 +3,15 @@ import { Dialog as AstryxDialog } from '@astryxdesign/core'
 
 
 type DialogProps = {
-  open?: boolean
-  isOpen?: boolean
+  isOpen: boolean
   onOpenChange: (open: boolean) => void
-  title?: string
-  description?: string
   children: ReactNode
 }
 
-/** Astryx Dialog wrapper — accepts both `open` (legacy) and `isOpen` (Astryx). Keeps focus trap via native <dialog>. */
-export function Dialog({ open, isOpen, onOpenChange, children }: DialogProps) {
-  const resolvedOpen = isOpen ?? open ?? false
+/** Astryx Dialog — deep seam, no legacy `open` prop. Use `isOpen` (Astryx). */
+export function Dialog({ isOpen, onOpenChange, children }: DialogProps) {
   return (
-    <AstryxDialog isOpen={resolvedOpen} onOpenChange={onOpenChange}>
+    <AstryxDialog isOpen={isOpen} onOpenChange={onOpenChange}>
       {children}
     </AstryxDialog>
   )

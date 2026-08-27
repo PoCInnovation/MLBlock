@@ -2,11 +2,15 @@ import React, { memo, useRef, useState } from 'react'
 import type { Segment } from '../../types/catalog'
 import { uploadFile, supabase } from '../../services/supabase'
 import { FileUp, Loader2, TriangleAlert } from 'lucide-react'
+import { Icon } from '@astryxdesign/core/Icon'
+import { Text } from '@astryxdesign/core/Text'
+import { Badge } from '@astryxdesign/core/Badge'
+import { HStack } from '@astryxdesign/core'
 import useAppStore from '../../store/useAppStore'
 import { theme } from '../../theme'
 import { ACCEPT_BY_BLOCK, DEFAULT_ACCEPT, SAMPLE_CATEGORY_BY_BLOCK } from '../../utils/samples'
 import SampleDataModal from '../ui/SampleDataModal'
-import { HoverCard, HoverCardTrigger, HoverCardContent } from '../ui/hover-card'
+import { HoverCard } from '@astryxdesign/core/HoverCard'
 
 const inputBase: React.CSSProperties = {
   background: 'rgba(255,255,255,.9)', border: 'none', borderRadius: theme.radius.sm,
@@ -17,12 +21,6 @@ const selectBase: React.CSSProperties = {
   background: 'rgba(255,255,255,.9)', border: 'none', borderRadius: theme.radius.sm,
   padding: '3px 6px', color: theme.color.textInput, fontWeight: 800, fontSize: 13,
   cursor: 'pointer',
-}
-const fieldPill: React.CSSProperties = {
-  background: 'rgba(255,255,255,.85)', padding: '2px 8px', borderRadius: theme.radius.sm, fontWeight: 800,
-}
-const labelStyle: React.CSSProperties = {
-  fontSize: 12, fontWeight: 700, opacity: 0.85, whiteSpace: 'nowrap',
 }
 const fileCard: React.CSSProperties = {
   display: 'flex', alignItems: 'center', gap: 6, flexBasis: '100%',
@@ -49,10 +47,6 @@ const removeBtn: React.CSSProperties = {
 const errStyle: React.CSSProperties = {
   color: theme.color.errorLight, fontSize: 12, fontWeight: 600, cursor: 'pointer',
 }
-/** Message d'erreur statique affiché sous un champ invalide (non cliquable). */
-const errMsgStyle: React.CSSProperties = {
-  color: theme.color.errorLight, fontSize: 12, fontWeight: 600, lineHeight: 1.3,
-}
 
 function fmtSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} o`
@@ -65,21 +59,8 @@ function uploadPath(userId: string | undefined, blockId: string): string {
   return `${userId ?? 'anonymous'}/${blockId}_${Date.now()}.csv`
 }
 
-/** HoverCard d'un paramètre : description + métadonnées (type, défaut, bornes). */
+/** HoverCard d'un paramètre : description + métadonnées (type, défaut, bornes). — Astryx deep seam */
 function ParamInfo({ seg, children }: { seg: Exclude<Segment, { t: 'text' }>; children: React.ReactNode }) {
-  // Le middleware inline du PreviewCard ancre sur la LIGNE du champ (large) —
-  // on suit le X du pointeur pour aligner le popup dessus (alignOffset).
-  const [pointerX, setPointerX] = useState<number | null>(null)
-  const triggerRef = useRef<HTMLSpanElement | null>(null)
-  /* eslint-disable react-hooks/refs -- Mesure DOM volontaire au rendu : le
-     middleware inline du PreviewCard ne suit pas la souris, on aligne le popup
-     sur le X du pointeur via le rect du trigger (voir commentaire ci-dessus).
-     Une bascule vers useLayoutEffect introduirait un double rendu par mousemove. */
-  const alignOffset = pointerX != null && triggerRef.current
-    ? pointerX - (triggerRef.current.getBoundingClientRect().left + triggerRef.current.getBoundingClientRect().width / 2)
-    : 0
-  /* eslint-enable react-hooks/refs */
-  // Union de segments : lecture normalisée des métadonnées optionnelles.
   const p = seg as unknown as {
     k: string
     t: string
@@ -93,38 +74,26 @@ function ParamInfo({ seg, children }: { seg: Exclude<Segment, { t: 'text' }>; ch
     format?: string
   }
   return (
-    <HoverCard>
-      {/* display:contents n'a PAS de boîte (rect 0) — le popup retombait en
-          haut à gauche. inline garde la boîte pour le positionnement. */}
-      <HoverCardTrigger
-        render={
-          <span
-            ref={triggerRef}
-            onMouseMove={e => setPointerX(e.clientX)}
-            style={{ display: 'inline' }}
-          >
-            {children}
-          </span>
-        }
-      />
-      <HoverCardContent align="center" alignOffset={alignOffset}>
-        <div style={{ fontWeight: 800, fontSize: 13, marginBottom: 2, color: theme.color.textLight }}>
-          {p.k}
+    <HoverCard
+      placement="above"
+      content={
+        <div style={{ minWidth: 200, display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <Text type="label">{p.k}</Text>
+          {p.desc && <Text type="body" color="secondary" style={{ fontSize: 12 }}>{p.desc}</Text>}
+          <div style={{ fontSize: 12, color: 'var(--color-text-dim)', display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <Text type="supporting">Type : {p.t}</Text>
+            {p.def !== undefined && p.def !== '' && <Text type="supporting">Défaut : {p.def}</Text>}
+            {p.min != null && <Text type="supporting">Min : {p.min}</Text>}
+            {p.max != null && <Text type="supporting">Max : {p.max}</Text>}
+            {p.step != null && <Text type="supporting">Pas : {p.step}</Text>}
+            {p.odd === true && <Text type="supporting">Valeurs impaires uniquement</Text>}
+            {p.opts && p.opts.length > 0 && <Text type="supporting">Choix : {p.opts.join(', ')}</Text>}
+            {p.format && <Text type="supporting">Format : {p.format}</Text>}
+          </div>
         </div>
-        {p.desc && (
-          <div style={{ fontSize: 12, color: theme.color.textMuted, marginBottom: 8 }}>{p.desc}</div>
-        )}
-        <div style={{ fontSize: 12, color: theme.color.textDim, display: 'flex', flexDirection: 'column', gap: 3 }}>
-          <span>Type : {p.t}</span>
-          {p.def !== undefined && p.def !== '' && <span>Défaut : {p.def}</span>}
-          {p.min != null && <span>Min : {p.min}</span>}
-          {p.max != null && <span>Max : {p.max}</span>}
-          {p.step != null && <span>Pas : {p.step}</span>}
-          {p.odd === true && <span>Valeurs impaires uniquement</span>}
-          {p.opts && p.opts.length > 0 && <span>Choix : {p.opts.join(', ')}</span>}
-          {p.format && <span>Format : {p.format}</span>}
-        </div>
-      </HoverCardContent>
+      }
+    >
+      <span style={{ display: 'inline' }}>{children}</span>
     </HoverCard>
   )
 }
@@ -213,9 +182,9 @@ const BlockSegments = memo(function BlockSegments({ segs, fields, blockId, block
   // Pas de gap-y : les cellules portent leur padding vertical, sinon le
   // séparateur serait segmenté aux gaps.
   const labelCell = (s: Exclude<Segment, { t: 'text' }>, row: number, divider: React.CSSProperties) => (
-    <span key={`l${row}`} style={{ gridColumn: 1, gridRow: row, justifySelf: 'end', alignSelf: 'center', padding: '3px 0', lineHeight: 1, ...labelStyle, ...divider }}>
+    <Text key={`l${row}`} type="label" color="secondary" style={{ gridColumn: 1, gridRow: row, justifySelf: 'end', alignSelf: 'center', padding: '3px 0', lineHeight: 1, ...divider }}>
       {s.k}:
-    </span>
+    </Text>
   )
   const fieldCell = (row: number, children: React.ReactNode, divider: React.CSSProperties) => (
     <span key={`f${row}`} style={{ gridColumn: 3, gridRow: row, justifySelf: 'start', padding: '3px 0', ...divider }}>
@@ -239,7 +208,7 @@ const BlockSegments = memo(function BlockSegments({ segs, fields, blockId, block
           return (
             <>
               {labelCell(s, row, i === 0 ? dividerStyle : {})}
-              {fieldCell(row, <span style={fieldPill}>{s.def}</span>, i === 0 ? dividerStyle : {})}
+              {fieldCell(row, <Badge variant="neutral" label={s.def ?? ''} />, i === 0 ? dividerStyle : {})}
             </>
           )
         }
@@ -334,7 +303,7 @@ const BlockSegments = memo(function BlockSegments({ segs, fields, blockId, block
                       title={v.msg}
                       placeholder={placeholder}
                     />
-                    {invalid && <span role="alert" style={errMsgStyle}>{v.msg}</span>}
+                    {invalid && <Text role="alert" type="supporting" style={{ fontSize: 12, lineHeight: 1.3, color: theme.color.errorLight }}>{v.msg}</Text>}
                   </span></ParamInfo>
                 ), divider)}
                 <datalist id={dlId}>{s.opts!.map(o => <option key={o} value={o} />)}</datalist>
@@ -359,7 +328,7 @@ const BlockSegments = memo(function BlockSegments({ segs, fields, blockId, block
                     max={s.max}
                     step={s.step}
                   />
-                  {invalid && <span role="alert" style={errMsgStyle}>{v.msg}</span>}
+                  {invalid && <Text role="alert" type="supporting" style={{ fontSize: 12, lineHeight: 1.3, color: theme.color.errorLight }}>{v.msg}</Text>}
                 </span></ParamInfo>
               ), divider)}
             </>
@@ -385,7 +354,7 @@ const BlockSegments = memo(function BlockSegments({ segs, fields, blockId, block
                     title={v.msg}
                     placeholder={s.format ?? '[1, 2, 3]'}
                   />
-                  {invalid && <span role="alert" style={errMsgStyle}>{v.msg}</span>}
+                  {invalid && <Text role="alert" type="supporting" style={{ fontSize: 12, lineHeight: 1.3, color: theme.color.errorLight }}>{v.msg}</Text>}
                 </span></ParamInfo>
               ), divider)}
               {s.opts && s.opts.length > 0 && (
@@ -409,10 +378,10 @@ const BlockSegments = memo(function BlockSegments({ segs, fields, blockId, block
             <>
               {labelCell(s, row, divider)}
               {fieldCell(row, (
-                <span style={fileCard}>
-                  <span style={fileNameStyle}>{meta?.name ?? 'Upload…'}</span>
-                  <span style={fileMeta}><Loader2 size={12} style={{ animation: 'mlbSpin .8s linear infinite' }} /></span>
-                </span>
+                <HStack gap={1} style={fileCard as never}>
+                  <Text style={fileNameStyle}>{meta?.name ?? 'Upload…'}</Text>
+                  <Text style={fileMeta}><Icon icon={Loader2} size="xsm" style={{ animation: 'mlbSpin .8s linear infinite' }} /></Text>
+                </HStack>
               ), divider)}
             </>
           )
@@ -421,11 +390,11 @@ const BlockSegments = memo(function BlockSegments({ segs, fields, blockId, block
             <>
               {labelCell(s, row, divider)}
               {fieldCell(row, (
-                <span style={fileCard}>
-                  <span style={{ ...errStyle, display: 'inline-flex', alignItems: 'center', gap: 4 }}><TriangleAlert size={12} /> Échec</span>
+                <HStack gap={1} style={fileCard as never}>
+                  <Text style={{ ...errStyle, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Icon icon={TriangleAlert} size="xsm" /> Échec</Text>
                   <button type="button" style={{ ...errStyle, background: 'none', border: 'none', padding: 0, fontFamily: 'inherit' }} onClick={() => inputRefs.current[s.k]?.click()}>Réessayer</button>
                   <input ref={el => { inputRefs.current[s.k] = el }} type="file" accept={fileAccept} style={{ display: 'none' }} onChange={e => handleFile(s.k, e)} />
-                </span>
+                </HStack>
               ), divider)}
             </>
           )
@@ -434,12 +403,12 @@ const BlockSegments = memo(function BlockSegments({ segs, fields, blockId, block
             <>
               {labelCell(s, row, divider)}
               {fieldCell(row, (
-                <span style={fileCard}>
-                  <span style={fileNameStyle}>{fname}</span>
-                  {fsize && <span style={fileMeta}>{fmtSize(fsize)}</span>}
+                <HStack gap={1} style={fileCard as never}>
+                  <Text style={fileNameStyle}>{fname}</Text>
+                  {fsize && <Text style={fileMeta}>{fmtSize(fsize)}</Text>}
                   <button style={removeBtn} onClick={() => { onUpdate(blockId!, s.k, ''); setFileMetaState(m => { const n = { ...m }; delete n[s.k]; return n }) }}>×</button>
                   <input ref={el => { inputRefs.current[s.k] = el }} type="file" accept={fileAccept} style={{ display: 'none' }} onChange={e => handleFile(s.k, e)} />
-                </span>
+                </HStack>
               ), divider)}
             </>
           )
@@ -451,7 +420,7 @@ const BlockSegments = memo(function BlockSegments({ segs, fields, blockId, block
                 <span style={{ display: 'flex' }}>
                   <input ref={el => { inputRefs.current[s.k] = el }} type="file" accept={fileAccept} style={{ display: 'none' }} onChange={e => handleFile(s.k, e)} />
                   <button type="button" onClick={() => sampleCat ? setSampleOpen(s.k) : inputRefs.current[s.k]?.click()} style={{ ...fileBtn, fontFamily: 'inherit' }} title={s.desc}>
-                    <FileUp size={13} /> {sampleCat ? 'Données' : 'CSV'}
+                    <Icon icon={FileUp} size="xsm" /> {sampleCat ? 'Données' : 'CSV'}
                   </button>
                 </span>
               ), divider)}
