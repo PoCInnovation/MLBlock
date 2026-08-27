@@ -26,6 +26,7 @@ export default function HeroSection() {
         </p>
         <HStack gap={3} style={{ marginTop: 34 }}>
           <Button label="Mes projets" variant="primary" icon={<Play size={16} fill="currentColor" />} onClick={() => navigate({ to: '/projets' })} />
+          <Button label="Voir les cours" variant="secondary" onClick={() => navigate({ to: '/cours' })} />
           <Button label="En savoir plus" variant="secondary" onClick={scrollToFeatures} />
         </HStack>
       </div>

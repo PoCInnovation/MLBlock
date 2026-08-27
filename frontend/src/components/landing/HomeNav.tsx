@@ -91,6 +91,7 @@ export default function HomeNav() {
         </div>
         <HStack gap={4} style={{ display: 'flex', alignItems: 'center', gap: 30 } as unknown as CSSProperties} className="landing-nav-links">
           <button onClick={handleDecouvrir} style={{ ...linkStyle(false), background: 'none', border: 'none' }}>Découvrir</button>
+          <button onClick={() => navigate({ to: '/cours' })} style={{ ...linkStyle(location.pathname.startsWith('/cours')), background: 'none', border: 'none' }}>Cours</button>
           <button onClick={() => navigate({ to: '/how-it-works' })} style={{ ...linkStyle(location.pathname === '/how-it-works'), background: 'none', border: 'none' }}>Comment ça marche</button>
           <button onClick={() => navigate({ to: '/about' })} style={{ ...linkStyle(location.pathname === '/about'), background: 'none', border: 'none' }}>Qui sommes nous</button>
           <Button label="Mes projets" variant="primary" size="md" onClick={() => navigate({ to: '/projets' })} />
@@ -108,6 +109,7 @@ export default function HomeNav() {
       {open && (
         <div className="landing-nav-menu">
           <button onClick={() => go(handleDecouvrir)} style={menuLinkStyle}>Découvrir</button>
+          <button onClick={() => go(() => navigate({ to: '/cours' }))} style={menuLinkStyle}>Cours</button>
           <button onClick={() => go(() => navigate({ to: '/how-it-works' }))} style={menuLinkStyle}>Comment ça marche</button>
           <button onClick={() => go(() => navigate({ to: '/about' }))} style={menuLinkStyle}>Qui sommes nous</button>
           <button onClick={() => go(() => navigate({ to: '/projets' }))} style={{ ...menuLinkStyle, color: theme.color.accentLight }}>Mes projets</button>

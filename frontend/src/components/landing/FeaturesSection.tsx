@@ -163,6 +163,9 @@ export default function FeaturesSection() {
                         </div>
                     ))}
                 </div>
+                <div style={{ textAlign: 'center', marginTop: 36 }}>
+                    <a href="/cours" className="poc-btn" style={{ textDecoration: 'none' }}>Tous les cours →</a>
+                </div>
             </div>
         </section>
     );
