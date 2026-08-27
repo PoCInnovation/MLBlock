@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react'
-import { Save, Play, Loader2, Upload, Download, Square, MoreVertical, FolderKanban, Trash2, LogOut, Check, Undo2, Redo2 } from 'lucide-react'
+import { Save, Play, Upload, Download, Square, MoreVertical, FolderKanban, Trash2, LogOut, Check, Undo2, Redo2 } from 'lucide-react'
 import { Icon } from '@astryxdesign/core/Icon'
 import { HStack, IconButton, Button } from '@astryxdesign/core'
+import { TextInput } from '@astryxdesign/core/TextInput'
 import { DropdownMenu } from '../ui/dropdown-menu'
 import { useNavigate } from '@tanstack/react-router'
 import useAppStore from '../../store/useAppStore'
@@ -101,16 +102,20 @@ export default function EditorHeader() {
         <HStack gap={2} style={{ alignItems: 'center', background: theme.color.surface3, border: `1px solid ${theme.color.border}`, padding: '6px 12px', borderRadius: theme.radius.md, minWidth: 0 }}>
           <span style={{ width: 7, height: 7, borderRadius: '50%', background: theme.color.status, display: 'inline-block', flexShrink: 0 }} />
           {editingName ? (
-            <input
+            <TextInput
+              label="Nom du projet"
+              isLabelHidden
               value={draftName}
-              autoFocus
-              onChange={e => setDraftName(e.target.value)}
+              onChange={(v) => setDraftName(v)}
               onBlur={commitName}
-              onKeyDown={e => {
+              onKeyDown={(e) => {
                 if (e.key === 'Enter') commitName()
                 if (e.key === 'Escape') { setDraftName(projectName); setEditingName(false) }
               }}
-              style={{ background: 'transparent', border: 'none', borderBottom: `1px solid ${theme.color.auth}`, outline: 'none', color: theme.color.text, fontWeight: 800, fontSize: 14, width: 'min(180px, 30vw)' }}
+              hasAutoFocus
+              placeholder="Nom du projet"
+              size="sm"
+              width={180}
             />
           ) : (
             <button
