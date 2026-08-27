@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import useAppStore from '../../store/useAppStore'
 import { listPipelineJobs, getJobOutputs, getPipeline } from '../../api/client'
-import { Card, VStack, HStack, Button, ToggleButtonGroup, ToggleButton, Divider } from '@astryxdesign/core'
+import { Badge, Card, VStack, HStack, Button, ToggleButtonGroup, ToggleButton, Divider } from '@astryxdesign/core'
 import { Text, Heading } from '@astryxdesign/core/Text'
 import { theme } from '../../theme'
 
@@ -37,6 +37,12 @@ export default function JournalPanel() {
     } catch {
       return iso
     }
+  }
+
+  const execType = (j: { vast_instance_id: string }) => {
+    const id = j.vast_instance_id ?? ''
+    const isLocal = id === 'local-instance-id' || id.startsWith('mock-') || !id
+    return isLocal ? 'Locale' : 'GPU Vast.ai'
   }
 
   const handleRestore = async () => {
@@ -102,6 +108,10 @@ export default function JournalPanel() {
           block: o.block_name,
         })
       }
+      if (sel) {
+        const typeLabel = `Exécution ${execType(sel)}`
+        items.push({ id: 'exec-type', at: new Date(sel.created_at).getTime() - 1, kind: 'log', text: typeLabel })
+      }
       if (sel?.output) items.push({ id: 'job-log', at: new Date(sel.created_at).getTime(), kind: 'log', text: sel.output })
       if (sel?.error)
         items.push({
@@ -140,7 +150,7 @@ export default function JournalPanel() {
           ← Retour au journal
         </button>
         <Heading level={5}>
-          {sel ? `${fmtTime(sel.created_at)} · ${sel.status}` : 'Exécution'}
+          {sel ? `${fmtTime(sel.created_at)} · ${sel.status} · ${execType(sel)}` : 'Exécution'}
         </Heading>
         {outputsQuery.isLoading ? (
           <Text type="body" color="secondary">
@@ -190,9 +200,12 @@ export default function JournalPanel() {
         {jobs.map(j => (
           <Card key={j.id} variant="muted" padding={2} className="cursor-pointer" onClick={() => setSelectedJobId(j.id)}>
             <HStack gap={2} style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-              <Text type="body" style={{ fontWeight: 700 }}>
-                {fmtTime(j.created_at)}
-              </Text>
+              <HStack gap={1} style={{ alignItems: 'center' }}>
+                <Text type="body" style={{ fontWeight: 700 }}>
+                  {fmtTime(j.created_at)}
+                </Text>
+                <Badge label={execType(j)} variant={execType(j) === 'Locale' ? 'neutral' : 'info'} />
+              </HStack>
               <Text type="supporting" color="secondary">
                 {j.status}
               </Text>
