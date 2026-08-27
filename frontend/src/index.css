@@ -360,9 +360,12 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
-    min-height: 100vh;
+    height: 100vh;
+    max-height: 100vh;
+    overflow: hidden;
     width: 100%;
     box-sizing: border-box;
+    min-height: 0;
   }
 }
 /* Handles tactiles ≥ 24px (WCAG 2.5.8) : pointer coarse couvre les

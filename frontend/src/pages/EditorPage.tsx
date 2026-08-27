@@ -13,7 +13,6 @@ import UnsavedChangesDialog from '../components/ui/UnsavedChangesDialog'
 import Toast from '../components/ui/Toast'
 import { CheckCircle2 } from 'lucide-react'
 import FlowCanvas from '../components/flow/FlowCanvas'
-import ConsolePanel from '../components/ui/ConsolePanel'
 import { theme } from '../theme'
 function stashIfDirty(): void {
   const s = useAppStore.getState()
@@ -172,7 +171,7 @@ export default function EditorPage() {
     )
   }
   return (
-    <main id="main" style={{ minHeight: '100vh', background: theme.color.bg, color: theme.color.text, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <main id="main" style={{ height: '100vh', background: theme.color.bg, color: theme.color.text, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <SkipLink />
       <div
         className="editor-outer"
@@ -183,10 +182,13 @@ export default function EditorPage() {
           display: 'flex',
           flexDirection: 'column',
           gap: 16,
-          minHeight: '100vh',
+          height: '100vh',
+          maxHeight: '100vh',
+          overflow: 'hidden',
           width: '100%',
           boxSizing: 'border-box',
           flex: 1,
+          minHeight: 0,
         }}
       >
         <EditorHeader />
@@ -211,7 +213,6 @@ export default function EditorPage() {
         >
           <FlowCanvas />
         </div>
-        <ConsolePanel />
       </div>
       <Toast />
       <UnsavedChangesDialog
