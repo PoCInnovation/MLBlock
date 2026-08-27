@@ -347,12 +347,6 @@
     opacity: 1;
     transform: translateY(0);
   }
-  /* Console : hauteur animée 0 ↔ 180px sans jank (transition interrompue proprement) */
-  .console-collapsible {
-    overflow: hidden;
-    transition: height 200ms ease, opacity 200ms ease;
-    will-change: height, opacity;
-  }
   .editor-outer {
     max-width: 1440px;
     margin: 0 auto;
@@ -360,9 +354,13 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
-    min-height: 100vh;
+    height: 100vh;
+    max-height: 100vh;
+    overflow: hidden;
     width: 100%;
     box-sizing: border-box;
+    min-height: 0;
+    flex: 1;
   }
 }
 /* Handles tactiles ≥ 24px (WCAG 2.5.8) : pointer coarse couvre les
@@ -388,7 +386,7 @@
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12) !important;
   }
   @media (prefers-reduced-motion: reduce) {
-    .floating-panel, .floating-canvas, .console-collapsible, .flow-palette, .palette-drawer {
+    .floating-panel, .floating-canvas, .flow-palette, .palette-drawer {
       transition: none !important;
       animation: none !important;
     }

@@ -27,6 +27,7 @@ import { courses, getCourse } from '../../content/cours'
 import BlockNode from './BlockNode'
 import FlowLink from './FlowLink'
 import FlowPalette from './FlowPalette'
+import JournalPanel from './JournalPanel'
 import { segsToFields } from '../../utils/flowConversion'
 import { buildConversionGraph, classifyEdge, converterFor, portDtype } from '../../utils/typeCheck'
 import { resolveConnection, type ResolvedConnection } from '../../utils/portResolution'
@@ -85,8 +86,40 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
   const [paletteOpen, setPaletteOpen] = useState(false)
   const [leftCollapsed, setLeftCollapsed] = useState(false)
   const [rightCollapsed, setRightCollapsed] = useState(false)
-  const [rightMode, setRightMode] = useState<'cours' | 'inspecteur'>('inspecteur')
+  const [rightMode, setRightMode] = useState<'cours' | 'inspecteur' | 'journal'>('inspecteur')
   const hasOutputs = useAppStore(s => s.results.length > 0)
+  const jobStatus = useAppStore(s => s.jobStatus)
+  // Auto-switch to Inspecteur and select last Block on run (Kahn topo)
+  useEffect(() => {
+    if (jobStatus !== 'running') return
+    setRightMode('inspecteur')
+    setRightCollapsed(false)
+    const { flowNodes, flowEdges } = useAppStore.getState()
+    if (flowNodes.length === 0) return
+    const indeg = new Map<string, number>(flowNodes.map(n => [n.id, 0]))
+    const adj = new Map<string, string[]>(flowNodes.map(n => [n.id, []]))
+    for (const e of flowEdges) {
+      indeg.set(e.target, (indeg.get(e.target) ?? 0) + 1)
+      adj.get(e.source)?.push(e.target)
+    }
+    const q = flowNodes.filter(n => (indeg.get(n.id) ?? 0) === 0).map(n => n.id)
+    const order: string[] = []
+    while (q.length) {
+      const id = q.shift()!
+      order.push(id)
+      for (const nb of adj.get(id) ?? []) {
+        indeg.set(nb, (indeg.get(nb) ?? 0) - 1)
+        if ((indeg.get(nb) ?? 0) === 0) q.push(nb)
+      }
+    }
+    const sinks = order.filter(id => (adj.get(id)?.length ?? 0) === 0)
+    const lastId = sinks.length ? sinks[sinks.length - 1] : order[order.length - 1]
+    const last = flowNodes.find(n => n.id === lastId)
+    if (last) {
+      const store = useAppStore.getState()
+      store.setFlowNodes(flowNodes.map(n => ({ ...n, selected: n.id === last.id })))
+    }
+  }, [jobStatus])
   // Compteur de taps : décale les ajouts successifs pour éviter l'empilement
   // exact au centre (le premier reste centré).
   const tapSeq = useRef(0)
@@ -365,7 +398,7 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
   )
 
   return (
-    <div style={{ flex: 1, position: 'relative', display: 'flex', gap: 16, minWidth: 0, minHeight: 0, height: '100%' }}>
+    <div style={{ flex: 1, position: 'relative', display: 'flex', gap: 16, minWidth: 0, minHeight: 0, height: '100%', alignItems: 'stretch' }}>
       {/* Palette gauche : bouton repli en haut à droite *dans* la sidebar, instant */}
       <div
         className="flow-palette"
@@ -377,6 +410,9 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
           overflow: 'hidden',
           transition: 'none',
           position: 'relative',
+          height: '100%',
+          alignSelf: 'stretch',
+          minHeight: 0,
         }}
       >
         <div
@@ -402,7 +438,10 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
           style={{
             flex: 1,
             minHeight: 0,
+            height: '100%',
             display: leftCollapsed ? 'none' : 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
           }}
         >
           <FlowPalette onDragStart={onDragStart} onToggleCollapse={() => setLeftCollapsed(true)} />
@@ -414,7 +453,7 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
         style={{
           flex: 1,
           alignSelf: 'stretch',
-          height: 'auto',
+          height: '100%',
           minHeight: 0,
           borderRadius: theme.radius.xl,
           overflow: 'hidden',
@@ -479,6 +518,9 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
           overflow: 'hidden',
           transition: 'none',
           position: 'relative',
+          height: '100%',
+          alignSelf: 'stretch',
+          minHeight: 0,
         }}
       >
         <div
@@ -504,14 +546,17 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
           style={{
             flex: 1,
             minHeight: 0,
+            height: '100%',
             display: rightCollapsed ? 'none' : 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
           }}
         >
           <InspectorPanel
             onToggleCollapse={() => setRightCollapsed(true)}
             rightMode={rightMode}
             onChangeMode={v => {
-              if (v) setRightMode(v as 'cours' | 'inspecteur')
+              if (v) setRightMode(v as 'cours' | 'inspecteur' | 'journal')
             }}
             hasOutputs={hasOutputs}
           />
@@ -663,7 +708,7 @@ function CoursPanel() {
   if (course) {
     const currentBody = sectionBodies[idx] ?? sectionBodies[0] ?? course.body
     return (
-      <VStack gap={3} style={{ minHeight: 0 }}>
+      <VStack gap={3} style={{ minHeight: 0, flex: 1, height: '100%', overflow: 'hidden' }}>
         <button onClick={() => setSelected(null)} style={{ background: 'none', border: 'none', color: theme.color.textMuted, cursor: 'pointer', fontSize: 13, fontWeight: 700, textAlign: 'left', padding: 0 }}>← Retour au catalogue</button>
         <Heading level={4}>{course.title}</Heading>
         {bannerText ? (
@@ -671,7 +716,7 @@ function CoursPanel() {
             {bannerText}
           </div>
         ) : null}
-        <Stack style={{ flex: 1, overflowY: 'auto', minHeight: 0, maxHeight: 420, paddingRight: 2 }}>
+        <Stack style={{ flex: 1, overflowY: 'auto', minHeight: 0, paddingRight: 2 }}>
           <Markdown>{currentBody}</Markdown>
         </Stack>
         {sections.length > 0 ? (
@@ -691,7 +736,7 @@ function CoursPanel() {
     )
   }
   return (
-    <VStack gap={2}>
+    <VStack gap={2} style={{ minHeight: 0, flex: 1, height: '100%', overflow: 'hidden' }}>
       <TextInput label="Rechercher un cours" isLabelHidden value={query} onChange={setQuery} placeholder="Rechercher un cours…" />
       <ToggleButtonGroup type="single" label="Difficulté" value={difficulty} onChange={v => setDifficulty((v as string) || 'Tous')} size="sm">
         <Grid columns={2} gap={1.5}>
@@ -706,7 +751,7 @@ function CoursPanel() {
       ) : filtered.length === 0 ? (
         <div style={{ color: theme.color.textMuted, fontSize: 13, fontWeight: 600, textAlign: 'center', padding: '18px 6px' }}>Aucun cours trouvé</div>
       ) : (
-        <VStack gap={2}>
+        <VStack gap={2} style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: 2 }}>
           {filtered.map(c => (
             <ClickableCard key={c.slug} label={c.title} onClick={() => setSelected(c.slug)} padding={2}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 2, textAlign: 'left' }}>
@@ -729,7 +774,7 @@ function InspectorPanel({
   hasOutputs = false,
 }: {
   onToggleCollapse?: () => void
-  rightMode?: 'cours' | 'inspecteur'
+  rightMode?: 'cours' | 'inspecteur' | 'journal'
   onChangeMode?: (v: string | null) => void
   hasOutputs?: boolean
 }) {
@@ -754,7 +799,10 @@ function InspectorPanel({
     <div
       className="floating-panel inspector-panel"
       style={{
-        width: 260,
+        width: '100%',
+        height: '100%',
+        flex: 1,
+        alignSelf: 'stretch',
         flexShrink: 0,
         background: theme.color.surface2,
         border: `1px solid ${theme.color.border}`,
@@ -798,16 +846,23 @@ function InspectorPanel({
         >
           <ToggleButton label="Cours" value="cours" />
           <ToggleButton label={inspecteurLabel} value="inspecteur" />
+          <ToggleButton label="Journal" value="journal" />
         </ToggleButtonGroup>
       </div>
       <div
         style={{
           flex: 1,
+          minHeight: 0,
+          height: '100%',
           padding: 16,
           overflowY: 'auto',
+          display: 'flex',
+          flexDirection: 'column',
         }}
       >
-        {rightMode === 'cours' ? (
+        {rightMode === 'journal' ? (
+          <JournalPanel />
+        ) : rightMode === 'cours' ? (
           <CoursPanel />
         ) : !selected ? (
           <Text type="body" color="secondary" style={{ textAlign: 'center', padding: '18px 6px' }}>
