@@ -1,6 +1,6 @@
 import useAppStore from '../../store/useAppStore'
 import { theme } from '../../theme'
-import { Card, VStack, Stack, Text, Heading } from '@astryxdesign/core'
+import { Card, VStack, Text } from '@astryxdesign/core'
 import { Text as AstryxText } from '@astryxdesign/core/Text'
 
 type TypedOutput =

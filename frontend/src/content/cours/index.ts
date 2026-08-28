@@ -188,11 +188,4 @@ export function courseTreeItems(list: CourseMeta[]) {
   ]
 }
 
-function searchCourses(q: string, difficulty?: string): CourseMeta[] {
-  const query = q.trim().toLowerCase()
-  return courses.filter(c => {
-    const matchQ = !query || c.title.toLowerCase().includes(query) || c.description.toLowerCase().includes(query)
-    const matchD = !difficulty || difficulty === 'Tous' || difficulty === 'all' || c.difficulty === difficulty
-    return matchQ && matchD
-  })
-}
+

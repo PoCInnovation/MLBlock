@@ -68,14 +68,6 @@ const pipelineEdgeSchema = z.object({
   target_port: z.string(),
 })
 
-const pipelineCreateSchema = z.object({
-  name: z.string(),
-  description: z.string(),
-  is_draft: z.boolean().optional(),
-  nodes: z.array(pipelineNodeSchema),
-  edges: z.array(pipelineEdgeSchema),
-})
-
 const pipelineSummarySchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -130,17 +122,3 @@ export const buildResponseSchema = z.object({
 export const generateResponseSchema = z.object({
   code: z.string(),
 })
-
-type Catalog = z.infer<typeof catalogSchema>
-type ValidationResponse = z.infer<typeof validationSchema>
-type PipelineNode = z.infer<typeof pipelineNodeSchema>
-type PipelineEdge = z.infer<typeof pipelineEdgeSchema>
-type PipelineCreate = z.infer<typeof pipelineCreateSchema>
-type PipelineSummary = z.infer<typeof pipelineSummarySchema>
-type PipelineDetail = z.infer<typeof pipelineDetailSchema>
-type PipelinePage = z.infer<typeof pipelinePageSchema>
-type JobStatus = z.infer<typeof jobStatusSchema>
-type Job = z.infer<typeof jobSchema>
-type JobOutput = z.infer<typeof jobOutputSchema>
-type BuildResponse = z.infer<typeof buildResponseSchema>
-type GenerateResponse = z.infer<typeof generateResponseSchema>

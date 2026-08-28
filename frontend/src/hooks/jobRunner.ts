@@ -3,9 +3,7 @@
  * (polling 3s + Realtime). Hook useBlockRunner becomes thin view adapter.
  * Two adapters justify the seam: polling vs Realtime (tests inject fake).
  */
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useRef } from 'react'
-import { supabase } from '../services/supabase'
+
 
 export type JobRunnerAdapter = {
   pollJob: (jobId: string) => Promise<{ status: string }>

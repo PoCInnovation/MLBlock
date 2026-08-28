@@ -1,6 +1,5 @@
 import { theme } from '../../theme'
 import { Play } from 'lucide-react'
-import { Icon } from '@astryxdesign/core/Icon'
 import React from 'react'
 
 type HeroBlock = {

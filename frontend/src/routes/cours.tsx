@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components -- TanStack Route: Route + component in same file */
 import { useState, useMemo, useEffect } from 'react'
 import { createFileRoute, Link, Outlet, useRouterState } from '@tanstack/react-router'
 import { TextInput, VStack, HStack } from '@astryxdesign/core'

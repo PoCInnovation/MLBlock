@@ -1,5 +1,5 @@
 import { memo, useRef, useState } from 'react'
-import { X, PanelLeft, PanelRight, ChevronDown, ChevronUp } from 'lucide-react'
+import { X, PanelLeft, ChevronDown, ChevronUp } from 'lucide-react'
 import useAppStore from '../../store/useAppStore'
 import { colorFor } from '../../utils/blockHelpers'
 import { shouldIgnoreTap } from '../../utils/tapGuard'
@@ -35,29 +35,6 @@ const headerStyle: React.CSSProperties = {
   alignItems: 'stretch',
 }
 
-const chipsStyle: React.CSSProperties = {
-  display: 'flex',
-  gap: 6,
-  flexWrap: 'wrap',
-  marginTop: 10,
-}
-
-const chipStyle = (active: boolean): React.CSSProperties => ({
-  minHeight: 44,
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  padding: '4px 10px',
-  borderRadius: 999,
-  fontSize: 11,
-  fontWeight: 700,
-  cursor: 'pointer',
-  border: 'none',
-  background: active ? theme.color.accent : theme.color.surface3,
-  color: active ? '#fff' : theme.color.textMuted,
-  transition: 'background .2s, color .2s',
-})
-
 const scrollStyle: React.CSSProperties = {
   flex: 1,
   overflowY: 'auto',
@@ -73,24 +50,6 @@ const catStyle: React.CSSProperties = {
   fontSize: 13,
   color: theme.color.textMuted,
   margin: '12px 0 8px',
-}
-
-const itemStyle: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: 8,
-  minHeight: 44,
-  padding: '8px 10px',
-  borderRadius: theme.radius.md,
-  marginBottom: 8,
-  cursor: 'grab',
-  background: theme.color.surface3,
-  border: `1px solid ${theme.color.border}`,
-  color: theme.color.text,
-  fontSize: 13,
-  fontWeight: 700,
-  transition: 'background .2s, border-color .2s',
-  userSelect: 'none',
 }
 
 const emptyStyle: React.CSSProperties = {

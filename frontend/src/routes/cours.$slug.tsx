@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components -- TanStack Route: Route + component in same file */
 import { createFileRoute, Link, notFound } from '@tanstack/react-router'
 import { Badge, Blockquote, Divider, HStack, VStack } from '@astryxdesign/core'
 import { Breadcrumbs, BreadcrumbItem } from '@astryxdesign/core/Breadcrumbs'

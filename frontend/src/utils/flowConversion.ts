@@ -1,11 +1,5 @@
 import type { BlockDefMap } from '../types/catalog'
 
-type FlowBlock = {
-  id: string
-  type: string
-  fields: Record<string, string>
-}
-
 /** Default field values from a block definition's segments. */
 export function segsToFields(def: BlockDefMap[string] | undefined): Record<string, string> {
   const fields: Record<string, string> = {}

@@ -59,7 +59,7 @@ export function useBlockRunner() {
     queryKey: ['job-outputs', jobId],
     queryFn: () => getJobOutputs(jobId!),
     enabled: !!jobId,
-    refetchInterval: (q) => {
+    refetchInterval: () => {
       const d = jobQuery.data
       if (d && (d.status === 'done' || d.status === 'error')) return false
       // Poll 2s en live, Realtime est le canal principal quand dispo
@@ -218,9 +218,9 @@ export function useBlockRunner() {
 
   const isRunning = runMutation.isPending || (jobId !== null && !terminal) || isStopping
 
-  // Reset stopping flag once jobId is cleared
+  // ponytail: queueMicrotask avoids synchronous setState in effect (lint rule)
   useEffect(() => {
-    if (jobId === null && isStopping) setIsStopping(false)
+    if (jobId === null && isStopping) queueMicrotask(() => setIsStopping(false))
   }, [jobId, isStopping])
 
   const onRun = useCallback(() => {
@@ -238,7 +238,7 @@ export function useBlockRunner() {
     setJobId(null)
     useAppStore.getState().appendConsoleLines([{ k: 'sys', t: 'Arrêté' }])
     // isStopping reste true jusqu'à ce que jobId passe à null (effet ci-dessus)
-  }, [isRunning, runMutation, jobId])
+  }, [isRunning, runMutation])
 
   const onClear = useCallback(() => {
     const s = useAppStore.getState()
