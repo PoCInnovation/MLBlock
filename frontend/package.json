@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite dev",
     "build": "tsc --noEmit && vite build && node scripts/generate-seo.mjs",
     "preview": "vite preview",
     "test": "vitest run",

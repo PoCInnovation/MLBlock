@@ -42,15 +42,18 @@ services:
       - key: GPU_API_KEY
         generateValue: true
 
-  # ── Frontend React/Vite (TanStack Start prerender → Node) ───────
+  # ── Frontend React/Vite (TanStack Start SSG prerender → Static) ─
   - type: web
     name: mlblock-frontend
-    runtime: node
-    plan: free
+    runtime: static
     rootDir: frontend
     buildCommand: npm ci && VITE_API_BASE_URL=https://mlblock-backend.onrender.com npm run build
-    startCommand: npx serve dist/client -s -l $PORT
     buildFilter:
       ignoredPaths:
         - backend/**
         - openspec/**
+    staticPublishPath: dist/client
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
