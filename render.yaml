@@ -52,7 +52,7 @@ services:
       ignoredPaths:
         - backend/**
         - openspec/**
-    staticPublishPath: dist
+    staticPublishPath: dist/client
     routes:
       - type: rewrite
         source: /*

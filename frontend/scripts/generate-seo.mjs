@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const contentDir = path.join(__dirname, '../src/content/cours')
 const distDir = path.join(__dirname, '../dist')
+const distClientDir = path.join(__dirname, '../dist/client')
 const publicDir = path.join(__dirname, '../public')
 const base = process.env.SITE_URL || 'https://mlblock-frontend.onrender.com'
 
@@ -31,7 +32,7 @@ const llms = `# Cours
 ${slugs.map(s => `- [${s}](${base}/cours/${s})`).join('\n')}
 `
 
-for (const dir of [distDir, publicDir]) {
+for (const dir of [distDir, distClientDir, publicDir]) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
   fs.writeFileSync(path.join(dir, 'sitemap.xml'), sitemap)
   fs.writeFileSync(path.join(dir, 'robots.txt'), robots)
