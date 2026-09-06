@@ -45,6 +45,7 @@ health_router = APIRouter()
 
 
 @health_router.get("/health")
+@health_router.get("/healthz")
 def health() -> dict:
     """Liveness probe — no DB access, cheap ping target."""
     mode = os.environ.get("MLBLOCK_RUN_MODE", "local").lower()

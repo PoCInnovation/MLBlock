@@ -1,0 +1,52 @@
+name: Deploy to Coolify
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-coolify-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Trigger Coolify Redeploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Validate Deployment Secrets
+        run: |
+          if [ -z "${{ secrets.COOLIFY_WEBHOOK_URL }}" ]; then
+            echo "::error::COOLIFY_WEBHOOK_URL secret is not set in repository settings."
+            exit 1
+          fi
+
+      - name: Trigger Webhook Deployment
+        env:
+          WEBHOOK_URL: ${{ secrets.COOLIFY_WEBHOOK_URL }}
+          API_TOKEN: ${{ secrets.COOLIFY_API_TOKEN }}
+        run: |
+          echo "Triggering deployment in Coolify..."
+          if [ -n "$API_TOKEN" ]; then
+            RESPONSE=$(curl -s -w "\n%{http_code}" -X GET "$WEBHOOK_URL" \
+              -H "Authorization: Bearer $API_TOKEN" \
+              -H "Content-Type: application/json")
+          else
+            RESPONSE=$(curl -s -w "\n%{http_code}" -X GET "$WEBHOOK_URL" \
+              -H "Content-Type: application/json")
+          fi
+
+          HTTP_STATUS=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+
+          echo "Response status: $HTTP_STATUS"
+          echo "Response body: $BODY"
+
+          if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 300 ]; then
+            echo "Deployment successfully triggered in Coolify."
+          else
+            echo "::error::Coolify deployment trigger failed with HTTP status $HTTP_STATUS"
+            exit 1
+          fi

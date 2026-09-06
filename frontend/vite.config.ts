@@ -22,13 +22,13 @@ export default defineConfig({
             prerender: {
               enabled: true,
               crawlLinks: true,
-              concurrency: 14,
+              concurrency: process.env.PRERENDER_CONCURRENCY ? parseInt(process.env.PRERENDER_CONCURRENCY, 10) : 4,
               failOnError: true,
               autoSubfolderIndex: true,
             },
             sitemap: {
               enabled: true,
-              host: 'https://mlblock-frontend.onrender.com',
+              host: process.env.SITE_URL || 'https://mlblock-frontend.onrender.com',
             },
             pages: slugs.map(s => ({ path: `/cours/${s}`, prerender: { enabled: true } })),
           }),

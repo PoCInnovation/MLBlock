@@ -297,6 +297,10 @@ def test_health_endpoint(client: TestClient):
     assert r.json()["status"] == "ok"
     assert r.json()["run_mode"] in ("local", "gpu")
 
+    rz = client.get("/healthz")
+    assert rz.status_code == 200
+    assert rz.json()["status"] == "ok"
+
 
 # ── Projets (persistance) ───────────────────────────────────────────
 
