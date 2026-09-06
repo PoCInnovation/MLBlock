@@ -5,10 +5,11 @@ FROM python:3.11-slim-bookworm AS builder
 # Install uv from official binary image
 COPY --from=ghcr.io/astral-sh/uv:0.5.29 /uv /bin/uv
 
-# Compile bytecode and disable cache during container build
-ENV UV_COMPILE_BYTECODE=1 \
+# Disable bytecode compilation and cache during container build to save disk space
+ENV UV_COMPILE_BYTECODE=0 \
     UV_LINK_MODE=copy \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
 
 WORKDIR /app
 
@@ -23,10 +24,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY pyproject.toml uv.lock /app/
 RUN uv sync --frozen --no-dev --no-install-project
 
-# Copy project source and install project
+# Copy project source, install project, and clean cache
 COPY mlblock /app/mlblock
-RUN uv sync --frozen --no-dev
-
+RUN uv sync --frozen --no-dev && \
+    find /app/.venv -type d -name "__pycache__" -prune -exec rm -rf {} + 2>/dev/null || true && \
+    rm -rf /root/.cache
 # ── Stage 2: Minimal runtime image ─────────────────────────────────────────
 FROM python:3.11-slim-bookworm AS runner
 
@@ -42,9 +44,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN groupadd -g 10001 mlblock && \
     useradd -u 10001 -g mlblock -s /bin/bash -m mlblock
 
-# Copy installed virtual environment and application code from builder
-COPY --from=builder --chown=mlblock:mlblock /app/.venv /app/.venv
-COPY --from=builder --chown=mlblock:mlblock /app/mlblock /app/mlblock
+# Copy installed virtual environment and application code from builder (avoiding chown layer duplication)
+COPY --from=builder /app/.venv /app/.venv
+COPY --from=builder /app/mlblock /app/mlblock
 
 # Set path to use virtual environment
 ENV PATH="/app/.venv/bin:$PATH" \
