@@ -29,25 +29,8 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
-    networks:
-      - default
-    labels:
-      - "coolify.managed=true"
-      - "traefik.enable=true"
-      - "traefik.docker.network=coolify"
-      # HTTP router
-      - "traefik.http.routers.backend-http.rule=Host(`${BACKEND_DOMAIN:-backend.141.253.110.210.sslip.io}`)"
-      - "traefik.http.routers.backend-http.entrypoints=http"
-      - "traefik.http.routers.backend-http.service=backend"
-      # HTTPS router (with Let's Encrypt TLS)
-      - "traefik.http.routers.backend-https.rule=Host(`${BACKEND_DOMAIN:-backend.141.253.110.210.sslip.io}`)"
-      - "traefik.http.routers.backend-https.entrypoints=https"
-      - "traefik.http.routers.backend-https.tls=true"
-      - "traefik.http.routers.backend-https.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.backend-https.service=backend"
-      # Backend loadbalancer port
-      - "traefik.http.services.backend.loadbalancer.server.port=8000"
-
+    expose:
+      - "8000"
   # ── Frontend React & Static Nginx Service ────────────────────────────────
   frontend:
     build:
@@ -69,26 +52,5 @@ services:
       timeout: 5s
       retries: 3
       start_period: 5s
-    networks:
-      - default
-    labels:
-      - "coolify.managed=true"
-      - "traefik.enable=true"
-      - "traefik.docker.network=coolify"
-      # HTTP router
-      - "traefik.http.routers.frontend-http.rule=Host(`${FRONTEND_DOMAIN:-frontend.141.253.110.210.sslip.io}`)"
-      - "traefik.http.routers.frontend-http.entrypoints=http"
-      - "traefik.http.routers.frontend-http.service=frontend"
-      # HTTPS router (with Let's Encrypt TLS)
-      - "traefik.http.routers.frontend-https.rule=Host(`${FRONTEND_DOMAIN:-frontend.141.253.110.210.sslip.io}`)"
-      - "traefik.http.routers.frontend-https.entrypoints=https"
-      - "traefik.http.routers.frontend-https.tls=true"
-      - "traefik.http.routers.frontend-https.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.frontend-https.service=frontend"
-      # Frontend loadbalancer port
-      - "traefik.http.services.frontend.loadbalancer.server.port=80"
-
-networks:
-  default:
-    name: coolify
-    external: true
+    expose:
+      - "80"

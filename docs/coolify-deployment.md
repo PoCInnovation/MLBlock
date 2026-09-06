@@ -111,10 +111,10 @@ Create the initial administrative account and save your credentials.
    - Docker Compose Location: `docker-compose.coolify.yml`.
 
 3. **Domains & Routing**:
-   - Configure domains in the Coolify UI or ensure environment variables are set:
-     - `FRONTEND_DOMAIN`: `https://mlblock.yourdomain.com`
-     - `BACKEND_DOMAIN`: `https://api.mlblock.yourdomain.com`
-
+   - In Coolify, open the MLBlock resource. Because it is a Docker Compose application, Coolify discovers both services:
+     - **frontend**: In the service settings / Domains input, enter `http://frontend.141.253.110.210.sslip.io` (or with `https://`).
+     - **backend**: In the service settings / Domains input, enter `http://backend.141.253.110.210.sslip.io:8000` (or with `https://`).
+   - Coolify's built-in proxy handles all routing, network attachment, and Let's Encrypt certificates automatically without needing manual Traefik labels in the compose file.
 ---
 
 ## 5. Environment Variables Configuration
