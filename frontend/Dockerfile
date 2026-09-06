@@ -1,45 +1,35 @@
 # syntax=docker/dockerfile:1
-# ── Stage 1: Build client assets with Node 22 (native WebSocket for Supabase SSR) ─
-FROM node:22-alpine AS builder
+FROM node:22-alpine
 
 WORKDIR /app
 
-# Install pnpm and dependencies
+# Enable pnpm
 RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
-COPY package.json pnpm-lock.yaml .npmrc /app/
+
+# Install dependencies
+COPY package.json pnpm-lock.yaml .npmrc ./
 RUN pnpm install --frozen-lockfile
 
-# Build-time environment variables inlined by Vite
-ARG VITE_API_BASE_URL="http://localhost:8000"
+# Build arguments for Vite
+ARG VITE_API_BASE_URL="http://backend.141.253.110.210.sslip.io"
 ARG VITE_SUPABASE_URL="https://placeholder.supabase.co"
 ARG VITE_SUPABASE_PUBLISHABLE_KEY="sb_publishable_placeholder"
-ARG SITE_URL="https://mlblock.local"
+ARG SITE_URL="http://frontend.141.253.110.210.sslip.io"
 
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL \
     VITE_SUPABASE_URL=$VITE_SUPABASE_URL \
     VITE_SUPABASE_PUBLISHABLE_KEY=$VITE_SUPABASE_PUBLISHABLE_KEY \
     SITE_URL=$SITE_URL \
-    NODE_ENV=production
+    NODE_ENV=production \
+    PORT=3000
 
 # Copy source code and build
-COPY . /app/
+COPY . .
 RUN pnpm run build
 
-# ── Stage 2: Serve static files with Nginx Alpine ─────────────────────────
-FROM nginx:alpine AS runner
-
-# Remove default nginx configurations
-RUN rm -rf /etc/nginx/conf.d/* /usr/share/nginx/html/*
-
-# Copy custom Nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-# Copy compiled static assets from builder stage
-COPY --from=builder /app/dist/client /usr/share/nginx/html
-
-EXPOSE 80
+EXPOSE 3000
 
 HEALTHCHECK --interval=15s --timeout=5s --start-period=5s --retries=3 \
-    CMD wget -q -O - http://localhost/healthz || exit 1
+    CMD wget -q -O - http://localhost:3000/ || exit 1
 
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["pnpm", "run", "start"]
