@@ -1,10 +1,4 @@
-# Frontend Tooling
-
-## Purpose
-
-Declares pnpm as the sole frontend package manager with a single committed lockfile, removing install ambiguity and drift risk.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Single package manager
 The frontend SHALL be installable and buildable with exactly one package manager (pnpm), and exactly one lockfile (`pnpm-lock.yaml`) MUST be tracked in the repository.

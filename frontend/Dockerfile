@@ -1,12 +1,13 @@
 # syntax=docker/dockerfile:1
-# ── Stage 1: Build client assets with Node 20 ─────────────────────────────
-FROM node:20-alpine AS builder
+# ── Stage 1: Build client assets with Node 22 (native WebSocket for Supabase SSR) ─
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-# Install dependencies first for Docker layer caching
-COPY package.json package-lock.json /app/
-RUN npm ci
+# Install pnpm and dependencies
+RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
+COPY package.json pnpm-lock.yaml .npmrc /app/
+RUN pnpm install --frozen-lockfile
 
 # Build-time environment variables inlined by Vite
 ARG VITE_API_BASE_URL="http://localhost:8000"
@@ -22,7 +23,7 @@ ENV VITE_API_BASE_URL=$VITE_API_BASE_URL \
 
 # Copy source code and build
 COPY . /app/
-RUN npm run build
+RUN pnpm run build
 
 # ── Stage 2: Serve static files with Nginx Alpine ─────────────────────────
 FROM nginx:alpine AS runner

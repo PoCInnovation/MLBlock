@@ -135,20 +135,20 @@ uv run pytest mlblock/tests -k "test_catalog"      # Run tests matching expressi
 
 ### Frontend (`frontend/`)
 
-Managed via `npm` only. Run all commands from the `frontend/` directory:
+Managed via `pnpm` only. Run all commands from the `frontend/` directory:
 
 ```bash
 # Environment setup
-npm ci                           # Clean install dependencies (or npm install)
+pnpm install                     # Clean install dependencies (or pnpm install --frozen-lockfile)
 
 # Run development server
-npm run dev                      # Start Vite dev server (direct backend access on VITE_API_BASE_URL)
+pnpm run dev                     # Start Vite dev server (direct backend access on VITE_API_BASE_URL)
 
 # Build & Quality checks
-npm run build                    # Runs `tsc --noEmit && vite build && node scripts/generate-seo.mjs`
-npm run lint -- --max-warnings 0 # ESLint check; CI requires zero warnings
-npm test                         # Run Vitest test runner (store & util logic)
-npm run knip                     # Check for unused exports and dependencies
+pnpm run build                   # Runs `tsc --noEmit && vite build && node scripts/generate-seo.mjs`
+pnpm run lint -- --max-warnings 0 # ESLint check; CI requires zero warnings
+pnpm test                        # Run Vitest test runner (store & util logic)
+pnpm run knip                    # Check for unused exports and dependencies
 ```
 
 ---
@@ -206,7 +206,7 @@ def load_csv(path: "file" = "data.csv") -> "pd.DataFrame":
 
 ### Configuration & Infrastructure
 - `backend/pyproject.toml` — Canonical backend dependency definitions, Python compatibility, and Ruff linting rules.
-- `frontend/package.json` — Frontend dependencies and npm build/lint/test scripts.
+- `frontend/package.json` — Frontend dependencies and pnpm build/lint/test scripts.
 - `frontend/vite.config.ts` — Vite configuration supporting SPA dev routing and TanStack Start SSG production builds.
 - `render.yaml` — Blueprint deployment configuration for Render (FastAPI web service + static frontend).
 - `.github/workflows/ci.yml` — Primary CI pipeline enforcing linting and test passes.
@@ -238,11 +238,11 @@ def load_csv(path: "file" = "data.csv") -> "pd.DataFrame":
 - **Python Runtime & Tooling**:
   - Python >= 3.10 required (3.11 used in CI and Render production).
   - Package manager: **`uv` ONLY**. Lockfile `backend/uv.lock` is committed.
-  - **CRITICAL**: `backend/requirements.txt` is an obsolete legacy file. Never edit, install from, or update it.
+  - **CRITICAL**: Do NOT use `pip` directly; legacy `backend/requirements.txt` has been removed. Always use `uv sync` and `uv run`.
 - **Node Runtime & Tooling**:
-  - Node.js version 20 (as configured in CI).
-  - Package manager: **`npm` ONLY**. Lockfile `frontend/package-lock.json` is committed.
-  - **Strict Tooling Ban**: Do NOT use `bun`, `pnpm`, or `yarn`. Do not introduce `.nvmrc`.
+  - Node.js version 22 (as configured in CI and container builds).
+  - Package manager: **`pnpm` ONLY** (`pnpm-lock.yaml` is committed).
+  - **Strict Tooling Ban**: Do NOT use `npm`, `yarn`, or `bun`. Do not introduce `.nvmrc`.
 - **TypeScript & Build**:
   - TypeScript in `strict` mode with `moduleResolution: bundler`.
   - No path aliases: all imports use relative paths (e.g. `../../store/useAppStore`).
@@ -276,7 +276,7 @@ def load_csv(path: "file" = "data.csv") -> "pd.DataFrame":
 - Triggered on all `push` and `pull_request` events.
 - Employs concurrency group `ci-${{ github.ref }}` with `cancel-in-progress: true`.
 - **Backend Job**: Sets up Python 3.11 with `setup-uv`, verifies dependencies with `uv sync --dev`, runs `uv run ruff check .`, and executes `uv run pytest mlblock/tests -q`.
-- **Frontend Job**: Sets up Node 20, runs `npm ci`, verifies build with `npm run build`, executes `npm test`, and runs `npm run lint -- --max-warnings 0`.
+- **Frontend Job**: Sets up Node 22 with `pnpm/action-setup@v4`, runs `pnpm install --frozen-lockfile`, verifies build with `pnpm run build`, executes `pnpm test`, and runs `pnpm run lint -- --max-warnings 0`.
 
 ---
 

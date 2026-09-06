@@ -47,7 +47,7 @@ services:
     name: mlblock-frontend
     runtime: static
     rootDir: frontend
-    buildCommand: npm ci && VITE_API_BASE_URL=https://mlblock-backend.onrender.com npm run build
+    buildCommand: pnpm install --frozen-lockfile && VITE_API_BASE_URL=https://mlblock-backend.onrender.com pnpm run build
     buildFilter:
       ignoredPaths:
         - backend/**
