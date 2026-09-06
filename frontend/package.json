@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build && node scripts/generate-seo.mjs",
-    "start": "serve -s dist/client -l 3000",
+    "start": "pnpx serve -s dist/client -l tcp://0.0.0.0:3000",
     "preview": "vite preview",
     "test": "vitest run",
     "lint": "eslint .",
