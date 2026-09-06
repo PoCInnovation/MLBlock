@@ -30,22 +30,23 @@ services:
       retries: 3
       start_period: 10s
     networks:
-      - mlblock-network
+      - default
     labels:
       - "coolify.managed=true"
       - "traefik.enable=true"
-      # HTTP router (active immediately)
+      - "traefik.docker.network=coolify"
+      # HTTP router
       - "traefik.http.routers.backend-http.rule=Host(`${BACKEND_DOMAIN:-backend.141.253.110.210.sslip.io}`)"
       - "traefik.http.routers.backend-http.entrypoints=http"
-      - "traefik.http.routers.backend-http.service=backend-svc"
-      # HTTPS router (with Let's Encrypt when SSL is ready)
+      - "traefik.http.routers.backend-http.service=backend"
+      # HTTPS router (with Let's Encrypt TLS)
       - "traefik.http.routers.backend-https.rule=Host(`${BACKEND_DOMAIN:-backend.141.253.110.210.sslip.io}`)"
       - "traefik.http.routers.backend-https.entrypoints=https"
       - "traefik.http.routers.backend-https.tls=true"
       - "traefik.http.routers.backend-https.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.backend-https.service=backend-svc"
+      - "traefik.http.routers.backend-https.service=backend"
       # Backend loadbalancer port
-      - "traefik.http.services.backend-svc.loadbalancer.server.port=8000"
+      - "traefik.http.services.backend.loadbalancer.server.port=8000"
 
   # ── Frontend React & Static Nginx Service ────────────────────────────────
   frontend:
@@ -69,23 +70,25 @@ services:
       retries: 3
       start_period: 5s
     networks:
-      - mlblock-network
+      - default
     labels:
       - "coolify.managed=true"
       - "traefik.enable=true"
-      # HTTP router (active immediately)
+      - "traefik.docker.network=coolify"
+      # HTTP router
       - "traefik.http.routers.frontend-http.rule=Host(`${FRONTEND_DOMAIN:-frontend.141.253.110.210.sslip.io}`)"
       - "traefik.http.routers.frontend-http.entrypoints=http"
-      - "traefik.http.routers.frontend-http.service=frontend-svc"
-      # HTTPS router (with Let's Encrypt when SSL is ready)
+      - "traefik.http.routers.frontend-http.service=frontend"
+      # HTTPS router (with Let's Encrypt TLS)
       - "traefik.http.routers.frontend-https.rule=Host(`${FRONTEND_DOMAIN:-frontend.141.253.110.210.sslip.io}`)"
       - "traefik.http.routers.frontend-https.entrypoints=https"
       - "traefik.http.routers.frontend-https.tls=true"
       - "traefik.http.routers.frontend-https.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.frontend-https.service=frontend-svc"
+      - "traefik.http.routers.frontend-https.service=frontend"
       # Frontend loadbalancer port
-      - "traefik.http.services.frontend-svc.loadbalancer.server.port=80"
+      - "traefik.http.services.frontend.loadbalancer.server.port=80"
 
 networks:
-  mlblock-network:
-    driver: bridge
+  default:
+    name: coolify
+    external: true
