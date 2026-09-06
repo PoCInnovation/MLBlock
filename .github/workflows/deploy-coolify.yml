@@ -30,11 +30,11 @@ jobs:
         run: |
           echo "Triggering deployment in Coolify..."
           if [ -n "$API_TOKEN" ]; then
-            RESPONSE=$(curl -s -w "\n%{http_code}" -X GET "$WEBHOOK_URL" \
+            RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$WEBHOOK_URL" \
               -H "Authorization: Bearer $API_TOKEN" \
               -H "Content-Type: application/json")
           else
-            RESPONSE=$(curl -s -w "\n%{http_code}" -X GET "$WEBHOOK_URL" \
+            RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$WEBHOOK_URL" \
               -H "Content-Type: application/json")
           fi
 
