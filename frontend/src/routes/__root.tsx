@@ -11,6 +11,14 @@ import '@astryxdesign/core/astryx.css'
 import '@astryxdesign/theme-neutral/theme.css'
 
 export const Route = createRootRoute({
+  beforeLoad: async () => {
+    try {
+      const { session } = await getSession()
+      useAppStore.getState().setUser(session?.user ?? null)
+    } catch {
+      useAppStore.getState().setUser(null)
+    }
+  },
   component: function RootComponent() {
     const [queryClient] = useState(() => new QueryClient())
     const setUser = useAppStore((s) => s.setUser)
