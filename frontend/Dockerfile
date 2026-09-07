@@ -22,15 +22,14 @@ ENV VITE_API_BASE_URL=$VITE_API_BASE_URL \
     SITE_URL=$SITE_URL \
     NODE_ENV=production \
     HOST=0.0.0.0 \
-    PORT=3000
+    PORT=80
 
 # Copy source code and build
 COPY . .
 RUN pnpm run build
-
-EXPOSE 3000
+EXPOSE 80
 
 HEALTHCHECK --interval=15s --timeout=5s --start-period=5s --retries=3 \
-    CMD wget -q -O - http://localhost:3000/ || exit 1
+    CMD wget -q -O - http://localhost:80/ || exit 1
 
 CMD ["pnpm", "run", "start"]

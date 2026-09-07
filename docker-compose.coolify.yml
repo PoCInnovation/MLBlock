@@ -47,10 +47,10 @@ services:
       backend:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:3000/"]
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:80/"]
       interval: 15s
       timeout: 5s
       retries: 3
       start_period: 5s
     expose:
-      - "3000"
+      - "80"
