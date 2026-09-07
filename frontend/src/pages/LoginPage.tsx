@@ -3,6 +3,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { signInWithEmail, signInWithMagicLink, signInWithGoogle, signInWithMicrosoft } from '../services/auth'
+import useAppStore from '../store/useAppStore'
 import SiteLayout from '../components/landing/SiteLayout'
 import { FormLayout } from '../components/ui/field'
 import { Button, Card, TextInput } from '@astryxdesign/core'
@@ -31,14 +32,16 @@ export default function LoginPage() {
   })
   // eslint-disable-next-line react-hooks/incompatible-library -- react-hook-form (bibliothèque de formulaires du repo) : watch() non mémoïsable, composant non mémoïsé.
   const email = form.watch('email')
-
   const onSubmit = async (data: LoginInput) => {
     setError('')
     setLoading(true)
     try {
-      const { error: err } = await signInWithEmail(data.email, data.password)
+      const { data: authData, error: err } = await signInWithEmail(data.email, data.password)
       if (err) setError(mapSupabaseError(err.message))
-      else navigate({ to: '/projets' })
+      else {
+        useAppStore.getState().setUser(authData?.user ?? null)
+        navigate({ to: '/projets' })
+      }
     } catch {
       setError(mapSupabaseError('Network request failed'))
     } finally {
