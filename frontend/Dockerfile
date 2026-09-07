@@ -30,6 +30,6 @@ RUN pnpm run build
 EXPOSE 80
 
 HEALTHCHECK --interval=15s --timeout=5s --start-period=5s --retries=3 \
-    CMD wget -q -O - http://localhost:80/ || exit 1
+    CMD wget -q --spider http://127.0.0.1:80/ || exit 1
 
 CMD ["pnpm", "run", "start"]
