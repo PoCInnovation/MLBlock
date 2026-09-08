@@ -1,0 +1,56 @@
+services:
+  # ── Backend FastAPI Service ───────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: mlblock-backend
+    restart: unless-stopped
+    environment:
+      # Database — Supabase PostgreSQL (transaction mode pooler, port 6543)
+      - DATABASE_URL=${DATABASE_URL:?DATABASE_URL is required}
+      # Supabase Authentication and Project Credentials
+      - SUPABASE_URL=${SUPABASE_URL:?SUPABASE_URL is required}
+      - SUPABASE_PUBLISHABLE_KEY=${SUPABASE_PUBLISHABLE_KEY:?SUPABASE_PUBLISHABLE_KEY is required}
+      - SUPABASE_SECRET_KEY=${SUPABASE_SECRET_KEY:?SUPABASE_SECRET_KEY is required}
+      - SUPABASE_JWKS_URL=${SUPABASE_JWKS_URL:?SUPABASE_JWKS_URL is required}
+      - SUPABASE_JWT_SECRET=${SUPABASE_JWT_SECRET:?SUPABASE_JWT_SECRET is required}
+      # GPU execution via Vast.ai REST API
+      - VAST_API_KEY=${VAST_API_KEY:?VAST_API_KEY is required}
+      - MLBLOCK_RUN_MODE=${MLBLOCK_RUN_MODE:-gpu}
+      # CORS and Callback endpoints
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://frontend.141.253.110.210.sslip.io,https://frontend.141.253.110.210.sslip.io}
+      - BACKEND_URL=${BACKEND_URL:-http://backend.141.253.110.210.sslip.io}
+      - GPU_API_KEY=${GPU_API_KEY:-your-shared-gpu-api-key-for-callbacks}
+      - PORT=8000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    expose:
+      - "8000"
+  # ── Frontend React Service (Node & pnpm) ──────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://backend.141.253.110.210.sslip.io}
+        - VITE_SUPABASE_URL=${VITE_SUPABASE_URL:-https://hrvbsbkcbtgephuntgqd.supabase.co}
+        - VITE_SUPABASE_PUBLISHABLE_KEY=${VITE_SUPABASE_PUBLISHABLE_KEY:-sb_publishable_sR5TVVYw_9RyWoCL6wViZQ_kGGjnkky}
+        - SITE_URL=${SITE_URL:-http://frontend.141.253.110.210.sslip.io}
+    container_name: mlblock-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:80/"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    expose:
+      - "80"
