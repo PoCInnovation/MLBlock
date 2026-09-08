@@ -1,2 +1,10 @@
 # Cours
+- [classification-simple](https://mlblock-frontend.onrender.com/cours/classification-simple)
+- [comparaison-features](https://mlblock-frontend.onrender.com/cours/comparaison-features)
+- [comparaison-modeles](https://mlblock-frontend.onrender.com/cours/comparaison-modeles)
+- [condition-seuil-accuracy](https://mlblock-frontend.onrender.com/cours/condition-seuil-accuracy)
+- [nettoyage-normalisation](https://mlblock-frontend.onrender.com/cours/nettoyage-normalisation)
+- [parametre-ratio-modele](https://mlblock-frontend.onrender.com/cours/parametre-ratio-modele)
+- [prediction-csv-principal](https://mlblock-frontend.onrender.com/cours/prediction-csv-principal)
+- [prediction-image](https://mlblock-frontend.onrender.com/cours/prediction-image)
 - [predire-valeur-csv](https://mlblock-frontend.onrender.com/cours/predire-valeur-csv)
