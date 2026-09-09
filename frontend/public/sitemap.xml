@@ -2,5 +2,13 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://mlblock-frontend.onrender.com/</loc></url>
   <url><loc>https://mlblock-frontend.onrender.com/cours</loc></url>
+  <url><loc>https://mlblock-frontend.onrender.com/cours/classification-simple</loc></url>
+  <url><loc>https://mlblock-frontend.onrender.com/cours/comparaison-features</loc></url>
+  <url><loc>https://mlblock-frontend.onrender.com/cours/comparaison-modeles</loc></url>
+  <url><loc>https://mlblock-frontend.onrender.com/cours/condition-seuil-accuracy</loc></url>
+  <url><loc>https://mlblock-frontend.onrender.com/cours/nettoyage-normalisation</loc></url>
+  <url><loc>https://mlblock-frontend.onrender.com/cours/parametre-ratio-modele</loc></url>
+  <url><loc>https://mlblock-frontend.onrender.com/cours/prediction-csv-principal</loc></url>
+  <url><loc>https://mlblock-frontend.onrender.com/cours/prediction-image</loc></url>
   <url><loc>https://mlblock-frontend.onrender.com/cours/predire-valeur-csv</loc></url>
 </urlset>
