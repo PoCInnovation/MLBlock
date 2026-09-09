@@ -189,6 +189,15 @@ export function useBlockRunner() {
         return null
       }
       store.setLastJob(job)
+      // Pré-remplir le cache TanStack pour que le polling détecte immédiatement
+      // le terminal (error/done) sans attendre le premier interval 3s.
+      queryClient.setQueryData(['job', job.id], job)
+      // Erreur immédiate (dummy-instance-id) : afficher sans attendre le polling
+      // (le second useEffect attendait outputsQuery.data, donc délai 2-3s)
+      if (job.status === 'error') {
+        store.appendConsoleLines([{ k: 'sys', t: `Exécution en erreur : ${job.error || 'inconnue'}` }])
+        handledFor.current = job.id
+      }
       return job.id
     },
     onSuccess: (id) => {
@@ -196,7 +205,6 @@ export function useBlockRunner() {
       setJobId(id)
     },
     onError: (err) => {
-      console.error('Pipeline run failed:', err)
       // Affiche le détail serveur (400 build/validate…) au lieu d'un message générique
       let detail = "Erreur lors de l'exécution."
       if (axios.isAxiosError(err)) {

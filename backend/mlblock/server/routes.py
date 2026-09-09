@@ -455,11 +455,11 @@ def execute_pipeline(
             "BACKEND_TIMEOUT": os.environ.get("BACKEND_TIMEOUT", "90"),
         }
         env_str = " ".join(f"{k}='{v}'" for k, v in env.items())
-        deps = "pip install -q --disable-pip-version-check scikit-learn gymnasium torchvision pandas requests"
+        deps = "pip install -q --disable-pip-version-check scikit-learn gymnasium torchvision pandas requests || true"
         # Script exécuté au boot de l'instance (onstart) — pas de SSH requis.
-        # Concaténation (le code généré contient des accolades).
-        onstart = deps + " && " + env_str + " python - << 'MLBLOCK_EOF'\n" + code + "\nMLBLOCK_EOF"
-
+        # Concaténation (le code généré contient des accolades). `;` pas `&&`
+        # pour que python tourne même si pip échoue; python3 explicite.
+        onstart = deps + "; " + env_str + " python3 - << 'MLBLOCK_EOF'\n" + code + "\nMLBLOCK_EOF"
         vast = VastAI(api_key=os.environ.get("VAST_API_KEY", "mock-vast-key"))
         instance = vast.launch_instance(
             gpu_name="RTX 3090",

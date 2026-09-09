@@ -66,7 +66,9 @@ def generate_code(nodes: list[PipelineNode], edges: list[PipelineEdge]) -> str:
     # gpu-instance-auth : sur une instance Vast, Vast injecte CONTAINER_API_KEY
     # (clé restreinte de l'instance) — elle authentifie les callbacks de ce job.
     # En local (subprocess) seul GPU_API_KEY existe (mock par défaut).
-    lines.append("GPU_API_KEY = os.environ.get('GPU_API_KEY') or os.environ.get('CONTAINER_API_KEY', 'mock-gpu-key')")
+    # IMPORTANT: CONTAINER_API_KEY d'abord — job.instance_api_key == CONTAINER_API_KEY
+    # quand Vast a loué; GPU_API_KEY n'est que le fallback legacy/local.
+    lines.append("GPU_API_KEY = os.environ.get('CONTAINER_API_KEY') or os.environ.get('GPU_API_KEY', 'mock-gpu-key')")
     lines.append("JOB_ID = os.environ.get('JOB_ID', 'mock-job-id')")
     lines.append("")
     # ponytail: 90s timeout — Render free tier spins down after 15min idle,

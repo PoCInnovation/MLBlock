@@ -78,14 +78,18 @@ class VastAI:
 
     @staticmethod
     def _encode_onstart(script: str) -> str:
-        """onstart limité à 4048 caractères — gzip+base64 au-delà (doc Vast).
+        """onstart — Vast limite ~16 KB (CLI) / 4048 dans notre garde-fou.
 
-        Le serveur décompresse le payload encodé au boot de l'instance.
+        Au-delà, on gzip+base64 et on encapsule dans un shell qui décode
+        côté instance :  echo '<b64>' | base64 -d | gunzip | bash
+        (le serveur Vast n'auto-décode pas — cf. docs.vast.ai CLI hello-world).
+        Le wrapper tient dans ~2.4 KB pour un script de 4.6 KB, donc sous la limite.
         """
         if len(script) <= 4048:
             return script
-        return base64.b64encode(gzip.compress(script.encode())).decode()
-
+        b64 = base64.b64encode(gzip.compress(script.encode())).decode()
+        # base64 alphabet ne contient pas de single-quote → wrapping sûr
+        return f"echo '{b64}' | base64 -d | gunzip | bash"
     def start_instance(self, instance_id: str) -> None:
         if not self.api_key or self.api_key.startswith("mock") or instance_id in (  # noqa: E501
             "dummy-instance-id",

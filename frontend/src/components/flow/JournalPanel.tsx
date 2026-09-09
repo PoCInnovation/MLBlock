@@ -199,17 +199,24 @@ export default function JournalPanel() {
       <VStack gap={1} style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: 2 }}>
         {jobs.map(j => (
           <Card key={j.id} variant="muted" padding={2} className="cursor-pointer" onClick={() => setSelectedJobId(j.id)}>
-            <HStack gap={2} style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-              <HStack gap={1} style={{ alignItems: 'center' }}>
-                <Text type="body" style={{ fontWeight: 700 }}>
-                  {fmtTime(j.created_at)}
+            <VStack gap={1}>
+              <HStack gap={2} style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                <HStack gap={1} style={{ alignItems: 'center' }}>
+                  <Text type="body" style={{ fontWeight: 700 }}>
+                    {fmtTime(j.created_at)}
+                  </Text>
+                  <Badge label={execType(j)} variant={execType(j) === 'Locale' ? 'neutral' : 'info'} />
+                </HStack>
+                <Text type="supporting" color="secondary">
+                  {j.status}
                 </Text>
-                <Badge label={execType(j)} variant={execType(j) === 'Locale' ? 'neutral' : 'info'} />
               </HStack>
-              <Text type="supporting" color="secondary">
-                {j.status}
-              </Text>
-            </HStack>
+              {j.status === 'error' && j.error ? (
+                <Text type="body" style={{ fontSize: 11, color: theme.color.error, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                  {j.error.slice(0, 220)}
+                </Text>
+              ) : null}
+            </VStack>
           </Card>
         ))}
       </VStack>

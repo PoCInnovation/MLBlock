@@ -551,7 +551,7 @@ def test_generated_code_instance_auth_and_self_destroy():
         [PipelineNode(id="n1", type="train_model", params={"epochs": "5"})],
         [],
     )
-    assert "os.environ.get('GPU_API_KEY') or os.environ.get('CONTAINER_API_KEY'" in code
+    assert "os.environ.get('CONTAINER_API_KEY') or os.environ.get('GPU_API_KEY'" in code
     assert "def _fetch_instance_id():" in code
     assert "def _self_destroy():" in code
     # le finally (destroy) est dans le corps de main(), après les callbacks
