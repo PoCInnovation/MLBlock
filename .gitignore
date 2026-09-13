@@ -169,3 +169,7 @@ homepage-check.png
 links-*.png
 hover-card-preview.png
 param-hover-card.png
+
+# Session exports
+omp-session-*.html
+
