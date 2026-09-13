@@ -9,10 +9,14 @@ export function familyOf(dtype: string): string {
   const d = dtype.trim()
   if (d === 'pd.DataFrame') return 'df'
   if (d === 'Model') return 'model'
+  if (d === 'PIL.Image.Image') return 'image'
   if (d === 'dict') return 'dict'
   if (d === 'numpy.ndarray') return 'ndarray'
   if (d === 'int' || d === 'float' || d === 'bool') return 'scalar'
   if (d === 'str') return 'str'
+  if (d.startsWith('list[')) return 'list'
+  if (d === 'Env') return 'env'
+  if (d === 'Policy') return 'policy'
   if (d.startsWith('torch.Tensor')) return 'tensor'
   if (d.startsWith('torch.utils.data.')) return 'dataset'
   if (d.startsWith('torch.optim.')) return 'optim'
@@ -22,13 +26,18 @@ export function familyOf(dtype: string): string {
   return d
 }
 
+export function splitUnion(dtype: string): string[] {
+  const parts = dtype.split(' | ').map(p => p.trim())
+  return parts.length > 1 ? parts : [dtype]
+}
+
 /** Only blocks in the `transforms` category contribute conversion edges. */
 export function buildConversionGraph(blocks: BlockDefMap): Map<string, Set<string>> {
   const graph = new Map<string, Set<string>>()
   for (const def of Object.values(blocks)) {
     if (def.cat !== 'transforms') continue
-    const outFamilies = new Set(def.outputs.map(p => familyOf(p.dtype)))
-    const inFamilies = new Set(def.inputs.map(p => familyOf(p.dtype)))
+    const outFamilies = new Set(def.outputs.flatMap(p => splitUnion(p.dtype)).map(familyOf))
+    const inFamilies = new Set(def.inputs.flatMap(p => splitUnion(p.dtype)).map(familyOf))
     for (const src of inFamilies) {
       for (const dst of outFamilies) {
         if (src !== dst && dst !== 'any') {
@@ -42,9 +51,21 @@ export function buildConversionGraph(blocks: BlockDefMap): Map<string, Set<strin
 }
 
 export function classifyEdge(srcDtype: string, tgtDtype: string, graph: Map<string, Set<string>>): Verdict {
-  if (WILDCARDS.has(tgtDtype) || srcDtype === tgtDtype) return 'compatible'
-  if (familyOf(srcDtype) === familyOf(tgtDtype)) return 'compatible'
-  if (reachable(familyOf(srcDtype), familyOf(tgtDtype), graph)) return 'convertible'
+  const srcs = splitUnion(srcDtype)
+  const tgts = splitUnion(tgtDtype)
+  for (const t of tgts) {
+    if (WILDCARDS.has(t)) return 'compatible'
+  }
+  for (const s of srcs) {
+    for (const t of tgts) {
+      if (s === t || familyOf(s) === familyOf(t)) return 'compatible'
+    }
+  }
+  for (const s of srcs) {
+    for (const t of tgts) {
+      if (reachable(familyOf(s), familyOf(t), graph)) return 'convertible'
+    }
+  }
   return 'incompatible'
 }
 

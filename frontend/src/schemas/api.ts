@@ -25,6 +25,15 @@ const blockSchema = z.object({
   outputs: z.array(z.record(z.string(), z.string())),
   advanced: z.boolean().optional(),
   group: z.string().optional(),
+  stage: z.number().optional(),
+  stage_name: z.string().optional(),
+})
+
+const stageSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  label: z.string(),
+  color: z.string(),
 })
 
 const categorySchema = z.object({
@@ -36,6 +45,7 @@ const categorySchema = z.object({
 
 export const catalogSchema = z.object({
   categories: z.array(categorySchema),
+  stages: z.array(stageSchema).optional(),
 })
 
 export const validationSchema = z.object({

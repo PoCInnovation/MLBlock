@@ -377,3 +377,21 @@ def test_validate_accepts_convertible_edges():
     ]
     edges = [PipelineEdge(source="n1", source_port="out_1", target="n2", target_port="in_1")]
     _validate(nodes, edges)  # convertible — allowed, converter materializes in UI
+
+
+# ── TypeSystem facade integration ────────────────────────────────────
+
+def test_type_system_facade_backward_compat():
+    from mlblock.core.type_system import type_system
+    from mlblock.core.stages import Stage
+
+    assert type_system.family_of("pd.DataFrame") == "df"
+    assert type_system.family_of("torch.Tensor") == "tensor"
+    assert type_system.stage_of("load_csv") == Stage.INGEST
+    assert type_system.stage_of("df") == Stage.INGEST
+    assert type_system.stage_of("linear_layer") == Stage.REPRESENT
+
+    graph = type_system.build_conversion_graph(BLOCK_REGISTRY)
+    verdict, msg = type_system.can_connect("pd.DataFrame", "torch.Tensor", graph)
+    assert verdict == "convertible"
+    assert "df_to_tensor" in msg

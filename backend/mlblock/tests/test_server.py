@@ -20,9 +20,14 @@ def test_catalog_returns_all_blocks(catalog_client: TestClient):
     assert resp.status_code == 200
     data = resp.json()
     assert "categories" in data
+    assert "stages" in data
+    assert len(data["stages"]) == 6
+    assert [s["name"] for s in data["stages"]] == ["Ingest", "Prepare", "Represent", "Train", "Eval", "World"]
     blocks = [b for cat in data["categories"] for b in cat["blocks"]]
     assert blocks
-    assert all({"type", "params", "inputs", "outputs"} <= set(b) for b in blocks)
+    assert all({"type", "params", "inputs", "outputs", "stage", "stage_name"} <= set(b) for b in blocks)
+    assert all(isinstance(b["stage"], int) for b in blocks)
+    assert all(isinstance(b["stage_name"], str) for b in blocks)
 
 
 def test_catalog_groups_blocks_by_category(catalog_client: TestClient):

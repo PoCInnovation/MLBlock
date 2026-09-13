@@ -16,17 +16,17 @@
 | ID | Nom | Nœuds | Arêtes | Validation | Codegen | Symptômes / Erreurs |
 |---|---|:---:|:---:|:---:|:---:|---|
 | **A1** | CIFAR-10 CNN — 60min Blitz | 11 | 11 | ✅ PASS | ✅ OK | Pipeline intègre et vérifié sans erreur de type |
-| **A2** | Fashion-MNIST Quickstart | 9 | 9 | ❌ GAP P0/P1 | ✅ OK | • `Type mismatch: dataset.out_1 (torch.utils.data.DataLoader) -> norm.in_1 (torch.Tensor)`<br>• `Type mismatch: norm.out_1 (torch.Tensor) -> loader.in_1 (torch.utils.data.Dataset)` |
+| **A2** | Fashion-MNIST Quickstart | 9 | 9 | ❌ GAP P0/P1 | ✅ OK | • `Stage mismatch: cannot connect Stage 1 (norm) to Stage 0 (loader).`<br>• `Type mismatch: dataset.out_1 (torch.utils.data.DataLoader) -> norm.in_1 (torch.Tensor)`<br>• `Type mismatch: norm.out_1 (torch.Tensor) -> loader.in_1 (torch.utils.data.Dataset)` |
 | **A3** | MNIST from scratch — What is torch.nn really? | 5 | 5 | ✅ PASS | ✅ OK | Pipeline intègre et vérifié sans erreur de type |
 | **A4** | Tabular Iris — df→tensor | 9 | 10 | ❌ GAP P0/P1 | ✅ OK | • `Type mismatch: converter.out_1 (torch.Tensor) -> fc1.in_1 (torch.nn.Module)`<br>• `Type mismatch: converter.out_1 (torch.Tensor) -> trainer.in_2 (torch.utils.data.DataLoader)` |
-| **A5** | CIFAR-10 + augmentation | 14 | 14 | ❌ GAP P0/P1 | ✅ OK | • `Type mismatch: dataset.out_1 (torch.utils.data.DataLoader) -> crop.in_1 (torch.Tensor)`<br>• `Type mismatch: norm.out_1 (torch.Tensor) -> loader.in_1 (torch.utils.data.Dataset)` |
+| **A5** | CIFAR-10 + augmentation | 14 | 14 | ❌ GAP P0/P1 | ✅ OK | • `Stage mismatch: cannot connect Stage 1 (norm) to Stage 0 (loader).`<br>• `Type mismatch: dataset.out_1 (torch.utils.data.DataLoader) -> crop.in_1 (torch.Tensor)`<br>• `Type mismatch: norm.out_1 (torch.Tensor) -> loader.in_1 (torch.utils.data.Dataset)` |
 | **A6** | NLP Text Classification — LSTM | 9 | 11 | ❌ GAP P0/P1 | ✅ OK | • `Type mismatch: encoder.out_1 (numpy.ndarray) -> trainer.in_2 (torch.utils.data.DataLoader)`<br>• `Type mismatch: lstm_cell.out_1 (torch.Tensor) -> fc.in_1 (torch.nn.Module)` |
 | **A7** | Time-series Sequence | 7 | 7 | ✅ PASS | ✅ OK | Pipeline intègre et vérifié sans erreur de type |
 | **B1** | Iris Classification — LogisticRegression | 4 | 4 | ✅ PASS | ✅ OK | Pipeline intègre et vérifié sans erreur de type |
 | **B2** | Iris PCA — 4D→2D | 3 | 3 | ✅ PASS | ✅ OK | Pipeline intègre et vérifié sans erreur de type |
 | **B3** | Iris KMeans — Elbow | 4 | 4 | ❌ GAP P0/P1 | ✅ OK | • `Type mismatch: scaler.scaled (numpy.ndarray) -> clustering.in_1 (pd.DataFrame)` |
 | **C1** | CartPole-v1 Tabular Q-learning | 3 | 3 | ✅ PASS | ✅ OK | Pipeline intègre et vérifié sans erreur de type |
-| **C2** | CartPole DQN (PyTorch) | 8 | 9 | ❌ GAP P0/P1 | ✅ OK | • `Type mismatch: env.out_1 (Env) -> fc1.in_1 (torch.nn.Module)`<br>• `Type mismatch: trainer.model (torch.nn.Module) -> eval.policy (Policy)` |
+| **C2** | CartPole DQN (PyTorch) | 8 | 9 | ❌ GAP P0/P1 | ✅ OK | • `Stage mismatch: cannot connect Stage 9 (env) to Stage 2 (fc1).`<br>• `Type mismatch: env.out_1 (Env) -> fc1.in_1 (torch.nn.Module)`<br>• `Type mismatch: trainer.model (torch.nn.Module) -> eval.policy (Policy)` |
 
 ---
 

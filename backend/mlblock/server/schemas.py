@@ -27,6 +27,13 @@ class Category(BaseModel):
     color: str
 
 
+class StageInfo(BaseModel):
+    id: int
+    name: str
+    label: str
+    color: str
+
+
 class Block(BaseModel):
     name: str
     description: str = ""
@@ -36,6 +43,32 @@ class Block(BaseModel):
     outputs: list[dict[str, str]] = []
     advanced: bool = False
     group: str = "core"
+    stage: int = 0
+    stage_name: str = "Ingest"
+
+
+class BlockSummary(BaseModel):
+    type: str
+    label: str
+    description: str = ""
+    stage: int
+    stage_name: str
+    advanced: bool = False
+    group: str = "core"
+
+
+class BlockResponse(BaseModel):
+    type: str
+    label: str
+    description: str = ""
+    category: Category | str | None = None
+    params: dict[str, ParamInfo] = {}
+    inputs: list[dict[str, str]] = []
+    outputs: list[dict[str, str]] = []
+    advanced: bool = False
+    group: str = "core"
+    stage: int
+    stage_name: str
 
 
 T = TypeVar("T")

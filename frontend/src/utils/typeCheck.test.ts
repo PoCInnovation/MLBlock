@@ -39,6 +39,13 @@ describe('familyOf (mirror of backend mlblock/core/types.py)', () => {
     expect(familyOf('torch.nn.Linear')).toBe('module')
   })
 
+  it('handles image, list, env, and policy types', () => {
+    expect(familyOf('PIL.Image.Image')).toBe('image')
+    expect(familyOf('list[int]')).toBe('list')
+    expect(familyOf('Env')).toBe('env')
+    expect(familyOf('Policy')).toBe('policy')
+  })
+
   it('handles generic tuple types and wildcards', () => {
     expect(familyOf('tuple[int, str]')).toBe('tuple')
     expect(familyOf('object')).toBe('any')
@@ -85,6 +92,12 @@ describe('classifyEdge', () => {
     expect(classifyEdge('pd.DataFrame', 'torch.Tensor', graph)).toBe('convertible')
     // wildcard input of passthrough: any → ndarray
     expect(classifyEdge('object', 'numpy.ndarray', graph)).toBe('convertible')
+  })
+
+  it('verdicts union dtypes correctly', () => {
+    expect(classifyEdge('PIL.Image.Image | numpy.ndarray', 'numpy.ndarray', graph)).toBe('compatible')
+    expect(classifyEdge('numpy.ndarray', 'PIL.Image.Image | numpy.ndarray', graph)).toBe('compatible')
+    expect(classifyEdge('pd.DataFrame', 'torch.Tensor | numpy.ndarray', graph)).toBe('convertible')
   })
 
   it('verdicts unreachable pairs as incompatible', () => {

@@ -276,6 +276,9 @@ def _inspect_function(name: str, fn: Callable, category: Any) -> Any:
         or "(avancé)" in (fn.__doc__ or "").lower()
     )
     group = getattr(fn, "__group__", "advanced" if is_advanced else "core")
+    from mlblock.core.stages import stage_of_block
+
+    st = stage_of_block(name, cat_name)
     return Block(
         name=name,
         description=fn.__doc__ or "",
@@ -285,6 +288,8 @@ def _inspect_function(name: str, fn: Callable, category: Any) -> Any:
         outputs=outputs,
         advanced=is_advanced,
         group=group,
+        stage=int(st),
+        stage_name=st.stage_name,
     )
 
 

@@ -58,3 +58,68 @@ def test_validate_port_not_found():
     )
     assert r.valid is False
     assert any("Port" in e for e in r.errors)
+
+
+def test_validate_stage_mismatch():
+    # Connecting Stage 3 (train_epoch) to Stage 0 (load_csv) must trigger Stage mismatch
+    r = validate(
+        [
+            {"id": "trainer", "type": "train_epoch", "params": {}},
+            {"id": "data", "type": "load_csv", "params": {}},
+        ],
+        [{"source": "trainer", "source_port": "out_1", "target": "data", "target_port": "in_1"}],
+    )
+    assert r.valid is False
+    assert any(
+        "Stage mismatch: cannot connect Stage 3 (trainer) to Stage 0 (data)." in e
+        for e in r.errors
+    )
+
+
+def test_validate_permitted_feedback_loop():
+    # Loop from Stage 3 (TRAIN) to Stage 1 (PREPARE e.g. normalize) is permitted
+    r = validate(
+        [
+            {"id": "trainer", "type": "train_epoch", "params": {}},
+            {"id": "prep", "type": "normalize", "params": {}},
+        ],
+        [{"source": "trainer", "source_port": "out_1", "target": "prep", "target_port": "in_1"}],
+    )
+    # Stage mismatch should NOT be present (even if port/dtype mismatch might be checked)
+    assert not any("Stage mismatch" in e for e in r.errors)
+
+
+def test_validate_forward_cross_stages():
+    # S0 (load_sklearn_dataset) -> S2 (logistic_regression) -> S4 (evaluate) is completely valid
+    r = validate(
+        [
+            {"id": "data", "type": "load_sklearn_dataset", "params": {}},
+            {"id": "model", "type": "logistic_regression", "params": {}},
+            {"id": "eval", "type": "evaluate", "params": {}},
+        ],
+        [
+            {"source": "data", "source_port": "out_1", "target": "model", "target_port": "train_data"},
+            {"source": "model", "source_port": "out_1", "target": "eval", "target_port": "model"},
+        ],
+    )
+    assert not any("Stage mismatch" in e for e in r.errors)
+
+
+def test_validate_type_mismatch_enhanced_suggestion():
+    # Connecting incompatible ports where a converter is known suggests the converter
+    from mlblock.catalog import catalog
+
+    r = validate(
+        [
+            {"id": "csv", "type": "load_csv", "params": {}},
+            {"id": "norm", "type": "normalize", "params": {}},
+        ],
+        [{"source": "csv", "source_port": "out_1", "target": "norm", "target_port": "in_1"}],
+        registry={
+            "load_csv": catalog.get("load_csv"),
+            "normalize": catalog.get("normalize"),
+        },
+    )
+    assert r.valid is False
+    assert any("Type mismatch" in e for e in r.errors)
+    assert any("Astuce : insérez un bloc df_to_tensor" in e for e in r.errors)

@@ -137,6 +137,15 @@ def get_catalog(
                 "color": block.category.color,
                 "blocks": [],
             }
+        stage_val = getattr(block, "stage", None)
+        stage_name_val = getattr(block, "stage_name", None)
+        if stage_val is None or stage_name_val is None:
+            from mlblock.core.stages import stage_of_block
+
+            st = stage_of_block(block.name, cat)
+            stage_val = int(st)
+            stage_name_val = st.stage_name
+
         categories[cat]["blocks"].append({
             "type": block.name,
             "label": _fr_label(block),
@@ -146,8 +155,19 @@ def get_catalog(
             "outputs": block.outputs,
             "advanced": block_adv,
             "group": block_grp,
+            "stage": stage_val,
+            "stage_name": stage_name_val,
         })
-    payload = {"categories": sorted(list(categories.values()), key=lambda c: c["id"])}
+    from mlblock.core.stages import Stage
+
+    stages_list = [
+        {"id": int(s), "name": s.stage_name, "label": s.label, "color": s.color}
+        for s in Stage.all_stages()
+    ]
+    payload = {
+        "categories": sorted(list(categories.values()), key=lambda c: c["id"]),
+        "stages": stages_list,
+    }
     # Appel direct en test (sans Request) : compatibilité — renvoie le dict brut.
     if request is None:
         return payload
