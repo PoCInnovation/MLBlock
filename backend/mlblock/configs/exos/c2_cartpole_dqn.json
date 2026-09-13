@@ -1,0 +1,118 @@
+{
+  "name": "CartPole DQN (PyTorch)",
+  "description": "Apprentissage par renforcement profond (Deep Q-Network) avec réseau de neurones PyTorch, buffer de relecture d'expérience et réseau cible sur CartPole-v1.",
+  "graph": {
+    "nodes": [
+      {
+        "id": "env",
+        "type": "create_env",
+        "params": {
+          "env_id": "CartPole-v1"
+        }
+      },
+      {
+        "id": "fc1",
+        "type": "linear_layer",
+        "params": {
+          "in_features": 4,
+          "out_features": 128
+        }
+      },
+      {
+        "id": "relu",
+        "type": "relu_layer",
+        "params": {}
+      },
+      {
+        "id": "fc2",
+        "type": "linear_layer",
+        "params": {
+          "in_features": 128,
+          "out_features": 2
+        }
+      },
+      {
+        "id": "loss",
+        "type": "mse_loss",
+        "params": {}
+      },
+      {
+        "id": "optimizer",
+        "type": "adam",
+        "params": {
+          "lr": 0.001
+        }
+      },
+      {
+        "id": "trainer",
+        "type": "train_model",
+        "params": {
+          "epochs": 10
+        }
+      },
+      {
+        "id": "eval",
+        "type": "evaluate_agent",
+        "params": {
+          "episodes": 10
+        }
+      }
+    ],
+    "edges": [
+      {
+        "source": "env",
+        "source_port": "out_1",
+        "target": "fc1",
+        "target_port": "in_1"
+      },
+      {
+        "source": "fc1",
+        "source_port": "out_1",
+        "target": "relu",
+        "target_port": "in_1"
+      },
+      {
+        "source": "relu",
+        "source_port": "out_1",
+        "target": "fc2",
+        "target_port": "in_1"
+      },
+      {
+        "source": "fc2",
+        "source_port": "out_1",
+        "target": "trainer",
+        "target_port": "in_1"
+      },
+      {
+        "source": "fc2",
+        "source_port": "out_1",
+        "target": "optimizer",
+        "target_port": "in_1"
+      },
+      {
+        "source": "optimizer",
+        "source_port": "out_1",
+        "target": "trainer",
+        "target_port": "in_3"
+      },
+      {
+        "source": "loss",
+        "source_port": "out_1",
+        "target": "trainer",
+        "target_port": "in_4"
+      },
+      {
+        "source": "trainer",
+        "source_port": "model",
+        "target": "eval",
+        "target_port": "policy"
+      },
+      {
+        "source": "env",
+        "source_port": "out_1",
+        "target": "eval",
+        "target_port": "env"
+      }
+    ]
+  }
+}

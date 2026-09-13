@@ -1,0 +1,76 @@
+{
+  "name": "MNIST from scratch — What is torch.nn really?",
+  "description": "Apprentissage d'un modèle linéaire minimaliste sur MNIST illustrant le passage de tenseurs bruts aux abstractions torch.nn, DataLoader et Optimizer.",
+  "graph": {
+    "nodes": [
+      {
+        "id": "dataset",
+        "type": "load_torch_dataset",
+        "params": {
+          "name": "mnist",
+          "batch_size": 64,
+          "split": "train"
+        }
+      },
+      {
+        "id": "fc",
+        "type": "linear_layer",
+        "params": {
+          "in_features": 784,
+          "out_features": 10
+        }
+      },
+      {
+        "id": "loss",
+        "type": "cross_entropy_loss",
+        "params": {}
+      },
+      {
+        "id": "optimizer",
+        "type": "sgd",
+        "params": {
+          "lr": 0.01
+        }
+      },
+      {
+        "id": "trainer",
+        "type": "train_model",
+        "params": {
+          "epochs": 1
+        }
+      }
+    ],
+    "edges": [
+      {
+        "source": "dataset",
+        "source_port": "out_1",
+        "target": "trainer",
+        "target_port": "in_2"
+      },
+      {
+        "source": "fc",
+        "source_port": "out_1",
+        "target": "trainer",
+        "target_port": "in_1"
+      },
+      {
+        "source": "fc",
+        "source_port": "out_1",
+        "target": "optimizer",
+        "target_port": "in_1"
+      },
+      {
+        "source": "optimizer",
+        "source_port": "out_1",
+        "target": "trainer",
+        "target_port": "in_3"
+      },
+      {
+        "source": "loss",
+        "source_port": "out_1",
+        "target": "trainer",
+        "target_port": "in_4"
+      }
+    ]
+  }
+}
