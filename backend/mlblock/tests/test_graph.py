@@ -12,12 +12,12 @@ SIMPLE_GRAPH = {
         },
         {
             "id": "conv1",
-            "type": "conv2d",
+            "type": "conv2d_layer",
             "params": {"in_channels": 1, "out_channels": 32},
         },
         {
             "id": "relu1",
-            "type": "relu",
+            "type": "relu_layer",
             "params": {},
         },
     ],
@@ -38,10 +38,10 @@ def test_graph_node_creation():
     graph = Graph(SIMPLE_GRAPH)
     node = graph.nodes["conv1"]
     assert node.id == "conv1"
-    assert node.type == "conv2d"
+    assert node.type == "conv2d_layer"
     assert node.params == {"in_channels": 1, "out_channels": 32}
     assert node.block is not None
-    assert node.block.name == "conv2d"
+    assert node.block.name == "conv2d_layer"
 
 
 def test_graph_edge_creation():

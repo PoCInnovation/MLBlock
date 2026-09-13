@@ -34,6 +34,8 @@ class Block(BaseModel):
     params: dict[str, ParamInfo] = {}
     inputs: list[dict[str, str]] = []
     outputs: list[dict[str, str]] = []
+    advanced: bool = False
+    group: str = "core"
 
 
 T = TypeVar("T")

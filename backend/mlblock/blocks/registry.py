@@ -6,12 +6,96 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-BLOCK_REGISTRY: dict[str, Any] = {}
-BLOCK_SOURCES: dict[str, str] = {}
+class BlockRegistryDict(dict):
+    """Dictionary that resolves legacy block aliases transparently."""
+
+    def __getitem__(self, key: str) -> Any:
+        try:
+            return super().__getitem__(key)
+        except KeyError:
+            from mlblock.core.adapters import resolve_alias
+
+            canonical = resolve_alias(key)
+            if canonical != key and canonical in self:
+                return super().__getitem__(canonical)
+            raise
+
+    def get(self, key: str, default: Any = None) -> Any:
+        val = super().get(key)
+        if val is not None:
+            return val
+        from mlblock.core.adapters import resolve_alias
+
+        canonical = resolve_alias(key)
+        if canonical != key:
+            return super().get(canonical, default)
+        return default
+
+    def __contains__(self, key: object) -> bool:
+        if super().__contains__(key):
+            return True
+        if isinstance(key, str):
+            from mlblock.core.adapters import resolve_alias
+
+            canonical = resolve_alias(key)
+            return super().__contains__(canonical)
+        return False
+
+
+class BlockSourcesDict(dict):
+    """Dictionary that resolves legacy block aliases transparently for source code."""
+
+    def __getitem__(self, key: str) -> str:
+        try:
+            return super().__getitem__(key)
+        except KeyError:
+            from mlblock.core.adapters import resolve_alias
+
+            canonical = resolve_alias(key)
+            if canonical != key and canonical in self:
+                return super().__getitem__(canonical)
+            raise
+
+    def get(self, key: str, default: Any = None) -> Any:
+        val = super().get(key)
+        if val is not None:
+            return val
+        from mlblock.core.adapters import resolve_alias
+
+        canonical = resolve_alias(key)
+        if canonical != key:
+            return super().get(canonical, default)
+        return default
+
+    def __contains__(self, key: object) -> bool:
+        if super().__contains__(key):
+            return True
+        if isinstance(key, str):
+            from mlblock.core.adapters import resolve_alias
+
+            canonical = resolve_alias(key)
+            return super().__contains__(canonical)
+        return False
+
+
+BLOCK_REGISTRY: dict[str, Any] = BlockRegistryDict()
+BLOCK_SOURCES: dict[str, str] = BlockSourcesDict()
+
+ADVANCED_ACTIVATIONS = {
+    "gelu",
+    "selu",
+    "mish",
+    "elu",
+    "prelu",
+    "leaky_relu",
+    "silu",
+    "tanh",
+    "identity",
+}
 
 
 def _color_from_folder(name: str) -> str | None:
-    """Extract hex color from folder name like 'convolution-6366F1'."""
+    """Extract hex color from folder name like 'layers-6366F1'."""
     m = re.match(r"^.*[-_]?([0-9A-Fa-f]{6})$", name)
     return f"#{m.group(1).upper()}" if m else None
 
@@ -185,6 +269,13 @@ def _inspect_function(name: str, fn: Callable, category: Any) -> Any:
             required=prequired, options=options, **pmeta,
         )
     outputs = _parse_return_annotation(sig.return_annotation)
+    cat_name = getattr(category, "name", "")
+    is_advanced = (
+        bool(getattr(fn, "__advanced__", False))
+        or (cat_name == "activation" and name in ADVANCED_ACTIVATIONS)
+        or "(avancé)" in (fn.__doc__ or "").lower()
+    )
+    group = getattr(fn, "__group__", "advanced" if is_advanced else "core")
     return Block(
         name=name,
         description=fn.__doc__ or "",
@@ -192,6 +283,8 @@ def _inspect_function(name: str, fn: Callable, category: Any) -> Any:
         params=params,
         inputs=inputs,
         outputs=outputs,
+        advanced=is_advanced,
+        group=group,
     )
 
 

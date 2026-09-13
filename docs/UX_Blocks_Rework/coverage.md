@@ -30,7 +30,7 @@
 
 ---
 
-## 2. Matrice Complète des 88 Blocs du Catalogue
+## 2. Matrice Complète des 83 Blocs du Catalogue
 
 Légende des statuts cibles (§02 Réduction) :
 - `keep` : Conservé dans la palette canonique v1 (~45 blocs cœur).
@@ -39,11 +39,11 @@ Légende des statuts cibles (§02 Réduction) :
 - `deprecate` : Déprécié (conservé temporairement avec wrapper et avertissement).
 - `hide` : Conservé mais replié par défaut dans la sous-palette avancée.
 
-**Statistiques globales :** 36/88 blocs (40.9%) sont directement utilisés dans les 12 exercices.
-- `keep` : 69
+**Statistiques globales :** 36/83 blocs (43.4%) sont directement utilisés dans les 12 exercices.
+- `keep` : 72
 - `hide` : 9
-- `delete` : 5
-- `merge` : 3
+- `delete` : 0
+- `merge` : 0
 - `deprecate` : 2
 
 | Block | Catégorie | Utilisé dans les Exos | Statut Cible |
@@ -56,38 +56,35 @@ Légende des statuts cibles (§02 Réduction) :
 | `batchnorm2d` | normalisation | — | `keep` |
 | `build_vocab` | texte | A6 | `keep` |
 | `confusion_matrix` | entrainement | — | `keep` |
-| `conv1d` | convolution | — | `delete` |
-| `conv2d` | convolution | — | `delete` |
-| `conv2d_layer` | convolution | A1, A5 | `keep` |
-| `conv3d` | convolution | — | `delete` |
-| `conv_transpose2d` | convolution | — | `delete` |
+| `conv1d_layer` | layers | — | `keep` |
+| `conv2d_layer` | layers | A1, A5 | `keep` |
+| `conv3d_layer` | layers | — | `keep` |
+| `conv_transpose2d_layer` | layers | — | `keep` |
 | `cosine_lr` | entrainement | — | `keep` |
 | `create_env` | renforcement | C1, C2 | `keep` |
 | `cross_entropy_loss` | entrainement | A1, A2, A3, A4, A5, A6 | `keep` |
 | `data_loader` | chargement | A1, A2, A5 | `keep` |
 | `decision_tree` | modeles | — | `keep` |
 | `df_to_tensor` | transformations | A4 | `keep` |
-| `dropout` | convolution | — | `deprecate` |
+| `dropout` | layers | — | `deprecate` |
 | `early_stopping` | entrainement | — | `keep` |
 | `elu` | activation | — | `hide` |
-| `embedding` | convolution | A6 | `deprecate` |
+| `embedding` | layers | A6 | `deprecate` |
 | `encode_text` | texte | A6 | `keep` |
 | `evaluate` | entrainement | B1 | `keep` |
 | `evaluate_agent` | renforcement | C1, C2 | `keep` |
-| `flatten` | convolution | — | `merge` |
-| `flatten_layer` | convolution | A1, A5 | `keep` |
+| `flatten_layer` | layers | A1, A5 | `keep` |
 | `gelu` | activation | — | `hide` |
 | `gru` | sequences | — | `keep` |
 | `identity` | activation | — | `hide` |
-| `input` | convolution | — | `keep` |
+| `input` | layers | — | `keep` |
 | `instancenorm2d` | normalisation | — | `keep` |
 | `isolation_forest` | modeles | — | `keep` |
 | `kmeans` | modeles | B3 | `keep` |
 | `knn` | modeles | — | `keep` |
 | `layernorm` | normalisation | — | `keep` |
 | `leaky_relu` | activation | — | `keep` |
-| `linear` | convolution | — | `delete` |
-| `linear_layer` | convolution | A1, A2, A3, A4, A5, A6, A7, C2 | `keep` |
+| `linear_layer` | layers | A1, A2, A3, A4, A5, A6, A7, C2 | `keep` |
 | `linear_regression` | modeles | — | `keep` |
 | `load_csv` | donnees | B3 | `keep` |
 | `load_image` | donnees | — | `keep` |
@@ -96,8 +93,7 @@ Légende des statuts cibles (§02 Réduction) :
 | `load_torch_dataset` | donnees | A1, A2, A3, A5 | `keep` |
 | `logistic_regression` | modeles | B1 | `keep` |
 | `lstm` | sequences | A6 | `keep` |
-| `maxpool2d` | regroupement | — | `merge` |
-| `maxpool2d_layer` | convolution | A1, A5 | `keep` |
+| `maxpool2d_layer` | layers | A1, A5 | `keep` |
 | `model_checkpoint` | entrainement | — | `keep` |
 | `mse_loss` | entrainement | A7, C2 | `keep` |
 | `multihead_attention` | sequences | — | `keep` |
@@ -112,11 +108,10 @@ Légende des statuts cibles (§02 Réduction) :
 | `random_forest` | modeles | — | `keep` |
 | `random_split` | chargement | — | `keep` |
 | `reduce_lr_on_plateau` | entrainement | — | `keep` |
-| `relu` | activation | — | `merge` |
-| `relu_layer` | convolution | A1, A2, A4, A5, C2 | `keep` |
+| `relu_layer` | layers | A1, A2, A4, A5, C2 | `keep` |
 | `resize` | transformations | — | `keep` |
 | `rnn` | sequences | — | `keep` |
-| `rnn_layer` | convolution | A7 | `keep` |
+| `rnn_layer` | layers | A7 | `keep` |
 | `selu` | activation | — | `hide` |
 | `sequence_dataset` | donnees | A7 | `keep` |
 | `sgd` | entrainement | A2, A3 | `keep` |
@@ -135,7 +130,7 @@ Légende des statuts cibles (§02 Réduction) :
 | `train_model` | entrainement | A1, A2, A3, A4, A5, A6, A7, C2 | `keep` |
 | `train_test_split` | donnees | A4, B1 | `keep` |
 | `tsne` | modeles | — | `keep` |
-| `upsample` | convolution | — | `keep` |
+| `upsample` | layers | — | `keep` |
 
 ---
 

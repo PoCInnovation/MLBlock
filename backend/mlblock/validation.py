@@ -92,13 +92,15 @@ def validate(
         except Exception:
             registry = {}
 
+    from mlblock.core.adapters import resolve_alias
+
     # ── basic shape ──────────────────────────────────────────────
     for n in node_dicts:
         if "id" not in n:
             errors.append("Node missing 'id'")
         if "type" not in n:
             errors.append(f"Node '{n.get('id','?')}' missing 'type'")
-        elif n["type"] not in (registry or {}):
+        elif resolve_alias(n["type"]) not in (registry or {}):
             errors.append(f"Unknown block type '{n['type']}' (node '{n.get('id','?')}')")
 
     node_map = {n["id"]: n for n in node_dicts if "id" in n}
@@ -120,7 +122,7 @@ def validate(
                 )
                 continue
             if registry is not None:
-                spec = registry.get(node["type"])  # type: ignore
+                spec = registry.get(resolve_alias(node["type"]))  # type: ignore
                 if spec is not None:
                     direction = "outputs" if side == "source" else "inputs"
                     ports = getattr(spec, direction, None)
@@ -147,8 +149,8 @@ def validate(
             t_node = node_map.get(e["target"])
             if not s_node or not t_node:
                 continue
-            s_spec = registry.get(s_node["type"])  # type: ignore
-            t_spec = registry.get(t_node["type"])  # type: ignore
+            s_spec = registry.get(resolve_alias(s_node["type"]))  # type: ignore
+            t_spec = registry.get(resolve_alias(t_node["type"]))  # type: ignore
             if not s_spec or not t_spec:
                 continue
             s_ports = getattr(s_spec, "outputs", None) or (  # noqa: E501

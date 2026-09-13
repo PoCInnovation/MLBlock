@@ -23,6 +23,8 @@ const blockSchema = z.object({
   params: z.record(z.string(), paramSchema),
   inputs: z.array(z.record(z.string(), z.string())),
   outputs: z.array(z.record(z.string(), z.string())),
+  advanced: z.boolean().optional(),
+  group: z.string().optional(),
 })
 
 const categorySchema = z.object({

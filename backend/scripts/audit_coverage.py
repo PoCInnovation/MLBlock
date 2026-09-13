@@ -197,7 +197,7 @@ def build_coverage_markdown(
         "",
         "---",
         "",
-        "## 2. Matrice Complète des 88 Blocs du Catalogue",
+        f"## 2. Matrice Complète des {total_blocks_count} Blocs du Catalogue",
         "",
         "Légende des statuts cibles (§02 Réduction) :",
         "- `keep` : Conservé dans la palette canonique v1 (~45 blocs cœur).",

@@ -109,9 +109,24 @@ def _fr_summary(block) -> str:
 
 
 @catalog_router.get("", response_model=None)
-def get_catalog(request: Request = None):  # type: ignore[assignment]
+def get_catalog(
+    request: Request = None,  # type: ignore[assignment]
+    all: bool = True,
+    advanced: bool | None = None,
+    group: str | None = None,
+):
     categories: dict[str, dict] = {}
     for block in BLOCK_REGISTRY.values():
+        block_adv = getattr(block, "advanced", False)
+        block_grp = getattr(block, "group", "core")
+
+        if not all and block_adv:
+            continue
+        if advanced is not None and block_adv != advanced:
+            continue
+        if group is not None and block_grp != group:
+            continue
+
         cat = block.category.name
         if cat not in categories:
             # id = slug brut (filtrage stable) ; name = première lettre en
@@ -129,6 +144,8 @@ def get_catalog(request: Request = None):  # type: ignore[assignment]
             "params": {k: v.model_dump() for k, v in block.params.items()},
             "inputs": block.inputs,
             "outputs": block.outputs,
+            "advanced": block_adv,
+            "group": block_grp,
         })
     payload = {"categories": sorted(list(categories.values()), key=lambda c: c["id"])}
     # Appel direct en test (sans Request) : compatibilité — renvoie le dict brut.
@@ -760,6 +777,24 @@ def build_pipeline_model(
     last_output = list(outputs.values())[-1]
     if isinstance(last_output, dict):
         last_output = list(last_output.values())[-1]  # type: ignore
+
+    if isinstance(last_output, nn.Module):
+        output_shape = None
+        try:
+            # Infer dummy shape from first layer if possible
+            first_node = nodes_by_id.get(order[0]) if order else None
+            in_ch = (first_node.params.get("in_channels", 1) if first_node else 1) or 1
+            dummy = torch.randn(1, in_ch, 28, 28)
+            out = last_output(dummy)
+            if isinstance(out, torch.Tensor):
+                output_shape = list(out.shape)
+        except Exception:
+            output_shape = None
+        return {
+            "success": True,
+            "output_shape": output_shape,
+            "layer_count": len(layers) or len(order),
+        }
 
     if not isinstance(last_output, torch.Tensor):
         return {

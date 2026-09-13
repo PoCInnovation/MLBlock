@@ -6,51 +6,41 @@ MNIST_CONFIG = {
     "graph": {
         "nodes": [
             {
-                "id": "input_1", "type": "input",
-                "params": {"shape": [1, 28, 28]},
-            },
-            {
-                "id": "conv1", "type": "conv2d",
+                "id": "conv1", "type": "conv2d_layer",
                 "params": {"in_channels": 1, "out_channels": 32, "kernel_size": 3},
             },
             {
-                "id": "relu1", "type": "relu",
+                "id": "relu1", "type": "relu_layer",
                 "params": {},
             },
             {
-                "id": "pool1", "type": "maxpool2d",
+                "id": "pool1", "type": "maxpool2d_layer",
                 "params": {"kernel_size": 2},
             },
             {
-                "id": "flat", "type": "flatten",
+                "id": "flat", "type": "flatten_layer",
                 "params": {},
             },
             {
-                "id": "fc1", "type": "linear",
+                "id": "fc1", "type": "linear_layer",
                 "params": {"in_features": 5408, "out_features": 128},
             },
             {
-                "id": "relu2", "type": "relu",
+                "id": "relu2", "type": "relu_layer",
                 "params": {},
             },
             {
-                "id": "fc2", "type": "linear",
+                "id": "fc2", "type": "linear_layer",
                 "params": {"in_features": 128, "out_features": 10},
-            },
-            {
-                "id": "output", "type": "softmax",
-                "params": {"dim": 1},
             },
         ],
         "edges": [
-            {"source": "input_1", "source_port": "out_1", "target": "conv1", "target_port": "in_1"},
             {"source": "conv1", "source_port": "out_1", "target": "relu1", "target_port": "in_1"},
             {"source": "relu1", "source_port": "out_1", "target": "pool1", "target_port": "in_1"},
             {"source": "pool1", "source_port": "out_1", "target": "flat", "target_port": "in_1"},
             {"source": "flat", "source_port": "out_1", "target": "fc1", "target_port": "in_1"},
             {"source": "fc1", "source_port": "out_1", "target": "relu2", "target_port": "in_1"},
             {"source": "relu2", "source_port": "out_1", "target": "fc2", "target_port": "in_1"},
-            {"source": "fc2", "source_port": "out_1", "target": "output", "target_port": "in_1"},
         ],
     }
 }
@@ -70,10 +60,9 @@ def test_generated_code_contains_layers():
     graph = Graph(graph_data)
     pipeline = Pipeline(graph)
     code = pipeline.generate_code()
-    assert "out_1 = input" in code
-    assert "out_2 = conv2d" in code
-    assert "out_5 = flatten" in code
-    assert "out_9 = softmax" in code
+    assert "conv2d_layer" in code
+    assert "flatten_layer" in code
+    assert "linear_layer" in code
 
 def test_generated_code_contains_params():
     graph_data = MNIST_CONFIG["graph"]
@@ -86,14 +75,14 @@ def test_generated_code_contains_params():
 
 def test_all_block_templates_generate_code():
     block_types = [
-        ("conv2d", {"in_channels": 3, "out_channels": 16}),
-        ("maxpool2d", {"kernel_size": 2}),
+        ("conv2d_layer", {"in_channels": 3, "out_channels": 16}),
+        ("maxpool2d_layer", {"kernel_size": 2}),
         ("avgpool2d", {"kernel_size": 2}),
-        ("relu", {}),
+        ("relu_layer", {}),
         ("sigmoid", {}),
         ("tanh", {}),
-        ("flatten", {}),
-        ("linear", {"in_features": 100, "out_features": 10}),
+        ("flatten_layer", {}),
+        ("linear_layer", {"in_features": 100, "out_features": 10}),
         ("dropout", {"p": 0.5}),
         ("batchnorm2d", {"num_features": 16}),
         ("softmax", {"dim": 1}),

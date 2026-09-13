@@ -4,12 +4,10 @@ from mlblock.validation import validate
 
 SIMPLE = {
     "nodes": [
-        {"id": "input_1", "type": "input", "params": {"shape": [1, 28, 28]}},
-        {"id": "conv1", "type": "conv2d", "params": {"in_channels": 1, "out_channels": 32}},
-        {"id": "relu1", "type": "relu", "params": {}},
+        {"id": "conv1", "type": "conv2d_layer", "params": {"in_channels": 1, "out_channels": 32}},
+        {"id": "relu1", "type": "relu_layer", "params": {}},
     ],
     "edges": [
-        {"source": "input_1", "source_port": "out_1", "target": "conv1", "target_port": "in_1"},
         {"source": "conv1", "source_port": "out_1", "target": "relu1", "target_port": "in_1"},
     ],
 }
@@ -19,7 +17,20 @@ def test_validate_valid_returns_order():
     r = validate(SIMPLE["nodes"], SIMPLE["edges"])
     assert r.valid is True
     assert r.errors == []
-    assert r.order == ["input_1", "conv1", "relu1"]
+    assert r.order == ["conv1", "relu1"]
+
+
+def test_validate_resolves_legacy_aliases():
+    r = validate(
+        [
+            {"id": "c", "type": "conv2d", "params": {"in_channels": 1, "out_channels": 32}},
+            {"id": "r", "type": "relu", "params": {}},
+        ],
+        [{"source": "c", "source_port": "out_1", "target": "r", "target_port": "in_1"}],
+    )
+    assert r.valid is True
+    assert r.errors == []
+    assert r.order == ["c", "r"]
 
 
 def test_validate_cycle():
