@@ -114,11 +114,15 @@ export async function fetchCatalog(): Promise<InternalCatalog> {
         inputs: (b.inputs ?? []).map(p => ({ name: String(p.name), dtype: String(p.dtype) })),
         outputs: (b.outputs ?? []).map(p => ({ name: String(p.name), dtype: String(p.dtype) })),
         description: b.description ? String(b.description) : '',
+        advanced: b.advanced ?? false,
+        group: b.group ?? 'core',
+        stage: b.stage,
+        stage_name: b.stage_name,
       }
     }
   }
 
-  return { categories, blocks }
+  return { categories, blocks, stages: parsed.stages }
 }
 
 export async function createPipeline(data: PipelineCreate): Promise<PipelineDetail> {

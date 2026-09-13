@@ -31,11 +31,11 @@ export function splitUnion(dtype: string): string[] {
   return parts.length > 1 ? parts : [dtype]
 }
 
-/** Only blocks in the `transforms` category contribute conversion edges. */
+/** Only blocks in the `transforms` or `transformations` category contribute conversion edges. */
 export function buildConversionGraph(blocks: BlockDefMap): Map<string, Set<string>> {
   const graph = new Map<string, Set<string>>()
   for (const def of Object.values(blocks)) {
-    if (def.cat !== 'transforms') continue
+    if (def.cat !== 'transforms' && def.cat !== 'transformations') continue
     const outFamilies = new Set(def.outputs.flatMap(p => splitUnion(p.dtype)).map(familyOf))
     const inFamilies = new Set(def.inputs.flatMap(p => splitUnion(p.dtype)).map(familyOf))
     for (const src of inFamilies) {
@@ -73,7 +73,7 @@ export function classifyEdge(srcDtype: string, tgtDtype: string, graph: Map<stri
 export function converterFor(srcDtype: string, tgtDtype: string, blocks: BlockDefMap): string | null {
   const tgtFamily = familyOf(tgtDtype)
   for (const [type, def] of Object.entries(blocks)) {
-    if (def.cat !== 'transforms') continue
+    if (def.cat !== 'transforms' && def.cat !== 'transformations') continue
     const inPort = def.inputs[0]
     const outPort = def.outputs[0]
     if (!inPort || !outPort) continue
@@ -106,3 +106,5 @@ function reachable(src: string, dst: string, graph: Map<string, Set<string>>): b
   }
   return false
 }
+
+export { typeSystem, TypeSystem } from './typeSystem'
