@@ -122,4 +122,39 @@ def test_validate_type_mismatch_enhanced_suggestion():
     )
     assert r.valid is False
     assert any("Type mismatch" in e for e in r.errors)
-    assert any("Astuce : insérez un bloc df_to_tensor" in e for e in r.errors)
+    assert any("Astuce : insérez un Block df_to_tensor" in e for e in r.errors)
+
+
+def test_validate_stage_world_isolation():
+    # Connecting between Stage.WORLD and non-WORLD is rejected as a Stage mismatch
+    # 1. Non-world to world (e.g. S0 -> SX)
+    r1 = validate(
+        [
+            {"id": "data", "type": "load_csv", "params": {}},
+            {"id": "env", "type": "evaluate_agent", "params": {}},
+        ],
+        [{"source": "data", "source_port": "out_1", "target": "env", "target_port": "in_1"}],
+    )
+    assert r1.valid is False
+    assert any("Stage.WORLD is isolated from tensor stages" in e for e in r1.errors)
+
+    # 2. World to non-world (e.g. SX -> S2)
+    r2 = validate(
+        [
+            {"id": "env", "type": "create_env", "params": {}},
+            {"id": "fc", "type": "linear_layer", "params": {}},
+        ],
+        [{"source": "env", "source_port": "out_1", "target": "fc", "target_port": "in_1"}],
+    )
+    assert r2.valid is False
+    assert any("Stage.WORLD is isolated from tensor stages" in e for e in r2.errors)
+
+    # 3. World to World is allowed (e.g. SX -> SX)
+    r3 = validate(
+        [
+            {"id": "env", "type": "create_env", "params": {}},
+            {"id": "agent", "type": "q_learning", "params": {}},
+        ],
+        [{"source": "env", "source_port": "out_1", "target": "agent", "target_port": "in_1"}],
+    )
+    assert not any("Stage mismatch" in e for e in r3.errors)

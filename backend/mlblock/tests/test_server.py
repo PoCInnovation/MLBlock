@@ -57,6 +57,25 @@ def test_list_categories(catalog_client: TestClient):
     assert "layers" in ids
 
 
+def test_catalog_filter_advanced(catalog_client: TestClient):
+    resp_all = catalog_client.get("/api/catalog?all=true")
+    assert resp_all.status_code == 200
+    all_blocks = [b for cat in resp_all.json()["categories"] for b in cat["blocks"]]
+
+    resp_core = catalog_client.get("/api/catalog?all=false")
+    assert resp_core.status_code == 200
+    core_blocks = [b for cat in resp_core.json()["categories"] for b in cat["blocks"]]
+
+    resp_no_adv = catalog_client.get("/api/catalog?advanced=false")
+    assert resp_no_adv.status_code == 200
+    no_adv_blocks = [b for cat in resp_no_adv.json()["categories"] for b in cat["blocks"]]
+
+    assert len(core_blocks) < len(all_blocks)
+    assert len(no_adv_blocks) == len(core_blocks)
+    assert not any(b.get("advanced", False) for b in core_blocks)
+    assert any(b.get("advanced", False) for b in all_blocks)
+
+
 # ── Pipelines CRUD ─────────────────────────────────────────────────
 
 

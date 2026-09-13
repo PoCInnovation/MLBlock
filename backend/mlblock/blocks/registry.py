@@ -91,6 +91,8 @@ ADVANCED_ACTIVATIONS = {
     "silu",
     "tanh",
     "identity",
+    "sigmoid",
+    "softmax",
 }
 
 
@@ -103,7 +105,10 @@ def _color_from_folder(name: str) -> str | None:
 def _name(obj: Any) -> str:
     if hasattr(obj, "__name__"):
         return obj.__name__
-    return str(obj)
+    s = str(obj).strip()
+    while len(s) >= 2 and s[0] == s[-1] and s[0] in ("'", '"'):
+        s = s[1:-1].strip()
+    return s
 
 
 def _extract_param_desc(doc: str | None, pname: str) -> tuple[str, dict[str, Any]]:
@@ -257,7 +262,7 @@ def _inspect_function(name: str, fn: Callable, category: Any) -> Any:
                     ptype = ann_str
         # Port dtype comes from the raw annotation string (get_type_hints
         # strips module prefixes: torch.Tensor → Tensor)
-        port_dtype = p.annotation if isinstance(p.annotation, str) else ptype
+        port_dtype = _name(p.annotation) if isinstance(p.annotation, str) else ptype
         # Data ports: in_<N> prefix or data-flow type (hyperparams stay params)
         if re.match(r"^in_\d+$", pname) or _is_data_port_type(port_dtype):
             inputs.append({"name": pname, "dtype": port_dtype})

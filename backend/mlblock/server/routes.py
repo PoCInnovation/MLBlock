@@ -13,7 +13,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import JSONResponse, Response
 from sqlmodel import Session, select
 
-from mlblock.blocks.registry import BLOCK_REGISTRY  # deprecated: use mlblock.catalog
+from mlblock.catalog import catalog
 from mlblock.core.vast import VastAI
 from mlblock.validation import validate as validate_pipeline
 from mlblock.server.database import get_session
@@ -116,7 +116,7 @@ def get_catalog(
     group: str | None = None,
 ):
     categories: dict[str, dict] = {}
-    for block in BLOCK_REGISTRY.values():
+    for block in catalog.all().values():
         block_adv = getattr(block, "advanced", False)
         block_grp = getattr(block, "group", "core")
 
@@ -158,15 +158,9 @@ def get_catalog(
             "stage": stage_val,
             "stage_name": stage_name_val,
         })
-    from mlblock.core.stages import Stage
-
-    stages_list = [
-        {"id": int(s), "name": s.stage_name, "label": s.label, "color": s.color}
-        for s in Stage.all_stages()
-    ]
     payload = {
         "categories": sorted(list(categories.values()), key=lambda c: c["id"]),
-        "stages": stages_list,
+        "stages": catalog.stages(),
     }
     # Appel direct en test (sans Request) : compatibilité — renvoie le dict brut.
     if request is None:

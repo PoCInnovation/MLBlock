@@ -125,7 +125,7 @@ const FlowPalette = memo(function FlowPalette({ onDragStart, onAdd, onClose, onT
     <div style={paletteStyle} className="floating-panel flow-palette-inner">
       <div style={headerStyle}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span>Blocs</span>
+          <span>Blocks</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             {onToggleCollapse && (
               <IconButton
@@ -148,11 +148,11 @@ const FlowPalette = memo(function FlowPalette({ onDragStart, onAdd, onClose, onT
           </div>
         </div>
         <TextInput
-          label="Rechercher un bloc"
+          label="Rechercher un Block"
           isLabelHidden
           value={query}
           onChange={setQuery}
-          placeholder="Rechercher un bloc…"
+          placeholder="Rechercher un Block…"
         />
         <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{ fontSize: 12, fontWeight: 700, color: theme.color.textMuted }}>Filtres</span>
@@ -196,7 +196,7 @@ const FlowPalette = memo(function FlowPalette({ onDragStart, onAdd, onClose, onT
       <div style={scrollStyle}>
         {!hasAnyMatch && (
           <div style={{ color: theme.color.textMuted, fontSize: 13, fontWeight: 600, padding: '18px 6px', textAlign: 'center' }}>
-            Aucun bloc ne correspond
+            Aucun Block ne correspond
           </div>
         )}
         {ALL_STAGES.map(s => {
@@ -225,7 +225,7 @@ const FlowPalette = memo(function FlowPalette({ onDragStart, onAdd, onClose, onT
                   {s.label}
                 </span>
                 <span style={{ fontSize: 11, color: theme.color.textMuted, marginLeft: 'auto' }}>
-                  {types.length} {types.length > 1 ? 'blocs' : 'bloc'}
+                  {types.length} {types.length > 1 ? 'Blocks' : 'Block'}
                 </span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -265,7 +265,7 @@ const FlowPalette = memo(function FlowPalette({ onDragStart, onAdd, onClose, onT
           )
         })}
         {Object.keys(catalog.blocks).filter(matches).length === 0 && (
-          <div style={emptyStyle}>Aucun bloc trouvé</div>
+          <div style={emptyStyle}>Aucun Block trouvé</div>
         )}
       </div>
     </div>

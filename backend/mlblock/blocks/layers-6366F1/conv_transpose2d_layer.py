@@ -1,8 +1,7 @@
-import torch
-from torch import nn
+from __future__ import annotations
 
 
-def conv_transpose2d_layer(in_channels: "int", out_channels: "int", in_1: "torch.nn.Module" = None, kernel_size: "int" = 3, stride: "int" = 1, padding: "int" = 0, output_padding: "int" = 0) -> "torch.nn.Module":
+def conv_transpose2d_layer(in_channels: "int", out_channels: "int", in_1: "torch.nn.Module" = None, kernel_size: "int" = 3, stride: "int" = 1, padding: "int" = 0, output_padding: "int" = 0) -> "torch.nn.Module":  # noqa: F821
     """Convolution transposée 2D.
     Couche de convolution transposée 2D composable (nn.Module).
 
@@ -15,5 +14,7 @@ def conv_transpose2d_layer(in_channels: "int", out_channels: "int", in_1: "torch
         padding: Padding. (entre: 0-8)
         output_padding: Padding de sortie. (entre: 0-8)
     """
+    from torch import nn
+
     layer = nn.ConvTranspose2d(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel_size, stride=stride, padding=padding, output_padding=output_padding)
     return nn.Sequential(in_1, layer) if in_1 is not None else layer

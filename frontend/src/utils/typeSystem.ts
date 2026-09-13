@@ -129,16 +129,16 @@ export class TypeSystem {
     if (verdict === 'convertible') {
       if (conv) {
         if (srcBlock && tgtBlock) {
-          return ['convertible', `Astuce : insérez un bloc ${conv} entre '${srcBlock}' et '${tgtBlock}'`]
+          return ['convertible', `Astuce : insérez un Block ${conv} entre '${srcBlock}' et '${tgtBlock}'`]
         }
-        return ['convertible', `Astuce : insérez un bloc ${conv}`]
+        return ['convertible', `Astuce : insérez un Block ${conv}`]
       }
       return ['convertible', `Type convertible de ${srcDtype} vers ${tgtDtype}`]
     }
 
     // Incompatible
     if (conv) {
-      return ['incompatible', `Type mismatch: ${srcDtype} -> ${tgtDtype}. Astuce : insérez un bloc ${conv}`]
+      return ['incompatible', `Type mismatch: ${srcDtype} -> ${tgtDtype}. Astuce : insérez un Block ${conv}`]
     }
     return ['incompatible', `Type mismatch: ${srcDtype} -> ${tgtDtype}. Aucune conversion possible`]
   }

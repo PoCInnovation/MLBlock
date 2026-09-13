@@ -155,7 +155,12 @@ def validate(
             continue
         s_stage = type_system.stage_of(s_type)
         t_stage = type_system.stage_of(t_type)
-        if int(t_stage) < int(s_stage) and (s_stage, t_stage) not in PERMITTED_FEEDBACK_LOOPS:
+        if (s_stage == Stage.WORLD) != (t_stage == Stage.WORLD):
+            errors.append(
+                f"Stage mismatch: Stage.WORLD is isolated from tensor stages "
+                f"(cannot connect '{e['source']}' to '{e['target']}')."
+            )
+        elif int(t_stage) < int(s_stage) and (s_stage, t_stage) not in PERMITTED_FEEDBACK_LOOPS:
             errors.append(
                 f"Stage mismatch: cannot connect Stage {int(s_stage)} ({e['source']}) "
                 f"to Stage {int(t_stage)} ({e['target']})."
@@ -204,7 +209,7 @@ def validate(
                 )
                 conv = type_system.find_converter(s_dtype, t_dtype, registry)
                 if conv:
-                    err_msg += f". Astuce : insérez un bloc {conv}"
+                    err_msg += f". Astuce : insérez un Block {conv}"
                 errors.append(err_msg)
 
     # ── cycle (topo) ──────────────────────────────────────────────

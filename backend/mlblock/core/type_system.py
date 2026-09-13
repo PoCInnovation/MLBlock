@@ -143,16 +143,16 @@ class TypeSystem:
         if verdict == VERDICT_CONVERTIBLE:
             if conv:
                 if src_block and tgt_block:
-                    msg = f"Astuce : insérez un bloc {conv} entre '{src_block}' et '{tgt_block}'"
+                    msg = f"Astuce : insérez un Block {conv} entre '{src_block}' et '{tgt_block}'"
                 else:
-                    msg = f"Astuce : insérez un bloc {conv}"
+                    msg = f"Astuce : insérez un Block {conv}"
             else:
                 msg = f"Type convertible de {src_dtype} vers {tgt_dtype}"
             return (VERDICT_CONVERTIBLE, msg)
 
         # Incompatible verdict
         if conv:
-            msg = f"Type mismatch: {src_dtype} -> {tgt_dtype}. Astuce : insérez un bloc {conv}"
+            msg = f"Type mismatch: {src_dtype} -> {tgt_dtype}. Astuce : insérez un Block {conv}"
         else:
             msg = f"Type mismatch: {src_dtype} -> {tgt_dtype}. Aucune conversion possible"
         return (VERDICT_INCOMPATIBLE, msg)
