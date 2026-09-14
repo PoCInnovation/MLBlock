@@ -1,11 +1,12 @@
 import { memo, useEffect, useMemo, useState } from 'react'
 import { Handle, Position, type NodeProps, type Node } from '@xyflow/react'
 import { useShallow } from 'zustand/react/shallow'
-import { Card, Divider, Heading, HStack, Text, VStack } from '@astryxdesign/core'
+import { Badge, Card, Divider, Heading, HStack, Text, VStack } from '@astryxdesign/core'
 import useAppStore from '../../store/useAppStore'
 import BlockSegments from '../blocks/BlockSegments'
 import { resolveColumnsForPath, resolveFlowSourcePath } from '../../utils/columns'
 import { isAmbiguous } from '../../utils/portResolution'
+import { getStageConfig, stageOfBlock } from '../../utils/stages'
 import { theme } from '../../theme'
 import type { Port, Segment } from '../../types/catalog'
 
@@ -27,6 +28,8 @@ type BlockNodeData = {
   fields: Record<string, string>
   inputs: Port[]
   outputs: Port[]
+  stage?: number
+  stage_name?: string
 }
 
 /** Distribute N handles vertically on a side. */
@@ -41,6 +44,8 @@ function BlockNode({ data, id }: NodeProps<Node<BlockNodeData>>) {
   const { flowNodes, flowEdges } = useAppStore(useShallow(s => ({ flowNodes: s.flowNodes, flowEdges: s.flowEdges })))
   const [columnOptions, setColumnOptions] = useState<Record<string, string[]>>({})
   const description = catalog?.blocks[data.type]?.description
+  const stageNum = data.stage ?? catalog?.blocks[data.type]?.stage ?? stageOfBlock(data.type, data.category)
+  const stageConfig = getStageConfig(stageNum)
 
   // Ports fournis (état dérivé des edges — jamais stocké) : un input est
   // fourni s'il a une edge entrante, un output s'il a une edge sortante.
@@ -78,8 +83,26 @@ function BlockNode({ data, id }: NodeProps<Node<BlockNodeData>>) {
       }}
     >
       <HStack justify="between" align="start" gap={2} style={{ paddingBlock: 10 }}>
-        <VStack gap={0}>
-          <Heading level={4} style={{ fontSize: 13.5, fontWeight: 800, lineHeight: 1.3, color: 'var(--color-text-light)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{data.label || data.type || 'Untitled'}</Heading>
+        <VStack gap={0} style={{ minWidth: 0, flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+            <span title={`${stageConfig.name} (${stageConfig.label})`} style={{ display: 'inline-flex' }}>
+              <Badge
+                label={stageConfig.key}
+                style={{
+                  backgroundColor: `${stageConfig.color}22`,
+                  color: stageConfig.color,
+                  border: `1px solid ${stageConfig.color}66`,
+                  fontSize: 10,
+                  fontWeight: 800,
+                  padding: '1px 5px',
+                  borderRadius: 4,
+                  lineHeight: 1.2,
+                  flexShrink: 0,
+                }}
+              />
+            </span>
+            <Heading level={4} style={{ fontSize: 13.5, fontWeight: 800, lineHeight: 1.3, color: 'var(--color-text-light)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{data.label || data.type || 'Untitled'}</Heading>
+          </div>
           {description && <Text style={{ fontSize: 12, color: 'var(--color-text-muted)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{description}</Text>}
         </VStack>
         <div style={{ justifySelf: 'end', alignSelf: 'start' }}>

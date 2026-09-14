@@ -3,8 +3,9 @@ import { X, PanelLeft, ChevronDown, ChevronUp } from 'lucide-react'
 import useAppStore from '../../store/useAppStore'
 import { colorFor } from '../../utils/blockHelpers'
 import { shouldIgnoreTap } from '../../utils/tapGuard'
+import { ALL_STAGES, stageOfBlock, stageKey } from '../../utils/stages'
 import { theme } from '../../theme'
-import { ToggleButtonGroup, ToggleButton, Grid, ClickableCard, IconButton, TextInput } from '@astryxdesign/core'
+import { Badge, Switch, ToggleButtonGroup, ToggleButton, Grid, ClickableCard, IconButton, TextInput } from '@astryxdesign/core'
 
 const paletteStyle: React.CSSProperties = {
   width: '100%',
@@ -44,14 +45,6 @@ const scrollStyle: React.CSSProperties = {
   gap: 10,
 }
 
-const catStyle: React.CSSProperties = {
-  fontFamily: theme.font.heading,
-  fontWeight: 600,
-  fontSize: 13,
-  color: theme.color.textMuted,
-  margin: '12px 0 8px',
-}
-
 const emptyStyle: React.CSSProperties = {
   color: theme.color.textDim,
   fontSize: 13,
@@ -85,7 +78,8 @@ type FlowPaletteProps = {
 const FlowPalette = memo(function FlowPalette({ onDragStart, onAdd, onClose, onToggleCollapse }: FlowPaletteProps) {
   const catalog = useAppStore(s => s.catalog)
   const [query, setQuery] = useState('')
-  const [cat, setCat] = useState('all')
+  const [stageFilter, setStageFilter] = useState('all')
+  const [showAdvanced, setShowAdvanced] = useState(false)
   const [filtersOpen, setFiltersOpen] = useState(true)
   const pressStart = useRef<{ x: number; y: number } | null>(null)
   // Un drag HTML5 (même court, ≤8px) marque le flag : le click qui suit ne
@@ -117,10 +111,12 @@ const FlowPalette = memo(function FlowPalette({ onDragStart, onAdd, onClose, onT
 
   const matches = (type: string) => {
     const def = catalog.blocks[type]
+    if (!showAdvanced && def.advanced) return false
     const label = def.segs.find(s => s.t === 'text')?.v ?? type
     const matchQuery = !q || label.toLowerCase().includes(q)
-    const matchCat = cat === 'all' || def.cat === cat
-    return matchQuery && matchCat
+    const blockStage = def.stage ?? stageOfBlock(type, def.cat)
+    const matchStage = stageFilter === 'all' || String(blockStage) === stageFilter || stageKey(blockStage) === stageFilter
+    return matchQuery && matchStage
   }
 
   const hasAnyMatch = Object.keys(catalog.blocks).some(matches)
@@ -129,7 +125,7 @@ const FlowPalette = memo(function FlowPalette({ onDragStart, onAdd, onClose, onT
     <div style={paletteStyle} className="floating-panel flow-palette-inner">
       <div style={headerStyle}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span>Blocs</span>
+          <span>Blocks</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             {onToggleCollapse && (
               <IconButton
@@ -152,11 +148,11 @@ const FlowPalette = memo(function FlowPalette({ onDragStart, onAdd, onClose, onT
           </div>
         </div>
         <TextInput
-          label="Rechercher un bloc"
+          label="Rechercher un Block"
           isLabelHidden
           value={query}
           onChange={setQuery}
-          placeholder="Rechercher un bloc…"
+          placeholder="Rechercher un Block…"
         />
         <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{ fontSize: 12, fontWeight: 700, color: theme.color.textMuted }}>Filtres</span>
@@ -169,69 +165,107 @@ const FlowPalette = memo(function FlowPalette({ onDragStart, onAdd, onClose, onT
           />
         </div>
         {filtersOpen && (
-          <div style={{ marginTop: 8 }}>
+          <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 10 }}>
             <ToggleButtonGroup
               type="single"
-              label="Catégories"
-              value={cat}
-              onChange={(v) => setCat((v as string) || 'all')}
+              label="Stages"
+              value={stageFilter}
+              onChange={(v) => setStageFilter((v as string) || 'all')}
               size="sm"
             >
-              <Grid columns={2} gap={1.5}>
+              <Grid columns={3} gap={1.5}>
                 <ToggleButton label="Tous" value="all" />
-                {categories.map(c => (
-                  <ToggleButton key={c.id} label={c.name} value={c.id} />
+                {ALL_STAGES.map(s => (
+                  <ToggleButton key={s.id} label={`${s.key} ${s.label}`} value={String(s.id)} />
                 ))}
               </Grid>
             </ToggleButtonGroup>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '2px 4px' }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: theme.color.textMuted }}>Avancé</span>
+              <Switch
+                label="Avancé"
+                isLabelHidden
+                value={showAdvanced}
+                onChange={setShowAdvanced}
+                size="sm"
+              />
+            </div>
           </div>
         )}
       </div>
       <div style={scrollStyle}>
         {!hasAnyMatch && (
           <div style={{ color: theme.color.textMuted, fontSize: 13, fontWeight: 600, padding: '18px 6px', textAlign: 'center' }}>
-            Aucun bloc ne correspond
+            Aucun Block ne correspond
           </div>
         )}
-        {categories.map(c => {
-          const types = Object.keys(catalog.blocks).filter(t => catalog.blocks[t].cat === c.id && matches(t))
+        {ALL_STAGES.map(s => {
+          const types = Object.keys(catalog.blocks).filter(t => {
+            const def = catalog.blocks[t]
+            const bStage = def.stage ?? stageOfBlock(t, def.cat)
+            return bStage === s.id && matches(t)
+          })
           if (types.length === 0) return null
           return (
-            <div key={c.id}>
-              <div style={catStyle}>{c.name}</div>
+            <div key={s.id}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '14px 0 8px' }}>
+                <Badge
+                  label={s.key}
+                  style={{
+                    backgroundColor: `${s.color}22`,
+                    color: s.color,
+                    border: `1px solid ${s.color}66`,
+                    fontSize: 10,
+                    fontWeight: 800,
+                    padding: '1px 5px',
+                    borderRadius: 4,
+                  }}
+                />
+                <span style={{ fontFamily: theme.font.heading, fontWeight: 700, fontSize: 13, color: theme.color.text }}>
+                  {s.label}
+                </span>
+                <span style={{ fontSize: 11, color: theme.color.textMuted, marginLeft: 'auto' }}>
+                  {types.length} {types.length > 1 ? 'Blocks' : 'Block'}
+                </span>
+              </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {types.map(type => {
-                const def = catalog.blocks[type]
-                const label = def.segs.find(s => s.t === 'text')?.v ?? type
-                return (
-                  <ClickableCard
-                    key={type}
-                    label={label}
-                    onClick={(e) => handleItemClick(type, e as unknown as React.MouseEvent)}
-                    padding={2}
-                  >
-                    <div
-                      draggable
-                      onDragStart={e => { dragStarted.current = true; onDragStart(e, type) }}
-                      onPointerDown={e => { dragStarted.current = false; pressStart.current = { x: e.clientX, y: e.clientY } }}
-                      onKeyDown={e => handleItemKeyDown(type, e)}
-                      style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', cursor: 'grab' }}
-                      title={def.description || undefined}
-                      role="button"
-                      tabIndex={0}
+                {types.map(type => {
+                  const def = catalog.blocks[type]
+                  const label = def.segs.find(s => s.t === 'text')?.v ?? type
+                  return (
+                    <ClickableCard
+                      key={type}
+                      label={label}
+                      onClick={(e) => handleItemClick(type, e as unknown as React.MouseEvent)}
+                      padding={2}
                     >
-                      <span style={dotStyle(colorFor(c.id, categories))} />
-                      <span style={{ fontSize: 13, fontWeight: 700, color: theme.color.text }}>{label}</span>
-                    </div>
-                  </ClickableCard>
-                )
-              })}
+                      <div
+                        draggable
+                        onDragStart={e => { dragStarted.current = true; onDragStart(e, type) }}
+                        onPointerDown={e => { dragStarted.current = false; pressStart.current = { x: e.clientX, y: e.clientY } }}
+                        onKeyDown={e => handleItemKeyDown(type, e)}
+                        style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', cursor: 'grab' }}
+                        title={def.description || undefined}
+                        role="button"
+                        tabIndex={0}
+                      >
+                        <span style={dotStyle(colorFor(def.cat, categories))} />
+                        <span style={{ fontSize: 13, fontWeight: 700, color: theme.color.text }}>{label}</span>
+                        {def.advanced && (
+                          <span style={{ fontSize: 10, color: theme.color.textDim, marginLeft: 'auto', fontWeight: 600 }}>
+                            Avancé
+                          </span>
+                        )}
+                      </div>
+                    </ClickableCard>
+                  )
+                })}
               </div>
             </div>
           )
         })}
         {Object.keys(catalog.blocks).filter(matches).length === 0 && (
-          <div style={emptyStyle}>Aucun bloc trouvé</div>
+          <div style={emptyStyle}>Aucun Block trouvé</div>
         )}
       </div>
     </div>

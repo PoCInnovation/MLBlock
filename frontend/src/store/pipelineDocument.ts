@@ -6,6 +6,7 @@
 import type { InternalCatalog } from '../types/catalog'
 import type { PipelineNode, PipelineEdge } from '../types/catalog'
 import type { Node, Edge } from '@xyflow/react'
+import { stageOfBlock } from '../utils/stages'
 
 export type PersistenceAdapter = {
   createPipeline: (body: { name: string; description: string; is_draft: boolean; nodes: PipelineNode[]; edges: PipelineEdge[] }) => Promise<{ id: string; name: string }>
@@ -71,6 +72,8 @@ export function backfillNodes(flowNodes: Node[], catalog: InternalCatalog): Node
         fields: d?.fields ?? {},
         inputs: def?.inputs ?? [],
         outputs: def?.outputs ?? [],
+        stage: def?.stage ?? (d?.type ? stageOfBlock(d.type, def?.cat) : undefined),
+        stage_name: def?.stage_name,
       },
     }
   })

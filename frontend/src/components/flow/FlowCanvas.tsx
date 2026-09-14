@@ -28,10 +28,13 @@ import BlockNode from './BlockNode'
 import FlowLink from './FlowLink'
 import FlowPalette from './FlowPalette'
 import JournalPanel from './JournalPanel'
+import ConverterDialog from './ConverterDialog'
 import { segsToFields } from '../../utils/flowConversion'
-import { buildConversionGraph, classifyEdge, converterFor, portDtype } from '../../utils/typeCheck'
+import { portDtype } from '../../utils/typeCheck'
+import { typeSystem } from '../../utils/typeSystem'
 import { resolveConnection, type ResolvedConnection } from '../../utils/portResolution'
 import { arrangeGraph } from '../../utils/layout'
+import { stageOfBlock } from '../../utils/stages'
 import type { Port } from '../../types/catalog'
 const nodeTypes = { block: BlockNode }
 const edgeTypes = { flow: FlowLink }
@@ -59,7 +62,7 @@ function edgeStyleFor(e: Edge, nodes: Node[], graph: Map<string, Set<string>>): 
   const srcDtype = portDtype(portList(src, 'outputs'), e.sourceHandle)
   const tgtDtype = portDtype(portList(tgt, 'inputs'), e.targetHandle)
   if (!srcDtype || !tgtDtype) return {}
-  const verdict = classifyEdge(srcDtype, tgtDtype, graph)
+  const verdict = typeSystem.classify(srcDtype, tgtDtype, graph)
   return {
     stroke: edgeColor[verdict],
     strokeDasharray: verdict === 'convertible' ? '6 4' : undefined,
@@ -89,6 +92,12 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
   const [rightMode, setRightMode] = useState<'cours' | 'inspecteur' | 'journal'>('inspecteur')
   const hasOutputs = useAppStore(s => s.results.length > 0)
   const jobStatus = useAppStore(s => s.jobStatus)
+  const [converterPrompt, setConverterPrompt] = useState<{
+    conn: Connection
+    convType: string
+    convLabel: string
+    resolved: ResolvedConnection
+  } | null>(null)
   // Auto-switch to Inspecteur and select last Block on run (Kahn topo)
   // ponytail: queueMicrotask avoids synchronous setState in effect
   useEffect(() => {
@@ -154,7 +163,7 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
   }, [paletteOpen])
 
   const graph = useMemo(
-    () => (catalog ? buildConversionGraph(catalog.blocks) : new Map<string, Set<string>>()),
+    () => (catalog ? typeSystem.buildConversionGraph(catalog.blocks) : new Map<string, Set<string>>()),
     [catalog]
   )
 
@@ -165,6 +174,7 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
     if (!def) return null
     const cat = catalog.categories.find(c => c.id === def.cat)
     const label = def.segs.find(s => s.t === 'text')?.v ?? type
+    const stage = def.stage ?? stageOfBlock(type, def.cat)
     return {
       id: `${type}_${Date.now()}`,
       type: 'block',
@@ -179,6 +189,8 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
         fields: segsToFields(def),
         inputs: def.inputs,
         outputs: def.outputs,
+        stage,
+        stage_name: def.stage_name,
       },
     }
   }, [catalog])
@@ -198,6 +210,7 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
       : { x: 300, y: 300 }
     const convId = `${convType}_${Date.now()}`
     const cat = catalog.categories.find(c => c.id === def.cat)
+    const stage = def.stage ?? stageOfBlock(convType, def.cat)
     const node: Node = {
       id: convId,
       type: 'block',
@@ -212,6 +225,8 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
         fields: segsToFields(def),
         inputs: def.inputs,
         outputs: def.outputs,
+        stage,
+        stage_name: def.stage_name,
       },
     }
     // Câblage avec les ports résolus (sourcePort de A, targetPort de B) :
@@ -248,9 +263,9 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
   }, [])
 
   const onConnect = useCallback((params: Connection) => {
-    useAppStore.getState().commitUndoPoint()
     const { flowNodes, flowEdges } = useAppStore.getState()
     if (!catalog) {
+      useAppStore.getState().commitUndoPoint()
       addFlowEdges(addEdge(params, []))
       return
     }
@@ -259,6 +274,7 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
     const srcPorts = portList(src, 'outputs')
     const tgtPorts = portList(tgt, 'inputs')
     if (!src || !tgt || !srcPorts?.length || !tgtPorts?.length) {
+      useAppStore.getState().commitUndoPoint()
       addFlowEdges(addEdge(params, []))
       return
     }
@@ -267,12 +283,18 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
     // choisit le plus compatible. Côté ambigu le handle cliqué est figé.
     const resolved = resolveConnection(srcPorts, tgtPorts, params.sourceHandle, params.targetHandle, graph)
     if (!resolved) {
-      const srcDtype = portDtype(srcPorts, params.sourceHandle)
-      const tgtDtype = portDtype(tgtPorts, params.targetHandle)
-      showToast({ kind: 'error', message: `${srcDtype} → ${tgtDtype} : aucune conversion possible` })
+      const srcPort = params.sourceHandle ? srcPorts.find(p => p.name === params.sourceHandle) : srcPorts[0]
+      const tgtPort = params.targetHandle ? tgtPorts.find(p => p.name === params.targetHandle) : tgtPorts[0]
+      const srcDtype = srcPort?.dtype ?? portDtype(srcPorts, params.sourceHandle) ?? ''
+      const tgtDtype = tgtPort?.dtype ?? portDtype(tgtPorts, params.targetHandle) ?? ''
+      const srcBlock = ((src.data as Record<string, unknown>)?.type as string) ?? src.id
+      const tgtBlock = ((tgt.data as Record<string, unknown>)?.type as string) ?? tgt.id
+      const [, diag] = typeSystem.canConnect(srcDtype, tgtDtype, graph, srcBlock, tgtBlock, catalog.blocks)
+      showToast({ kind: 'error', message: diag ?? `${srcDtype} → ${tgtDtype} : aucune conversion possible` })
       return
     }
     if (resolved.verdict === 'compatible') {
+      useAppStore.getState().commitUndoPoint()
       // Remplacement : un input n'a jamais qu'une edge — supprime l'ancienne
       // sur ce port avant d'ajouter la nouvelle (1 input = 1 edge max).
       const rest = flowEdges.filter(e => !(e.target === tgt.id && e.targetHandle === resolved.targetPort))
@@ -284,22 +306,26 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
         targetHandle: resolved.targetPort,
       }]))
     } else {
-      const conv = converterFor(
-        srcPorts.find(p => p.name === resolved.sourcePort)?.dtype ?? '',
-        tgtPorts.find(p => p.name === resolved.targetPort)?.dtype ?? '',
-        catalog.blocks,
-      )
+      const srcDtype = srcPorts.find(p => p.name === resolved.sourcePort)?.dtype ?? ''
+      const tgtDtype = tgtPorts.find(p => p.name === resolved.targetPort)?.dtype ?? ''
+      const conv = typeSystem.findConverter(srcDtype, tgtDtype, catalog.blocks)
       if (!conv) {
-        showToast({ kind: 'error', message: `chemin de conversion introuvable` })
+        const srcBlock = ((src.data as Record<string, unknown>)?.type as string) ?? src.id
+        const tgtBlock = ((tgt.data as Record<string, unknown>)?.type as string) ?? tgt.id
+        const [, diag] = typeSystem.canConnect(srcDtype, tgtDtype, graph, srcBlock, tgtBlock, catalog.blocks)
+        showToast({ kind: 'error', message: diag ?? `${resolved.sourcePort} -> ${resolved.targetPort} incompatible` })
         return
       }
-      showToast({
-        kind: 'convert',
-        message: `conversion via ${conv}`,
-        action: () => insertConverter(params, conv, resolved),
+      const convDef = catalog.blocks[conv]
+      const convLabel = convDef?.segs.find(s => s.t === 'text')?.v ?? conv
+      setConverterPrompt({
+        conn: params,
+        convType: conv,
+        convLabel,
+        resolved,
       })
     }
-  }, [catalog, graph, addFlowEdges, showToast, insertConverter])
+  }, [catalog, graph, addFlowEdges, showToast])
 
   const onDragStart = useCallback((e: React.DragEvent, type: string) => {
     e.dataTransfer.setData('application/mlblock-type', type)
@@ -606,6 +632,20 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
             <FlowPalette onDragStart={onDragStart} onAdd={addNodeAtCenter} onClose={() => setPaletteOpen(false)} />
           </div>
         </>
+      )}
+      {converterPrompt && (
+        <ConverterDialog
+          open={Boolean(converterPrompt)}
+          blockName={converterPrompt.convType}
+          blockLabel={converterPrompt.convLabel}
+          onConfirm={() => {
+            insertConverter(converterPrompt.conn, converterPrompt.convType, converterPrompt.resolved)
+            setConverterPrompt(null)
+          }}
+          onCancel={() => {
+            setConverterPrompt(null)
+          }}
+        />
       )}
     </div>
   )

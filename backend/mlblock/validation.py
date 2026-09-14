@@ -17,7 +17,8 @@ from collections import deque
 from dataclasses import dataclass, field
 from typing import Any
 
-from mlblock.core.types import build_conversion_graph, classify  # canonical
+from mlblock.core.stages import Stage
+from mlblock.core.type_system import type_system
 
 
 @dataclass
@@ -92,13 +93,15 @@ def validate(
         except Exception:
             registry = {}
 
+    from mlblock.core.adapters import resolve_alias
+
     # ── basic shape ──────────────────────────────────────────────
     for n in node_dicts:
         if "id" not in n:
             errors.append("Node missing 'id'")
         if "type" not in n:
             errors.append(f"Node '{n.get('id','?')}' missing 'type'")
-        elif n["type"] not in (registry or {}):
+        elif resolve_alias(n["type"]) not in (registry or {}):
             errors.append(f"Unknown block type '{n['type']}' (node '{n.get('id','?')}')")
 
     node_map = {n["id"]: n for n in node_dicts if "id" in n}
@@ -120,7 +123,7 @@ def validate(
                 )
                 continue
             if registry is not None:
-                spec = registry.get(node["type"])  # type: ignore
+                spec = registry.get(resolve_alias(node["type"]))  # type: ignore
                 if spec is not None:
                     direction = "outputs" if side == "source" else "inputs"
                     ports = getattr(spec, direction, None)
@@ -134,10 +137,39 @@ def validate(
                                 f"Port '{port_name}' not found on {side} '{nid}' ({node['type']}). Valid ports: {valid}"
                             )
 
+    # ── stage ordering ────────────────────────────────────────────
+    PERMITTED_FEEDBACK_LOOPS: set[tuple[Stage, Stage]] = {
+        (Stage.TRAIN, Stage.PREPARE),  # e.g. training feedback loop into data preparation
+    }
+
+    for e in edge_dicts:
+        if not all(k in e for k in ("source", "target")):
+            continue
+        s_node = node_map.get(e["source"])
+        t_node = node_map.get(e["target"])
+        if not s_node or not t_node or "type" not in s_node or "type" not in t_node:
+            continue
+        s_type = resolve_alias(s_node["type"])
+        t_type = resolve_alias(t_node["type"])
+        if registry and (s_type not in registry or t_type not in registry):
+            continue
+        s_stage = type_system.stage_of(s_type)
+        t_stage = type_system.stage_of(t_type)
+        if (s_stage == Stage.WORLD) != (t_stage == Stage.WORLD):
+            errors.append(
+                f"Stage mismatch: Stage.WORLD is isolated from tensor stages "
+                f"(cannot connect '{e['source']}' to '{e['target']}')."
+            )
+        elif int(t_stage) < int(s_stage) and (s_stage, t_stage) not in PERMITTED_FEEDBACK_LOOPS:
+            errors.append(
+                f"Stage mismatch: cannot connect Stage {int(s_stage)} ({e['source']}) "
+                f"to Stage {int(t_stage)} ({e['target']})."
+            )
+
     # ── dtype compatibility (family-aware, single table) ─────────
     if registry:
         try:
-            conv_graph = build_conversion_graph(registry)
+            conv_graph = type_system.build_conversion_graph(registry)
         except Exception:
             conv_graph = {}
         for e in edge_dicts:
@@ -147,8 +179,8 @@ def validate(
             t_node = node_map.get(e["target"])
             if not s_node or not t_node:
                 continue
-            s_spec = registry.get(s_node["type"])  # type: ignore
-            t_spec = registry.get(t_node["type"])  # type: ignore
+            s_spec = registry.get(resolve_alias(s_node["type"]))  # type: ignore
+            t_spec = registry.get(resolve_alias(t_node["type"]))  # type: ignore
             if not s_spec or not t_spec:
                 continue
             s_ports = getattr(s_spec, "outputs", None) or (  # noqa: E501
@@ -169,12 +201,16 @@ def validate(
             )
             if not s_dtype or not t_dtype:
                 continue
-            verdict = classify(s_dtype, t_dtype, conv_graph)
+            verdict = type_system.classify(s_dtype, t_dtype, conv_graph)
             if verdict == "incompatible":
-                errors.append(
+                err_msg = (
                     f"Type mismatch: {e['source']}.{e['source_port']} ({s_dtype}) -> "  # noqa: E501
                     f"{e['target']}.{e['target_port']} ({t_dtype})"  # noqa: E501
                 )
+                conv = type_system.find_converter(s_dtype, t_dtype, registry)
+                if conv:
+                    err_msg += f". Astuce : insérez un Block {conv}"
+                errors.append(err_msg)
 
     # ── cycle (topo) ──────────────────────────────────────────────
     order, has_cycle = _topological_sort(node_dicts, edge_dicts)

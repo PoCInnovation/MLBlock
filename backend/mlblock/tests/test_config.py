@@ -12,21 +12,21 @@ def valid_json():
     data = {
         "nodes": [
             {
-                "id": "input_1",
-                "type": "input",
-                "params": {"shape": [1, 28, 28]},
+                "id": "conv1",
+                "type": "conv2d_layer",
+                "params": {"in_channels": 1, "out_channels": 32},
             },
             {
-                "id": "conv1",
-                "type": "conv2d",
-                "params": {"in_channels": 1, "out_channels": 32},
+                "id": "relu1",
+                "type": "relu_layer",
+                "params": {},
             },
         ],
         "edges": [
             {
-                "source": "input_1",
+                "source": "conv1",
                 "source_port": "out_1",
-                "target": "conv1",
+                "target": "relu1",
                 "target_port": "in_1",
             }
         ],

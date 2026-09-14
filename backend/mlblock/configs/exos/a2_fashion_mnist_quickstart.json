@@ -1,0 +1,129 @@
+{
+  "name": "Fashion-MNIST Quickstart",
+  "description": "Classification d'articles de mode Fashion-MNIST (10 classes) suivant le tutoriel officiel PyTorch Quickstart avec normalisation, architecture MLP et optimiseur SGD.",
+  "graph": {
+    "nodes": [
+      {
+        "id": "dataset",
+        "type": "load_torch_dataset",
+        "params": {
+          "name": "fashion_mnist",
+          "batch_size": 64,
+          "split": "train"
+        }
+      },
+      {
+        "id": "norm",
+        "type": "normalize",
+        "params": {
+          "mean": [0.5],
+          "std": [0.5]
+        }
+      },
+      {
+        "id": "loader",
+        "type": "data_loader",
+        "params": {
+          "batch_size": 64,
+          "shuffle": true
+        }
+      },
+      {
+        "id": "fc1",
+        "type": "linear_layer",
+        "params": {
+          "in_features": 784,
+          "out_features": 128
+        }
+      },
+      {
+        "id": "relu",
+        "type": "relu_layer",
+        "params": {}
+      },
+      {
+        "id": "fc2",
+        "type": "linear_layer",
+        "params": {
+          "in_features": 128,
+          "out_features": 10
+        }
+      },
+      {
+        "id": "loss",
+        "type": "cross_entropy_loss",
+        "params": {}
+      },
+      {
+        "id": "optimizer",
+        "type": "sgd",
+        "params": {
+          "lr": 0.001
+        }
+      },
+      {
+        "id": "trainer",
+        "type": "train_model",
+        "params": {
+          "epochs": 5
+        }
+      }
+    ],
+    "edges": [
+      {
+        "source": "dataset",
+        "source_port": "out_1",
+        "target": "norm",
+        "target_port": "in_1"
+      },
+      {
+        "source": "norm",
+        "source_port": "out_1",
+        "target": "loader",
+        "target_port": "in_1"
+      },
+      {
+        "source": "loader",
+        "source_port": "out_1",
+        "target": "trainer",
+        "target_port": "in_2"
+      },
+      {
+        "source": "fc1",
+        "source_port": "out_1",
+        "target": "relu",
+        "target_port": "in_1"
+      },
+      {
+        "source": "relu",
+        "source_port": "out_1",
+        "target": "fc2",
+        "target_port": "in_1"
+      },
+      {
+        "source": "fc2",
+        "source_port": "out_1",
+        "target": "trainer",
+        "target_port": "in_1"
+      },
+      {
+        "source": "fc2",
+        "source_port": "out_1",
+        "target": "optimizer",
+        "target_port": "in_1"
+      },
+      {
+        "source": "optimizer",
+        "source_port": "out_1",
+        "target": "trainer",
+        "target_port": "in_3"
+      },
+      {
+        "source": "loss",
+        "source_port": "out_1",
+        "target": "trainer",
+        "target_port": "in_4"
+      }
+    ]
+  }
+}

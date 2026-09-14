@@ -25,17 +25,17 @@ def test_block_registry_get_unknown():
 
 def test_block_registry_list():
     blocks = BlockRegistry.list()
-    assert "conv2d" in blocks
-    assert "relu" in blocks
-    assert "linear" in blocks
+    assert "conv2d_layer" in blocks
+    assert "relu_layer" in blocks
+    assert "linear_layer" in blocks
 
 
 def test_block_registry_by_category():
-    neural_blocks = BlockRegistry.by_category("convolution")
+    neural_blocks = BlockRegistry.by_category("layers")
     assert len(neural_blocks) > 0
     names = [b.name for b in neural_blocks]
-    assert "conv2d" in names
-    assert "linear" in names
+    assert "conv2d_layer" in names
+    assert "linear_layer" in names
 
 
 def test_block_meta_params_schema():

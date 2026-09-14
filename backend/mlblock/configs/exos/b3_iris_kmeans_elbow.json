@@ -1,0 +1,58 @@
+{
+  "name": "Iris KMeans — Elbow",
+  "description": "Partitionnement de données non supervisé sur Iris par k-moyennes (KMeans) avec standardisation préalable et calcul du score de silhouette.",
+  "graph": {
+    "nodes": [
+      {
+        "id": "data",
+        "type": "load_csv",
+        "params": {
+          "path": "iris.csv"
+        }
+      },
+      {
+        "id": "scaler",
+        "type": "standard_scaler",
+        "params": {}
+      },
+      {
+        "id": "clustering",
+        "type": "kmeans",
+        "params": {
+          "n_clusters": 3
+        }
+      },
+      {
+        "id": "eval",
+        "type": "silhouette",
+        "params": {}
+      }
+    ],
+    "edges": [
+      {
+        "source": "data",
+        "source_port": "out_1",
+        "target": "scaler",
+        "target_port": "in_1"
+      },
+      {
+        "source": "scaler",
+        "source_port": "scaled",
+        "target": "clustering",
+        "target_port": "in_1"
+      },
+      {
+        "source": "data",
+        "source_port": "out_1",
+        "target": "eval",
+        "target_port": "in_1"
+      },
+      {
+        "source": "clustering",
+        "source_port": "out_1",
+        "target": "eval",
+        "target_port": "model"
+      }
+    ]
+  }
+}

@@ -1,0 +1,140 @@
+{
+  "name": "NLP Text Classification — LSTM",
+  "description": "Classification de texte avec tokenisation, dictionnaire de vocabulaire, embedding vectoriel, cellule récurrente LSTM et classification supervisée.",
+  "graph": {
+    "nodes": [
+      {
+        "id": "tokenizer",
+        "type": "tokenize",
+        "params": {
+          "text": "le chat dort le chat mange le chien court",
+          "sep": " "
+        }
+      },
+      {
+        "id": "vocab",
+        "type": "build_vocab",
+        "params": {}
+      },
+      {
+        "id": "encoder",
+        "type": "encode_text",
+        "params": {
+          "max_len": 16
+        }
+      },
+      {
+        "id": "embed",
+        "type": "embedding",
+        "params": {
+          "num_embeddings": 100,
+          "embedding_dim": 32
+        }
+      },
+      {
+        "id": "lstm_cell",
+        "type": "lstm",
+        "params": {
+          "input_size": 32,
+          "hidden_size": 64,
+          "batch_first": true
+        }
+      },
+      {
+        "id": "fc",
+        "type": "linear_layer",
+        "params": {
+          "in_features": 64,
+          "out_features": 2
+        }
+      },
+      {
+        "id": "loss",
+        "type": "cross_entropy_loss",
+        "params": {}
+      },
+      {
+        "id": "optimizer",
+        "type": "adam",
+        "params": {
+          "lr": 0.001
+        }
+      },
+      {
+        "id": "trainer",
+        "type": "train_model",
+        "params": {
+          "epochs": 5
+        }
+      }
+    ],
+    "edges": [
+      {
+        "source": "tokenizer",
+        "source_port": "out_1",
+        "target": "vocab",
+        "target_port": "in_1"
+      },
+      {
+        "source": "tokenizer",
+        "source_port": "out_1",
+        "target": "encoder",
+        "target_port": "in_1"
+      },
+      {
+        "source": "vocab",
+        "source_port": "out_1",
+        "target": "encoder",
+        "target_port": "vocab"
+      },
+      {
+        "source": "encoder",
+        "source_port": "out_1",
+        "target": "embed",
+        "target_port": "in_1"
+      },
+      {
+        "source": "encoder",
+        "source_port": "out_1",
+        "target": "trainer",
+        "target_port": "in_2"
+      },
+      {
+        "source": "embed",
+        "source_port": "out_1",
+        "target": "lstm_cell",
+        "target_port": "in_1"
+      },
+      {
+        "source": "lstm_cell",
+        "source_port": "out_1",
+        "target": "fc",
+        "target_port": "in_1"
+      },
+      {
+        "source": "fc",
+        "source_port": "out_1",
+        "target": "trainer",
+        "target_port": "in_1"
+      },
+      {
+        "source": "fc",
+        "source_port": "out_1",
+        "target": "optimizer",
+        "target_port": "in_1"
+      },
+      {
+        "source": "optimizer",
+        "source_port": "out_1",
+        "target": "trainer",
+        "target_port": "in_3"
+      },
+      {
+        "source": "loss",
+        "source_port": "out_1",
+        "target": "trainer",
+        "target_port": "in_4"
+      }
+    ]
+  }
+}

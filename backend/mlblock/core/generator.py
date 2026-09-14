@@ -160,14 +160,17 @@ def generate_code(nodes: list[PipelineNode], edges: list[PipelineEdge]) -> str:
     lines.append("    except Exception: pass")
     lines.append("")
 
+    from mlblock.core.adapters import resolve_alias
+
     seen = set()
     for node in nodes:
-        if node.type in seen:
+        b_type = resolve_alias(node.type)
+        if b_type in seen:
             continue
-        seen.add(node.type)
-        source = _source_for(node.type)
+        seen.add(b_type)
+        source = _source_for(b_type)
         if source:
-            lines.append(f"# === {node.type} ===")
+            lines.append(f"# === {b_type} ===")
             lines.append(source.strip())
             lines.append("")
 
@@ -184,7 +187,8 @@ def generate_code(nodes: list[PipelineNode], edges: list[PipelineEdge]) -> str:
 
     for node_id in order:
         node = next(n for n in nodes if n.id == node_id)
-        block = BLOCK_REGISTRY.get(node.type)
+        b_type = resolve_alias(node.type)
+        block = BLOCK_REGISTRY.get(b_type)
         if not block:
             continue
 
@@ -226,7 +230,7 @@ def generate_code(nodes: list[PipelineNode], edges: list[PipelineEdge]) -> str:
         if len(block.outputs) <= 1:
             output_counter += 1
             output_map[node_id] = output_counter
-            lines.append(f"        out_{output_counter} = {node.type}({args})")
+            lines.append(f"        out_{output_counter} = {b_type}({args})")
             lines.append(f"        notify_output({node.type!r}, json.dumps(_serialize_output(out_{output_counter})), {bid})")  # noqa: E501
         else:
             targets = []
@@ -234,7 +238,7 @@ def generate_code(nodes: list[PipelineNode], edges: list[PipelineEdge]) -> str:
                 output_counter += 1
                 output_map[(node_id, o['name'])] = output_counter
                 targets.append(f"out_{output_counter}")
-            lines.append(f"        {', '.join(targets)} = {node.type}({args})")
+            lines.append(f"        {', '.join(targets)} = {b_type}({args})")
             for t in targets:
                 lines.append(f"        notify_output({node.type!r}, json.dumps(_serialize_output({t})), {bid})")
         lines.append(f"        notify_status({node.type!r}, 'done', {bid})")

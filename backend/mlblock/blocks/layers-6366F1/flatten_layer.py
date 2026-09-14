@@ -3,7 +3,8 @@ from torch import nn
 
 
 def flatten_layer(in_1: "torch.nn.Module" = None) -> "torch.nn.Module":
-    """Construire une couche (module composable).
+    """Aplatissement.
+    Aplatit le tenseur en 2D composable (batch, features).
 
     Args:
         in_1: Couche précédente (optionnelle).

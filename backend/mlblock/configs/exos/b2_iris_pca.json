@@ -1,0 +1,49 @@
+{
+  "name": "Iris PCA — 4D→2D",
+  "description": "Réduction de dimensionnalité non supervisée sur Iris par Analyse en Composantes Principales (PCA) de 4 à 2 dimensions et rendu graphique PNG.",
+  "graph": {
+    "nodes": [
+      {
+        "id": "dataset",
+        "type": "load_sklearn_dataset",
+        "params": {
+          "name": "iris"
+        }
+      },
+      {
+        "id": "pca_reducer",
+        "type": "pca",
+        "params": {
+          "n_components": 2
+        }
+      },
+      {
+        "id": "plot",
+        "type": "plot_predictions",
+        "params": {
+          "target_column": "target"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "source": "dataset",
+        "source_port": "out_1",
+        "target": "pca_reducer",
+        "target_port": "in_1"
+      },
+      {
+        "source": "dataset",
+        "source_port": "out_1",
+        "target": "plot",
+        "target_port": "in_2"
+      },
+      {
+        "source": "pca_reducer",
+        "source_port": "model",
+        "target": "plot",
+        "target_port": "in_1"
+      }
+    ]
+  }
+}
