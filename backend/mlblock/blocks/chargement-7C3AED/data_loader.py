@@ -2,7 +2,7 @@ import torch
 
 
 def data_loader(in_1: "torch.utils.data.Dataset", batch_size: "int" = 32, shuffle: "bool" = True, num_workers: "int" = 0) -> "torch.utils.data.DataLoader":
-    """Chargeur de données.
+    """Data Loader.
     Enveloppe un dataset dans un DataLoader (batches).
     
     Args:

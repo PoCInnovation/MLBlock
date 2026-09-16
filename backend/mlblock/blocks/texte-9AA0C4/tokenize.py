@@ -1,5 +1,5 @@
 def tokenize(text: "str", sep: "str" = " ") -> "list[str]":
-    """Découper un texte en tokens.
+    """Tokenize Text.
     Sépare un texte en mots (minuscules, sans ponctuation).
 
     Args:

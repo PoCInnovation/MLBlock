@@ -2,7 +2,7 @@ import pandas as pd
 
 
 def polynomial_features(in_1: "pd.DataFrame", degree: "int" = 2) -> "pd.DataFrame":
-    """Générer des features polynomiales.
+    """Polynomial Features.
     Ajoute les combinaisons polynomiales des colonnes numériques (degré donné).
 
     Args:

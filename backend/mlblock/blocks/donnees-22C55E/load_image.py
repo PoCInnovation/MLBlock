@@ -4,7 +4,7 @@ import requests
 
 
 def load_image(path: "file") -> "PIL.Image.Image":  # noqa: F821 -- annotation descriptive en chaîne (métadonnées DSL, noms virtuels)
-    """Charger une image.
+    """Load Image.
     Télécharge un fichier image (URL stockée) et retourne l'image PIL.
 
     Args:

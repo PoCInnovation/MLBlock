@@ -1,5 +1,5 @@
 def isolation_forest(in_1: "pd.DataFrame", contamination: "float" = 0.1) -> "Model":  # noqa: F821 -- annotation descriptive en chaîne (métadonnées DSL, noms virtuels)
-    """Détecter les anomalies.
+    """Isolation Forest.
     Entraîne un Isolation Forest (isolation forest) sur les données.
 
     Args:

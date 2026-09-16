@@ -16,7 +16,7 @@ class _RNNOut(nn.Module):
 
 
 def rnn_layer(input_size: "int", hidden_size: "int", in_1: "torch.nn.Module" = None) -> "torch.nn.Module":
-    """Construire une couche RNN (module composable).
+    """RNN Layer.
 
     Args:
         in_1: Couche précédente (optionnelle).

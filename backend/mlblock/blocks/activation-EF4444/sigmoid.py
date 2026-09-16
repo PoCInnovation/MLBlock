@@ -3,7 +3,7 @@ from torch import nn
 
 
 def sigmoid(in_1: "torch.Tensor") -> "torch.Tensor":
-    """Sigmoïde.
+    """Sigmoid.
     Active sigmoïde : compresse entre 0 et 1.
     
     Args:

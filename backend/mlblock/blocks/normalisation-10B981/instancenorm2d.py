@@ -3,7 +3,7 @@ from torch import nn
 
 
 def instancenorm2d(in_1: "torch.Tensor", num_features: "int") -> "torch.Tensor":
-    """Normalisation d'instance 2D.
+    """Instance Normalization 2D.
     Normalise par instance (2D) — style transfer.
     
     Args:

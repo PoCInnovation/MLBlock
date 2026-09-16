@@ -2,7 +2,7 @@ from __future__ import annotations
 
 
 def maxpool2d_layer(kernel_size: "int" = 2, in_1: "torch.nn.Module" = None, stride: "int" = None) -> "torch.nn.Module":  # noqa: F821
-    """Pool maximum 2D.
+    """Max Pooling 2D.
     Réduit la résolution par pooling maximum composable (nn.Module).
 
     Args:

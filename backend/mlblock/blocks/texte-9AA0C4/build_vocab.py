@@ -1,5 +1,5 @@
 def build_vocab(in_1: "list[str]") -> "dict":
-    """Construire un vocabulaire.
+    """Build Vocabulary.
     Indexe chaque token unique (0 = inconnu, 1..n = tokens).
 
     Args:

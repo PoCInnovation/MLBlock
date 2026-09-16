@@ -1,5 +1,5 @@
 def standard_scaler(in_1: "pd.DataFrame", target_column: "str | None" = None) -> "dict[scaler: object, scaled: numpy.ndarray]":  # noqa: F821 -- annotation descriptive en chaîne (métadonnées DSL, noms virtuels)
-    """Mise à l'échelle standard.
+    """Standard Scaler.
     Standardise les features (moyenne 0, écart-type 1).
     
     Args:

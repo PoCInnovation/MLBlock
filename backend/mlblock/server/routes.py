@@ -91,8 +91,8 @@ def _cleanup_pipeline_files(pipeline_id: UUID) -> None:
 
 # ── Catalog ─────────────────────────────────────────────────────────
 
-def _fr_label(block) -> str:
-    """Label FR : première ligne de la docstring, sinon name.title()."""
+def _en_label(block) -> str:
+    """Label EN : première ligne de la docstring, sinon name.title()."""
     first = next((line.strip() for line in (block.description or "").splitlines() if line.strip()), "")
     first = first.rstrip(".")
     if len(first) >= 3 and not first.startswith(("Parameter", "Block", "Args")):
@@ -105,7 +105,7 @@ def _fr_summary(block) -> str:
     lines = [line.strip() for line in (block.description or "").splitlines() if line.strip()]
     if len(lines) >= 2 and not lines[1].startswith(("Args", "Param")):
         return lines[1].rstrip(".")
-    return _fr_label(block)
+    return _en_label(block)
 
 
 @catalog_router.get("", response_model=None)
@@ -148,7 +148,7 @@ def get_catalog(
 
         categories[cat]["blocks"].append({
             "type": block.name,
-            "label": _fr_label(block),
+            "label": _en_label(block),
             "description": _fr_summary(block),
             "params": {k: v.model_dump() for k, v in block.params.items()},
             "inputs": block.inputs,

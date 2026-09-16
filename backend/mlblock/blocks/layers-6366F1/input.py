@@ -2,7 +2,7 @@ import torch
 
 
 def input(shape: "list[int]") -> "torch.Tensor":
-    """Entrée du modèle.
+    """Model Input.
     Déclare la forme d'entrée du réseau (bloc source virtuel).
 
     Args:

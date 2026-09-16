@@ -2,7 +2,7 @@ import torch
 
 
 def model_checkpoint(in_1: "torch.nn.Module", filepath: "str" = "model.pth") -> "None":
-    """Sauvegarde du modèle.
+    """Model Checkpoint.
     Sauvegarde les poids du modèle sur disque.
     
     Args:

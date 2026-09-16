@@ -3,7 +3,7 @@ from torch import nn
 
 
 def embedding(in_1: "torch.Tensor", num_embeddings: "int", embedding_dim: "int", padding_idx: "int" = None) -> "torch.Tensor":
-    """Couche d'embedding.
+    """Embedding Layer.
     Mappe des indices entiers vers des vecteurs denses appris.
     
     Args:

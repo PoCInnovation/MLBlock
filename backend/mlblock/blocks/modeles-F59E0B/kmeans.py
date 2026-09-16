@@ -1,5 +1,5 @@
 def kmeans(in_1: "pd.DataFrame", n_clusters: "int" = 3) -> "Model":  # noqa: F821 -- annotation descriptive en chaîne (métadonnées DSL, noms virtuels)
-    """Regrouper en clusters.
+    """K-Means Clustering.
     Applique le clustering K-means sur les données.
 
     Args:

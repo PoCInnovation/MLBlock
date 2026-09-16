@@ -1,5 +1,5 @@
 def random_forest(train_data: "pd.DataFrame", target_column: "str", n_estimators: "int" = 100, max_depth: "int" = None) -> "Model":  # noqa: F821 -- annotation descriptive en chaîne (métadonnées DSL, noms virtuels)
-    """Forêt aléatoire.
+    """Random Forest.
     Forêt aléatoire (classification ou régression).
 
     Args:

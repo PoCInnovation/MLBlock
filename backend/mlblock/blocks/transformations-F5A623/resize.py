@@ -1,5 +1,5 @@
 def resize(in_1: "torch.Tensor", size: "int") -> "torch.Tensor":  # noqa: F821 -- annotation descriptive en chaîne (métadonnées DSL, noms virtuels)
-    """Redimensionnement.
+    """Resize.
     Redimensionne le tenseur image.
     
     Args:

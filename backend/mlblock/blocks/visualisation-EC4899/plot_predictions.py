@@ -2,7 +2,7 @@ import io
 
 
 def plot_predictions(in_1: "object", in_2: "pd.DataFrame", target_column: "str") -> "bytes":  # noqa: F821 -- annotation descriptive en chaîne (métadonnées DSL, noms virtuels)
-    """Tracer les prédictions.
+    """Plot Predictions.
     Trace les prédictions vs les valeurs réelles et retourne le PNG (octets).
 
     Args:

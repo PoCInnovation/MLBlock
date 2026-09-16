@@ -2,7 +2,7 @@ import pandas as pd
 
 
 def load_sklearn_dataset(name: "str", target: "str" = "target") -> "pd.DataFrame":
-    """Charger un dataset sklearn.
+    """Load sklearn Dataset.
     Charge un dataset classique (iris, digits, wine, breast_cancer) avec sa
     colonne cible.
 

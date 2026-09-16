@@ -249,20 +249,20 @@ def test_param_suggestions():
     assert BLOCK_REGISTRY["input"].params["shape"].suggestions == ["[1, 28, 28]", "[3, 32, 32]", "[1, 3, 224, 224]"]
 
 
-def test_fr_label_from_docstring():
-    from mlblock.server.routes import _fr_label
-    assert _fr_label(BLOCK_REGISTRY["conv2d_layer"]) == "Convolution 2D"
-    assert _fr_label(BLOCK_REGISTRY["train_test_split"]) == "Séparer train/test"
-    assert _fr_label(BLOCK_REGISTRY["cross_entropy_loss"]) == "Perte d'entropie croisée"
+def test_en_label_from_docstring():
+    from mlblock.server.routes import _en_label
+    assert _en_label(BLOCK_REGISTRY["conv2d_layer"]) == "Convolution 2D"
+    assert _en_label(BLOCK_REGISTRY["train_test_split"]) == "Train-Test Split"
+    assert _en_label(BLOCK_REGISTRY["cross_entropy_loss"]) == "Cross-Entropy Loss"
 
 
-def test_fr_label_fallback():
-    from mlblock.server.routes import _fr_label
+def test_en_label_fallback():
+    from mlblock.server.routes import _en_label
     # docstring vide/générique → fallback name.title()
     class Fake:
         name = "load_csv"
         description = ""
-    assert _fr_label(Fake()) == "Load Csv"
+    assert _en_label(Fake()) == "Load Csv"
 
 
 def test_fr_summary():

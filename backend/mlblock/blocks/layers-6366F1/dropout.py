@@ -3,7 +3,7 @@ from torch import nn
 
 
 def dropout(in_1: "torch.Tensor", p: "float" = 0.5) -> "torch.Tensor":
-    """Abandon (dropout).
+    """Dropout.
     Désactive aléatoirement des neurones pendant l'entraînement (régularisation).
     
     Args:

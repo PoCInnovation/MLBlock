@@ -3,7 +3,7 @@ from torch import nn
 
 
 def adaptive_avgpool2d(in_1: "torch.Tensor", output_size: "int" = 1) -> "torch.Tensor":
-    """Pool moyen adaptatif.
+    """Adaptive Average Pooling 2D.
     Pooling moyen avec taille de sortie fixe.
     
     Args:

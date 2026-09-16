@@ -4,7 +4,7 @@ import torch
 
 
 def reduce_lr_on_plateau(in_1: "torch.optim.Optimizer", mode: Literal["min", "max"] = "min", factor: "float" = 0.1, patience: "int" = 10) -> "torch.optim.lr_scheduler.ReduceLROnPlateau":
-    """Réduction du taux sur plateau.
+    """Reduce LR on Plateau.
     Réduit le taux d'apprentissage quand la perte stagne.
     
     Args:

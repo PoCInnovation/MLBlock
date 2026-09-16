@@ -2,7 +2,7 @@ import torch
 
 
 def sgd(in_1: "torch.nn.Module", lr: "float" = 0.01, momentum: "float" = 0.0, weight_decay: "float" = 0.0, nesterov: "bool" = False) -> "torch.optim.SGD":
-    """Descente de gradient stochastique.
+    """SGD Optimizer.
     Optimiseur SGD (descente de gradient stochastique).
     
     Args:

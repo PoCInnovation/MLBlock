@@ -3,7 +3,7 @@ from torch import nn
 
 
 def linear_layer(in_features: "int", out_features: "int", in_1: "torch.nn.Module" = None, bias: "bool" = True) -> "torch.nn.Module":
-    """Couche linéaire (dense).
+    """Linear Layer.
     Couche entièrement connectée composable : transforme l'entrée par une matrice apprise.
 
     Args:

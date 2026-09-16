@@ -3,7 +3,7 @@ from torch import nn
 
 
 def avgpool2d(in_1: "torch.Tensor", kernel_size: "int" = 2) -> "torch.Tensor":
-    """Pool moyen.
+    """Average Pooling 2D.
     Réduit la résolution par pooling moyen.
     
     Args:

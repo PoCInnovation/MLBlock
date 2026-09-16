@@ -1,5 +1,5 @@
 def tsne(in_1: "pd.DataFrame", n_components: "int" = 2) -> "numpy.ndarray":  # noqa: F821 -- annotation descriptive en chaîne (métadonnées DSL, noms virtuels)
-    """Réduire en 2D (t-SNE).
+    """t-SNE Projection.
     Projette les données en 2 ou 3 dimensions pour visualisation.
 
     Args:

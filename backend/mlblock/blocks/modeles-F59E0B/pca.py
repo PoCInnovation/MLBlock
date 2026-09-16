@@ -1,5 +1,5 @@
 def pca(in_1: "pd.DataFrame", n_components: "int" = 2, target_column: "str | None" = None) -> "dict[model: Model, transformed: numpy.ndarray]":  # noqa: F821 -- annotation descriptive en chaîne (métadonnées DSL, noms virtuels)
-    """Réduction de dimensionnalité PCA.
+    """PCA Dimensionality Reduction.
     Réduction de dimensionnalité par composantes principales.
     
     Args:
