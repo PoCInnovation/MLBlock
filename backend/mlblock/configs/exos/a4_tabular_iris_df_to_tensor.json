@@ -26,7 +26,7 @@
         "id": "fc1",
         "type": "linear_layer",
         "params": {
-          "in_features": 4,
+          "in_features": 16,
           "out_features": 16
         }
       },
@@ -61,6 +61,22 @@
         "params": {
           "epochs": 10
         }
+      },
+      {
+        "id": "entry",
+        "type": "input_layer",
+        "params": {
+          "in_features": 4,
+          "out_features": 16
+        }
+      },
+      {
+        "id": "loader",
+        "type": "df_to_loader",
+        "params": {
+          "target_column": "target",
+          "batch_size": 32
+        }
       }
     ],
     "edges": [
@@ -79,14 +95,14 @@
       {
         "source": "converter",
         "source_port": "out_1",
-        "target": "fc1",
+        "target": "entry",
         "target_port": "in_1"
       },
       {
-        "source": "converter",
+        "source": "entry",
         "source_port": "out_1",
-        "target": "trainer",
-        "target_port": "in_2"
+        "target": "fc1",
+        "target_port": "in_1"
       },
       {
         "source": "fc1",
@@ -123,6 +139,18 @@
         "source_port": "out_1",
         "target": "trainer",
         "target_port": "in_4"
+      },
+      {
+        "source": "split",
+        "source_port": "out_1",
+        "target": "loader",
+        "target_port": "in_1"
+      },
+      {
+        "source": "loader",
+        "source_port": "out_1",
+        "target": "trainer",
+        "target_port": "in_2"
       }
     ]
   }

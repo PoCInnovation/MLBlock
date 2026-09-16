@@ -19,6 +19,8 @@ import {
 
 const QUICK_MAP: Record<string, string> = {
   'df->tensor': 'df_to_tensor',
+  'df->image': 'df_to_tensor',
+  'df->ndarray': 'df_to_tensor',
   'ndarray->tensor': 'to_tensor',
   'image->tensor': 'to_tensor',
 }
@@ -76,12 +78,14 @@ export class TypeSystem {
   }
 
   findConverter(srcDtype: string, tgtDtype: string, blocks?: BlockDefMap): string | null {
-    const srcFam = this.familyOf(srcDtype)
-    const tgtFam = this.familyOf(tgtDtype)
+    const srcFams = new Set(splitUnion(srcDtype).map(d => this.familyOf(d)))
+    const tgtFams = new Set(splitUnion(tgtDtype).map(d => this.familyOf(d)))
 
-    const mapped = QUICK_MAP[`${srcFam}->${tgtFam}`]
-    if (mapped) {
-      return mapped
+    for (const sf of srcFams) {
+      for (const tf of tgtFams) {
+        const mapped = QUICK_MAP[`${sf}->${tf}`]
+        if (mapped) return mapped
+      }
     }
 
     if (!blocks) {
@@ -99,7 +103,7 @@ export class TypeSystem {
       if (def.cat !== 'transforms' && def.cat !== 'transformations') continue
       const inFamilies = new Set(def.inputs.flatMap(p => splitUnion(p.dtype)).map(d => this.familyOf(d)))
       const outFamilies = new Set(def.outputs.flatMap(p => splitUnion(p.dtype)).map(d => this.familyOf(d)))
-      if (inFamilies.has(srcFam) && outFamilies.has(tgtFam)) {
+      if ([...srcFams].some(f => inFamilies.has(f)) && [...tgtFams].some(f => outFamilies.has(f))) {
         return name
       }
     }

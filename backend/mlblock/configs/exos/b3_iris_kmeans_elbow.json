@@ -37,7 +37,7 @@
       },
       {
         "source": "scaler",
-        "source_port": "scaled",
+        "source_port": "out_1",
         "target": "clustering",
         "target_port": "in_1"
       },

@@ -9,28 +9,28 @@
 ## 1. Synthèse de Validation Baseline (12 Exercices)
 
 - **Total Exercices :** 12
-- **Exercices Validés (Passing) :** 6/12 (`A1, A3, A7, B1, B2, C1`)
-- **Exercices avec Gaps Documentés (Failing) :** 6/12 (`A2, A4, A5, A6, B3, C2`)
+- **Exercices Validés (Passing) :** 12/12 (`A1, A2, A3, A4, A5, A6, A7, B1, B2, B3, C1, C2`)
+- **Exercices avec Gaps Documentés (Failing) :** 0/12 (``)
 - **Génération de code :** 12/12 génèrent un script exécutable sans exception.
 
 | ID | Nom | Nœuds | Arêtes | Validation | Codegen | Symptômes / Erreurs |
 |---|---|:---:|:---:|:---:|:---:|---|
 | **A1** | CIFAR-10 CNN — 60min Blitz | 11 | 11 | ✅ PASS | ✅ OK | Pipeline intègre et vérifié sans erreur de type |
-| **A2** | Fashion-MNIST Quickstart | 9 | 9 | ❌ GAP P0/P1 | ✅ OK | • `Stage mismatch: cannot connect Stage 1 (norm) to Stage 0 (loader).`<br>• `Type mismatch: dataset.out_1 (torch.utils.data.DataLoader) -> norm.in_1 (torch.Tensor)`<br>• `Type mismatch: norm.out_1 (torch.Tensor) -> loader.in_1 (torch.utils.data.Dataset)` |
-| **A3** | MNIST from scratch — What is torch.nn really? | 5 | 5 | ✅ PASS | ✅ OK | Pipeline intègre et vérifié sans erreur de type |
-| **A4** | Tabular Iris — df→tensor | 9 | 10 | ❌ GAP P0/P1 | ✅ OK | • `Type mismatch: converter.out_1 (torch.Tensor) -> fc1.in_1 (torch.nn.Module)`<br>• `Type mismatch: converter.out_1 (torch.Tensor) -> trainer.in_2 (torch.utils.data.DataLoader)` |
-| **A5** | CIFAR-10 + augmentation | 14 | 14 | ❌ GAP P0/P1 | ✅ OK | • `Stage mismatch: cannot connect Stage 1 (norm) to Stage 0 (loader).`<br>• `Type mismatch: dataset.out_1 (torch.utils.data.DataLoader) -> crop.in_1 (torch.Tensor)`<br>• `Type mismatch: norm.out_1 (torch.Tensor) -> loader.in_1 (torch.utils.data.Dataset)` |
-| **A6** | NLP Text Classification — LSTM | 9 | 11 | ❌ GAP P0/P1 | ✅ OK | • `Type mismatch: encoder.out_1 (numpy.ndarray) -> trainer.in_2 (torch.utils.data.DataLoader)`<br>• `Type mismatch: lstm_cell.out_1 (torch.Tensor) -> fc.in_1 (torch.nn.Module)` |
+| **A2** | Fashion-MNIST Quickstart | 9 | 9 | ✅ PASS | ✅ OK | Pipeline intègre et vérifié sans erreur de type |
+| **A3** | MNIST from scratch — What is torch.nn really? | 6 | 6 | ✅ PASS | ✅ OK | Pipeline intègre et vérifié sans erreur de type |
+| **A4** | Tabular Iris — df→tensor | 11 | 12 | ✅ PASS | ✅ OK | Pipeline intègre et vérifié sans erreur de type |
+| **A5** | CIFAR-10 + augmentation | 14 | 14 | ✅ PASS | ✅ OK | Pipeline intègre et vérifié sans erreur de type |
+| **A6** | NLP Text Classification — LSTM | 10 | 11 | ✅ PASS | ✅ OK | Pipeline intègre et vérifié sans erreur de type |
 | **A7** | Time-series Sequence | 7 | 7 | ✅ PASS | ✅ OK | Pipeline intègre et vérifié sans erreur de type |
 | **B1** | Iris Classification — LogisticRegression | 4 | 4 | ✅ PASS | ✅ OK | Pipeline intègre et vérifié sans erreur de type |
 | **B2** | Iris PCA — 4D→2D | 3 | 3 | ✅ PASS | ✅ OK | Pipeline intègre et vérifié sans erreur de type |
-| **B3** | Iris KMeans — Elbow | 4 | 4 | ❌ GAP P0/P1 | ✅ OK | • `Type mismatch: scaler.scaled (numpy.ndarray) -> clustering.in_1 (pd.DataFrame)` |
+| **B3** | Iris KMeans — Elbow | 4 | 4 | ✅ PASS | ✅ OK | Pipeline intègre et vérifié sans erreur de type |
 | **C1** | CartPole-v1 Tabular Q-learning | 3 | 3 | ✅ PASS | ✅ OK | Pipeline intègre et vérifié sans erreur de type |
-| **C2** | CartPole DQN (PyTorch) | 8 | 9 | ❌ GAP P0/P1 | ✅ OK | • `Stage mismatch: cannot connect Stage 9 (env) to Stage 2 (fc1).`<br>• `Type mismatch: env.out_1 (Env) -> fc1.in_1 (torch.nn.Module)`<br>• `Type mismatch: trainer.model (torch.nn.Module) -> eval.policy (Policy)` |
+| **C2** | CartPole DQN (PyTorch) | 11 | 12 | ✅ PASS | ✅ OK | Pipeline intègre et vérifié sans erreur de type |
 
 ---
 
-## 2. Matrice Complète des 83 Blocs du Catalogue
+## 2. Matrice Complète des 91 Blocs du Catalogue
 
 Légende des statuts cibles (§02 Réduction) :
 - `keep` : Conservé dans la palette canonique v1 (~45 blocs cœur).
@@ -39,8 +39,8 @@ Légende des statuts cibles (§02 Réduction) :
 - `deprecate` : Déprécié (conservé temporairement avec wrapper et avertissement).
 - `hide` : Conservé mais replié par défaut dans la sous-palette avancée.
 
-**Statistiques globales :** 36/83 blocs (43.4%) sont directement utilisés dans les 12 exercices.
-- `keep` : 72
+**Statistiques globales :** 41/91 blocs (45.1%) sont directement utilisés dans les 12 exercices.
+- `keep` : 80
 - `hide` : 9
 - `delete` : 0
 - `merge` : 0
@@ -63,21 +63,26 @@ Légende des statuts cibles (§02 Réduction) :
 | `cosine_lr` | entrainement | — | `keep` |
 | `create_env` | renforcement | C1, C2 | `keep` |
 | `cross_entropy_loss` | entrainement | A1, A2, A3, A4, A5, A6 | `keep` |
-| `data_loader` | chargement | A1, A2, A5 | `keep` |
+| `data_loader` | chargement | A1, A2, A3, A5 | `keep` |
 | `decision_tree` | modeles | — | `keep` |
+| `df_to_loader` | chargement | A4 | `keep` |
 | `df_to_tensor` | transformations | A4 | `keep` |
 | `dropout` | layers | — | `deprecate` |
 | `early_stopping` | entrainement | — | `keep` |
 | `elu` | activation | — | `hide` |
-| `embedding` | layers | A6 | `deprecate` |
+| `embedding` | layers | — | `deprecate` |
+| `embedding_layer` | layers | A6 | `keep` |
 | `encode_text` | texte | A6 | `keep` |
+| `env_to_tensor` | renforcement | C2 | `keep` |
 | `evaluate` | entrainement | B1 | `keep` |
 | `evaluate_agent` | renforcement | C1, C2 | `keep` |
 | `flatten_layer` | layers | A1, A5 | `keep` |
 | `gelu` | activation | — | `hide` |
 | `gru` | sequences | — | `keep` |
 | `identity` | activation | — | `hide` |
+| `indices_to_loader` | chargement | A6 | `keep` |
 | `input` | layers | — | `keep` |
+| `input_layer` | layers | A4, C2 | `keep` |
 | `instancenorm2d` | normalisation | — | `keep` |
 | `isolation_forest` | modeles | — | `keep` |
 | `kmeans` | modeles | B3 | `keep` |
@@ -92,9 +97,11 @@ Légende des statuts cibles (§02 Réduction) :
 | `load_text` | donnees | — | `keep` |
 | `load_torch_dataset` | donnees | A1, A2, A3, A5 | `keep` |
 | `logistic_regression` | modeles | B1 | `keep` |
-| `lstm` | sequences | A6 | `keep` |
+| `lstm` | sequences | — | `keep` |
+| `lstm_layer` | layers | A6 | `keep` |
 | `maxpool2d_layer` | layers | A1, A5 | `keep` |
 | `model_checkpoint` | entrainement | — | `keep` |
+| `module_to_policy` | renforcement | C2 | `keep` |
 | `mse_loss` | entrainement | A7, C2 | `keep` |
 | `multihead_attention` | sequences | — | `keep` |
 | `normalize` | transformations | A2, A5 | `keep` |
@@ -126,6 +133,7 @@ Légende des statuts cibles (§02 Réduction) :
 | `tensor_dataset` | chargement | — | `keep` |
 | `to_tensor` | transformations | — | `keep` |
 | `tokenize` | texte | A6 | `keep` |
+| `torch_dataset` | donnees | — | `keep` |
 | `train_epoch` | entrainement | — | `keep` |
 | `train_model` | entrainement | A1, A2, A3, A4, A5, A6, A7, C2 | `keep` |
 | `train_test_split` | donnees | A4, B1 | `keep` |

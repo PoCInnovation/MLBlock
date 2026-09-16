@@ -14,7 +14,7 @@
         "id": "fc1",
         "type": "linear_layer",
         "params": {
-          "in_features": 4,
+          "in_features": 128,
           "out_features": 128
         }
       },
@@ -56,11 +56,43 @@
         "params": {
           "episodes": 10
         }
+      },
+      {
+        "id": "bridge_in",
+        "type": "env_to_tensor",
+        "params": {
+          "episodes": 100
+        }
+      },
+      {
+        "id": "bridge_out",
+        "type": "module_to_policy",
+        "params": {}
+      },
+      {
+        "id": "entry",
+        "type": "input_layer",
+        "params": {
+          "in_features": 4,
+          "out_features": 128
+        }
       }
     ],
     "edges": [
       {
         "source": "env",
+        "source_port": "out_1",
+        "target": "bridge_in",
+        "target_port": "env"
+      },
+      {
+        "source": "bridge_in",
+        "source_port": "out_1",
+        "target": "entry",
+        "target_port": "in_1"
+      },
+      {
+        "source": "entry",
         "source_port": "out_1",
         "target": "fc1",
         "target_port": "in_1"
@@ -104,6 +136,12 @@
       {
         "source": "trainer",
         "source_port": "model",
+        "target": "bridge_out",
+        "target_port": "in_1"
+      },
+      {
+        "source": "bridge_out",
+        "source_port": "out_1",
         "target": "eval",
         "target_port": "policy"
       },

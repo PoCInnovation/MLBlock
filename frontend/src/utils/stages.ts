@@ -52,7 +52,7 @@ export function stageKey(stage?: number): string {
 
 export const STAGE_OF_CATEGORY: Record<string, Stage> = {
   donnees: Stage.INGEST,
-  chargement: Stage.INGEST,
+  chargement: Stage.TRAIN,
   transformations: Stage.PREPARE,
   texte: Stage.PREPARE,
   layers: Stage.REPRESENT,
@@ -90,6 +90,8 @@ export const STAGE_OF_BLOCK_OVERRIDES: Record<string, Stage> = {
   confusion_matrix: Stage.EVAL,
   silhouette: Stage.EVAL,
   plot_predictions: Stage.EVAL,
+  env_to_tensor: Stage.PREPARE,
+  module_to_policy: Stage.EVAL,
 }
 
 export function stageOfCategory(categoryName: string): Stage {

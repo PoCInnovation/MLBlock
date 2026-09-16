@@ -187,7 +187,7 @@ describe('typeSystem facade (parity with backend mlblock/core/type_system.py)', 
     expect(typeSystem.findConverter('torch.Tensor', 'pd.DataFrame')).toBeNull()
 
     // Using catalog blocks
-    expect(typeSystem.findConverter('pd.DataFrame', 'numpy.ndarray', blocks)).toBe('to_numpy')
+    expect(typeSystem.findConverter('pd.DataFrame', 'numpy.ndarray', blocks)).toBe('df_to_tensor')
     expect(typeSystem.findConverter('numpy.ndarray', 'torch.Tensor', blocks)).toBe('to_tensor')
   })
 

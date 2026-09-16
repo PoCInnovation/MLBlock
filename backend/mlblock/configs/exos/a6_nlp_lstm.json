@@ -6,10 +6,7 @@
       {
         "id": "tokenizer",
         "type": "tokenize",
-        "params": {
-          "text": "le chat dort le chat mange le chien court",
-          "sep": " "
-        }
+        "params": {}
       },
       {
         "id": "vocab",
@@ -20,31 +17,37 @@
         "id": "encoder",
         "type": "encode_text",
         "params": {
-          "max_len": 16
+          "max_len": 32
+        }
+      },
+      {
+        "id": "batcher",
+        "type": "indices_to_loader",
+        "params": {
+          "batch_size": 32
         }
       },
       {
         "id": "embed",
-        "type": "embedding",
+        "type": "embedding_layer",
         "params": {
-          "num_embeddings": 100,
-          "embedding_dim": 32
+          "num_embeddings": 1000,
+          "embedding_dim": 64
         }
       },
       {
         "id": "lstm_cell",
-        "type": "lstm",
+        "type": "lstm_layer",
         "params": {
-          "input_size": 32,
-          "hidden_size": 64,
-          "batch_first": true
+          "input_size": 64,
+          "hidden_size": 128
         }
       },
       {
         "id": "fc",
         "type": "linear_layer",
         "params": {
-          "in_features": 64,
+          "in_features": 128,
           "out_features": 2
         }
       },
@@ -90,11 +93,11 @@
       {
         "source": "encoder",
         "source_port": "out_1",
-        "target": "embed",
+        "target": "batcher",
         "target_port": "in_1"
       },
       {
-        "source": "encoder",
+        "source": "batcher",
         "source_port": "out_1",
         "target": "trainer",
         "target_port": "in_2"

@@ -112,12 +112,12 @@ def test_validate_type_mismatch_enhanced_suggestion():
     r = validate(
         [
             {"id": "csv", "type": "load_csv", "params": {}},
-            {"id": "norm", "type": "normalize", "params": {}},
+            {"id": "tens", "type": "to_tensor", "params": {}},
         ],
-        [{"source": "csv", "source_port": "out_1", "target": "norm", "target_port": "in_1"}],
+        [{"source": "csv", "source_port": "out_1", "target": "tens", "target_port": "in_1"}],
         registry={
             "load_csv": catalog.get("load_csv"),
-            "normalize": catalog.get("normalize"),
+            "to_tensor": catalog.get("to_tensor"),
         },
     )
     assert r.valid is False

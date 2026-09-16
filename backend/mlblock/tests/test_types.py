@@ -299,7 +299,7 @@ def test_dict_blocks_expose_named_outputs():
         ("model", "Model"), ("transformed", "numpy.ndarray"),
     ]
     assert [(p["name"], p["dtype"]) for p in BLOCK_REGISTRY["standard_scaler"].outputs] == [
-        ("scaler", "object"), ("scaled", "numpy.ndarray"),
+        ("out_1", "pd.DataFrame"),
     ]
     assert [(p["name"], p["dtype"]) for p in BLOCK_REGISTRY["train_model"].outputs] == [
         ("model", "torch.nn.Module"), ("history", "list"),

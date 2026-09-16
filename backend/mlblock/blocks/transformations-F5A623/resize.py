@@ -1,10 +1,12 @@
-def resize(in_1: "torch.Tensor", size: "int") -> "torch.Tensor":  # noqa: F821 -- annotation descriptive en chaîne (métadonnées DSL, noms virtuels)
+def resize(in_1: "torch.utils.data.Dataset", size: "int") -> "torch.utils.data.Dataset":  # noqa: F821 -- annotation descriptive en chaîne (métadonnées DSL, noms virtuels)
     """Resize.
-    Redimensionne le tenseur image.
-    
+    Redimensionne les images du dataset (transform en tête).
+
     Args:
-        in_1: Input image.
+        in_1: Dataset image.
         size: Output size.
     """
     from torchvision import transforms
-    return transforms.Resize(size)(in_1)
+    aug = transforms.Resize(size)
+    in_1.transform = transforms.Compose([in_1.transform, aug]) if getattr(in_1, "transform", None) else aug
+    return in_1

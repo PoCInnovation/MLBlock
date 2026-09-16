@@ -57,7 +57,7 @@ STAGE_METADATA: dict[Stage, dict[str, Any]] = {
 STAGE_OF_CATEGORY: dict[str, Stage] = {
     # S0 Ingest
     "donnees": Stage.INGEST,
-    "chargement": Stage.INGEST,
+    "chargement": Stage.TRAIN,
     # S1 Prepare
     "transformations": Stage.PREPARE,
     "texte": Stage.PREPARE,
@@ -101,6 +101,8 @@ STAGE_OF_BLOCK_OVERRIDES: dict[str, Stage] = {
     "confusion_matrix": Stage.EVAL,
     "silhouette": Stage.EVAL,
     "plot_predictions": Stage.EVAL,
+    "env_to_tensor": Stage.PREPARE,
+    "module_to_policy": Stage.EVAL,
 }
 
 # S2A sub-state annotations / notes:

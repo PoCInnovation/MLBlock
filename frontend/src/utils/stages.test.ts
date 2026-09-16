@@ -113,7 +113,7 @@ describe('stageOfCategory', () => {
   it('maps category names and category slugs to correct stages', () => {
     expect(stageOfCategory('donnees')).toBe(Stage.INGEST)
     expect(stageOfCategory('donnees-22C55E')).toBe(Stage.INGEST)
-    expect(stageOfCategory('chargement-7C3AED')).toBe(Stage.INGEST)
+    expect(stageOfCategory('chargement-7C3AED')).toBe(Stage.TRAIN)
     expect(stageOfCategory('transformations')).toBe(Stage.PREPARE)
     expect(stageOfCategory('transformations-F5A623')).toBe(Stage.PREPARE)
     expect(stageOfCategory('texte')).toBe(Stage.PREPARE)

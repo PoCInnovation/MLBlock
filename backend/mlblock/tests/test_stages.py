@@ -69,7 +69,7 @@ def test_stage_all_stages():
 def test_stage_of_category():
     assert stage_of_category("donnees") == Stage.INGEST
     assert stage_of_category("donnees-22C55E") == Stage.INGEST
-    assert stage_of_category("chargement-7C3AED") == Stage.INGEST
+    assert stage_of_category("chargement-7C3AED") == Stage.TRAIN
     assert stage_of_category("transformations") == Stage.PREPARE
     assert stage_of_category("transformations-F5A623") == Stage.PREPARE
     assert stage_of_category("texte") == Stage.PREPARE

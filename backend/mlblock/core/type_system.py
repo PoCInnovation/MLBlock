@@ -86,17 +86,21 @@ class TypeSystem:
         registry: dict[str, Any] | None = None,
     ) -> str | None:
         """Find a converter block from transformations that accepts src_dtype and outputs tgt_dtype."""
-        src_fam = self.family_of(src_dtype)
-        tgt_fam = self.family_of(tgt_dtype)
+        src_fams = {self.family_of(f) for f in _split_union(src_dtype)}
+        tgt_fams = {self.family_of(f) for f in _split_union(tgt_dtype)}
 
         # Standard conversion mappings (available even without catalog loaded)
         quick_map = {
             ("df", "tensor"): "df_to_tensor",
+            ("df", "image"): "df_to_tensor",
+            ("df", "ndarray"): "df_to_tensor",
             ("ndarray", "tensor"): "to_tensor",
             ("image", "tensor"): "to_tensor",
         }
-        if (src_fam, tgt_fam) in quick_map:
-            return quick_map[(src_fam, tgt_fam)]
+        for sf in src_fams:
+            for tf in tgt_fams:
+                if (sf, tf) in quick_map:
+                    return quick_map[(sf, tf)]
 
         if registry is None:
             try:
@@ -122,7 +126,7 @@ class TypeSystem:
                 for p in outputs
                 for f in _split_union(p["dtype"] if isinstance(p, dict) else getattr(p, "dtype", ""))
             }
-            if src_fam in in_families and tgt_fam in out_families:
+            if src_fams & in_families and tgt_fams & out_families:
                 return name
         return None
 

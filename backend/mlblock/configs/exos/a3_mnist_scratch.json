@@ -38,11 +38,24 @@
         "params": {
           "epochs": 1
         }
+      },
+      {
+        "id": "loader",
+        "type": "data_loader",
+        "params": {
+          "batch_size": 32
+        }
       }
     ],
     "edges": [
       {
         "source": "dataset",
+        "source_port": "out_1",
+        "target": "loader",
+        "target_port": "in_1"
+      },
+      {
+        "source": "loader",
         "source_port": "out_1",
         "target": "trainer",
         "target_port": "in_2"

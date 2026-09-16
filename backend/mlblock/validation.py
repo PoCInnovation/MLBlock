@@ -141,6 +141,13 @@ def validate(
     PERMITTED_FEEDBACK_LOOPS: set[tuple[Stage, Stage]] = {
         (Stage.TRAIN, Stage.PREPARE),  # e.g. training feedback loop into data preparation
     }
+    # Explicit SX bridges: the only legal crossings of the WORLD isolation wall.
+    # Directional pairs (bridge, neighbor): env_to_tensor only out of WORLD,
+    # module_to_policy only into WORLD.
+    WORLD_BRIDGES: set[tuple[str, str]] = {
+        ("create_env", "env_to_tensor"),
+        ("module_to_policy", "evaluate_agent"),
+    }
 
     for e in edge_dicts:
         if not all(k in e for k in ("source", "target")):
@@ -156,10 +163,13 @@ def validate(
         s_stage = type_system.stage_of(s_type)
         t_stage = type_system.stage_of(t_type)
         if (s_stage == Stage.WORLD) != (t_stage == Stage.WORLD):
-            errors.append(
-                f"Stage mismatch: Stage.WORLD is isolated from tensor stages "
-                f"(cannot connect '{e['source']}' to '{e['target']}')."
-            )
+            if (s_type, t_type) in WORLD_BRIDGES:
+                pass  # explicit bridge edge — legal crossing
+            else:
+                errors.append(
+                    f"Stage mismatch: Stage.WORLD is isolated from tensor stages "
+                    f"(cannot connect '{e['source']}' to '{e['target']}')."
+                )
         elif int(t_stage) < int(s_stage) and (s_stage, t_stage) not in PERMITTED_FEEDBACK_LOOPS:
             errors.append(
                 f"Stage mismatch: cannot connect Stage {int(s_stage)} ({e['source']}) "

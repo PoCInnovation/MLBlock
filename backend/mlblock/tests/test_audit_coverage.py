@@ -15,19 +15,19 @@ def test_audit_exercises_baseline():
     exo_results, block_to_exos, all_blocks = audit_exercises()
 
     assert len(exo_results) == 12
-    assert len(all_blocks) == 83
+    assert len(all_blocks) == 91
 
     passing = {e["id"] for e in exo_results if e["valid"]}
     failing = {e["id"] for e in exo_results if not e["valid"]}
 
-    assert passing == {"A1", "A3", "A7", "B1", "B2", "C1"}
-    assert failing == {"A2", "A4", "A5", "A6", "B3", "C2"}
+    assert passing == {"A1", "A2", "A3", "A4", "A5", "A6", "A7", "B1", "B2", "B3", "C1", "C2"}
+    assert failing == set()
 
     # All 12 generate code without exception
     assert all(e["codegen_ok"] for e in exo_results)
 
-    # 36 blocks used directly in the 12 reference exercises
-    assert len(block_to_exos) == 36
+    # 41 blocks used directly in the 12 reference exercises
+    assert len(block_to_exos) == 41
 
 
 def test_get_block_status():
@@ -50,9 +50,8 @@ def test_build_coverage_markdown():
     assert "## 3. Analyse Détaillée des Gaps P0 (Bloquants v1)" in md
     assert "## 4. Analyse des Gaps P1 (Secondaires / Post-v1)" in md
 
-    # Verify passing and failing lists
-    assert "A1, A3, A7, B1, B2, C1" in md
-    assert "A2, A4, A5, A6, B3, C2" in md
+    # Verify passing and failing lists (12/12 green after gap fixes)
+    assert "A1, A2, A3, A4, A5, A6, A7, B1, B2, B3, C1, C2" in md
 
     # Verify P0 gap names
     assert "Gap P0.1" in md
