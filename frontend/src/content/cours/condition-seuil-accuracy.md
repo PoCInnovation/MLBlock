@@ -34,12 +34,12 @@ expected:
     - from: separer
       to: evaluer
   hints:
-    load_csv: "Glisse le bloc Charger un CSV depuis Données."
-    standard_scaler: "Ajoute Mise à l'échelle standard avant l'entraînement."
-    train_test_split: "Ajoute Séparer train/test et note son ratio."
-    decision_tree: "Choisis Arbre de décision comme modèle à évaluer."
-    train_model: "Ajoute Entraîner le modèle pour lancer l'entraînement."
-    evaluate: "Ajoute Évaluer le modèle : c'est sur ses métriques que tu jugeras."
+    load_csv: "Glisse le bloc Load CSV depuis Données."
+    standard_scaler: "Ajoute Standard Scaler avant l'entraînement."
+    train_test_split: "Ajoute Train-Test Split et note son ratio."
+    decision_tree: "Choisis Decision Tree comme modèle à évaluer."
+    train_model: "Ajoute Train Model pour lancer l'entraînement."
+    evaluate: "Ajoute Evaluate Model : c'est sur ses métriques que tu jugeras."
 ---
 
 ## Intro
@@ -50,31 +50,31 @@ Dans ce cours, tu vas construire un pipeline qui évalue un modèle, puis prend 
 
 ## Étape 1 — Charger CSV
 
-Glisse un bloc **Charger un CSV** (`load_csv`) depuis la catégorie **Données** sur le canvas. Il fournira les données que le pipeline tentera d'optimiser.
+Glisse un bloc **Load CSV** (`load_csv`) depuis la catégorie **Données** sur le canvas. Il fournira les données que le pipeline tentera d'optimiser.
 
 ## Étape 2 — Normaliser
 
-Ajoute un bloc **Mise à l'échelle standard** (`standard_scaler`) et connecte-le à la sortie du bloc **Charger un CSV**. Il harmonise les échelles des variables avant l'entraînement.
+Ajoute un bloc **Standard Scaler** (`standard_scaler`) et connecte-le à la sortie du bloc **Load CSV**. Il harmonise les échelles des variables avant l'entraînement.
 
 ## Étape 3 — Séparer les données
 
-Ajoute un bloc **Séparer train/test** (`train_test_split`) et relie la sortie du bloc **Mise à l'échelle standard** à son entrée. Note le ratio actuel — tu le modifieras si l'accuracy est insuffisante. Ce bloc produit deux sorties, entraînement et test.
+Ajoute un bloc **Train-Test Split** (`train_test_split`) et relie la sortie du bloc **Standard Scaler** à son entrée. Note le ratio actuel — tu le modifieras si l'accuracy est insuffisante. Ce bloc produit deux sorties, entraînement et test.
 
 ## Étape 4 — Choisir le modèle
 
-Glisse un bloc **Arbre de décision** (`decision_tree`) sur le canvas. Ce modèle sera entraîné en premier, avant de juger si ses performances sont acceptables.
+Glisse un bloc **Decision Tree** (`decision_tree`) sur le canvas. Ce modèle sera entraîné en premier, avant de juger si ses performances sont acceptables.
 
 ## Étape 5 — Entraîner
 
-Ajoute un bloc **Entraîner le modèle** (`train_model`) et branche-le sur la sortie d'entraînement du bloc **Séparer train/test**. Connecte-y aussi le bloc **Arbre de décision** : ce bloc prend deux entrées, les données et le modèle.
+Ajoute un bloc **Train Model** (`train_model`) et branche-le sur la sortie d'entraînement du bloc **Train-Test Split**. Connecte-y aussi le bloc **Decision Tree** : ce bloc prend deux entrées, les données et le modèle.
 
 ## Étape 6 — Évaluer
 
-Glisse un bloc **Évaluer le modèle** (`evaluate`). Ce bloc prend deux entrées : connecte la sortie du bloc **Entraîner le modèle** d'un côté, et la sortie de test du bloc **Séparer train/test** de l'autre. Il produit les métriques sur lesquelles la condition sera évaluée.
+Glisse un bloc **Evaluate Model** (`evaluate`). Ce bloc prend deux entrées : connecte la sortie du bloc **Train Model** d'un côté, et la sortie de test du bloc **Train-Test Split** de l'autre. Il produit les métriques sur lesquelles la condition sera évaluée.
 
 ## Étape 7 — Décider du seuil
 
-Lance le pipeline et lis l'accuracy dans le bloc **Évaluer le modèle**. Si elle est sous 0.75 : change le ratio du bloc **Séparer train/test** (par exemple 0.2 → 0.3), relance, et compare. Sinon, garde le résultat final.
+Lance le pipeline et lis l'accuracy dans le bloc **Evaluate Model**. Si elle est sous 0.75 : change le ratio du bloc **Train-Test Split** (par exemple 0.2 → 0.3), relance, et compare. Sinon, garde le résultat final.
 
 ## Lancement
 
