@@ -173,7 +173,7 @@ const FlowPalette = memo(function FlowPalette({ onDragStart, onAdd, onClose, onT
               onChange={(v) => setStageFilter((v as string) || 'all')}
               size="sm"
             >
-              <Grid columns={3} gap={1.5}>
+              <Grid columns={2} gap={1.5}>
                 <ToggleButton label="Tous" value="all" />
                 {ALL_STAGES.map(s => (
                   <ToggleButton key={s.id} label={`${s.key} ${s.label}`} value={String(s.id)} />
