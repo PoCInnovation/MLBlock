@@ -173,3 +173,6 @@ param-hover-card.png
 # Session exports
 omp-session-*.html
 
+
+# CodeGraph index
+.codegraph/

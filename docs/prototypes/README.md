@@ -64,3 +64,4 @@ Les détails techniques complets sont documentés dans les fichiers suivants :
 - 📐 [**ARCHITECTURE.md**](./ARCHITECTURE.md) : Modèles de données, typage macro/micro, schéma de stockage et **diagramme de classes Mermaid**.
 - 🔄 [**DATA_FLOW_SEQUENCE.md**](./DATA_FLOW_SEQUENCE.md) : Cycle de vie distant, persistance Supabase, exécution Vast.ai et **diagramme de séquence Mermaid**.
 - 🎨 [**UI_SPECIFICATION.md**](./UI_SPECIFICATION.md) : Spécifications des composants d'interface, slots multi-entrées, tiroir d'étapes et moteur Pan & Zoom réactif.
+- 🔍 [**FEASIBILITY_REPORT.md**](./FEASIBILITY_REPORT.md) : **Rapport d'audit technique & CodeGraph**, traces d'appels réelles, analyse des 5 bloquants et plan de résolution.
