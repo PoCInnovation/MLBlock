@@ -3,6 +3,7 @@ import { z } from 'zod'
 import type {
   BlockDefMap,
   Category,
+  ExoTemplate,
   InternalCatalog,
   PipelineCreate,
   PipelineDetail,
@@ -141,6 +142,13 @@ export interface PipelinePage {
 export async function listPipelines(size = 100): Promise<PipelinePage> {
   const { data } = await http.get<unknown>('/api/pipelines', { params: { page: 1, size } })
   return parseOrThrow(pipelinePageSchema, 'GET /api/pipelines', data)
+}
+
+export async function listExos(pattern?: string): Promise<ExoTemplate[]> {
+  const { data } = await http.get<ExoTemplate[]>('/api/exos', {
+    params: pattern ? { pattern } : {},
+  })
+  return data
 }
 
 export async function getPipeline(id: string): Promise<PipelineDetail> {

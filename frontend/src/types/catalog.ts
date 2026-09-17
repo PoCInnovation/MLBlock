@@ -75,6 +75,16 @@ export interface PipelineDetail extends PipelineSummary {
   edges: PipelineEdge[]
 }
 
+export interface ExoTemplate {
+  id: string
+  code: string
+  name: string
+  description: string
+  pattern: string
+  nodes: PipelineNode[]
+  edges: PipelineEdge[]
+}
+
 export interface ValidationResponse {
   valid: boolean
   errors: string[]

@@ -41,6 +41,7 @@ pipelines_router = APIRouter(prefix="/api/pipelines")
 validation_router = APIRouter(prefix="/api/validate")
 jobs_router = APIRouter(prefix="/api/jobs")
 files_router = APIRouter(prefix="/api/files")
+exos_router = APIRouter(prefix="/api/exos")
 health_router = APIRouter()
 
 
@@ -201,6 +202,31 @@ def get_samples(category: str | None = None) -> list[dict]:
     if category:
         items = [i for i in items if i.get("category") == category]
     return items
+
+
+# ── Exos & Baselines ────────────────────────────────────────────────
+
+@exos_router.get("")
+def list_exos(pattern: str | None = None) -> list[dict]:
+    """Liste les pipelines de référence et baselines."""
+    from mlblock.core.exos import get_exos
+
+    items = get_exos()
+    if pattern:
+        p = pattern.strip().lower()
+        items = [e for e in items if e.get("pattern") == p]
+    return items
+
+
+@exos_router.get("/{id_or_code}")
+def get_exo_by_id(id_or_code: str) -> dict:
+    """Récupère un pipeline de référence prêt à l'import."""
+    from mlblock.core.exos import get_exo
+
+    exo = get_exo(id_or_code)
+    if not exo:
+        raise HTTPException(404, detail="Pipeline de référence introuvable")
+    return exo
 
 
 # ── Files ───────────────────────────────────────────────────────────

@@ -26,8 +26,8 @@ def test_audit_exercises_baseline():
     # All 12 generate code without exception
     assert all(e["codegen_ok"] for e in exo_results)
 
-    # 41 blocks used directly in the 12 reference exercises
-    assert len(block_to_exos) == 41
+    # 42 blocks used directly in the 12 reference exercises (tsne added to B3)
+    assert len(block_to_exos) == 42
 
 
 def test_get_block_status():

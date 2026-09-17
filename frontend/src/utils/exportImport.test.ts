@@ -48,6 +48,26 @@ describe('parseImportFile', () => {
     expect(p.edges).toEqual([{ source: 'n1', source_port: 'out_1', target: 'n2', target_port: 'in_1' }])
   })
 
+  it('parses exercise format with graph wrapper and auto-computes positions', async () => {
+    const exoJson = JSON.stringify({
+      name: 'Exo Test',
+      description: 'Test exo',
+      graph: {
+        nodes: [
+          { id: 'n1', type: 'load_csv', params: {} },
+          { id: 'n2', type: 'kmeans', params: {} },
+        ],
+        edges: [{ source: 'n1', source_port: 'out_1', target: 'n2', target_port: 'in_1' }],
+      },
+    })
+    const parsed = await parseImportFile(fakeFile('exo.json', exoJson))
+    expect(parsed.name).toBe('Exo Test')
+    expect(parsed.nodes).toHaveLength(2)
+    expect(parsed.edges).toHaveLength(1)
+    expect(parsed.nodes[0].position).toBeDefined()
+    expect(typeof parsed.nodes[0].position?.x).toBe('number')
+  })
+
   it('falls back to the filename (without extension) when name is missing or blank', async () => {
     const body = JSON.stringify({ nodes: [], edges: [] })
     await expect(parseImportFile(fakeFile('mon-projet.json', body))).resolves.toMatchObject({ name: 'mon-projet' })

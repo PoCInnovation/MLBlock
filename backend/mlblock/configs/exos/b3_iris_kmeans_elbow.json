@@ -26,6 +26,13 @@
         "id": "eval",
         "type": "silhouette",
         "params": {}
+      },
+      {
+        "id": "visu",
+        "type": "tsne",
+        "params": {
+          "n_components": 2
+        }
       }
     ],
     "edges": [
@@ -51,6 +58,18 @@
         "source": "clustering",
         "source_port": "out_1",
         "target": "eval",
+        "target_port": "model"
+      },
+      {
+        "source": "scaler",
+        "source_port": "out_1",
+        "target": "visu",
+        "target_port": "in_1"
+      },
+      {
+        "source": "clustering",
+        "source_port": "out_1",
+        "target": "visu",
         "target_port": "model"
       }
     ]

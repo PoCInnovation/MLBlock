@@ -6,9 +6,11 @@ import { listPipelines, getPipeline, deletePipeline } from '../api/client'
 import type { PipelineSummary } from '../types/catalog'
 import { usePipelineImport } from '../hooks/usePipelineImport'
 import ExportModal from '../components/ui/ExportModal'
+import TemplateModal from '../components/ui/TemplateModal'
 import SkipLink from '../components/ui/SkipLink'
-import { Upload } from 'lucide-react'
+import { Upload, Sparkles } from 'lucide-react'
 import { Card, Button } from '@astryxdesign/core'
+import type { ExoTemplate } from '../types/catalog'
 
 const MAX_PROJECTS = 20
 
@@ -42,8 +44,15 @@ export default function ProjectsPage() {
   const [importError, setImportError] = useState<string | null>(null)
   const error = actionError ?? listError ?? importError
   const [exporting, setExporting] = useState<PipelineSummary | null>(null)
+  const [templateOpen, setTemplateOpen] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
   const { importFile } = usePipelineImport()
+
+  const onSelectTemplate = (template: ExoTemplate) => {
+    useAppStore.getState().clearAll()
+    useAppStore.getState().loadPipeline(template.nodes, template.edges, '', template.name)
+    navigate({ to: '/editor' })
+  }
 
   const openProject = async (p: PipelineSummary) => {
     try {
@@ -96,6 +105,7 @@ export default function ProjectsPage() {
             className="hidden"
             onChange={e => { const f = e.target.files?.[0]; if (f) onImportFile(f); e.target.value = '' }}
           />
+          <Button label="Baselines" variant="secondary" icon={<Sparkles size={15} />} onClick={() => setTemplateOpen(true)} />
           <Button label="Importer" variant="secondary" icon={<Upload size={15} />} onClick={() => fileRef.current?.click()} />
           <Button
             label="+ Nouveau projet"
@@ -139,6 +149,12 @@ export default function ProjectsPage() {
           onClose={() => setExporting(null)}
         />
       )}
+
+      <TemplateModal
+        isOpen={templateOpen}
+        onSelect={onSelectTemplate}
+        onClose={() => setTemplateOpen(false)}
+      />
     </div>
   )
 }

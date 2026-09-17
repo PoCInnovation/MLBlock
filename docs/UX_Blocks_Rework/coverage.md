@@ -24,7 +24,7 @@
 | **A7** | Time-series Sequence | 7 | 7 | ✅ PASS | ✅ OK | Pipeline intègre et vérifié sans erreur de type |
 | **B1** | Iris Classification — LogisticRegression | 4 | 4 | ✅ PASS | ✅ OK | Pipeline intègre et vérifié sans erreur de type |
 | **B2** | Iris PCA — 4D→2D | 3 | 3 | ✅ PASS | ✅ OK | Pipeline intègre et vérifié sans erreur de type |
-| **B3** | Iris KMeans — Elbow | 4 | 4 | ✅ PASS | ✅ OK | Pipeline intègre et vérifié sans erreur de type |
+| **B3** | Iris KMeans — Elbow | 5 | 6 | ✅ PASS | ✅ OK | Pipeline intègre et vérifié sans erreur de type |
 | **C1** | CartPole-v1 Tabular Q-learning | 3 | 3 | ✅ PASS | ✅ OK | Pipeline intègre et vérifié sans erreur de type |
 | **C2** | CartPole DQN (PyTorch) | 11 | 12 | ✅ PASS | ✅ OK | Pipeline intègre et vérifié sans erreur de type |
 
@@ -39,7 +39,7 @@ Légende des statuts cibles (§02 Réduction) :
 - `deprecate` : Déprécié (conservé temporairement avec wrapper et avertissement).
 - `hide` : Conservé mais replié par défaut dans la sous-palette avancée.
 
-**Statistiques globales :** 41/91 blocs (45.1%) sont directement utilisés dans les 12 exercices.
+**Statistiques globales :** 42/91 blocs (46.2%) sont directement utilisés dans les 12 exercices.
 - `keep` : 80
 - `hide` : 9
 - `delete` : 0
@@ -137,7 +137,7 @@ Légende des statuts cibles (§02 Réduction) :
 | `train_epoch` | entrainement | — | `keep` |
 | `train_model` | entrainement | A1, A2, A3, A4, A5, A6, A7, C2 | `keep` |
 | `train_test_split` | donnees | A4, B1 | `keep` |
-| `tsne` | modeles | — | `keep` |
+| `tsne` | visualisation | B3 | `keep` |
 | `upsample` | layers | — | `keep` |
 
 ---
