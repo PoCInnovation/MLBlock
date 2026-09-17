@@ -1,0 +1,176 @@
+/* MLBlock Custom Markdown Preview Stylesheet
+ * Configured via .vscode/settings.json ("markdown.styles")
+ * Follows VS Code Markdown Styling guidelines:
+ * https://code.visualstudio.com/Docs/languages/markdown#_using-your-own-css
+ */
+
+:root {
+  --vscode-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --mlblock-accent: #f97316;
+  --mlblock-indigo: #6366f1;
+  --mlblock-emerald: #10b981;
+  --mlblock-surface: #141720;
+  --mlblock-border: #272c3a;
+}
+
+body {
+  font-family: var(--vscode-font-family) !important;
+  line-height: 1.65;
+  font-size: 14.5px;
+  color: #e2e8f0;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 32px 24px;
+}
+
+/* Headings */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  color: #f8fafc;
+  margin-top: 1.6em;
+  margin-bottom: 0.6em;
+  line-height: 1.3;
+}
+
+h1 {
+  font-size: 26px;
+  border-bottom: 2px solid var(--mlblock-border);
+  padding-bottom: 10px;
+  letter-spacing: -0.5px;
+}
+
+h2 {
+  font-size: 20px;
+  border-bottom: 1px solid var(--mlblock-border);
+  padding-bottom: 8px;
+  margin-top: 2em;
+}
+
+h3 {
+  font-size: 16px;
+  color: #c7d2fe;
+}
+
+/* Tables */
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 20px 0;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--mlblock-border);
+  background: var(--mlblock-surface);
+}
+
+th, td {
+  padding: 10px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--mlblock-border);
+  font-size: 13.5px;
+}
+
+th {
+  background: #1a1e2b;
+  color: #f1f5f9;
+  font-weight: 700;
+  border-bottom: 2px solid var(--mlblock-border);
+}
+
+tr:nth-child(even) {
+  background: #10121a;
+}
+
+tr:hover {
+  background: #1e2230;
+}
+
+/* Blockquotes / Callouts */
+blockquote {
+  margin: 18px 0;
+  padding: 12px 18px;
+  background: #181b26;
+  border-left: 4px solid var(--mlblock-indigo);
+  border-radius: 0 8px 8px 0;
+  color: #cbd5e1;
+  font-size: 13.5px;
+}
+
+blockquote p {
+  margin: 0;
+}
+
+/* Code & Pre */
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  font-size: 12.5px;
+  background: #1c202d;
+  color: #fca5a5;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid #2d3345;
+}
+
+pre {
+  background: #0d0f15 !important;
+  border: 1px solid var(--mlblock-border) !important;
+  border-radius: 8px !important;
+  padding: 16px !important;
+  overflow-x: auto;
+}
+
+pre code {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  color: #e2e8f0;
+}
+
+/* Mermaid Diagrams Container Styling in Preview */
+.mermaid {
+  background: #0d0f15 !important;
+  border: 1px solid var(--mlblock-border);
+  border-radius: 10px;
+  padding: 24px;
+  margin: 24px 0;
+  display: flex;
+  justify-content: center;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+}
+
+.mermaid svg {
+  max-width: 100% !important;
+  height: auto !important;
+}
+
+/* Math equations (KaTeX) */
+.katex-display {
+  background: #141722;
+  border: 1px solid var(--mlblock-border);
+  border-radius: 8px;
+  padding: 14px;
+  margin: 16px 0;
+  overflow-x: auto;
+}
+
+/* Lists */
+ul, ol {
+  padding-left: 24px;
+  margin: 12px 0;
+}
+
+li {
+  margin-bottom: 6px;
+}
+
+/* Links */
+a {
+  color: #60a5fa;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.15s;
+}
+
+a:hover {
+  color: #93c5fd;
+  text-decoration: underline;
+}

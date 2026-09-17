@@ -1,0 +1,1361 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MLBlock Prototype — Baseline A1 (CIFAR-10 CNN) : Comparatif Réactif & Précis</title>
+  <style>
+    :root {
+      --bg: #0a0c10;
+      --surface: #13151c;
+      --surface-elevated: #1a1d26;
+      --border: #242834;
+      --border-light: #353b4d;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      
+      /* Semantic Flow Colors */
+      --flow-data: #a855f7;      /* Violet: Données / Tenseurs */
+      --flow-model: #f59e0b;     /* Orange: Modèle / Poids */
+      --flow-metric: #10b981;    /* Vert: Métriques / Résultats */
+      --flow-opt: #3b82f6;       /* Bleu: Hyperparamètres / Optim */
+      --flow-loss: #ef4444;      /* Rouge: Loss / Critère */
+
+      /* Stages */
+      --stage-s0: #22c55e;
+      --stage-s1: #eab308;
+      --stage-s2: #6366f1;
+      --stage-s3: #de497d;
+      --stage-s4: #ec4899;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top Bar */
+    header {
+      height: 56px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      z-index: 30;
+      flex-shrink: 0;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    }
+    .logo-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .badge-proto {
+      background: #f59e0b22;
+      color: #f59e0b;
+      border: 1px solid #f59e0b55;
+      padding: 3px 8px;
+      border-radius: 5px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .actions-group {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .btn {
+      background: var(--surface-elevated);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 7px 14px;
+      border-radius: 8px;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all .15s ease;
+    }
+    .btn:hover { background: #262a38; border-color: var(--border-light); }
+    .btn.active {
+      background: #3b82f633;
+      border-color: #3b82f6;
+      color: #60a5fa;
+      box-shadow: 0 0 12px #3b82f644;
+    }
+
+    /* Mode Switcher Tabs */
+    .view-tabs {
+      display: flex;
+      background: #08090d;
+      border: 1px solid var(--border);
+      padding: 3px;
+      border-radius: 9px;
+      gap: 4px;
+    }
+    .view-tab {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .view-tab:hover { color: var(--text); }
+    .view-tab.active {
+      background: #ea580c;
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(234, 88, 12, 0.4);
+    }
+
+    /* Responsive Media Queries */
+    @media (max-width: 1250px) {
+      header { padding: 0 12px; height: 50px; }
+      .badge-proto { display: none; }
+      .header-sub { display: none; }
+      .view-tab { padding: 5px 10px; font-size: 11.5px; }
+      .btn { padding: 6px 11px; font-size: 11.5px; }
+      .tab-label-full { display: none; }
+      .tab-label-short { display: inline; }
+      .comparison-banner { font-size: 11px; padding: 5px 14px; top: 8px; }
+    }
+    @media (min-width: 1251px) {
+      .tab-label-full { display: inline; }
+      .tab-label-short { display: none; }
+    }
+    @media (max-width: 900px) {
+      header { gap: 8px; }
+      .btn-text { display: none; }
+      .btn { padding: 6px 8px; }
+      .view-tab { padding: 4px 8px; font-size: 11px; }
+      .btn-add-superblock { padding: 6px 12px; font-size: 11px; bottom: 12px; left: 12px; }
+      .canvas-controls { bottom: 12px; right: 12px; }
+      .comparison-banner { display: none; }
+    }
+    .workspace {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      background-color: var(--bg);
+      background-image: 
+        radial-gradient(circle at 1px 1px, #ffffff0c 1px, transparent 0);
+      background-size: 24px 24px;
+      cursor: grab;
+    }
+    .workspace:active {
+      cursor: grabbing;
+    }
+
+    /* Canvas Scalable Content Container */
+    #canvas-content {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 2600px;
+      height: 1600px;
+      transform-origin: 0 0;
+      pointer-events: none;
+    }
+
+    /* SVG Connections Layer */
+    svg.connections-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .wire-bg {
+      fill: none;
+      stroke: #141620;
+      stroke-width: 9;
+      stroke-linecap: round;
+    }
+    .wire-main {
+      fill: none;
+      stroke-width: 3.5;
+      stroke-linecap: round;
+      cursor: pointer;
+      pointer-events: stroke;
+      transition: stroke-width .2s, filter .2s;
+    }
+    .wire-main:hover {
+      stroke-width: 6.5;
+      filter: drop-shadow(0 0 8px currentColor);
+    }
+    .wire-pulse {
+      fill: none;
+      stroke-width: 4;
+      stroke-linecap: round;
+      stroke-dasharray: 10 32;
+      animation: flow-dash 1.3s linear infinite;
+      opacity: 0.9;
+      display: none;
+    }
+    .simulating .wire-pulse { display: inline; }
+
+    @keyframes flow-dash {
+      from { stroke-dashoffset: 42; }
+      to { stroke-dashoffset: 0; }
+    }
+
+    /* Shape Badges along Wires */
+    .shape-badge {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      background: #14161f;
+      border: 1px solid var(--border-light);
+      padding: 3px 9px;
+      border-radius: 12px;
+      font-size: 10.5px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-weight: 600;
+      color: var(--text);
+      z-index: 10;
+      pointer-events: auto;
+      cursor: help;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.75);
+      transition: all .2s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+    .shape-badge:hover {
+      border-color: var(--flow-data);
+      transform: translate(-50%, -50%) scale(1.08);
+      background: #1f2230;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.9);
+    }
+    .shape-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+    }
+
+    /* Nodes Container */
+    .nodes-container {
+      position: absolute;
+      inset: 0;
+      z-index: 5;
+      pointer-events: none;
+    }
+    .block-node {
+      position: absolute;
+      pointer-events: auto;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+      transition: box-shadow .2s, border-color .2s;
+    }
+    .block-node:hover {
+      border-color: var(--border-light);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7);
+    }
+    .block-node.is-container {
+      border: 1.5px solid #6366f188;
+      background: linear-gradient(180deg, #161824 0%, #11131b 100%);
+    }
+
+    .node-header {
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #ffffff0a;
+      background: #ffffff04;
+      border-top-left-radius: 12px;
+      border-top-right-radius: 12px;
+    }
+    .node-title-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .stage-pill {
+      font-size: 9.5px;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .node-title {
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .node-body {
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+    .field-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11.5px;
+      color: var(--text-muted);
+    }
+    .field-val {
+      color: var(--text);
+      font-weight: 600;
+      background: #ffffff0a;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    /* Handles & Ports */
+    .port {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #181a24;
+      border: 2.5px solid var(--border-light);
+      position: absolute;
+      cursor: crosshair;
+      z-index: 15;
+      transition: transform .15s, border-color .15s, background-color .15s;
+    }
+    .port:hover {
+      transform: scale(1.4) !important;
+    }
+    .port-in {
+      left: -7px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+    .port-out {
+      right: -7px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+    .port-data { border-color: var(--flow-data); }
+    .port-data:hover { background: var(--flow-data); }
+    .port-model { border-color: var(--flow-model); }
+    .port-model:hover { background: var(--flow-model); }
+    .port-opt { border-color: var(--flow-opt); }
+    .port-opt:hover { background: var(--flow-opt); }
+    .port-loss { border-color: var(--flow-loss); }
+    .port-loss:hover { background: var(--flow-loss); }
+    .port-metric { border-color: var(--flow-metric); }
+    .port-metric:hover { background: var(--flow-metric); }
+
+    /* Slots inside Multi-Input Panels */
+    .slot-row {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 8px 6px 18px;
+      background: #151722;
+      border: 1px solid #282b3a;
+      border-radius: 6px;
+      font-size: 11.5px;
+      margin-bottom: 5px;
+    }
+    .slot-row .port {
+      left: -7px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+    .slot-label {
+      font-weight: 700;
+    }
+    .slot-status {
+      font-size: 10px;
+      font-family: monospace;
+      color: #10b981;
+    }
+
+    /* Internal step item lists (for data, model, trainer) */
+    .steps-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      background: #0b0c11;
+      border: 1px solid #242735;
+      border-radius: 8px;
+      padding: 8px;
+      max-height: 270px;
+      overflow-y: auto;
+    }
+    .step-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #151722;
+      border: 1px solid #2b2e40;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 11.5px;
+      transition: all .15s ease;
+    }
+    .step-item:hover {
+      border-color: #4f46e5;
+    }
+    .step-name { font-weight: 700; color: #c7d2fe; }
+    .step-dims { font-size: 10.5px; color: var(--text-muted); font-family: monospace; margin-top: 1px; }
+    .step-del {
+      color: var(--text-dim);
+      font-size: 12px;
+      cursor: pointer;
+      padding: 0 4px;
+    }
+    .step-del:hover { color: #f87171; }
+
+    .btn-add-step {
+      background: #ffffff08;
+      border: 1px dashed #3b404d;
+      color: #94a3b8;
+      padding: 6px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      transition: all .15s;
+    }
+    .btn-add-step:hover {
+      background: #6366f122;
+      border-color: #6366f1;
+      color: #c7d2fe;
+    }
+
+    /* In-place step picker popover */
+    .step-picker-popover {
+      position: absolute;
+      background: #181a24;
+      border: 1px solid #3d4358;
+      border-radius: 10px;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.8);
+      padding: 6px;
+      width: 250px;
+      z-index: 100;
+      display: none;
+      animation: pop .15s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes pop {
+      from { opacity: 0; transform: scale(0.94); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .picker-title {
+      font-size: 10.5px;
+      font-weight: 800;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      padding: 5px 8px;
+    }
+    .picker-item {
+      padding: 7px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--text);
+      transition: background .12s;
+    }
+    .picker-item:hover {
+      background: #272c3d;
+      color: #60a5fa;
+    }
+    .picker-item-sub {
+      font-size: 10px;
+      color: var(--text-muted);
+      font-family: monospace;
+    }
+
+    /* Floating Canvas Controls */
+    .canvas-controls {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      background: #141620ee;
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-light);
+      border-radius: 10px;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      z-index: 25;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+    }
+    .ctrl-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all .15s;
+    }
+    .ctrl-btn:hover {
+      background: #ffffff12;
+      color: var(--text);
+    }
+    .ctrl-indicator {
+      font-size: 11px;
+      font-family: monospace;
+      padding: 0 8px;
+      color: var(--text-muted);
+    }
+
+    /* Floating Add Super-Block Button */
+    .btn-add-superblock {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      background: #1e2230;
+      border: 1px solid #4f46e5;
+      color: #c7d2fe;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      z-index: 25;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+      transition: all .15s;
+    }
+    .btn-add-superblock:hover {
+      background: #312e81;
+      color: #fff;
+      transform: translateY(-1px);
+    }
+
+    /* Top Comparison Banner */
+    .comparison-banner {
+      position: absolute;
+      top: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #141620ee;
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-light);
+      border-radius: 20px;
+      padding: 7px 22px;
+      font-size: 12px;
+      color: var(--text);
+      z-index: 20;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.6);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      pointer-events: none;
+      max-width: 90%;
+      text-align: center;
+    }
+
+    /* Peek Tooltip */
+    .peek-tooltip {
+      position: absolute;
+      background: #151821;
+      border: 1px solid var(--border-light);
+      border-radius: 12px;
+      box-shadow: 0 20px 45px rgba(0,0,0,0.85);
+      padding: 14px;
+      width: 270px;
+      z-index: 100;
+      pointer-events: none;
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity .15s ease, transform .15s ease;
+    }
+    .peek-tooltip.visible { opacity: 1; transform: translateY(0); }
+    .peek-title { font-size: 11px; font-weight: 800; text-transform: uppercase; margin-bottom: 8px; display: flex; justify-content: space-between; }
+    .peek-box { background: #090a0d; border-radius: 8px; border: 1px solid #222633; padding: 9px; font-family: monospace; font-size: 11px; color: #94a3b8; line-height: 1.5; }
+    .peek-thumbs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 8px; }
+    .thumb { aspect-ratio: 1; border-radius: 5px; background: #232736; display: flex; align-items: center; justify-content: center; font-size: 15px; }
+  </style>
+</head>
+<body>
+
+  <!-- Top Header -->
+  <header>
+    <div class="logo-group">
+      <div style="width: 28px; height: 28px; border-radius: 7px; background: linear-gradient(135deg, #f97316, #ea580c); display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 16px;">M</div>
+      <div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-weight: 800; font-size: 15px;">MLBlock</span>
+          <span class="header-sub" style="font-weight: 600; font-size: 13px; color: #f97316;">• Baseline A1 (CIFAR-10 CNN)</span>
+        </div>
+      </div>
+      <span class="badge-proto">MODULARITÉ EN PROFONDEUR</span>
+    </div>
+
+    <!-- Toggle Switcher between Current Baseline vs New UX -->
+    <div class="view-tabs">
+      <button class="view-tab" id="tab-current" onclick="setMode('current')">
+        <span class="tab-label-full">1. Structure Actuelle (11 Blocs)</span>
+        <span class="tab-label-short">1. Actuel (11)</span>
+      </button>
+      <button class="view-tab active" id="tab-clean" onclick="setMode('clean')">
+        <span class="tab-label-full">2. Nouvelle UX Cible (Super-Blocs & Étapes)</span>
+        <span class="tab-label-short">2. Cible (3)</span>
+      </button>
+    </div>
+
+    <div class="actions-group">
+      <button class="btn" id="btn-toggle-sim" onclick="toggleSim()">
+        <span id="sim-icon">▶</span> <span id="sim-text" class="btn-text">Lancer Flux Vivant</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Workspace Canvas -->
+  <main class="workspace" id="workspace">
+    
+    <div class="comparison-banner" id="comparison-banner"></div>
+
+    <!-- Pan & Zoom Content Wrapper -->
+    <div id="canvas-content">
+      <svg class="connections-layer" id="svg-layer"></svg>
+      <div id="shape-badges-container"></div>
+      <div class="nodes-container" id="nodes-container"></div>
+    </div>
+
+    <!-- Floating Add Super-Block Button (active on Clean View) -->
+    <button class="btn-add-superblock" id="btn-add-sb" onclick="openSuperBlockPicker(event)">
+      <span>+</span> <span>Ajouter un Super-Bloc...</span>
+    </button>
+
+    <!-- In-place Step Picker Popover -->
+    <div class="step-picker-popover" id="step-picker-popover">
+      <div class="picker-title" id="picker-title">Ajouter une étape</div>
+      <div id="picker-items"></div>
+    </div>
+
+    <!-- Live Data Peek Tooltip -->
+    <div class="peek-tooltip" id="peek-tooltip">
+      <div class="peek-title">
+        <span id="peek-type" style="color: var(--flow-data);">Données</span>
+        <span id="peek-shape" style="font-family: monospace; color: #fff;"></span>
+      </div>
+      <div class="peek-box" id="peek-content"></div>
+    </div>
+
+    <!-- Canvas Navigation Controls -->
+    <div class="canvas-controls">
+      <button class="ctrl-btn" onclick="zoomIn()" title="Zoom avant">+</button>
+      <span class="ctrl-indicator" id="zoom-text">100%</span>
+      <button class="ctrl-btn" onclick="zoomOut()" title="Zoom arrière">−</button>
+      <button class="ctrl-btn" onclick="resetView()" title="Recentrer et adapter à l'écran" style="width: auto; padding: 0 8px; font-size: 11px;">Recentrer</button>
+    </div>
+
+  </main>
+
+  <script>
+    let mode = 'clean'; // 'current' | 'clean'
+    let isSimulating = false;
+    let hasEvaluatorBlock = false; // toggle downstream super-block
+
+    // Pan & Zoom Engine
+    let scale = 1.0;
+    let panX = 0;
+    let panY = 0;
+    let isDragging = false;
+    let startX = 0;
+    let startY = 0;
+
+    const workspace = document.getElementById('workspace');
+    const content = document.getElementById('canvas-content');
+
+    function applyTransform() {
+      content.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+      document.getElementById('zoom-text').textContent = `${Math.round(scale * 100)}%`;
+      renderWires();
+    }
+
+    workspace.addEventListener('mousedown', (e) => {
+      if (e.target.closest('.block-node') || e.target.closest('.canvas-controls') || e.target.closest('.btn-add-superblock') || e.target.closest('.step-picker-popover') || e.target.closest('.shape-badge')) return;
+      isDragging = true;
+      startX = e.clientX - panX;
+      startY = e.clientY - panY;
+      closePicker();
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      panX = e.clientX - startX;
+      panY = e.clientY - startY;
+      applyTransform();
+    });
+
+    window.addEventListener('mouseup', () => {
+      isDragging = false;
+    });
+
+    workspace.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const zoomFactor = e.deltaY < 0 ? 1.08 : 0.92;
+      const wsRect = workspace.getBoundingClientRect();
+      const mouseX = e.clientX - wsRect.left;
+      const mouseY = e.clientY - wsRect.top;
+
+      const newScale = Math.min(Math.max(scale * zoomFactor, 0.4), 2.2);
+      panX = mouseX - (mouseX - panX) * (newScale / scale);
+      panY = mouseY - (mouseY - panY) * (newScale / scale);
+      scale = newScale;
+      applyTransform();
+    }, { passive: false });
+
+    function zoomIn() { scale = Math.min(scale * 1.15, 2.2); applyTransform(); }
+    function zoomOut() { scale = Math.max(scale * 0.85, 0.4); applyTransform(); }
+
+    function resetView() {
+      const wsWidth = workspace.clientWidth;
+      const wsHeight = workspace.clientHeight;
+
+      if (mode === 'clean') {
+        const targetWidth = hasEvaluatorBlock ? 1800 : 1480;
+        const targetHeight = 650;
+        scale = Math.min(wsWidth / targetWidth, wsHeight / targetHeight, 1.0) * 0.92;
+        panX = (wsWidth - targetWidth * scale) / 2 + 20;
+        panY = (wsHeight - targetHeight * scale) / 2 + 10;
+      } else {
+        const targetWidth = 1750;
+        const targetHeight = 750;
+        scale = Math.min(wsWidth / targetWidth, wsHeight / targetHeight, 1.0) * 0.92;
+        panX = (wsWidth - targetWidth * scale) / 2 + 30;
+        panY = (wsHeight - targetHeight * scale) / 2 + 10;
+      }
+      applyTransform();
+    }
+
+    // -------------------------------------------------------------
+    // DATA 1 : CURRENT BASELINE A1 (11 nodes with organized layout)
+    // -------------------------------------------------------------
+    const currentNodes = [
+      { id: "dataset", title: "load_torch_dataset", stage: "S0", x: 60, y: 110, w: 210, fields: [["name", "cifar10"], ["batch_size", "32"], ["split", "train"]], out: "port-data" },
+      { id: "loader", title: "data_loader", stage: "S1", x: 350, y: 110, w: 190, in: "port-data", fields: [["batch_size", "32"], ["shuffle", "true"]], out: "port-data" },
+      { id: "conv1", title: "conv2d_layer", stage: "S2", x: 60, y: 310, w: 155, fields: [["in", "3"], ["out", "32"], ["k", "3"]], out: "port-data" },
+      { id: "relu1", title: "relu_layer", stage: "S2", x: 275, y: 310, w: 135, in: "port-data", fields: [["activation", "ReLU"]], out: "port-data" },
+      { id: "pool1", title: "maxpool2d_layer", stage: "S2", x: 470, y: 310, w: 145, in: "port-data", fields: [["kernel", "2"]], out: "port-data" },
+      { id: "conv2", title: "conv2d_layer", stage: "S2", x: 675, y: 310, w: 155, in: "port-data", fields: [["in", "32"], ["out", "64"], ["k", "3"]], out: "port-data" },
+      { id: "flat", title: "flatten_layer", stage: "S2", x: 890, y: 310, w: 135, in: "port-data", fields: [["start_dim", "1"]], out: "port-data" },
+      { id: "fc", title: "linear_layer", stage: "S2", x: 1085, y: 310, w: 155, in: "port-data", fields: [["in", "4096"], ["out", "10"]], out: "port-model" },
+      { id: "loss", title: "cross_entropy_loss", stage: "S3", x: 860, y: 530, w: 185, fields: [["loss", "CrossEntropy"]], out: "port-loss" },
+      { id: "optimizer", title: "adam", stage: "S3", x: 1085, y: 530, w: 185, in: "port-model", fields: [["lr", "0.001"]], out: "port-opt" },
+      { 
+        id: "trainer", 
+        title: "train_model", 
+        stage: "S3", 
+        x: 1390, 
+        y: 200, 
+        w: 290, 
+        isTrainerCurrent: true,
+        fields: [["epochs", "5"]],
+        out: "port-metric"
+      }
+    ];
+
+    const currentEdges = [
+      { from: "dataset", to: "loader", color: "var(--flow-data)" },
+      { from: "conv1", to: "relu1", color: "var(--flow-data)" },
+      { from: "relu1", to: "pool1", color: "var(--flow-data)" },
+      { from: "pool1", to: "conv2", color: "var(--flow-data)" },
+      { from: "conv2", to: "flat", color: "var(--flow-data)" },
+      { from: "flat", to: "fc", color: "var(--flow-data)" },
+      { from: "fc", to: "trainer-in-1", color: "var(--flow-model)", label: "Modèle → in_1" },
+      { from: "loader", to: "trainer-in-2", color: "var(--flow-data)", label: "DataLoader → in_2" },
+      { from: "fc", to: "optimizer", color: "var(--flow-model)", label: "Params → in_1" },
+      { from: "optimizer", to: "trainer-in-3", color: "var(--flow-opt)", label: "Optimizer → in_3" },
+      { from: "loss", to: "trainer-in-4", color: "var(--flow-loss)", label: "Criterion → in_4" }
+    ];
+
+    // -------------------------------------------------------------
+    // DATA 2 : CLEAN NEW UX (Dynamic In-Block Steps & Super-Blocks)
+    // -------------------------------------------------------------
+    
+    // Internal steps for Data container
+    let dataSteps = [
+      { name: "Source : CIFAR-10", dims: "60k images (32x32 RGB)" },
+      { name: "Normalisation", dims: "mean=0.5, std=0.5" },
+      { name: "DataLoader", dims: "batch_size=32, shuffle=True" }
+    ];
+
+    // Internal steps for Model container (layers)
+    let modelLayers = [
+      { name: "1. Conv2d + ReLU", dims: "in: 3, out: 32, k: 3x3", params: 896 },
+      { name: "2. MaxPool2d", dims: "kernel: 2x2, stride: 2", params: 0 },
+      { name: "3. Conv2d + ReLU", dims: "in: 32, out: 64, k: 3x3", params: 18496 },
+      { name: "4. Flatten + Linear", dims: "in: 4096, out: 10", params: 40970 }
+    ];
+
+    // Callbacks for Trainer
+    let trainerCallbacks = [
+      { name: "Optimizer : Adam", dims: "lr=0.001" },
+      { name: "Loss : CrossEntropy", dims: "reduction=mean" }
+    ];
+
+    function calculateTotalParams() {
+      const sum = modelLayers.reduce((acc, l) => acc + (l.params || 10000), 0);
+      return (sum / 1000).toFixed(1) + "k params";
+    }
+
+    function setMode(newMode) {
+      mode = newMode;
+      document.getElementById('tab-current').classList.toggle('active', mode === 'current');
+      document.getElementById('tab-clean').classList.toggle('active', mode === 'clean');
+      document.getElementById('btn-add-sb').style.display = mode === 'clean' ? 'flex' : 'none';
+      closePicker();
+      
+      const banner = document.getElementById('comparison-banner');
+      if (mode === 'current') {
+        banner.innerHTML = `⚠️ <strong>Approche Actuelle (A1) :</strong> 11 blocs séparés, 6 blocs de layers en chaîne 1D, et 4 fils qui convergent vers <code style="background:#fff2;padding:2px 6px;border-radius:4px;color:#fca5a5;">train_model (in_1..in_4)</code>. <strong>50 min d'assemblage fastidieux.</strong>`;
+        banner.style.borderColor = '#ef444455';
+      } else {
+        banner.innerHTML = `✨ <strong>Nouvelle UX Cible :</strong> Clique sur <code style="background:#6366f133;color:#a5b4fc;padding:2px 6px;border-radius:4px;">+ Ajouter étape/couche</code> dans n'importe quel bloc, ou sur <code style="background:#1e2230;color:#c7d2fe;padding:2px 6px;border-radius:4px;">+ Ajouter un Super-Bloc</code> en bas à gauche !`;
+        banner.style.borderColor = '#6366f155';
+      }
+
+      renderCanvas();
+      resetView();
+    }
+
+    function renderCanvas() {
+      const container = document.getElementById('nodes-container');
+      container.innerHTML = '';
+
+      if (mode === 'current') {
+        renderCurrentNodes(container);
+      } else {
+        renderCleanNodes(container);
+      }
+
+      setTimeout(renderWires, 40);
+    }
+
+    function renderCurrentNodes(container) {
+      currentNodes.forEach(node => {
+        const div = document.createElement('div');
+        div.className = 'block-node';
+        div.id = `node-${node.id}`;
+        div.style.left = `${node.x}px`;
+        div.style.top = `${node.y}px`;
+        div.style.width = `${node.w}px`;
+
+        let portsHtml = '';
+        if (node.in) portsHtml += `<div class="port port-in ${node.in}" id="port-${node.id}-in" title="Port d'entrée"></div>`;
+        if (node.out) portsHtml += `<div class="port port-out ${node.out}" id="port-${node.id}-out" title="Port de sortie"></div>`;
+
+        let bodyHtml = '';
+        if (node.isTrainerCurrent) {
+          bodyHtml = `
+            <div style="background:#090a0e;border:1px solid #2d3142;border-radius:8px;padding:8px;font-size:11px;margin-bottom:6px;">
+              <div style="color:#f87171;font-weight:800;margin-bottom:6px;font-size:10px;text-transform:uppercase;">4 Ports d'Entrée Anonymes :</div>
+              <div class="slot-row"><div class="port port-in port-model" id="port-trainer-in-1"></div><span class="slot-label" style="color:var(--flow-model);">in_1 (Modèle)</span><span class="slot-status">nn.Module</span></div>
+              <div class="slot-row"><div class="port port-in port-data" id="port-trainer-in-2"></div><span class="slot-label" style="color:var(--flow-data);">in_2 (DataLoader)</span><span class="slot-status">DataLoader</span></div>
+              <div class="slot-row"><div class="port port-in port-opt" id="port-trainer-in-3"></div><span class="slot-label" style="color:var(--flow-opt);">in_3 (Optimizer)</span><span class="slot-status">Optimizer</span></div>
+              <div class="slot-row"><div class="port port-in port-loss" id="port-trainer-in-4"></div><span class="slot-label" style="color:var(--flow-loss);">in_4 (Criterion)</span><span class="slot-status">Loss</span></div>
+            </div>
+            <div class="field-row"><span>Époques</span><span class="field-val">5 epochs</span></div>
+          `;
+        } else {
+          bodyHtml = node.fields.map(f => `<div class="field-row"><span>${f[0]}</span><span class="field-val">${f[1]}</span></div>`).join('');
+        }
+
+        div.innerHTML = `
+          ${portsHtml}
+          <div class="node-header">
+            <div class="node-title-group">
+              <span class="stage-pill" style="background:#6366f122;color:#818cf8;">${node.stage}</span>
+              <span class="node-title">${node.title}</span>
+            </div>
+          </div>
+          <div class="node-body">${bodyHtml}</div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function renderCleanNodes(container) {
+      // 1. Data Pipeline Node
+      const dataDiv = document.createElement('div');
+      dataDiv.className = 'block-node is-container';
+      dataDiv.id = 'node-data-clean';
+      dataDiv.style.left = '80px';
+      dataDiv.style.top = '140px';
+      dataDiv.style.width = '300px';
+      dataDiv.innerHTML = `
+        <div class="port port-out port-data" id="port-data-clean-out" title="Sortie Données"></div>
+        <div class="node-header">
+          <div class="node-title-group">
+            <span class="stage-pill" style="background:#22c55e22;color:#22c55e;">S0/S1</span>
+            <span class="node-title">Pipeline Données</span>
+          </div>
+          <span style="font-size:11px;color:#86efac;font-weight:700;">${dataSteps.length} étapes</span>
+        </div>
+        <div class="node-body">
+          <div class="steps-stack">
+            ${dataSteps.map((s, idx) => `
+              <div class="step-item">
+                <div>
+                  <div class="step-name">${s.name}</div>
+                  <div class="step-dims">${s.dims}</div>
+                </div>
+                ${idx >= 3 ? `<span class="step-del" onclick="removeDataStep(${idx})">✕</span>` : ''}
+              </div>
+            `).join('')}
+          </div>
+          <button class="btn-add-step" onclick="openStepPicker(event, 'data')">+ Ajouter étape (Augmentation, Filtre...)</button>
+        </div>
+      `;
+      container.appendChild(dataDiv);
+
+      // 2. Model Backbone Node (with in-block layers)
+      const modelDiv = document.createElement('div');
+      modelDiv.className = 'block-node is-container';
+      modelDiv.id = 'node-model-clean';
+      modelDiv.style.left = '520px';
+      modelDiv.style.top = '120px';
+      modelDiv.style.width = '340px';
+      modelDiv.innerHTML = `
+        <div class="port port-in port-data" id="port-model-clean-in" title="Entrée Tenseurs"></div>
+        <div class="port port-out port-model" id="port-model-clean-out" title="Sortie Modèle"></div>
+        <div class="node-header">
+          <div class="node-title-group">
+            <span class="stage-pill" style="background:#6366f122;color:#818cf8;">S2</span>
+            <span class="node-title">CNN Backbone</span>
+          </div>
+          <span style="font-size:11px;color:#a5b4fc;font-weight:700;">${modelLayers.length} couches</span>
+        </div>
+        <div class="node-body">
+          <div class="steps-stack">
+            ${modelLayers.map((l, idx) => `
+              <div class="step-item">
+                <div>
+                  <div class="step-name">${l.name}</div>
+                  <div class="step-dims">${l.dims}</div>
+                </div>
+                <span class="step-del" onclick="removeModelLayer(${idx})">✕</span>
+              </div>
+            `).join('')}
+          </div>
+          <button class="btn-add-step" onclick="openStepPicker(event, 'model')">+ Ajouter une couche (Conv, Norm, Drop...)</button>
+        </div>
+      `;
+      container.appendChild(modelDiv);
+
+      // 3. Trainer Node (with slots & callbacks)
+      const trainerDiv = document.createElement('div');
+      trainerDiv.className = 'block-node is-container';
+      trainerDiv.id = 'node-trainer-clean';
+      trainerDiv.style.left = '1000px';
+      trainerDiv.style.top = '130px';
+      trainerDiv.style.width = '320px';
+      trainerDiv.innerHTML = `
+        <div class="port port-out port-metric" id="port-trainer-clean-out" title="Sortie Métriques"></div>
+        <div class="node-header">
+          <div class="node-title-group">
+            <span class="stage-pill" style="background:#de497d22;color:#f472b6;">S3</span>
+            <span class="node-title">Entraîneur PyTorch</span>
+          </div>
+          <span style="font-size:11px;color:#f472b6;font-weight:700;">5 epochs</span>
+        </div>
+        <div class="node-body">
+          <!-- Required Inputs Panel -->
+          <div style="background:#090a0e;border:1px solid #282b3c;border-radius:8px;padding:8px;">
+            <div style="font-size:10px;font-weight:800;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px;display:flex;justify-content:space-between;">
+              <span>Entrées requises :</span>
+              <span style="color:#10b981;">✓ 2/2 prêtes</span>
+            </div>
+            <div class="slot-row">
+              <div class="port port-in port-model" id="port-trainer-clean-model-in"></div>
+              <span class="slot-label" style="color:var(--flow-model);">● Modèle (nn.Module)</span>
+              <span class="slot-status">[connecté]</span>
+            </div>
+            <div class="slot-row">
+              <div class="port port-in port-data" id="port-trainer-clean-data-in"></div>
+              <span class="slot-label" style="color:var(--flow-data);">● Données (DataLoader)</span>
+              <span class="slot-status">[connecté]</span>
+            </div>
+          </div>
+
+          <!-- Internal Callbacks & Schedulers -->
+          <div class="steps-stack" style="max-height: 120px;">
+            ${trainerCallbacks.map((c, idx) => `
+              <div class="step-item">
+                <div>
+                  <div class="step-name">${c.name}</div>
+                  <div class="step-dims">${c.dims}</div>
+                </div>
+                <span class="step-del" onclick="removeTrainerCallback(${idx})">✕</span>
+              </div>
+            `).join('')}
+          </div>
+          <button class="btn-add-step" onclick="openStepPicker(event, 'trainer')">+ Ajouter Callback / Scheduler...</button>
+
+          <div class="field-row" style="margin-top:2px;padding-top:6px;border-top:1px solid #ffffff0a;">
+            <span style="color:var(--flow-metric);font-weight:700;">Précision Test</span>
+            <span class="field-val" style="color:var(--flow-metric);">89.2 %</span>
+          </div>
+        </div>
+      `;
+      container.appendChild(trainerDiv);
+
+      // 4. (Optional) Evaluator Node spawned dynamically via Super-Block button
+      if (hasEvaluatorBlock) {
+        const evalDiv = document.createElement('div');
+        evalDiv.className = 'block-node is-container';
+        evalDiv.id = 'node-eval-clean';
+        evalDiv.style.left = '1460px';
+        evalDiv.style.top = '150px';
+        evalDiv.style.width = '290px';
+        evalDiv.innerHTML = `
+          <div class="port port-in port-metric" id="port-eval-clean-in" title="Entrée Métriques"></div>
+          <div class="node-header">
+            <div class="node-title-group">
+              <span class="stage-pill" style="background:#ec489922;color:#ec4899;">S4</span>
+              <span class="node-title">Évaluateur & Matrice</span>
+            </div>
+            <button class="btn" style="padding:2px 6px;font-size:10px;" onclick="removeEvaluatorBlock()">✕ Retirer</button>
+          </div>
+          <div class="node-body">
+            <div class="field-row"><span>Matrice</span><span class="field-val">Confusion 10x10</span></div>
+            <div class="field-row"><span>F1-Score</span><span class="field-val" style="color:#10b981;">0.89</span></div>
+            <div class="field-row"><span>Top-1 Acc</span><span class="field-val" style="color:#10b981;">89.2%</span></div>
+            <div style="background:#090a0e;border:1px solid #232733;border-radius:6px;padding:8px;margin-top:4px;font-size:10.5px;color:#94a3b8;">
+              📊 Rapport de classification généré automatiquement après validation.
+            </div>
+          </div>
+        `;
+        container.appendChild(evalDiv);
+      }
+    }
+
+    // Precise Port Position Computation relative to #canvas-content (scale independent)
+    function getPortPosition(portEl) {
+      const rect = portEl.getBoundingClientRect();
+      const contentRect = content.getBoundingClientRect();
+      return {
+        x: (rect.left + rect.width / 2 - contentRect.left) / scale,
+        y: (rect.top + rect.height / 2 - contentRect.top) / scale
+      };
+    }
+
+    function renderWires() {
+      const svg = document.getElementById('svg-layer');
+      const badgesContainer = document.getElementById('shape-badges-container');
+      svg.innerHTML = '';
+      badgesContainer.innerHTML = '';
+
+      let edges = [];
+      if (mode === 'current') {
+        edges = currentEdges;
+      } else {
+        edges = [
+          { 
+            from: "data-clean", 
+            to: "model-clean", 
+            color: "var(--flow-data)", 
+            shape: "(32, 3, 32, 32)", 
+            peekTitle: "Batch Tenseurs Données",
+            peekData: "CIFAR-10 Images prétraitées<br>Type: torch.float32<br>Shape: [32, 3, 32, 32]",
+            peekThumbs: ["🚗", "✈️", "🐱", "🐶"]
+          },
+          { 
+            from: "model-clean", 
+            to: "trainer-clean-model-in", 
+            color: "var(--flow-model)", 
+            shape: `CNN: ${calculateTotalParams()}`, 
+            peekTitle: "Architecture & Poids Modèle",
+            peekData: `PyTorch nn.Module (${modelLayers.length} couches)<br>Total paramètres: ${calculateTotalParams()}<br>Gradients prêts pour le backward` 
+          },
+          { 
+            from: "data-clean", 
+            to: "trainer-clean-data-in", 
+            color: "var(--flow-data)", 
+            shape: "DataLoader (train batch: 32)", 
+            peekTitle: "Flux d'entraînement (Data)",
+            peekData: "Générateur PyTorch Batched<br>Images + Labels pour la boucle d'entraînement",
+            peekThumbs: ["🐸", "🐎", "🚢", "🚚"],
+            swoopBelow: true
+          }
+        ];
+
+        if (hasEvaluatorBlock) {
+          edges.push({
+            from: "trainer-clean",
+            to: "eval-clean",
+            color: "var(--flow-metric)",
+            shape: "Metrics & Logs",
+            peekTitle: "Métriques d'Entraînement",
+            peekData: "Pertes par époque + Prédictions Test<br>Accuracy: 89.2%<br>Envoyé vers l'évaluateur"
+          });
+        }
+      }
+
+      edges.forEach(edge => {
+        let fromId = `port-${edge.from}-out`;
+        let toId = `port-${edge.to}-in`;
+
+        if (edge.to.startsWith('trainer-')) {
+          toId = `port-${edge.to}`;
+        }
+
+        const fromEl = document.getElementById(fromId);
+        const toEl = document.getElementById(toId);
+        if (!fromEl || !toEl) return;
+
+        const p1 = getPortPosition(fromEl);
+        const p2 = getPortPosition(toEl);
+
+        let d = '';
+        let midX = (p1.x + p2.x) / 2;
+        let midY = (p1.y + p2.y) / 2;
+
+        if (edge.swoopBelow) {
+          const dipY = Math.max(p1.y, p2.y) + 220;
+          d = `M ${p1.x} ${p1.y} C ${p1.x + 160} ${dipY}, ${p2.x - 160} ${dipY}, ${p2.x} ${p2.y}`;
+          midX = (p1.x + p2.x) / 2;
+          midY = dipY - 30;
+        } else {
+          const dx = Math.abs(p2.x - p1.x) * 0.52;
+          d = `M ${p1.x} ${p1.y} C ${p1.x + dx} ${p1.y}, ${p2.x - dx} ${p2.y}, ${p2.x} ${p2.y}`;
+        }
+
+        // Wire background
+        const pathBg = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        pathBg.setAttribute("d", d);
+        pathBg.setAttribute("class", "wire-bg");
+        svg.appendChild(pathBg);
+
+        // Main colored wire
+        const pathMain = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        pathMain.setAttribute("d", d);
+        pathMain.setAttribute("class", "wire-main");
+        pathMain.setAttribute("style", `stroke: ${edge.color};`);
+        svg.appendChild(pathMain);
+
+        // Pulse wire
+        const pathPulse = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        pathPulse.setAttribute("d", d);
+        pathPulse.setAttribute("class", "wire-pulse");
+        pathPulse.setAttribute("style", `stroke: #ffffff;`);
+        svg.appendChild(pathPulse);
+
+        // Midpoint badge
+        if (edge.shape || edge.label) {
+          const badge = document.createElement('div');
+          badge.className = 'shape-badge';
+          badge.style.left = `${midX}px`;
+          badge.style.top = `${midY}px`;
+          badge.innerHTML = `<span class="shape-dot" style="background: ${edge.color};"></span>${edge.shape || edge.label}`;
+          
+          if (edge.peekData) {
+            badge.addEventListener('mouseenter', (e) => showPeek(e, edge, midX, midY));
+            badge.addEventListener('mouseleave', hidePeek);
+          }
+          badgesContainer.appendChild(badge);
+        }
+      });
+    }
+
+    // -------------------------------------------------------------
+    // INTERACTIVE STEP MANAGEMENT INSIDE CONTAINERS
+    // -------------------------------------------------------------
+    const picker = document.getElementById('step-picker-popover');
+    let currentTargetContainer = null;
+
+    function openStepPicker(e, target) {
+      e.stopPropagation();
+      currentTargetContainer = target;
+      const rect = e.target.getBoundingClientRect();
+
+      let title = "";
+      let items = [];
+
+      if (target === 'data') {
+        title = "Ajouter étape de données :";
+        items = [
+          { name: "RandomHorizontalFlip", sub: "p=0.5 (Data Augmentation)", data: { name: "RandomHorizontalFlip", dims: "p=0.5" } },
+          { name: "RandomCrop", sub: "size=32, pad=4", data: { name: "RandomCrop", dims: "size=32, pad=4" } },
+          { name: "ColorJitter", sub: "brightness=0.2", data: { name: "ColorJitter", dims: "bright=0.2, hue=0.1" } }
+        ];
+      } else if (target === 'model') {
+        title = "Ajouter couche neuronale :";
+        items = [
+          { name: "BatchNorm2d", sub: "num_features=64", data: { name: `${modelLayers.length + 1}. BatchNorm2d`, dims: "num_features: 64", params: 128 } },
+          { name: "Dropout", sub: "p=0.3", data: { name: `${modelLayers.length + 1}. Dropout`, dims: "p: 0.3", params: 0 } },
+          { name: "Conv2d (128 filtres)", sub: "k: 3x3, pad: 1", data: { name: `${modelLayers.length + 1}. Conv2d + ReLU`, dims: "in: 64, out: 128, k: 3x3", params: 73856 } }
+        ];
+      } else if (target === 'trainer') {
+        title = "Ajouter Callback / Scheduler :";
+        items = [
+          { name: "CosineAnnealingLR", sub: "T_max=10, eta_min=1e-5", data: { name: "Scheduler : CosineAnnealing", dims: "T_max=10, min=1e-5" } },
+          { name: "EarlyStopping", sub: "patience=3, monitor='val_loss'", data: { name: "EarlyStopping", dims: "patience=3, min_delta=0.001" } },
+          { name: "ModelCheckpoint", sub: "save_best_only=True", data: { name: "ModelCheckpoint", dims: "filepath='best_model.pt'" } }
+        ];
+      }
+
+      document.getElementById('picker-title').textContent = title;
+      document.getElementById('picker-items').innerHTML = items.map((it, idx) => `
+        <div class="picker-item" onclick="selectStep(${idx})">
+          <span>${it.name}</span>
+          <span class="picker-item-sub">${it.sub}</span>
+        </div>
+      `).join('');
+
+      picker.style.left = `${Math.min(rect.left, window.innerWidth - 270)}px`;
+      picker.style.top = `${rect.bottom + 6}px`;
+      picker.style.display = 'block';
+      window._currentPickerItems = items;
+    }
+
+    function selectStep(idx) {
+      const item = window._currentPickerItems[idx];
+      if (currentTargetContainer === 'data') {
+        dataSteps.push(item.data);
+      } else if (currentTargetContainer === 'model') {
+        modelLayers.push(item.data);
+      } else if (currentTargetContainer === 'trainer') {
+        trainerCallbacks.push(item.data);
+      }
+      closePicker();
+      renderCanvas();
+    }
+
+    function removeDataStep(idx) {
+      dataSteps.splice(idx, 1);
+      renderCanvas();
+    }
+
+    function removeModelLayer(idx) {
+      if (modelLayers.length <= 1) return;
+      modelLayers.splice(idx, 1);
+      renderCanvas();
+    }
+
+    function removeTrainerCallback(idx) {
+      trainerCallbacks.splice(idx, 1);
+      renderCanvas();
+    }
+
+    // -------------------------------------------------------------
+    // SUPER-BLOCK ADDITION ON CANVAS
+    // -------------------------------------------------------------
+    function openSuperBlockPicker(e) {
+      e.stopPropagation();
+      const rect = e.target.getBoundingClientRect();
+
+      document.getElementById('picker-title').textContent = "Ajouter un Super-Bloc au Canvas :";
+      const items = [
+        { name: "Évaluateur & Matrice (S4)", sub: "Classification metrics", act: () => { hasEvaluatorBlock = true; resetView(); } },
+        { name: "Visualisation Prédictions (S4)", sub: "Galerie d'images test", act: () => { alert("Bloc Visualisation de Galerie test ajouté !"); } },
+        { name: "Export ONNX / TorchScript (S5)", sub: "Optimisation & inférence", act: () => { alert("Bloc Export & Déploiement ajouté !"); } }
+      ];
+
+      document.getElementById('picker-items').innerHTML = items.map((it, idx) => `
+        <div class="picker-item" onclick="selectSuperBlock(${idx})">
+          <span>${it.name}</span>
+          <span class="picker-item-sub">${it.sub}</span>
+        </div>
+      `).join('');
+
+      picker.style.left = `${rect.left}px`;
+      picker.style.top = `${rect.top - 140}px`;
+      picker.style.display = 'block';
+      window._currentSuperBlockItems = items;
+    }
+
+    function selectSuperBlock(idx) {
+      window._currentSuperBlockItems[idx].act();
+      closePicker();
+      renderCanvas();
+    }
+
+    function removeEvaluatorBlock() {
+      hasEvaluatorBlock = false;
+      renderCanvas();
+      resetView();
+    }
+
+    function closePicker() {
+      picker.style.display = 'none';
+    }
+
+    window.addEventListener('click', () => {
+      closePicker();
+    });
+
+    // Tooltips
+    const tooltip = document.getElementById('peek-tooltip');
+    function showPeek(e, edge, midX, midY) {
+      document.getElementById('peek-type').textContent = edge.peekTitle;
+      document.getElementById('peek-type').style.color = edge.color;
+      document.getElementById('peek-shape').textContent = edge.shape;
+
+      let html = `<div>${edge.peekData}</div>`;
+      if (edge.peekThumbs && edge.peekThumbs.length > 0) {
+        html += `<div style="font-size: 10px; margin-top: 8px; color: #cbd5e1; font-weight: 700;">Aperçu des 4 premiers éléments :</div>
+                 <div class="peek-thumbs">
+                   ${edge.peekThumbs.map(t => `<div class="thumb">${t}</div>`).join('')}
+                 </div>`;
+      }
+      document.getElementById('peek-content').innerHTML = html;
+
+      const screenX = panX + midX * scale;
+      const screenY = panY + midY * scale;
+
+      tooltip.style.left = `${screenX - 135}px`;
+      tooltip.style.top = `${screenY - 145}px`;
+      tooltip.classList.add('visible');
+    }
+
+    function hidePeek() {
+      tooltip.classList.remove('visible');
+    }
+
+    function toggleSim() {
+      isSimulating = !isSimulating;
+      workspace.classList.toggle('simulating', isSimulating);
+      const btn = document.getElementById('btn-toggle-sim');
+      btn.classList.toggle('active', isSimulating);
+      document.getElementById('sim-icon').textContent = isSimulating ? '⏹' : '▶';
+      document.getElementById('sim-text').textContent = isSimulating ? 'Arrêter Flux' : 'Lancer Flux Vivant';
+    }
+
+    window.addEventListener('resize', () => {
+      resetView();
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      setMode('clean');
+    });
+  </script>
+</body>
+</html>
