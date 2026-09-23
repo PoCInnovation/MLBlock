@@ -35,8 +35,23 @@ type DragState = DragBase & { source: 'palette' }
     les métadonnées temporaires sont recalculées au restore). */
 type UndoSnapshot = { nodes: Node[]; edges: Edge[]; name: string }
 
+/** Mode palette : junior (niveaux) par defaut, avance (catalogue complet). */
+export type PaletteMode = 'junior' | 'avance'
+
+const PALETTE_MODE_KEY = 'mlblock-palette-mode'
+
+function initialPaletteMode(): PaletteMode {
+  try {
+    const v = typeof window === 'undefined' ? null : window.localStorage.getItem(PALETTE_MODE_KEY)
+    return v === 'avance' ? 'avance' : 'junior'
+  } catch {
+    return 'junior'
+  }
+}
+
 type AppState = {
   category: string
+  paletteMode: PaletteMode
   user: unknown | null
   flowNodes: Node[]
   flowEdges: Edge[]
@@ -61,6 +76,7 @@ type AppState = {
 
   setUser: (user: unknown | null) => void
   setCategory: (id: string) => void
+  setPaletteMode: (mode: PaletteMode) => void
   setDrag: (drag: DragState) => void
   clearDrag: () => void
   setFlowNodes: (nodes: Node[]) => void
@@ -102,6 +118,7 @@ export const fingerprintOf = _fingerprintOf
 
 const useAppStore = create<AppState>((set, get) => ({
   category: 'data',
+  paletteMode: initialPaletteMode(),
   flowNodes: [],
   flowEdges: [],
   consoleLines: [],
@@ -124,6 +141,15 @@ const useAppStore = create<AppState>((set, get) => ({
   redoStack: [],
 
   setCategory: (id) => set({ category: id }),
+
+  setPaletteMode: (mode) => {
+    try {
+      window.localStorage.setItem(PALETTE_MODE_KEY, mode)
+    } catch {
+      // stockage indisponible : le mode reste en memoire pour la session
+    }
+    set({ paletteMode: mode })
+  },
 
   setFlowNodes: (nodes) => set({ flowNodes: nodes }),
   setFlowEdges: (edges) => set({ flowEdges: edges }),
