@@ -1,0 +1,29 @@
+{
+  "id": "regroupe-points",
+  "title": "Regroupe les points",
+  "pattern": "clustering",
+  "description": "Prends un jeu tout pret, regroupe les points qui se ressemblent, note les groupes et dessine-les.",
+  "difficulty": "facile",
+  "etapes": {
+    "chargement": ["load_sklearn_dataset"],
+    "traitement": ["kmeans"],
+    "evaluation": ["silhouette"],
+    "visualisation": ["tsne", "plot_predictions"]
+  },
+  "name": "Regroupe les points",
+  "nodes": [
+    { "id": "n1", "type": "load_sklearn_dataset", "params": { "name": "iris" }, "children": [], "position": { "x": 60, "y": 80 } },
+    { "id": "n2", "type": "kmeans", "params": { "n_clusters": "3" }, "children": [], "position": { "x": 320, "y": 80 } },
+    { "id": "n3", "type": "silhouette", "params": {}, "children": [], "position": { "x": 560, "y": 80 } },
+    { "id": "n4", "type": "tsne", "params": { "n_components": "2" }, "children": [], "position": { "x": 320, "y": 340 } },
+    { "id": "n5", "type": "plot_predictions", "params": { "target_column": "target" }, "children": [], "position": { "x": 560, "y": 340 } }
+  ],
+  "edges": [
+    { "source": "n1", "source_port": "out_1", "target": "n2", "target_port": "in_1" },
+    { "source": "n2", "source_port": "out_1", "target": "n3", "target_port": "model" },
+    { "source": "n1", "source_port": "out_1", "target": "n3", "target_port": "in_1" },
+    { "source": "n1", "source_port": "out_1", "target": "n4", "target_port": "in_1" },
+    { "source": "n4", "source_port": "out_1", "target": "n5", "target_port": "in_1" },
+    { "source": "n1", "source_port": "out_1", "target": "n5", "target_port": "in_2" }
+  ]
+}
