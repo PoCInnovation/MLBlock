@@ -1,8 +1,8 @@
 {
   "id": "classification-regression",
-  "title": "Classification & Régression",
+  "title": "Classification & Regression",
   "pattern": "classification",
-  "description": "Compare des modèles supervisés sur le même jeu : régression logistique (classification), régression linéaire avec features polynomiales, et KNN.",
+  "description": "Compare des modeles supervises sur le meme jeu : regression logistique (classification), regression lineaire avec features polynomiales, et KNN.",
   "difficulty": "facile",
   "etapes": {
     "chargement": ["load_sklearn_dataset"],

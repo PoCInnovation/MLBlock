@@ -1,8 +1,8 @@
 {
   "id": "cnn-imagerie",
-  "title": "CNN — Classification d'images",
+  "title": "CNN - Classification d'images",
   "pattern": "cnn",
-  "description": "Convolution + pooling pour la classification d'images (MNIST). Charge un dataset torchvision, construit un réseau CNN et l'entraîne.",
+  "description": "Convolution + pooling pour la classification d'images (MNIST). Charge un dataset torchvision, construit un reseau CNN et l'entraine.",
   "difficulty": "intermediaire",
   "etapes": {
     "chargement": ["load_torch_dataset"],

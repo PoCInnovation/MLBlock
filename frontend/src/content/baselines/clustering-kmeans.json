@@ -1,8 +1,8 @@
 {
   "id": "clustering-kmeans",
-  "title": "Clustering — K-Means + t-SNE",
+  "title": "Clustering - K-Means + t-SNE",
   "pattern": "clustering",
-  "description": "Regroupe des données non labellisées avec K-Means, mesure la qualité avec la silhouette, puis visualise les clusters via PCA et t-SNE.",
+  "description": "Regroupe des donnees non labellisees avec K-Means, mesure la qualite avec la silhouette, puis visualise les clusters via PCA et t-SNE.",
   "difficulty": "facile",
   "etapes": {
     "chargement": ["load_sklearn_dataset"],

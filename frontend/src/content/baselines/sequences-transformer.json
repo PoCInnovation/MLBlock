@@ -1,6 +1,6 @@
 {
   "id": "sequences-transformer",
-  "title": "Séquences — Tokenisation & Transformer",
+  "title": "Sequences - Tokenisation & Transformer",
   "pattern": "sequences",
   "description": "Construit un pipeline NLP de bout en bout : tokenisation, vocabulaire, encodage, puis passage dans un transformer (embedding + multi-head attention + layer norm).",
   "difficulty": "difficile",
