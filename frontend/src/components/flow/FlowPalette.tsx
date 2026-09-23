@@ -1,9 +1,10 @@
-import { memo, useRef, useState } from 'react'
-import { X, PanelLeft, ChevronDown, ChevronUp } from 'lucide-react'
+import { memo, useMemo, useRef, useState } from 'react'
+import { X, PanelLeft, ChevronDown, ChevronUp, Sparkles } from 'lucide-react'
 import useAppStore from '../../store/useAppStore'
 import { colorFor } from '../../utils/blockHelpers'
 import { shouldIgnoreTap } from '../../utils/tapGuard'
 import { theme } from '../../theme'
+import { baselines, PATTERN_LABELS, ETAPE_LABELS, ETAPES } from '../../content/baselines'
 import { ToggleButtonGroup, ToggleButton, Grid, ClickableCard, IconButton, TextInput } from '@astryxdesign/core'
 
 const paletteStyle: React.CSSProperties = {
@@ -74,6 +75,10 @@ type FlowPaletteProps = {
    * non : un clic desktop sur un item doit rester inerte).
    */
   onAdd?: (type: string) => void
+  /** Drag d'une baseline entière (mime application/mlblock-pipeline). */
+  onBaselineDragStart?: (e: React.DragEvent, slug: string) => void
+  /** Clic/tap sur une baseline : charge la pipeline dans le canvas. */
+  onBaselineLoad?: (slug: string) => void
   /** Fermeture du tiroir mobile (affiche un bouton ✕ dans l'en-tête). */
   onClose?: () => void
   /** Collapse toggle for desktop sidebar — affiche un bouton en haut à droite. */
@@ -82,15 +87,31 @@ type FlowPaletteProps = {
   collapsed?: boolean
 }
 
-const FlowPalette = memo(function FlowPalette({ onDragStart, onAdd, onClose, onToggleCollapse }: FlowPaletteProps) {
+const FlowPalette = memo(function FlowPalette({ onDragStart, onAdd, onBaselineDragStart, onBaselineLoad, onClose, onToggleCollapse }: FlowPaletteProps) {
   const catalog = useAppStore(s => s.catalog)
   const [query, setQuery] = useState('')
   const [cat, setCat] = useState('all')
+  const [etape, setEtape] = useState('all')
   const [filtersOpen, setFiltersOpen] = useState(true)
   const pressStart = useRef<{ x: number; y: number } | null>(null)
   // Un drag HTML5 (même court, ≤8px) marque le flag : le click qui suit ne
   // doit pas ajouter de bloc (dragStarted est réinitialisé au pointerdown).
   const dragStarted = useRef(false)
+
+  // Carte type de bloc -> étapes où il apparaît (agrégée sur les baselines).
+  // Permet de filtrer les blocs unitaires par étape du pattern.
+  const etapeByType = useMemo(() => {
+    const m = new Map<string, string[]>()
+    for (const b of baselines) {
+      for (const [e, types] of Object.entries(b.etapes ?? {})) {
+        for (const t of types) {
+          const cur = m.get(t) ?? []
+          if (!cur.includes(e)) m.set(t, [...cur, e])
+        }
+      }
+    }
+    return m
+  }, [])
 
   const handleItemClick = (type: string, e: React.MouseEvent) => {
     if (dragStarted.current) {
@@ -120,7 +141,8 @@ const FlowPalette = memo(function FlowPalette({ onDragStart, onAdd, onClose, onT
     const label = def.segs.find(s => s.t === 'text')?.v ?? type
     const matchQuery = !q || label.toLowerCase().includes(q)
     const matchCat = cat === 'all' || def.cat === cat
-    return matchQuery && matchCat
+    const matchEtape = etape === 'all' || (etapeByType.get(type)?.includes(etape) ?? false)
+    return matchQuery && matchCat && matchEtape
   }
 
   const hasAnyMatch = Object.keys(catalog.blocks).some(matches)
@@ -184,11 +206,59 @@ const FlowPalette = memo(function FlowPalette({ onDragStart, onAdd, onClose, onT
                 ))}
               </Grid>
             </ToggleButtonGroup>
+            <div style={{ marginTop: 8 }}>
+              <ToggleButtonGroup
+                type="single"
+                label="Étapes du pattern"
+                value={etape}
+                onChange={(v) => setEtape((v as string) || 'all')}
+                size="sm"
+              >
+                <Grid columns={2} gap={1.5}>
+                  <ToggleButton label="Toutes" value="all" />
+                  {ETAPES.map(e => (
+                    <ToggleButton key={e} label={ETAPE_LABELS[e]} value={e} />
+                  ))}
+                </Grid>
+              </ToggleButtonGroup>
+            </div>
           </div>
         )}
       </div>
       <div style={scrollStyle}>
-        {!hasAnyMatch && (
+        {baselines.length > 0 && (
+          <div>
+            <div style={{ ...catStyle, display: 'flex', alignItems: 'center', gap: 6, marginTop: 0 }}>
+              <Sparkles size={13} />
+              <span>Baselines</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {baselines.map(b => (
+                <ClickableCard
+                  key={b.slug}
+                  label={b.title}
+                  onClick={() => onBaselineLoad?.(b.slug)}
+                  padding={2}
+                >
+                  <div
+                    draggable
+                    onDragStart={e => { dragStarted.current = true; onBaselineDragStart?.(e, b.slug) }}
+                    onPointerDown={e => { dragStarted.current = false; pressStart.current = { x: e.clientX, y: e.clientY } }}
+                    style={{ display: 'flex', flexDirection: 'column', gap: 3, width: '100%', cursor: 'grab' }}
+                    title={b.description}
+                    role="button"
+                    tabIndex={0}
+                  >
+                    <span style={{ fontSize: 13, fontWeight: 700, color: theme.color.text }}>{b.title}</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: theme.color.accent }}>{PATTERN_LABELS[b.pattern]}</span>
+                    <span style={{ fontSize: 11, color: theme.color.textMuted, lineHeight: 1.3 }}>{b.description}</span>
+                  </div>
+                </ClickableCard>
+              ))}
+            </div>
+          </div>
+        )}
+        {!hasAnyMatch && baselines.length === 0 && (
           <div style={{ color: theme.color.textMuted, fontSize: 13, fontWeight: 600, padding: '18px 6px', textAlign: 'center' }}>
             Aucun bloc ne correspond
           </div>

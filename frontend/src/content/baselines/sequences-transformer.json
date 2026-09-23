@@ -1,0 +1,30 @@
+{
+  "id": "sequences-transformer",
+  "title": "Séquences — Tokenisation & Transformer",
+  "pattern": "sequences",
+  "description": "Construit un pipeline NLP de bout en bout : tokenisation, vocabulaire, encodage, puis passage dans un transformer (embedding + multi-head attention + layer norm).",
+  "difficulty": "difficile",
+  "etapes": {
+    "chargement": ["tokenize"],
+    "traitement": ["build_vocab", "encode_text", "to_tensor", "embedding", "multihead_attention", "layernorm"]
+  },
+  "name": "Transformer from scratch",
+  "nodes": [
+    { "id": "n1", "type": "tokenize", "params": { "text": "Le chat dort le chat mange", "sep": " " }, "children": [], "position": { "x": 60, "y": 80 } },
+    { "id": "n2", "type": "build_vocab", "params": {}, "children": [], "position": { "x": 300, "y": 80 } },
+    { "id": "n3", "type": "encode_text", "params": { "max_len": "8" }, "children": [], "position": { "x": 540, "y": 80 } },
+    { "id": "n4", "type": "to_tensor", "params": {}, "children": [], "position": { "x": 780, "y": 80 } },
+    { "id": "n5", "type": "embedding", "params": { "num_embeddings": "8", "embedding_dim": "16" }, "children": [], "position": { "x": 1020, "y": 80 } },
+    { "id": "n6", "type": "multihead_attention", "params": { "embed_dim": "16", "num_heads": "2" }, "children": [], "position": { "x": 1280, "y": 80 } },
+    { "id": "n7", "type": "layernorm", "params": { "normalized_shape": "16" }, "children": [], "position": { "x": 1520, "y": 80 } }
+  ],
+  "edges": [
+    { "source": "n1", "source_port": "out_1", "target": "n2", "target_port": "in_1" },
+    { "source": "n1", "source_port": "out_1", "target": "n3", "target_port": "in_1" },
+    { "source": "n2", "source_port": "out_1", "target": "n3", "target_port": "vocab" },
+    { "source": "n3", "source_port": "out_1", "target": "n4", "target_port": "in_1" },
+    { "source": "n4", "source_port": "out_1", "target": "n5", "target_port": "in_1" },
+    { "source": "n5", "source_port": "out_1", "target": "n6", "target_port": "in_1" },
+    { "source": "n6", "source_port": "out_1", "target": "n7", "target_port": "in_1" }
+  ]
+}

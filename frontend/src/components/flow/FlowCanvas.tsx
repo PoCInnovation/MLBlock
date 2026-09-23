@@ -24,6 +24,7 @@ import { IconButton, ToggleButtonGroup, ToggleButton, TextInput, Grid, Clickable
 import { Markdown } from '@astryxdesign/core'
 import { Text, Heading } from '@astryxdesign/core/Text'
 import { courses, getCourse } from '../../content/cours'
+import { getBaseline } from '../../content/baselines'
 import BlockNode from './BlockNode'
 import FlowLink from './FlowLink'
 import FlowPalette from './FlowPalette'
@@ -306,15 +307,102 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
     e.dataTransfer.effectAllowed = 'move'
   }, [])
 
+  // Baseline entière : on ne transporte que le slug, le payload JSON est lu
+  // à l'arrivée (getBaseline). L'insertion insère les blocs ET les arêtes
+  // (pipelines multi-nœuds), avec un snapshot d'undo avant mutation.
+  const onBaselineDragStart = useCallback((e: React.DragEvent, slug: string) => {
+    e.dataTransfer.setData('application/mlblock-pipeline', slug)
+    e.dataTransfer.effectAllowed = 'copy'
+  }, [])
+
   const onDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault()
     e.dataTransfer.dropEffect = 'move'
   }, [])
 
+  // Insertion d'une baseline : remap les IDs (évite les collisions avec le
+  // canvas courant), décale chaque nœud depuis l'ancre de drop, puis ajoute
+  // nœuds + arêtes. Clic sur la carte baseline = même chemin, ancré au centre.
+  const insertBaseline = useCallback((baselineSlug: string, anchor: { x: number; y: number }) => {
+    const baseline = getBaseline(baselineSlug)
+    if (!baseline || !catalog) return
+    useAppStore.getState().commitUndoPoint()
+    const store = useAppStore.getState()
+    const { flowNodes: existing } = store
+    const used = new Set(existing.map(n => n.id))
+    const idMap = new Map<string, string>()
+    const remap = (id: string): string => {
+      let next = id
+      while (used.has(next) || idMap.has(next)) next = `${id}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
+      return next
+    }
+    const newNodes: Node[] = []
+    // Normalise les positions : le coin haut-gauche de la baseline arrive sur
+    // l'ancre de drop (sinon les offsets absolus du JSON décalent le groupe).
+    const minX = Math.min(...baseline.pipelineNodes.map(n => n.position?.x ?? 0))
+    const minY = Math.min(...baseline.pipelineNodes.map(n => n.position?.y ?? 0))
+    for (const n of baseline.pipelineNodes) {
+      const def = catalog.blocks[n.type]
+      if (!def) continue
+      const cat = catalog.categories.find(c => c.id === def.cat)
+      const label = def.segs.find(s => s.t === 'text')?.v ?? n.type
+      const newId = remap(n.id)
+      idMap.set(n.id, newId)
+      used.add(newId)
+      newNodes.push({
+        id: newId,
+        type: 'block',
+        dragHandle: '.block-drag-handle',
+        position: {
+          x: anchor.x + ((n.position?.x ?? 0) - minX),
+          y: anchor.y + ((n.position?.y ?? 0) - minY),
+        },
+        data: {
+          type: n.type,
+          label,
+          category: def.cat,
+          categoryColor: cat?.color ?? theme.color.accent,
+          segs: def.segs,
+          fields: { ...segsToFields(def), ...Object.fromEntries(Object.entries(n.params ?? {}).map(([k, v]) => [k, String(v)])) },
+          inputs: def.inputs,
+          outputs: def.outputs,
+        },
+      })
+    }
+    const newEdges: Edge[] = baseline.pipelineEdges
+      .filter(e => idMap.has(e.source) && idMap.has(e.target))
+      .map((e, i) => ({
+        id: `e_${baseline.slug}_${Date.now()}_${i}`,
+        source: idMap.get(e.source)!,
+        sourceHandle: e.source_port,
+        target: idMap.get(e.target)!,
+        targetHandle: e.target_port,
+      }))
+    store.setFlowNodes([...existing, ...newNodes])
+    store.addFlowEdges(newEdges)
+    setTimeout(() => fitView({ padding: 0.2, duration: 300 }), 50)
+  }, [catalog, fitView])
+
+  const onBaselineLoad = useCallback((slug: string) => {
+    const rect = wrapperRef.current?.getBoundingClientRect()
+    const x = rect ? rect.left + rect.width / 2 : window.innerWidth / 2
+    const y = rect ? rect.top + rect.height / 2 : window.innerHeight / 2
+    const anchor = screenToFlowPosition({ x, y })
+    insertBaseline(slug, anchor)
+    setPaletteOpen(false)
+  }, [insertBaseline, screenToFlowPosition])
+
   const onDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault()
       if (!catalog) return
+      // Baseline entière d'abord (mime dédié), sinon bloc unitaire.
+      const baselineSlug = e.dataTransfer.getData('application/mlblock-pipeline')
+      if (baselineSlug) {
+        const anchor = screenToFlowPosition({ x: e.clientX, y: e.clientY })
+        insertBaseline(baselineSlug, anchor)
+        return
+      }
       const type = e.dataTransfer.getData('application/mlblock-type')
       if (!type || !catalog.blocks[type]) return
       useAppStore.getState().commitUndoPoint()
@@ -327,7 +415,7 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
       // on an empty canvas (fitView scale ~0.1) yields enormous flow coords
       setTimeout(() => fitView({ padding: 0.2, duration: 300 }), 50)
     },
-    [catalog, screenToFlowPosition, buildNode, addFlowNode, fitView]
+    [catalog, screenToFlowPosition, buildNode, addFlowNode, fitView, insertBaseline]
   )
 
   // Tap-to-add (mobile) : même construction que le drop, position = centre
@@ -447,7 +535,7 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
             overflow: 'hidden',
           }}
         >
-          <FlowPalette onDragStart={onDragStart} onToggleCollapse={() => setLeftCollapsed(true)} />
+          <FlowPalette onDragStart={onDragStart} onBaselineDragStart={onBaselineDragStart} onBaselineLoad={onBaselineLoad} onToggleCollapse={() => setLeftCollapsed(true)} />
         </div>
       </div>
       <div
@@ -603,7 +691,7 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
               overflow: 'hidden',
             }}
           >
-            <FlowPalette onDragStart={onDragStart} onAdd={addNodeAtCenter} onClose={() => setPaletteOpen(false)} />
+            <FlowPalette onDragStart={onDragStart} onBaselineDragStart={onBaselineDragStart} onBaselineLoad={onBaselineLoad} onAdd={addNodeAtCenter} onClose={() => setPaletteOpen(false)} />
           </div>
         </>
       )}
