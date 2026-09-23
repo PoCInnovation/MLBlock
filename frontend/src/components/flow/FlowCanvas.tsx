@@ -307,9 +307,9 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
     e.dataTransfer.effectAllowed = 'move'
   }, [])
 
-  // Baseline entière : on ne transporte que le slug, le payload JSON est lu
-  // à l'arrivée (getBaseline). L'insertion insère les blocs ET les arêtes
-  // (pipelines multi-nœuds), avec un snapshot d'undo avant mutation.
+  // Baseline entiere : on ne transporte que le slug, le payload JSON est lu
+  // a l'arrivee (getBaseline). L'insertion insere les blocs ET les aretes
+  // (pipelines multi-noeuds), avec un snapshot d'undo avant mutation.
   const onBaselineDragStart = useCallback((e: React.DragEvent, slug: string) => {
     e.dataTransfer.setData('application/mlblock-pipeline', slug)
     e.dataTransfer.effectAllowed = 'copy'
@@ -320,12 +320,15 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
     e.dataTransfer.dropEffect = 'move'
   }, [])
 
-  // Insertion d'une baseline : remap les IDs (évite les collisions avec le
-  // canvas courant), décale chaque nœud depuis l'ancre de drop, puis ajoute
-  // nœuds + arêtes. Clic sur la carte baseline = même chemin, ancré au centre.
+  // Insertion d'une baseline : remap les IDs (evite les collisions avec le
+  // canvas courant), decale chaque noeud depuis l'ancre de drop, puis ajoute
+  // noeuds + aretes. Clic sur la carte baseline = meme chemin, ancre au centre.
   const insertBaseline = useCallback((baselineSlug: string, anchor: { x: number; y: number }) => {
     const baseline = getBaseline(baselineSlug)
-    if (!baseline || !catalog) return
+    if (!baseline || !catalog) {
+      showToast({ kind: 'error', message: 'Baseline introuvable - recharge la page' })
+      return
+    }
     useAppStore.getState().commitUndoPoint()
     const store = useAppStore.getState()
     const { flowNodes: existing } = store
@@ -381,7 +384,7 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
     store.setFlowNodes([...existing, ...newNodes])
     store.addFlowEdges(newEdges)
     setTimeout(() => fitView({ padding: 0.2, duration: 300 }), 50)
-  }, [catalog, fitView])
+  }, [catalog, fitView, showToast])
 
   const onBaselineLoad = useCallback((slug: string) => {
     const rect = wrapperRef.current?.getBoundingClientRect()
@@ -396,7 +399,7 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
     (e: React.DragEvent) => {
       e.preventDefault()
       if (!catalog) return
-      // Baseline entière d'abord (mime dédié), sinon bloc unitaire.
+      // Baseline entiere d'abord (mime dedie), sinon bloc unitaire.
       const baselineSlug = e.dataTransfer.getData('application/mlblock-pipeline')
       if (baselineSlug) {
         const anchor = screenToFlowPosition({ x: e.clientX, y: e.clientY })
@@ -535,7 +538,7 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
             overflow: 'hidden',
           }}
         >
-          <FlowPalette onDragStart={onDragStart} onBaselineDragStart={onBaselineDragStart} onBaselineLoad={onBaselineLoad} onToggleCollapse={() => setLeftCollapsed(true)} />
+          <FlowPalette onDragStart={onDragStart} onBaselineDragStart={onBaselineDragStart} onBaselineLoad={onBaselineLoad} onJuniorAdd={addNodeAtCenter} onToggleCollapse={() => setLeftCollapsed(true)} />
         </div>
       </div>
       <div
@@ -691,7 +694,7 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
               overflow: 'hidden',
             }}
           >
-            <FlowPalette onDragStart={onDragStart} onBaselineDragStart={onBaselineDragStart} onBaselineLoad={onBaselineLoad} onAdd={addNodeAtCenter} onClose={() => setPaletteOpen(false)} />
+            <FlowPalette onDragStart={onDragStart} onBaselineDragStart={onBaselineDragStart} onBaselineLoad={onBaselineLoad} onJuniorAdd={addNodeAtCenter} onAdd={addNodeAtCenter} onClose={() => setPaletteOpen(false)} />
           </div>
         </>
       )}
