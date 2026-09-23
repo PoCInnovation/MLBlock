@@ -11,14 +11,14 @@ export const ETAPES: Etape[] = ['chargement', 'traitement', 'evaluation', 'visua
 export const PATTERN_LABELS: Record<Pattern, string> = {
   cnn: 'CNN / imagerie',
   clustering: 'Clustering',
-  classification: 'Classification & régression',
-  sequences: 'Séquences / transformer',
+  classification: 'Classification & regression',
+  sequences: 'Sequences / transformer',
 }
 
 export const ETAPE_LABELS: Record<Etape, string> = {
   chargement: 'Chargement',
   traitement: 'Traitement',
-  evaluation: 'Évaluation',
+  evaluation: 'Evaluation',
   visualisation: 'Visualisation',
 }
 
@@ -52,7 +52,7 @@ export type Baseline = z.infer<typeof BaselineSchema> & {
   /** nodes au format PipelineNode attendu par createPipeline/loadPipeline. */
   pipelineNodes: PipelineNode[]
   pipelineEdges: PipelineEdge[]
-  /** index nodeId -> étape, pour filtrer la palette par étape. */
+  /** index nodeId -> etape, pour filtrer la palette par etape. */
   etapeByNode: Record<string, Etape>
 }
 
@@ -77,7 +77,7 @@ function buildBaselines(): Baseline[] {
     const etapeByNode: Record<string, Etape> = {}
     for (const [etape, types] of Object.entries(b.etapes ?? {})) {
       if (!ETAPES.includes(etape as Etape)) {
-        console.warn(`[baselines] étape inconnue ${etape} dans ${slug}`)
+        console.warn(`[baselines] etape inconnue ${etape} dans ${slug}`)
         continue
       }
       for (const t of types) etapeByNode[t] = etape as Etape
