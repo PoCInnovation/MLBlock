@@ -55,6 +55,8 @@ type AppState = {
   savedFingerprint: string | null
   restoredWork: boolean
   toast: Toast | null
+  activeSheet: 'add' | 'inspect' | 'journal' | null
+  setActiveSheet: (sheet: 'add' | 'inspect' | 'journal' | null) => void
 
   undoStack: UndoSnapshot[]
   redoStack: UndoSnapshot[]
@@ -121,6 +123,8 @@ const useAppStore = create<AppState>((set, get) => ({
   savedFingerprint: fingerprintOf({ flowNodes: [], flowEdges: [], projectName: 'mon-premier-modèle' }),
   restoredWork: false,
   toast: null,
+  activeSheet: null,
+  setActiveSheet: (sheet) => set({ activeSheet: sheet }),
   undoStack: [],
   redoStack: [],
 

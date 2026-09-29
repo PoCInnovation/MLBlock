@@ -227,7 +227,7 @@ export function SequentialDrawerBody({ id, data, updateFlowParam }: SuperBlockBo
   )
 }
 
-export function TrainerBody({ id, data, updateFlowParam, inputFed, outputFed }: SuperBlockBodyProps) {
+export function TrainerBody({ id, data, updateFlowParam }: SuperBlockBodyProps) {
   const results = useAppStore(s => s.results)
   const epochs = data.fields?.epochs ?? '5'
   const optimizer = data.fields?.optimizer ?? 'adam'
@@ -235,32 +235,8 @@ export function TrainerBody({ id, data, updateFlowParam, inputFed, outputFed }: 
   const lossFn = data.fields?.loss_fn ?? 'cross_entropy'
   const myResult = results.find(r => r.block_name === 'deep_trainer' || r.block_id === id)
 
-  const slots = [
-    { id: 'in_1', label: 'Train Data', color: '#A855F7', fed: inputFed['in_1'] },
-    { id: 'in_2', label: 'Modèle', color: '#F97316', fed: inputFed['in_2'] },
-    { id: 'in_3', label: 'Val (opt)', color: '#A855F7', fed: inputFed['in_3'] },
-    { id: 'out_1', label: 'Trained Model', color: '#F97316', fed: outputFed['out_1'] },
-  ]
-
   return (
     <VStack gap={2}>
-      <div className="grid grid-cols-2 gap-1.5 text-[10px] bg-surface1 p-2 rounded-xl border border-border/40">
-        {slots.map(s => (
-          <div key={s.id} className="flex items-center gap-1.5">
-            <span
-              className="w-2 h-2 rounded-full inline-block shrink-0"
-              style={{
-                backgroundColor: s.color,
-                boxShadow: s.fed ? `0 0 6px ${s.color}` : 'none',
-              }}
-            />
-            <span className={s.fed ? 'text-text font-semibold' : 'text-text-muted'}>
-              {s.label}
-            </span>
-          </div>
-        ))}
-      </div>
-
       <div className="flex items-center justify-between text-[11px]">
         <span className="text-text-muted">Époques:</span>
         <input

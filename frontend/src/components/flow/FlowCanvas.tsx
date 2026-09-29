@@ -4,7 +4,6 @@ import {
   Background,
   Controls,
   ControlButton,
-  MiniMap,
   ReactFlowProvider,
   useReactFlow,
   addEdge,
@@ -16,19 +15,17 @@ import {
   type EdgeChange,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { AlignVerticalJustifyCenter, Menu, PanelLeft, PanelRight } from 'lucide-react'
+import { AlignVerticalJustifyCenter } from 'lucide-react'
 import { useShallow } from 'zustand/react/shallow'
 import useAppStore from '../../store/useAppStore'
 import { theme } from '../../theme'
-import { IconButton, ToggleButtonGroup, ToggleButton, TextInput, Grid, ClickableCard, Button, Card, Divider, Switch, HStack, VStack, Stack } from '@astryxdesign/core'
-import { Markdown } from '@astryxdesign/core'
+import { ClickableCard, Divider, HStack, VStack, Badge } from '@astryxdesign/core'
+import { BottomSheet } from '@astryxdesign/core/BottomSheet'
 import { Text, Heading } from '@astryxdesign/core/Text'
-import { courses, getCourse } from '../../content/cours'
 import BlockNode from './BlockNode'
 import SuperBlockNode from './SuperBlockNode'
-import { isSuperBlock } from './superBlockRegistry'
+import { isSuperBlock, SUPER_BLOCK_REGISTRY } from './superBlockRegistry'
 import FlowLink from './FlowLink'
-import FlowPalette from './FlowPalette'
 import JournalPanel from './JournalPanel'
 import ConverterDialog from './ConverterDialog'
 import { segsToFields } from '../../utils/flowConversion'
@@ -36,8 +33,9 @@ import { portDtype } from '../../utils/typeCheck'
 import { typeSystem } from '../../utils/typeSystem'
 import { resolveConnection, type ResolvedConnection } from '../../utils/portResolution'
 import { arrangeGraph } from '../../utils/layout'
-import { stageOfBlock } from '../../utils/stages'
+import { stageOfBlock, getStageConfig } from '../../utils/stages'
 import type { Port } from '../../types/catalog'
+
 const nodeTypes = {
   block: BlockNode,
   superblock: SuperBlockNode,
@@ -54,6 +52,7 @@ const edgeColor: Record<string, string> = {
   convertible: theme.color.convert,
   incompatible: theme.color.error,
 }
+
 /** Ports of a flow node (xyflow Node data is untyped `Record<string, unknown>`). */
 function portList(node: Node | undefined, side: 'inputs' | 'outputs'): Port[] | undefined {
   const data = node?.data as Record<string, unknown> | undefined
@@ -75,7 +74,6 @@ function edgeStyleFor(e: Edge, nodes: Node[], graph: Map<string, Set<string>>): 
 }
 
 const FlowCanvasInner = React.memo(function FlowCanvasInner() {
-  // Single source of truth: the store. No local canvas state, no sync effects.
   const { flowNodes, flowEdges } = useAppStore(useShallow(s => ({
     flowNodes: s.flowNodes,
     flowEdges: s.flowEdges,
@@ -84,95 +82,116 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
   const addFlowEdges = useAppStore(s => s.addFlowEdges)
   const catalog = useAppStore(s => s.catalog)
   const showToast = useAppStore(s => s.showToast)
+  const activeSheet = useAppStore(s => s.activeSheet)
+  const setActiveSheet = useAppStore(s => s.setActiveSheet)
+  const jobStatus = useAppStore(s => s.jobStatus)
 
   const { screenToFlowPosition, fitView, getZoom } = useReactFlow()
   const wrapperRef = useRef<HTMLDivElement>(null)
-  // Timer du fitView post-dispose : annulé au démontage pour ne pas appeler
-  // fitView sur une instance ReactFlow démontée.
-  const fitViewTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  // Tiroir palette mobile (overlay) — desktop : jamais ouvert, bouton caché.
-  const [paletteOpen, setPaletteOpen] = useState(false)
-  const [leftCollapsed, setLeftCollapsed] = useState(false)
-  const [rightCollapsed, setRightCollapsed] = useState(false)
-  const [rightMode, setRightMode] = useState<'cours' | 'inspecteur' | 'journal'>('inspecteur')
-  const hasOutputs = useAppStore(s => s.results.length > 0)
-  const jobStatus = useAppStore(s => s.jobStatus)
+  const fitViewTimerRef = useRef<number | null>(null)
+  const tapSeq = useRef(0)
+
   const [converterPrompt, setConverterPrompt] = useState<{
     conn: Connection
     convType: string
     convLabel: string
     resolved: ResolvedConnection
   } | null>(null)
-  // Auto-switch to Inspecteur and select last Block on run (Kahn topo)
-  // ponytail: queueMicrotask avoids synchronous setState in effect
+
   useEffect(() => {
     if (jobStatus !== 'running') return
-    queueMicrotask(() => {
-      setRightMode('inspecteur')
-      setRightCollapsed(false)
-      const { flowNodes, flowEdges } = useAppStore.getState()
-      if (flowNodes.length === 0) return
-      const indeg = new Map<string, number>(flowNodes.map(n => [n.id, 0]))
-      const adj = new Map<string, string[]>(flowNodes.map(n => [n.id, []]))
-      for (const e of flowEdges) {
-        indeg.set(e.target, (indeg.get(e.target) ?? 0) + 1)
-        adj.get(e.source)?.push(e.target)
-      }
-      const q = flowNodes.filter(n => (indeg.get(n.id) ?? 0) === 0).map(n => n.id)
-      const order: string[] = []
-      while (q.length) {
-        const id = q.shift()!
-        order.push(id)
-        for (const nb of adj.get(id) ?? []) {
-          indeg.set(nb, (indeg.get(nb) ?? 0) - 1)
-          if ((indeg.get(nb) ?? 0) === 0) q.push(nb)
-        }
-      }
-      const sinks = order.filter(id => (adj.get(id)?.length ?? 0) === 0)
-      const lastId = sinks.length ? sinks[sinks.length - 1] : order[order.length - 1]
-      const last = flowNodes.find(n => n.id === lastId)
-      if (last) {
-        const store = useAppStore.getState()
-        store.setFlowNodes(flowNodes.map(n => ({ ...n, selected: n.id === last.id })))
-      }
-    })
-  }, [jobStatus])
-  // Compteur de taps : décale les ajouts successifs pour éviter l'empilement
-  // exact au centre (le premier reste centré).
-  const tapSeq = useRef(0)
-  const paletteToggleRef = useRef<HTMLButtonElement>(null)
-  const paletteDrawerRef = useRef<HTMLDivElement>(null)
-  const wasOpenRef = useRef(false)
+    setActiveSheet('journal')
+  }, [jobStatus, setActiveSheet])
+
   useEffect(() => {
     return () => {
-      if (fitViewTimerRef.current) clearTimeout(fitViewTimerRef.current)
+      clearTimeout(fitViewTimerRef.current ?? undefined)
     }
   }, [])
-
-  useEffect(() => {
-    if (!paletteOpen) return
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setPaletteOpen(false) }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [paletteOpen])
-
-  // Focus : dans le tiroir à l'ouverture, retour au bouton à la fermeture.
-  useEffect(() => {
-    if (paletteOpen) {
-      wasOpenRef.current = true
-      paletteDrawerRef.current?.focus()
-    } else if (wasOpenRef.current) {
-      wasOpenRef.current = false
-      paletteToggleRef.current?.focus()
-    }
-  }, [paletteOpen])
 
   const graph = useMemo(
     () => (catalog ? typeSystem.buildConversionGraph(catalog.blocks) : new Map<string, Set<string>>()),
     [catalog]
   )
 
-  /** Construit un nœud bloc — partagé entre drop (DnD) et tap-to-add. */
+  const onNodesChange = useCallback(
+    (changes: NodeChange[]) => {
+      if (changes.some(c => c.type === 'remove')) useAppStore.getState().commitUndoPoint()
+      useAppStore.getState().applyFlowNodeChanges(changes)
+    },
+    []
+  )
+
+  const onEdgesChange = useCallback(
+    (changes: EdgeChange[]) => {
+      if (changes.some(c => c.type === 'remove')) useAppStore.getState().commitUndoPoint()
+      useAppStore.getState().applyFlowEdgeChanges(changes)
+    },
+    []
+  )
+
+  const insertConverter = useCallback((conn: Connection, convType: string, resolved: ResolvedConnection) => {
+    useAppStore.getState().commitUndoPoint()
+    const { flowNodes, flowEdges } = useAppStore.getState()
+    if (!catalog) return
+    const def = catalog.blocks[convType]
+    if (!def) return
+
+    const src = flowNodes.find(n => n.id === conn.source)
+    const tgt = flowNodes.find(n => n.id === conn.target)
+    if (!src || !tgt) return
+
+    const convX = (src.position.x + tgt.position.x) / 2
+    const convY = (src.position.y + tgt.position.y) / 2
+    const convId = `${convType}_${Date.now()}`
+    const cat = catalog.categories.find(c => c.id === def.cat)
+    const convNode: Node = {
+      id: convId,
+      type: 'block',
+      dragHandle: '.block-drag-handle',
+      position: { x: convX, y: convY },
+      data: {
+        type: convType,
+        label: def.segs.find(s => s.t === 'text')?.v ?? convType,
+        category: def.cat,
+        categoryColor: cat?.color ?? theme.color.accent,
+        segs: def.segs,
+        fields: segsToFields(def),
+        inputs: def.inputs,
+        outputs: def.outputs,
+        stage: def.stage ?? stageOfBlock(convType, def.cat),
+        stage_name: def.stage_name,
+      },
+    }
+
+    const inPort = def.inputs[0]?.name ?? 'in_1'
+    const outPort = def.outputs[0]?.name ?? 'out_1'
+    const e1: Edge = {
+      id: `e-${Date.now()}-1`,
+      source: conn.source,
+      sourceHandle: resolved.sourcePort,
+      target: convId,
+      targetHandle: inPort,
+      type: 'flow',
+    }
+    const e2: Edge = {
+      id: `e-${Date.now()}-2`,
+      source: convId,
+      sourceHandle: outPort,
+      target: conn.target,
+      targetHandle: resolved.targetPort,
+      type: 'flow',
+    }
+
+    const remainingEdges = flowEdges.filter(e => !(e.source === conn.source && e.target === conn.target))
+    addFlowNode(convNode)
+    useAppStore.getState().setFlowEdges([...remainingEdges, e1, e2])
+    const newEdges = [...remainingEdges, e1, e2]
+    const layoutNodes = [...flowNodes, convNode].map(n => ({ id: n.id, width: 220, height: 140 }))
+    const positions = arrangeGraph(layoutNodes, newEdges)
+    useAppStore.getState().setFlowNodes([...flowNodes, convNode].map(n => ({ ...n, position: positions[n.id] ?? n.position })))
+  }, [catalog, addFlowNode])
+
   const buildNode = useCallback((type: string, position: { x: number; y: number }): Node | null => {
     if (!catalog) return null
     const def = catalog.blocks[type]
@@ -202,119 +221,43 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
     }
   }, [catalog])
 
-  const insertConverter = useCallback((conn: Connection, convType: string, resolved: ResolvedConnection) => {
-    useAppStore.getState().commitUndoPoint()
-    const { flowNodes, flowEdges } = useAppStore.getState()
-    if (!catalog) return
-    const def = catalog.blocks[convType]
-    if (!def) return
-    const convIn = def.inputs[0]?.name ?? 'in_1'
-    const convOut = def.outputs[0]?.name ?? 'out_1'
-    const srcPos = flowNodes.find(n => n.id === conn.source)?.position
-    const tgtPos = flowNodes.find(n => n.id === conn.target)?.position
-    const position = srcPos && tgtPos
-      ? { x: (srcPos.x + tgtPos.x) / 2, y: (srcPos.y + tgtPos.y) / 2 }
-      : { x: 300, y: 300 }
-    const convId = `${convType}_${Date.now()}`
-    const cat = catalog.categories.find(c => c.id === def.cat)
-    const stage = def.stage ?? stageOfBlock(convType, def.cat)
-    const node: Node = {
-      id: convId,
-      type: 'block',
-      dragHandle: '.block-drag-handle',
-      position,
-      data: {
-        type: convType,
-        label: def.segs.find(s => s.t === 'text')?.v ?? convType,
-        category: def.cat,
-        categoryColor: cat?.color ?? theme.color.accent,
-        segs: def.segs,
-        fields: segsToFields(def),
-        inputs: def.inputs,
-        outputs: def.outputs,
-        stage,
-        stage_name: def.stage_name,
-      },
-    }
-    // Câblage avec les ports résolus (sourcePort de A, targetPort de B) :
-    // les handles cliqués ne sont pas fiables côté non-ambigu (point unique).
-    const edgeA: Edge = {
-      id: `e_${conn.source}_${convId}`,
-      source: conn.source ?? '',
-      sourceHandle: resolved.sourcePort,
-      target: convId,
-      targetHandle: convIn,
-    }
-    const edgeB: Edge = {
-      id: `e_${convId}_${conn.target}`,
-      source: convId,
-      sourceHandle: convOut,
-      target: conn.target ?? '',
-      targetHandle: resolved.targetPort,
-    }
-    addFlowNode(node)
-    addFlowEdges(flowEdges.filter(ed => !(ed.source === conn.source && ed.target === conn.target)).concat([edgeA, edgeB]))
-  }, [catalog, addFlowNode, addFlowEdges])
-
-  // Undo/redo : snapshot avant toute suppression (rafale = un seul appel
-  // ReactFlow — le `some` évite de pousser plusieurs points par sélection).
-  const onNodesChange = useCallback((changes: NodeChange[]) => {
-    const s = useAppStore.getState()
-    if (changes.some(c => c.type === 'remove')) s.commitUndoPoint()
-    s.applyFlowNodeChanges(changes)
-  }, [])
-  const onEdgesChange = useCallback((changes: EdgeChange[]) => {
-    const s = useAppStore.getState()
-    if (changes.some(c => c.type === 'remove')) s.commitUndoPoint()
-    s.applyFlowEdgeChanges(changes)
-  }, [])
-
   const onConnect = useCallback((params: Connection) => {
+    if (!params.source || !params.target || !catalog) return
     const { flowNodes, flowEdges } = useAppStore.getState()
-    if (!catalog) {
-      useAppStore.getState().commitUndoPoint()
-      addFlowEdges(addEdge(params, []))
-      return
-    }
     const src = flowNodes.find(n => n.id === params.source)
     const tgt = flowNodes.find(n => n.id === params.target)
-    const srcPorts = portList(src, 'outputs')
-    const tgtPorts = portList(tgt, 'inputs')
-    if (!src || !tgt || !srcPorts?.length || !tgtPorts?.length) {
-      useAppStore.getState().commitUndoPoint()
-      addFlowEdges(addEdge(params, []))
+    if (!src || !tgt) return
+
+    const srcOutputs = portList(src, 'outputs')
+    const tgtInputs = portList(tgt, 'inputs')
+    const resolved = resolveConnection(srcOutputs, tgtInputs, params.sourceHandle, params.targetHandle, graph)
+
+    if (!resolved || !resolved.targetPort) {
+      showToast({ kind: 'error', message: 'Aucun port d\'entrée compatible disponible sur la cible' })
       return
     }
-    // Résolution automatique du couple (source_port, target_port) : côté
-    // non-ambigu le point unique représente tous les ports, le scoring
-    // choisit le plus compatible. Côté ambigu le handle cliqué est figé.
-    const resolved = resolveConnection(srcPorts, tgtPorts, params.sourceHandle, params.targetHandle, graph)
-    if (!resolved) {
-      const srcPort = params.sourceHandle ? srcPorts.find(p => p.name === params.sourceHandle) : srcPorts[0]
-      const tgtPort = params.targetHandle ? tgtPorts.find(p => p.name === params.targetHandle) : tgtPorts[0]
-      const srcDtype = srcPort?.dtype ?? portDtype(srcPorts, params.sourceHandle) ?? ''
-      const tgtDtype = tgtPort?.dtype ?? portDtype(tgtPorts, params.targetHandle) ?? ''
-      const srcBlock = ((src.data as Record<string, unknown>)?.type as string) ?? src.id
-      const tgtBlock = ((tgt.data as Record<string, unknown>)?.type as string) ?? tgt.id
-      const [, diag] = typeSystem.canConnect(srcDtype, tgtDtype, graph, srcBlock, tgtBlock, catalog.blocks)
-      showToast({ kind: 'error', message: diag ?? `${srcDtype} → ${tgtDtype} : aucune conversion possible` })
+
+    const srcDtype = portDtype(srcOutputs, resolved.sourcePort)
+    const tgtDtype = portDtype(tgtInputs, resolved.targetPort)
+    if (!srcDtype || !tgtDtype) {
+      showToast({ kind: 'error', message: 'Impossible de résoudre les types des ports' })
       return
     }
+
     if (resolved.verdict === 'compatible') {
-      useAppStore.getState().commitUndoPoint()
-      // Remplacement : un input n'a jamais qu'une edge — supprime l'ancienne
-      // sur ce port avant d'ajouter la nouvelle (1 input = 1 edge max).
-      const rest = flowEdges.filter(e => !(e.target === tgt.id && e.targetHandle === resolved.targetPort))
-      addFlowEdges(rest.concat([{
-        id: `e_${src.id}_${tgt.id}_${resolved.targetPort}`,
-        source: src.id,
+      const edgeStyle = edgeStyleFor({ ...params, sourceHandle: resolved.sourcePort, targetHandle: resolved.targetPort } as Edge, flowNodes, graph)
+      const newEdge: Edge = {
+        id: `e-${Date.now()}`,
+        source: params.source,
+        target: params.target,
         sourceHandle: resolved.sourcePort,
-        target: tgt.id,
         targetHandle: resolved.targetPort,
-      }]))
+        type: 'flow',
+        style: edgeStyle,
+      }
+      useAppStore.getState().commitUndoPoint()
+      addFlowEdges(addEdge(newEdge, flowEdges))
     } else {
-      const srcDtype = srcPorts.find(p => p.name === resolved.sourcePort)?.dtype ?? ''
-      const tgtDtype = tgtPorts.find(p => p.name === resolved.targetPort)?.dtype ?? ''
       const conv = typeSystem.findConverter(srcDtype, tgtDtype, catalog.blocks)
       if (!conv) {
         const srcBlock = ((src.data as Record<string, unknown>)?.type as string) ?? src.id
@@ -334,10 +277,6 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
     }
   }, [catalog, graph, addFlowEdges, showToast])
 
-  const onDragStart = useCallback((e: React.DragEvent, type: string) => {
-    e.dataTransfer.setData('application/mlblock-type', type)
-    e.dataTransfer.effectAllowed = 'move'
-  }, [])
 
   const onDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -356,17 +295,11 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
       const node = buildNode(type, position)
       if (!node) return
       addFlowNode(node)
-      // ponytail: fitView recenters on the dropped node — screenToFlowPosition
-      // on an empty canvas (fitView scale ~0.1) yields enormous flow coords
-      setTimeout(() => fitView({ padding: 0.2, duration: 300 }), 50)
+      fitViewTimerRef.current = setTimeout(() => fitView({ padding: 0.2, duration: 300 }), 50)
     },
     [catalog, screenToFlowPosition, buildNode, addFlowNode, fitView]
   )
 
-  // Tap-to-add (mobile) : même construction que le drop, position = centre
-  // du viewport visible (le rect du canvas, pas de la fenêtre). Les ajouts
-  // successifs sont décalés de 22px en Y (cycles de 6) pour ne pas s'empiler
-  // exactement au centre.
   const addNodeAtCenter = useCallback((type: string) => {
     const rect = wrapperRef.current?.getBoundingClientRect()
     const x = rect ? rect.left + rect.width / 2 : window.innerWidth / 2
@@ -376,26 +309,16 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
     if (!node) return
     useAppStore.getState().commitUndoPoint()
     addFlowNode(node)
-    setPaletteOpen(false)
+    setActiveSheet(null)
     setTimeout(() => fitView({ padding: 0.2, duration: 300 }), 50)
-  }, [buildNode, screenToFlowPosition, addFlowNode, fitView])
+  }, [buildNode, screenToFlowPosition, addFlowNode, fitView, setActiveSheet])
 
-  // Disposer : ré-arrangement hiérarchique EXPLICITE des nœuds (dagre) —
-  // jamais automatique (ni au chargement, ni après chaque édition). Taille
-  // lue dans le DOM au moment du clic (hauteurs variables : params/segments),
-  // corrigée du zoom pour rester en coordonnées de flow ; snapshot d'undo
-  // avant application pour que Ctrl+Z restaure les positions manuelles.
   const handleArrange = useCallback(() => {
-    if (useAppStore.getState().flowNodes.length < 2) return // no-op silencieux
-    // rAF : le DOM reflète le dernier rendu (édition d'un param puis clic
-    // immédiat sur Disposer avant le re-render React).
+    if (useAppStore.getState().flowNodes.length < 2) return
     requestAnimationFrame(() => {
       const store = useAppStore.getState()
       if (store.flowNodes.length < 2) return
-      const zoom = getZoom() || 1 // zoom 0 → division infinie → NaN
-      // Lookup en une passe par data-id : un id avec guillemet/backslash
-      // (ids serveur passés verbatim au chargement) ferait jeter
-      // querySelector(selon template).
+      const zoom = getZoom() || 1
       const elById: Record<string, Element> = {}
       wrapperRef.current?.querySelectorAll('.react-flow__node').forEach(el => {
         const id = el.getAttribute('data-id')
@@ -403,18 +326,12 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
       })
       const nodes = store.flowNodes.map(n => {
         const rect = elById[n.id]?.getBoundingClientRect()
-        // Fallback 220×140 si le DOM manque ou si le rect est dégénéré
-        // (0×0 : display:none ou non encore disposé).
         const width = rect && rect.width > 0 ? rect.width / zoom : 220
         const height = rect && rect.height > 0 ? rect.height / zoom : 140
         return { id: n.id, width, height }
       })
       const edges = store.flowEdges.map(e => ({ source: e.source, target: e.target }))
       const positions = arrangeGraph(nodes, edges)
-      // Graphe déjà disposé : aucun déplacement visible → pas de point d'undo
-      // inutile. Tolérance 1px : le zoom fitView fait dériver les mesures
-      // DOM de fractions de pixel entre deux clics — l'égalité stricte ne
-      // déclencherait jamais le skip.
       if (store.flowNodes.every(n => {
         const p = positions[n.id]
         return Math.abs(n.position.x - p.x) < 1 && Math.abs(n.position.y - p.y) < 1
@@ -433,61 +350,15 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
     [flowEdges, flowNodes, graph]
   )
 
+  const handleNodeClick = useCallback(() => setActiveSheet('inspect'), [setActiveSheet])
   return (
-    <div style={{ flex: 1, position: 'relative', display: 'flex', gap: 16, minWidth: 0, minHeight: 0, height: '100%', alignItems: 'stretch' }}>
-      {/* Palette gauche : bouton repli en haut à droite *dans* la sidebar, instant */}
-      <div
-        className="flow-palette"
-        style={{
-          width: leftCollapsed ? 48 : 280,
-          flexShrink: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-          transition: 'none',
-          position: 'relative',
-          height: '100%',
-          alignSelf: 'stretch',
-          minHeight: 0,
-        }}
-      >
-        <div
-          style={{
-            position: 'absolute',
-            top: 6,
-            left: 0,
-            right: 0,
-            display: leftCollapsed ? 'flex' : 'none',
-            justifyContent: 'center',
-            zIndex: 2,
-          }}
-        >
-          <IconButton
-            label="Ouvrir la palette"
-            icon={<PanelRight size={16} />}
-            variant="ghost"
-            size="sm"
-            onClick={() => setLeftCollapsed(false)}
-          />
-        </div>
-        <div
-          style={{
-            flex: 1,
-            minHeight: 0,
-            height: '100%',
-            display: leftCollapsed ? 'none' : 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden',
-          }}
-        >
-          <FlowPalette onDragStart={onDragStart} onToggleCollapse={() => setLeftCollapsed(true)} />
-        </div>
-      </div>
+    <div style={{ flex: 1, position: 'relative', display: 'flex', width: '100%', minWidth: 0, minHeight: 0, height: '100%', alignItems: 'stretch' }}>
       <div
         ref={wrapperRef}
         className="floating-panel floating-canvas"
         style={{
           flex: 1,
+          width: '100%',
           alignSelf: 'stretch',
           height: '100%',
           minHeight: 0,
@@ -506,6 +377,7 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
           onConnect={onConnect}
           onDragOver={onDragOver}
           onDrop={onDrop}
+          onNodeClick={handleNodeClick}
           nodeTypes={nodeTypes}
           connectionRadius={40}
           edgeTypes={edgeTypes}
@@ -533,113 +405,81 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
               <AlignVerticalJustifyCenter size={18} />
             </ControlButton>
           </Controls>
-          <MiniMap
-            style={{
-              borderRadius: theme.radius.xl,
-              overflow: 'hidden',
-              boxShadow: '0 8px 32px rgba(0,0,0,.12)',
-            }}
-            className="floating-panel"
-          />
           <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
         </ReactFlow>
       </div>
-      {/* Inspector droit : bouton repli en haut à gauche *dans* la sidebar, instant */}
-      <div
-        style={{
-          width: rightCollapsed ? 48 : 260,
-          flexShrink: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-          transition: 'none',
-          position: 'relative',
-          height: '100%',
-          alignSelf: 'stretch',
-          minHeight: 0,
-        }}
+
+      {/* Unified Astryx BottomSheet for Add, Inspect, and Journal */}
+      <BottomSheet
+        isOpen={activeSheet !== null}
+        onOpenChange={open => !open && setActiveSheet(null)}
+        label={
+          activeSheet === 'add'
+            ? 'Ajouter un Super-Bloc'
+            : activeSheet === 'inspect'
+            ? 'Inspecteur de Paramètres'
+            : 'Journal d’Exécution'
+        }
+        height={activeSheet === 'inspect' ? 'tall' : 'capped'}
+        hasScrim={false}
       >
-        <div
-          style={{
-            position: 'absolute',
-            top: 6,
-            left: 0,
-            right: 0,
-            display: rightCollapsed ? 'flex' : 'none',
-            justifyContent: 'center',
-            zIndex: 2,
-          }}
-        >
-          <IconButton
-            label="Ouvrir inspecteur"
-            icon={<PanelLeft size={16} />}
-            variant="ghost"
-            size="sm"
-            onClick={() => setRightCollapsed(false)}
-          />
+        <div style={{ padding: '16px 20px', minHeight: 0, height: '100%', overflowY: 'auto' }}>
+          {activeSheet === 'add' && (
+            <VStack gap={3}>
+              <Heading level={4}>Catalogue des Super-Blocs</Heading>
+              <Text type="body" color="secondary">
+                Sélectionnez un Super-Bloc à instancier directement sur votre canvas.
+              </Text>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 12, marginTop: 8 }}>
+                {Object.entries(SUPER_BLOCK_REGISTRY).map(([typeKey, def]) => {
+                  const stageCfg = getStageConfig(def.stage)
+                  return (
+                    <ClickableCard
+                      key={typeKey}
+                      label={`Ajouter ${def.title}`}
+                      onClick={() => {
+                        addNodeAtCenter(typeKey)
+                        setActiveSheet(null)
+                      }}
+                      padding={3}
+                      elevation="low"
+                    >
+                      <VStack gap={2}>
+                        <HStack gap={2} style={{ alignItems: 'center' }}>
+                          <Badge
+                            label={stageCfg.key}
+                            style={{
+                              backgroundColor: `${stageCfg.color}22`,
+                              color: stageCfg.color,
+                              border: `1px solid ${stageCfg.color}66`,
+                              fontSize: 10,
+                              fontWeight: 800,
+                              padding: '2px 6px',
+                              borderRadius: 4,
+                            }}
+                          />
+                          <span style={{ fontWeight: 800, fontSize: 15, color: theme.color.text }}>{def.title}</span>
+                        </HStack>
+                        <span style={{ fontSize: 12, color: theme.color.textMuted }}>{def.subtitle}</span>
+                        <HStack gap={2} style={{ fontSize: 11, color: theme.color.textDim, marginTop: 4 }}>
+                          <span>Entrées: {def.inputs.length}</span>
+                          <span>•</span>
+                          <span>Sorties: {def.outputs.length}</span>
+                        </HStack>
+                      </VStack>
+                    </ClickableCard>
+                  )
+                })}
+              </div>
+            </VStack>
+          )}
+
+          {activeSheet === 'inspect' && <NodeInspector />}
+
+          {activeSheet === 'journal' && <JournalPanel />}
         </div>
-        <div
-          style={{
-            flex: 1,
-            minHeight: 0,
-            height: '100%',
-            display: rightCollapsed ? 'none' : 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden',
-          }}
-        >
-          <InspectorPanel
-            onToggleCollapse={() => setRightCollapsed(true)}
-            rightMode={rightMode}
-            onChangeMode={v => {
-              if (v) setRightMode(v as 'cours' | 'inspecteur' | 'journal')
-            }}
-            hasOutputs={hasOutputs}
-          />
-        </div>
-      </div>
-      <button
-        ref={paletteToggleRef}
-        className="palette-toggle"
-        onClick={() => setPaletteOpen(true)}
-        aria-label={paletteOpen ? 'Fermer les blocs' : 'Ouvrir les blocs'}
-        aria-expanded={paletteOpen}
-        aria-controls="flow-palette-drawer"
-        title="Blocs"
-        style={{
-          position: 'absolute', top: 12, left: 12, zIndex: 10,
-          width: 44, height: 44, alignItems: 'center', justifyContent: 'center',
-          background: theme.color.surface3, color: theme.color.text,
-          border: `1px solid ${theme.color.border}`, borderRadius: theme.radius.md,
-          cursor: 'pointer', boxShadow: theme.shadow.btn,
-        }}
-      >
-        <Menu size={20} />
-      </button>
-      {/* Tiroir palette mobile : overlay fixe + backdrop (z 40/50 au-dessus
-          des panes ReactFlow, sous les modals). */}
-      {paletteOpen && (
-        <>
-          <div className="palette-backdrop" onClick={() => setPaletteOpen(false)} />
-          <div
-            ref={paletteDrawerRef}
-            id="flow-palette-drawer"
-            className="palette-drawer floating-panel"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Palette de blocs"
-            tabIndex={-1}
-            style={{
-              borderRadius: theme.radius.xl,
-              boxShadow: '0 8px 32px rgba(0,0,0,.12)',
-              backdropFilter: 'blur(8px)',
-              overflow: 'hidden',
-            }}
-          >
-            <FlowPalette onDragStart={onDragStart} onAdd={addNodeAtCenter} onClose={() => setPaletteOpen(false)} />
-          </div>
-        </>
-      )}
+      </BottomSheet>
+
       {converterPrompt && (
         <ConverterDialog
           open={Boolean(converterPrompt)}
@@ -658,348 +498,76 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
   )
 })
 
-/** Cours panel droit (mode Cours) : catalogue + markdown + watcher réactif sur le DAG caché. */
-function CoursPanel() {
-  const [query, setQuery] = useState('')
-  const [difficulty, setDifficulty] = useState('Tous')
-  const [selected, setSelected] = useState<string | null>(null)
-  const [idx, setIdx] = useState(0)
-  const [hintsEnabled, setHintsEnabled] = useState(true)
-  const course = selected ? getCourse(selected) : undefined
-  const sections = course?.sections ?? []
-  const sectionBodies = useMemo(() => {
-    if (!course) return [] as string[]
-    const raw = course.body
-    const parts = raw.split(/\n(?=##\s)/)
-    return parts.map(p => p.trim()).filter(Boolean)
-  }, [course])
-  // ponytail: queueMicrotask avoids synchronous setState in effect
-  useEffect(() => { queueMicrotask(() => setIdx(0)) }, [selected])
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    return courses.filter(c => {
-      const matchQ = !q || c.title.toLowerCase().includes(q) || c.description.toLowerCase().includes(q)
-      const d = difficulty.toLowerCase()
-      const matchD = d === 'tous' || d === 'all' || c.difficulty === d
-      return matchQ && matchD
-    })
-  }, [query, difficulty])
-  const jump = (i: number) => {
-    if (i < 0 || i >= sections.length) return
-    setIdx(i)
-  }
-  const { flowNodes, flowEdges } = useAppStore(useShallow(s => ({ flowNodes: s.flowNodes, flowEdges: s.flowEdges })))
-  const watcher = useMemo(() => {
-    if (!course || !hintsEnabled) return null
-    const expected = (course as unknown as { expected?: { nodes: { id: string; type: string }[]; edges: { from: string; fromPort?: string; to: string; toPort?: string }[]; hints: Record<string, string> } }).expected
-    if (!expected || !Array.isArray(expected.nodes) || !Array.isArray(expected.edges)) return null
-    function nodeType(n: Node): string | undefined {
-      const d = n.data
-      if (!d || typeof d !== 'object' || !('type' in d)) return undefined
-      const t = (d as Record<string, unknown>).type
-      return typeof t === 'string' ? t : undefined
-    }
-    const actualTypes = new Set(flowNodes.map(nodeType).filter((t): t is string => Boolean(t)))
-    const expectedTypes = new Set(expected.nodes.map(n => n.type))
-    const missing = [...expectedTypes].filter(t => !actualTypes.has(t))
-    const extra = [...actualTypes].filter(t => !expectedTypes.has(t))
-    const idToType = new Map(expected.nodes.map(n => [n.id, n.type] as const))
-    let edgeMismatch: { from: string; fromPort?: string; to: string; toPort?: string } | null = null
-    for (const e of expected.edges) {
-      const fromType = idToType.get(e.from)
-      const toType = idToType.get(e.to)
-      if (!fromType || !toType) continue
-      const found = flowEdges.some(fe => {
-        const sN = flowNodes.find(n => n.id === fe.source)
-        const tN = flowNodes.find(n => n.id === fe.target)
-        const sType = sN ? nodeType(sN) : undefined
-        const tType = tN ? nodeType(tN) : undefined
-        if (sType !== fromType || tType !== toType) return false
-        if (e.fromPort && fe.sourceHandle !== e.fromPort) return false
-        if (e.toPort && fe.targetHandle !== e.toPort) return false
-        return true
-      })
-      if (!found) { edgeMismatch = e; break }
-    }
-    if (missing.length === 0 && !edgeMismatch && extra.length === 0) return null
-    return { missing, extra, edgeMismatch, idToType }
-  }, [course, hintsEnabled, flowNodes, flowEdges])
-  let bannerText: string | null = null
-  if (watcher) {
-    if (watcher.missing.length) {
-      const t = watcher.missing[0]
-      const friendly = (course as unknown as { expected: { hints: Record<string, string> } }).expected.hints?.[t] ?? t
-      bannerText = `Ce n'est pas le bon bloc — attendu ${friendly}`
-    } else if (watcher.edgeMismatch) {
-      const e = watcher.edgeMismatch
-      const fromType = watcher.idToType.get(e.from) ?? e.from
-      const toType = watcher.idToType.get(e.to) ?? e.to
-      const actualEdge = flowEdges.find(fe => {
-        const sN = flowNodes.find(n => n.id === fe.source)
-        const tN = flowNodes.find(n => n.id === fe.target)
-        const sType = sN && typeof sN.data === 'object' && sN.data && 'type' in sN.data ? (sN.data as Record<string, unknown>).type : undefined
-        const tType = tN && typeof tN.data === 'object' && tN.data && 'type' in tN.data ? (tN.data as Record<string, unknown>).type : undefined
-        return sType === fromType && tType === toType
-      })
-      if (e.fromPort && actualEdge?.sourceHandle && actualEdge.sourceHandle !== e.fromPort) {
-        bannerText = `Mauvais branchement — ${fromType} doit aller vers ${toType} via ${e.fromPort}, pas ${actualEdge.sourceHandle}`
-      } else if (e.toPort && actualEdge?.targetHandle && actualEdge.targetHandle !== e.toPort) {
-        bannerText = `Mauvais branchement — ${fromType} doit aller vers ${toType} via ${e.toPort}, pas ${actualEdge.targetHandle}`
-      } else if (e.fromPort || e.toPort) {
-        const port = e.fromPort ?? e.toPort ?? 'port'
-        bannerText = `Mauvais branchement — ${fromType} → ${toType} via ${port}`
-      } else {
-        bannerText = `Mauvais branchement — ${fromType} → ${toType}`
-      }
-    } else if (watcher.extra.length) {
-      const t = watcher.extra[0]
-      bannerText = `Bloc inattendu — ${t} ne fait pas partie de ce cours`
-    }
-  }
-  if (course) {
-    const currentBody = sectionBodies[idx] ?? sectionBodies[0] ?? course.body
+function NodeInspector() {
+  const flowNodes = useAppStore(s => s.flowNodes)
+  const catalog = useAppStore(s => s.catalog)
+  const updateFlowParam = useAppStore(s => s.updateFlowParam)
+  const selected = flowNodes.find(n => n.selected)
+  const data = selected?.data as Record<string, unknown> | undefined
+  const type = (data?.type as string) ?? ''
+  const superDef = SUPER_BLOCK_REGISTRY[type]
+  const def = type ? catalog?.blocks[type] : undefined
+  const stageNum = (data?.stage as number) ?? def?.stage ?? superDef?.stage ?? 2
+  const stageConfig = getStageConfig(stageNum)
+  const fields = (data?.fields as Record<string, string>) ?? {}
+
+  if (!selected) {
     return (
-      <VStack gap={3} style={{ minHeight: 0, flex: 1, height: '100%', overflow: 'hidden' }}>
-        <button onClick={() => setSelected(null)} style={{ background: 'none', border: 'none', color: theme.color.textMuted, cursor: 'pointer', fontSize: 13, fontWeight: 700, textAlign: 'left', padding: 0 }}>← Retour au catalogue</button>
-        <Heading level={4}>{course.title}</Heading>
-        {bannerText ? (
-          <div style={{ background: `${theme.color.warning}18`, border: `1px solid ${theme.color.warning}`, borderRadius: 10, padding: '8px 10px', color: theme.color.warning, fontSize: 12, fontWeight: 700, lineHeight: 1.4 }}>
-            {bannerText}
-          </div>
-        ) : null}
-        <Stack style={{ flex: 1, overflowY: 'auto', minHeight: 0, paddingRight: 2 }}>
-          <Markdown>{currentBody}</Markdown>
-        </Stack>
-        {sections.length > 0 ? (
-          <>
-            <Divider />
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'space-between' }}>
-              <Button label="Précédent" variant="ghost" onClick={() => jump(idx - 1)} isDisabled={idx === 0} />
-              <span style={{ fontSize: 12, color: theme.color.textMuted }}>{idx + 1} / {sections.length}</span>
-              <Button label="Suivant" variant="ghost" onClick={() => jump(idx + 1)} isDisabled={idx === sections.length - 1} />
-            </div>
-          </>
-        ) : null}
-        <HStack gap={2} style={{ alignItems: 'center', paddingTop: 4 }}>
-          <Switch label={`Indices: ${hintsEnabled ? 'ON' : 'OFF'}`} value={hintsEnabled} onChange={setHintsEnabled} size="sm" />
-        </HStack>
+      <VStack gap={2} style={{ padding: '32px 0', alignItems: 'center', textAlign: 'center' }}>
+        <Heading level={5}>Inspecteur</Heading>
+        <Text type="body" color="secondary">
+          Sélectionnez un bloc sur le canvas pour examiner et modifier ses paramètres.
+        </Text>
       </VStack>
     )
   }
+
   return (
-    <VStack gap={2} style={{ minHeight: 0, flex: 1, height: '100%', overflow: 'hidden' }}>
-      <TextInput label="Rechercher un cours" isLabelHidden value={query} onChange={setQuery} placeholder="Rechercher un cours…" />
-      <ToggleButtonGroup type="single" label="Difficulté" value={difficulty} onChange={v => setDifficulty((v as string) || 'Tous')} size="sm">
-        <Grid columns={2} gap={1.5}>
-          <ToggleButton label="Tous" value="Tous" />
-          <ToggleButton label="Facile" value="facile" />
-          <ToggleButton label="Moyen" value="moyen" />
-          <ToggleButton label="Difficile" value="difficile" />
-        </Grid>
-      </ToggleButtonGroup>
-      {courses.length === 0 ? (
-        <div style={{ color: theme.color.textMuted, fontSize: 13, fontWeight: 600, textAlign: 'center', padding: '18px 6px' }}>Aucun cours disponible</div>
-      ) : filtered.length === 0 ? (
-        <div style={{ color: theme.color.textMuted, fontSize: 13, fontWeight: 600, textAlign: 'center', padding: '18px 6px' }}>Aucun cours trouvé</div>
+    <VStack gap={3}>
+      <HStack gap={2} style={{ alignItems: 'center', justifyContent: 'space-between' }}>
+        <HStack gap={2} style={{ alignItems: 'center' }}>
+          <Badge
+            label={stageConfig.key}
+            style={{
+              backgroundColor: `${stageConfig.color}22`,
+              color: stageConfig.color,
+              border: `1px solid ${stageConfig.color}66`,
+            }}
+          />
+          <Heading level={4}>{String(data?.label ?? selected.id)}</Heading>
+        </HStack>
+        <span style={{ fontSize: 12, color: theme.color.textDim, fontFamily: theme.font.mono }}>
+          {type}
+        </span>
+      </HStack>
+      <Text type="body" color="secondary">
+        {superDef?.subtitle || def?.description || 'Bloc fonctionnel'}
+      </Text>
+
+      <Divider />
+
+      <Heading level={5}>Paramètres du Nœud</Heading>
+      {Object.keys(fields).length === 0 ? (
+        <Text type="supporting" color="secondary">Aucun paramètre configurable.</Text>
       ) : (
-        <VStack gap={2} style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: 2 }}>
-          {filtered.map(c => (
-            <ClickableCard key={c.slug} label={c.title} onClick={() => setSelected(c.slug)} padding={2}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 2, textAlign: 'left' }}>
-                <span style={{ fontSize: 13, fontWeight: 700, color: theme.color.text }}>{c.title}</span>
-                <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: theme.color.textMuted }}>{c.difficulty}</span>
-                <span style={{ fontSize: 12, color: theme.color.textMuted, lineHeight: 1.4 }}>{c.description}</span>
-              </div>
-            </ClickableCard>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
+          {Object.entries(fields).map(([k, val]) => (
+            <div key={k} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: theme.color.textMuted }}>{k}</span>
+              <input
+                type="text"
+                value={val}
+                onChange={e => updateFlowParam(selected.id, k, e.target.value)}
+                className="bg-surface1 border border-border rounded px-2 py-1 text-[12px] text-text font-mono"
+              />
+            </div>
           ))}
-        </VStack>
+        </div>
       )}
     </VStack>
   )
 }
 
-function InspectorPanel({
-  onToggleCollapse,
-  rightMode = 'inspecteur',
-  onChangeMode,
-  hasOutputs = false,
-}: {
-  onToggleCollapse?: () => void
-  rightMode?: 'cours' | 'inspecteur' | 'journal'
-  onChangeMode?: (v: string | null) => void
-  hasOutputs?: boolean
-}) {
-  const flowNodes = useAppStore(s => s.flowNodes)
-  const catalog = useAppStore(s => s.catalog)
-  const results = useAppStore(s => s.results)
-  const jobOutputs = useAppStore(s => s.jobOutputs)
-  const selected = flowNodes.find(n => n.selected)
-  const data = selected?.data as { label?: string; type?: string; category?: string } | undefined
-  const def = data?.type ? catalog?.blocks[data.type] : undefined
-  const outputs = jobOutputs.length ? jobOutputs : results
-  const count = outputs.length
-  const inspecteurLabel = count > 0 ? (count > 1 ? `Inspecteur •${count}` : 'Inspecteur •') : hasOutputs ? 'Inspecteur •' : 'Inspecteur'
-  // Per-block: filtre par block_id (node.id), fallback block_name quand block_id absent (compat anciennes sorties)
-  const selectedOutputs = selected
-    ? outputs.filter(o => {
-        if (o.block_id) return o.block_id === selected.id
-        return o.block_name === data?.type
-      })
-    : []
-  return (
-    <div
-      className="floating-panel inspector-panel"
-      style={{
-        width: '100%',
-        height: '100%',
-        flex: 1,
-        alignSelf: 'stretch',
-        flexShrink: 0,
-        background: theme.color.surface2,
-        border: `1px solid ${theme.color.border}`,
-        borderRadius: theme.radius.xl,
-        boxShadow: '0 8px 32px rgba(0,0,0,.12)',
-        backdropFilter: 'blur(8px)',
-        WebkitBackdropFilter: 'blur(8px)',
-        display: 'flex',
-        flexDirection: 'column',
-        minHeight: 0,
-        overflow: 'hidden',
-        transition: 'none',
-      }}
-    >
-      <div
-        style={{
-          padding: '10px 12px',
-          borderBottom: `1px solid ${theme.color.border}`,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-        }}
-      >
-        {onToggleCollapse && (
-          <IconButton
-            label="Replier"
-            icon={<PanelRight size={16} />}
-            variant="ghost"
-            size="sm"
-            onClick={onToggleCollapse}
-          />
-        )}
-        <ToggleButtonGroup
-          type="single"
-          label="Mode"
-          value={rightMode}
-          onChange={v => {
-            if (v) onChangeMode?.(v)
-          }}
-          size="sm"
-        >
-          <ToggleButton label="Cours" value="cours" />
-          <ToggleButton label={inspecteurLabel} value="inspecteur" />
-          <ToggleButton label="Journal" value="journal" />
-        </ToggleButtonGroup>
-      </div>
-      <div
-        style={{
-          flex: 1,
-          minHeight: 0,
-          height: '100%',
-          padding: 16,
-          overflowY: 'auto',
-          display: 'flex',
-          flexDirection: 'column',
-        }}
-      >
-        {rightMode === 'journal' ? (
-          <JournalPanel />
-        ) : rightMode === 'cours' ? (
-          <CoursPanel />
-        ) : !selected ? (
-          <Text type="body" color="secondary" style={{ textAlign: 'center', padding: '18px 6px' }}>
-            Sélectionne un bloc
-          </Text>
-        ) : (
-          <VStack gap={2}>
-            <Heading level={5}>{data?.label ?? selected.id}</Heading>
-            {data?.type && <Text type="supporting" color="secondary">{data.type}</Text>}
-            {data?.category && <Text type="supporting" color="secondary">Catégorie : {data.category}</Text>}
-            {def?.description && <Text type="body" color="secondary" style={{ lineHeight: 1.5 }}>{def.description}</Text>}
-            {def?.inputs?.length ? (
-              <VStack gap={1}>
-                <Text type="label" color="secondary">Entrées</Text>
-                {def.inputs.map(p => (
-                  <Text key={p.name} type="body" style={{ fontSize: 12 }}>{p.name} · {p.dtype}</Text>
-                ))}
-              </VStack>
-            ) : null}
-            {def?.outputs?.length ? (
-              <VStack gap={1}>
-                <Text type="label" color="secondary">Sorties</Text>
-                {def.outputs.map(p => (
-                  <Text key={p.name} type="body" style={{ fontSize: 12 }}>{p.name} · {p.dtype}</Text>
-                ))}
-              </VStack>
-            ) : null}
-            <Divider />
-            {selectedOutputs.length === 0 ? (
-              <Text type="body" color="secondary" style={{ textAlign: 'center', padding: '10px 6px' }}>
-                En attente…
-              </Text>
-            ) : (
-              <VStack gap={2}>
-                <Text type="label" color="secondary">Sortie</Text>
-                {selectedOutputs.map((o, i) => {
-                  let parsed: unknown
-                  try { parsed = JSON.parse(o.output) } catch { parsed = null }
-                  const isTooLarge = o.output.length > 20000
-                  if (isTooLarge) console.warn('[Inspecteur] sortie tronquée', o.block_id ?? o.block_name)
-                  const pretty = (() => {
-                    if (parsed && typeof parsed === 'object') {
-                      try { return JSON.stringify(parsed, null, 2) } catch { return o.output }
-                    }
-                    return o.output
-                  })()
-                  // Type-specific preview: reuse typed payload rendering when possible
-                  const typed = parsed as { type?: string; points?: number[]; values?: Record<string, unknown>; value?: number; text?: string; data?: string; mime?: string } | null
-                  const isImage = typed?.type === 'image' && typeof typed.data === 'string'
-                  const isCurve = typed?.type === 'curve' && Array.isArray(typed.points)
-                  const isMetrics = typed?.type === 'metrics' && typed.values
-                  const isMetric = typed?.type === 'metric' && typeof typed.value === 'number'
-                  return (
-                    <Card key={`${o.block_id ?? o.block_name}-${i}`} variant="muted" padding={2}>
-                      <VStack gap={2}>
-                      {isImage ? (
-                        <img src={`data:${typed.mime ?? 'image/png'};base64,${typed.data}`} alt={o.block_name} style={{ maxWidth: '100%', maxHeight: 180, borderRadius: 6, display: 'block' }} />
-                      ) : isCurve ? (
-                        <div style={{ fontSize: 12, color: theme.color.textMuted }}>{(typed.points?.length ?? 0)} points · min {Math.min(...typed.points!).toFixed(2)} · max {Math.max(...typed.points!).toFixed(2)}</div>
-                      ) : isMetrics ? (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '4px 10px', fontSize: 12 }}>
-                          {Object.entries(typed.values!).map(([k, v]) => (
-                            <div key={k} style={{ display: 'contents' }}>
-                              <span style={{ fontWeight: 700, opacity: 0.75 }}>{k}</span>
-                              <span style={{ fontWeight: 800 }}>{String(v)}</span>
-                            </div>
-                          ))}
-                        </div>
-                      ) : isMetric ? (
-                        <div style={{ fontWeight: 800, fontSize: 16, color: theme.color.success }}>{typed.value}</div>
-                      ) : null}
-                      <pre style={{ margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: 11, lineHeight: 1.4, color: theme.color.textLight, maxHeight: 220, overflowY: 'auto' }}>{pretty.slice(0, 4000)}{pretty.length > 4000 ? '\n…[tronqué]' : ''}</pre>
-                      <div style={{ fontSize: 10, color: theme.color.textMuted }}>{new Date(o.created_at).toLocaleTimeString()}</div>
-                      {i < selectedOutputs.length - 1 ? <Divider /> : null}
-                      </VStack>
-                    </Card>
-                  )
-                })}
-              </VStack>
-            )}
-          </VStack>
-        )}
-      </div>
-    </div>
-  )
-}
 export default function FlowCanvas() {
   return (
     <ReactFlowProvider>

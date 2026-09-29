@@ -11,10 +11,6 @@ import {
   type SuperBlockNodeData,
 } from './superBlockRegistry'
 
-function topFor(i: number, n: number): string {
-  return `${((i + 1) * 100) / (n + 1)}%`
-}
-
 function SuperBlockNode({ data, id }: NodeProps<Node<SuperBlockNodeData>>) {
   const updateFlowParam = useAppStore(s => s.updateFlowParam)
   const removeFlowNode = useAppStore(s => s.removeFlowNode)
@@ -104,6 +100,39 @@ function SuperBlockNode({ data, id }: NodeProps<Node<SuperBlockNodeData>>) {
 
       <Divider orientation="horizontal" style={{ margin: '4px 0 8px 0' }} />
 
+      {/* Blueprint Input Slots */}
+      {def.inputs.length > 0 && (
+        <div className="flex flex-col gap-1 mb-2">
+          <div className="text-[10px] font-extrabold uppercase tracking-wider text-text-muted px-1 flex justify-between items-center">
+            <span>Entrées :</span>
+            <span style={{ color: def.inputs.every(s => inputFed[s.id]) ? theme.color.success : theme.color.warning }}>
+              {def.inputs.filter(s => inputFed[s.id]).length}/{def.inputs.length} prêtes
+            </span>
+          </div>
+          {def.inputs.map(slot => (
+            <div
+              key={slot.id}
+              className="relative flex items-center justify-between pl-4 pr-2 py-1.5 rounded-md bg-surface1 border border-border"
+            >
+              <Handle
+                id={slot.id}
+                type="target"
+                position={Position.Left}
+                className="w-[14px]! h-[14px]! rounded-full! border-2! !absolute !-left-[7px] !top-1/2 !-translate-y-1/2"
+                style={{
+                  borderColor: slot.color,
+                  backgroundColor: inputFed[slot.id] ? slot.color : '#13151c',
+                  boxShadow: inputFed[slot.id] ? `0 0 8px ${slot.color}` : 'none',
+                }}
+                title={`${slot.label}: ${slot.dtype}`}
+              />
+              <span className="font-bold text-[11.5px] text-text">{slot.label}</span>
+              <span className="font-mono text-[10px] text-text-muted">({slot.dtype})</span>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Specialized Body */}
       <BodyComponent
         id={id}
@@ -112,6 +141,36 @@ function SuperBlockNode({ data, id }: NodeProps<Node<SuperBlockNodeData>>) {
         inputFed={inputFed}
         outputFed={outputFed}
       />
+
+      {/* Blueprint Output Slots */}
+      {def.outputs.length > 0 && (
+        <div className="flex flex-col gap-1 mt-2">
+          <div className="text-[10px] font-extrabold uppercase tracking-wider text-text-muted px-1">
+            Sorties :
+          </div>
+          {def.outputs.map(slot => (
+            <div
+              key={slot.id}
+              className="relative flex items-center justify-between pl-2 pr-4 py-1.5 rounded-md bg-surface1 border border-border"
+            >
+              <span className="font-bold text-[11.5px] text-text">{slot.label}</span>
+              <span className="font-mono text-[10px] text-text-muted">({slot.dtype})</span>
+              <Handle
+                id={slot.id}
+                type="source"
+                position={Position.Right}
+                className="w-[14px]! h-[14px]! rounded-full! border-2! !absolute !-right-[7px] !top-1/2 !-translate-y-1/2"
+                style={{
+                  borderColor: slot.color,
+                  backgroundColor: outputFed[slot.id] ? slot.color : '#13151c',
+                  boxShadow: outputFed[slot.id] ? `0 0 8px ${slot.color}` : 'none',
+                }}
+                title={`${slot.label}: ${slot.dtype}`}
+              />
+            </div>
+          ))}
+        </div>
+      )}
 
       <Divider orientation="horizontal" style={{ margin: '8px 0 6px 0' }} />
 
@@ -125,38 +184,6 @@ function SuperBlockNode({ data, id }: NodeProps<Node<SuperBlockNodeData>>) {
           Supprimer
         </button>
       </div>
-
-      {/* Dynamic Input Handles */}
-      {def.inputs.map((slot, idx) => (
-        <Handle
-          key={slot.id}
-          id={slot.id}
-          type="target"
-          position={Position.Left}
-          className="w-[14px]! h-[14px]! rounded-full! border-2! border-surface2!"
-          style={{
-            top: def.inputs.length === 1 ? '50%' : topFor(idx, def.inputs.length),
-            backgroundColor: inputFed[slot.id] ? theme.color.success : slot.color,
-          }}
-          title={`${slot.label}: ${slot.dtype}`}
-        />
-      ))}
-
-      {/* Dynamic Output Handles */}
-      {def.outputs.map((slot, idx) => (
-        <Handle
-          key={slot.id}
-          id={slot.id}
-          type="source"
-          position={Position.Right}
-          className="w-[14px]! h-[14px]! rounded-full! border-2! border-surface2!"
-          style={{
-            top: def.outputs.length === 1 ? '50%' : topFor(idx, def.outputs.length),
-            backgroundColor: outputFed[slot.id] ? theme.color.success : slot.color,
-          }}
-          title={`${slot.label}: ${slot.dtype}`}
-        />
-      ))}
     </Card>
   )
 }

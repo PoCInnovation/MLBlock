@@ -37,6 +37,7 @@
     "zustand": "^4.5.4"
   },
   "devDependencies": {
+    "@shadcn/lint": "^0.2.0",
     "@tanstack/react-router-devtools": "^1.130.0",
     "@tanstack/router-plugin": "^1.130.0",
     "@types/react": "^19.2.18",

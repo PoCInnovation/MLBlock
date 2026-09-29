@@ -6,6 +6,81 @@ import { Badge, Card, VStack, HStack, Button, ToggleButtonGroup, ToggleButton, D
 import { Text, Heading } from '@astryxdesign/core/Text'
 import { theme } from '../../theme'
 
+type TypedOutput =
+  | { type: 'image'; mime: string; data: string }
+  | { type: 'curve'; points: number[] }
+  | { type: 'metric'; value: number }
+  | { type: 'metrics'; values: Record<string, number | string | boolean> }
+  | { type: 'text'; text: string }
+
+function parseOutput(raw: string): TypedOutput {
+  try {
+    const v = JSON.parse(raw)
+    if (v && typeof v === 'object' && typeof v.type === 'string') return v as TypedOutput
+  } catch {
+    /* pas du JSON -> texte */
+  }
+  return { type: 'text', text: raw }
+}
+
+function Curve({ points }: { points: number[] }) {
+  if (points.length < 2) {
+    return <div style={{ color: theme.color.textMuted, fontSize: 12 }}>Courbe insuffisante ({points.length} point(s))</div>
+  }
+  const min = Math.min(...points)
+  const max = Math.max(...points)
+  const span = max - min || 1
+  const pts = points
+    .map((v, i) => `${((i / (points.length - 1)) * 100).toFixed(2)},${(50 - ((v - min) / span) * 45 - 2.5).toFixed(2)}`)
+    .join(' ')
+  return (
+    <svg viewBox="0 0 100 50" preserveAspectRatio="none" style={{ width: '100%', height: 110, background: 'rgba(255,255,255,.03)', borderRadius: 8, display: 'block' }}>
+      <polyline points={pts} fill="none" stroke={theme.color.accentLight} strokeWidth="1.5" />
+    </svg>
+  )
+}
+
+function OutputRenderer({ raw }: { raw: string }) {
+  const out = parseOutput(raw)
+  switch (out.type) {
+    case 'image':
+      return (
+        <div style={{ marginTop: 4 }}>
+          <img src={`data:${out.mime ?? 'image/png'};base64,${out.data}`} alt="Résultat" style={{ maxWidth: '100%', maxHeight: 240, borderRadius: 6, display: 'block' }} />
+        </div>
+      )
+    case 'curve':
+      return (
+        <div style={{ marginTop: 4 }}>
+          <Curve points={out.points} />
+        </div>
+      )
+    case 'metric':
+      return (
+        <div style={{ marginTop: 4, display: 'flex', alignItems: 'baseline', gap: 6 }}>
+          <Text style={{ fontWeight: 800, fontSize: 20, color: theme.color.success }}>{out.value}</Text>
+        </div>
+      )
+    case 'metrics':
+      return (
+        <div style={{ marginTop: 4, display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '4px 14px', fontSize: 12 }}>
+          {Object.entries(out.values).map(([k, v]) => (
+            <div key={k} style={{ display: 'contents' }}>
+              <span style={{ color: theme.color.textMuted, fontWeight: 600 }}>{k} :</span>
+              <span style={{ fontWeight: 800, color: theme.color.text }}>{String(v)}</span>
+            </div>
+          ))}
+        </div>
+      )
+    default:
+      return (
+        <Text type="body" style={{ fontSize: 12, whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: theme.font.mono }}>
+          {raw.slice(0, 2000)}
+        </Text>
+      )
+  }
+}
+
 type Filter = 'logs' | 'outputs' | 'mixte'
 
 export default function JournalPanel() {
@@ -173,11 +248,18 @@ export default function JournalPanel() {
             fused.map((it, i) => (
               <Card key={`${it.id}-${i}`} variant="muted" padding={2}>
                 <VStack gap={1}>
-                  {it.block && <Text type="label" color="secondary">{it.block}</Text>}
-                  <Text type="body" style={{ fontSize: 12, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                    {it.text.slice(0, 2000)}
-                  </Text>
-                  <Text type="supporting" color="secondary">
+                  <HStack gap={2} style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                    {it.block && <Text type="label" color="secondary">{it.block}</Text>}
+                    <Badge label={it.kind === 'output' ? 'Sortie' : 'Log'} variant={it.kind === 'output' ? 'success' : 'neutral'} />
+                  </HStack>
+                  {it.kind === 'output' ? (
+                    <OutputRenderer raw={it.text} />
+                  ) : (
+                    <Text type="body" style={{ fontSize: 12, whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: theme.font.mono }}>
+                      {it.text.slice(0, 2000)}
+                    </Text>
+                  )}
+                  <Text type="supporting" color="secondary" style={{ fontSize: 10 }}>
                     {new Date(it.at).toLocaleTimeString('fr-FR')}
                   </Text>
                 </VStack>

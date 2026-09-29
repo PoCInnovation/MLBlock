@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Save, Play, Upload, Download, Square, MoreVertical, FolderKanban, Trash2, LogOut, Check, Undo2, Redo2, Sparkles } from 'lucide-react'
+import { Save, Play, Upload, Download, Square, MoreVertical, FolderKanban, Trash2, LogOut, Check, Undo2, Redo2, Sparkles, Plus, Sliders, Terminal } from 'lucide-react'
 import { Icon } from '@astryxdesign/core/Icon'
 import { HStack, IconButton, Button } from '@astryxdesign/core'
 import { TextInput } from '@astryxdesign/core/TextInput'
@@ -24,7 +24,8 @@ export default function EditorHeader() {
   const savePipeline = useAppStore(s => s.savePipeline)
   const ensureDraft = useAppStore(s => s.ensureDraft)
   const showToast   = useAppStore(s => s.showToast)
-  // Run : isPending = mutation + suivi job (start → terminal), isStopping = annulation en cours
+  const activeSheet = useAppStore(s => s.activeSheet)
+  const setActiveSheet = useAppStore(s => s.setActiveSheet)
   const { onRun, onStop, onClear, isPending, isStopping } = useBlockRunner() as { onRun: () => void; onStop: () => void; onClear: () => void; isPending: boolean; isStopping: boolean; jobId: string | null }
   // Arrêter actif tant qu'un run est en cours (isPending inclut jobId non terminal + stopping)
   const stopActive = isPending
@@ -139,6 +140,37 @@ export default function EditorHeader() {
           )}
         </HStack>
       </HStack>
+      <HStack gap={2} style={{ alignItems: 'center' }}>
+        <Button
+          label="Modèles & Baselines"
+          variant="secondary"
+          size="sm"
+          icon={<Icon icon={Sparkles} size="sm" />}
+          onClick={() => setTemplatesOpen(true)}
+        />
+        <Button
+          label="Ajouter Super-Bloc"
+          variant={activeSheet === 'add' ? 'primary' : 'secondary'}
+          size="sm"
+          icon={<Icon icon={Plus} size="sm" />}
+          onClick={() => setActiveSheet(activeSheet === 'add' ? null : 'add')}
+        />
+        <Button
+          label="Inspecteur"
+          variant={activeSheet === 'inspect' ? 'primary' : 'secondary'}
+          size="sm"
+          icon={<Icon icon={Sliders} size="sm" />}
+          onClick={() => setActiveSheet(activeSheet === 'inspect' ? null : 'inspect')}
+        />
+        <Button
+          label="Journal"
+          variant={activeSheet === 'journal' ? 'primary' : 'secondary'}
+          size="sm"
+          icon={<Icon icon={Terminal} size="sm" />}
+          onClick={() => setActiveSheet(activeSheet === 'journal' ? null : 'journal')}
+        />
+      </HStack>
+
       <HStack gap={2} className="header-actions" style={{ alignItems: 'center' }}>
         <IconButton
           label="Annuler (Ctrl+Z)"
@@ -181,12 +213,14 @@ export default function EditorHeader() {
           isDisabled={isPending}
           isLoading={isPending}
           icon={!isPending ? <Icon icon={Play} size="sm" /> : undefined}
-          onClick={onRun}
+          onClick={() => {
+            setActiveSheet('journal')
+            onRun()
+          }}
         />
         <DropdownMenu
           button={{ label: 'Menu du projet', icon: <Icon icon={MoreVertical} size="sm" />, isIconOnly: true, variant: 'secondary' }}
           items={[
-            { label: 'Modèles & Baselines', icon: <Icon icon={Sparkles} size="sm" />, onClick: () => setTemplatesOpen(true) },
             { label: 'Importer', icon: <Icon icon={Upload} size="sm" />, onClick: () => fileRef.current?.click() },
             { label: 'Exporter', icon: <Icon icon={Download} size="sm" />, onClick: () => setExportOpen(true) },
             { type: 'divider' },
