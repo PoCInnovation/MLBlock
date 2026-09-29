@@ -58,6 +58,71 @@ def _topological_sort(nodes: list[dict[str, Any]], edges: list[dict[str, Any]]) 
     has_cycle = len(order) != len(ids)
     return order, has_cycle
 
+def validate_container_children(
+    node: dict[str, Any],
+    registry: dict[str, Any],
+    type_system_obj: Any,
+    conv_graph: Any,
+    errors: list[str],
+) -> None:
+    from mlblock.core.adapters import resolve_alias
+
+    children = node.get("children") or []
+    if not isinstance(children, list):
+        errors.append(f"Node '{node.get('id', '?')}' 'children' must be a list")
+        return
+
+    prev_child_type = None
+    prev_out_dtype = None
+
+    for idx, raw_child in enumerate(children):
+        if hasattr(raw_child, "model_dump"):
+            child = raw_child.model_dump()
+        elif hasattr(raw_child, "dict"):
+            child = raw_child.dict()
+        elif isinstance(raw_child, dict):
+            child = raw_child
+        else:
+            child = dict(raw_child)
+
+        child_type = child.get("type")
+        if not child_type:
+            errors.append(f"Child step #{idx} in container '{node.get('id', '?')}' missing 'type'")
+            continue
+
+        canonical_child_type = resolve_alias(child_type)
+        if canonical_child_type not in (registry or {}):
+            errors.append(
+                f"Unknown child block type '{child_type}' in container '{node.get('id', '?')}'"
+            )
+            continue
+
+        spec = registry.get(canonical_child_type)
+        inputs = getattr(spec, "inputs", None) or (spec.get("inputs", []) if isinstance(spec, dict) else [])
+        outputs = getattr(spec, "outputs", None) or (spec.get("outputs", []) if isinstance(spec, dict) else [])
+
+        in_dtype = None
+        if inputs:
+            p0 = inputs[0]
+            in_dtype = p0.get("dtype") if isinstance(p0, dict) else getattr(p0, "dtype", None)
+
+        out_dtype = None
+        if outputs:
+            p0 = outputs[0]
+            out_dtype = p0.get("dtype") if isinstance(p0, dict) else getattr(p0, "dtype", None)
+
+        if prev_out_dtype and in_dtype and conv_graph is not None:
+            verdict = type_system_obj.classify(prev_out_dtype, in_dtype, conv_graph)
+            if verdict == "incompatible":
+                errors.append(
+                    f"Sequential mismatch in container '{node.get('id', '?')}': "
+                    f"child #{idx-1} '{prev_child_type}' ({prev_out_dtype}) -> "
+                    f"child #{idx} '{child_type}' ({in_dtype})"
+                )
+
+        prev_child_type = child_type
+        prev_out_dtype = out_dtype
+
 
 def validate(
     nodes: list[dict[str, Any] | Any],
@@ -105,6 +170,14 @@ def validate(
             errors.append(f"Unknown block type '{n['type']}' (node '{n.get('id','?')}')")
 
     node_map = {n["id"]: n for n in node_dicts if "id" in n}
+
+    try:
+        conv_graph = type_system.build_conversion_graph(registry) if registry else {}
+    except Exception:
+        conv_graph = {}
+    for n in node_dicts:
+        if n.get("children"):
+            validate_container_children(n, registry, type_system, conv_graph, errors)
 
     # ── port existence ────────────────────────────────────────────
     for e in edge_dicts:

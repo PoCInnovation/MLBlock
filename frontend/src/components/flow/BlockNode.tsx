@@ -5,6 +5,8 @@ import { Badge, Card, Divider, Heading, HStack, Text, VStack } from '@astryxdesi
 import useAppStore from '../../store/useAppStore'
 import BlockSegments from '../blocks/BlockSegments'
 import { resolveColumnsForPath, resolveFlowSourcePath } from '../../utils/columns'
+import SuperBlockNode from './SuperBlockNode'
+import { isSuperBlock } from './superBlockRegistry'
 import { isAmbiguous } from '../../utils/portResolution'
 import { getStageConfig, stageOfBlock } from '../../utils/stages'
 import { theme } from '../../theme'
@@ -37,7 +39,7 @@ function topFor(i: number, n: number): string {
   return `${((i + 1) * 100) / (n + 1)}%`
 }
 
-function BlockNode({ data, id }: NodeProps<Node<BlockNodeData>>) {
+function StandardBlockNode({ data, id }: NodeProps<Node<BlockNodeData>>) {
   const updateFlowParam = useAppStore(s => s.updateFlowParam)
   const removeFlowNode = useAppStore(s => s.removeFlowNode)
   const catalog = useAppStore(s => s.catalog)
@@ -205,6 +207,13 @@ function BlockNode({ data, id }: NodeProps<Node<BlockNodeData>>) {
       ))}
     </Card>
   )
+}
+
+function BlockNode(props: NodeProps<Node<BlockNodeData>>) {
+  if (isSuperBlock(props.data.type)) {
+    return <SuperBlockNode {...props} />
+  }
+  return <StandardBlockNode {...props} />
 }
 
 export default memo(BlockNode)

@@ -74,6 +74,7 @@ class PipelineDef(BaseModel):
         registry = info.context.get("registry") if info.context else None
         if registry is None:
             return self
+        from mlblock.core.adapters import resolve_alias
         from mlblock.core.types import build_conversion_graph, classify
 
         graph = build_conversion_graph(registry)
@@ -81,8 +82,8 @@ class PipelineDef(BaseModel):
         for edge in self.edges:
             src_node = node_map[edge.source]
             tgt_node = node_map[edge.target]
-            src_spec = registry[src_node.type]
-            tgt_spec = registry[tgt_node.type]
+            src_spec = registry[resolve_alias(src_node.type)]
+            tgt_spec = registry[resolve_alias(tgt_node.type)]
             src_dtype = next(
                 p["dtype"] for p in src_spec.outputs if p["name"] == edge.source_port
             )

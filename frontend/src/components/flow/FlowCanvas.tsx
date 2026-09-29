@@ -25,6 +25,8 @@ import { Markdown } from '@astryxdesign/core'
 import { Text, Heading } from '@astryxdesign/core/Text'
 import { courses, getCourse } from '../../content/cours'
 import BlockNode from './BlockNode'
+import SuperBlockNode from './SuperBlockNode'
+import { isSuperBlock } from './superBlockRegistry'
 import FlowLink from './FlowLink'
 import FlowPalette from './FlowPalette'
 import JournalPanel from './JournalPanel'
@@ -36,7 +38,10 @@ import { resolveConnection, type ResolvedConnection } from '../../utils/portReso
 import { arrangeGraph } from '../../utils/layout'
 import { stageOfBlock } from '../../utils/stages'
 import type { Port } from '../../types/catalog'
-const nodeTypes = { block: BlockNode }
+const nodeTypes = {
+  block: BlockNode,
+  superblock: SuperBlockNode,
+}
 const edgeTypes = { flow: FlowLink }
 
 const reactFlowStyle: React.CSSProperties = {
@@ -175,9 +180,10 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
     const cat = catalog.categories.find(c => c.id === def.cat)
     const label = def.segs.find(s => s.t === 'text')?.v ?? type
     const stage = def.stage ?? stageOfBlock(type, def.cat)
+    const isSuper = isSuperBlock(type)
     return {
       id: `${type}_${Date.now()}`,
-      type: 'block',
+      type: isSuper ? 'superblock' : 'block',
       dragHandle: '.block-drag-handle',
       position,
       data: {
@@ -189,6 +195,7 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
         fields: segsToFields(def),
         inputs: def.inputs,
         outputs: def.outputs,
+        children: type === 'sequential_container' ? [] : undefined,
         stage,
         stage_name: def.stage_name,
       },

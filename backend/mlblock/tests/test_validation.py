@@ -158,3 +158,85 @@ def test_validate_stage_world_isolation():
         [{"source": "env", "source_port": "out_1", "target": "agent", "target_port": "in_1"}],
     )
     assert not any("Stage mismatch" in e for e in r3.errors)
+
+
+def test_validate_sequential_container_valid():
+    nodes = [
+        {
+            "id": "seq",
+            "type": "sequential_container",
+            "params": {},
+            "children": [
+                {"id": "c1", "type": "conv2d_layer", "params": {"in_channels": 3, "out_channels": 32}},
+                {"id": "r1", "type": "relu_layer", "params": {}},
+                {"id": "l1", "type": "linear_layer", "params": {"in_features": 32, "out_features": 10}},
+            ],
+        },
+        {"id": "train", "type": "train_model", "params": {}},
+    ]
+    edges = [
+        {"source": "seq", "source_port": "out_1", "target": "train", "target_port": "in_1"},
+    ]
+    r = validate(nodes, edges)
+    assert r.valid is True
+    assert r.errors == []
+    assert r.order == ["seq", "train"]
+
+
+def test_validate_sequential_container_unknown_child():
+    nodes = [
+        {
+            "id": "seq",
+            "type": "sequential_container",
+            "params": {},
+            "children": [
+                {"id": "c1", "type": "non_existent_layer", "params": {}},
+            ],
+        }
+    ]
+    r = validate(nodes, [])
+    assert r.valid is False
+    assert any("Unknown child block type 'non_existent_layer'" in e for e in r.errors)
+
+
+def test_validate_deep_trainer_valid():
+    nodes = [
+        {"id": "seq", "type": "sequential_container", "params": {}},
+        {"id": "trainer", "type": "deep_trainer", "params": {"epochs": 5}},
+    ]
+    edges = [
+        {"source": "seq", "source_port": "out_1", "target": "trainer", "target_port": "in_2"},
+    ]
+    r = validate(nodes, edges)
+    assert r.valid is True
+    assert r.errors == []
+
+
+def test_validate_data_pipeline_to_deep_trainer():
+    nodes = [
+        {"id": "data", "type": "data_pipeline", "params": {"dataset": "cifar10"}},
+        {"id": "seq", "type": "sequential_container", "params": {}},
+        {"id": "trainer", "type": "deep_trainer", "params": {"epochs": 5}},
+    ]
+    edges = [
+        {"source": "data", "source_port": "out_1", "target": "trainer", "target_port": "in_1"},
+        {"source": "seq", "source_port": "out_1", "target": "trainer", "target_port": "in_2"},
+    ]
+    r = validate(nodes, edges)
+    assert r.valid is True
+    assert r.errors == []
+    assert r.order == ["data", "seq", "trainer"] or set(r.order[:2]) == {"data", "seq"}
+
+
+def test_validate_ml_pipeline_valid():
+    nodes = [
+        {"id": "load", "type": "load_csv", "params": {}},
+        {"id": "pipe", "type": "ml_pipeline", "params": {"estimator": "logistic_regression"}},
+    ]
+    edges = [
+        {"source": "load", "source_port": "out_1", "target": "pipe", "target_port": "in_1"},
+    ]
+    r = validate(nodes, edges)
+    assert r.valid is True
+    assert r.errors == []
+    assert r.order == ["load", "pipe"]

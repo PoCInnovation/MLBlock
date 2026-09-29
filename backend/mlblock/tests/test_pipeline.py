@@ -111,3 +111,65 @@ def test_generated_code_has_main_block():
     pipeline = Pipeline(graph)
     code = pipeline.generate_code()
     assert '__name__ == "__main__"' in code
+
+
+def test_generate_code_sequential_container():
+    from mlblock.core.generator import generate_code
+    from mlblock.server.schemas import PipelineNode
+
+    nodes = [
+        PipelineNode(
+            id="seq1",
+            type="sequential_container",
+            params={},
+            children=[
+                PipelineNode(
+                    id="c1", type="conv2d_layer", params={"in_channels": 3, "out_channels": 32, "kernel_size": 3}
+                ),
+                PipelineNode(id="r1", type="relu_layer", params={}),
+            ],
+        ),
+    ]
+    edges = []
+    code = generate_code(nodes, edges)
+    assert "torch.nn as nn" in code
+    assert "nn.Sequential" in code
+    assert "conv2d_layer(in_channels=3, out_channels=32, kernel_size=3)" in code
+    assert "relu_layer()" in code
+    assert "def conv2d_layer" in code
+    assert "def relu_layer" in code
+
+
+def test_generate_code_deep_trainer():
+    from mlblock.core.generator import generate_code
+    from mlblock.server.schemas import PipelineNode
+
+    nodes = [
+        PipelineNode(
+            id="t1",
+            type="deep_trainer",
+            params={"epochs": 10, "optimizer": "adam", "learning_rate": 0.001, "loss_fn": "cross_entropy"},
+        ),
+    ]
+    edges = []
+    code = generate_code(nodes, edges)
+    assert "def deep_trainer" in code
+    assert "out_1, out_2 = deep_trainer(" in code
+    assert "epochs=10" in code
+    assert "optimizer='adam'" in code
+
+
+def test_generate_code_data_and_ml_pipelines():
+    from mlblock.core.generator import generate_code
+    from mlblock.server.schemas import PipelineNode
+
+    nodes = [
+        PipelineNode(id="dp", type="data_pipeline", params={"dataset": "cifar10", "batch_size": 32}),
+        PipelineNode(id="mlp", type="ml_pipeline", params={"estimator": "random_forest"}),
+    ]
+    edges = []
+    code = generate_code(nodes, edges)
+    assert "def data_pipeline" in code
+    assert "out_1, out_2 = data_pipeline(" in code
+    assert "def ml_pipeline" in code
+    assert "out_3, out_4 = ml_pipeline(" in code

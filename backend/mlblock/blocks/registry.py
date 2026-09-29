@@ -169,7 +169,7 @@ def _parse_return_annotation(ret: Any) -> list[dict[str, str]]:
     m = re.match(r"^(?:tuple|Tuple)\[(.+)\]$", name)
     if m:
         return [
-            {"name": f"out_{i + 1}", "dtype": part}
+            {"name": f"out_{i + 1}", "dtype": part.strip().strip("'\"")}
             for i, part in enumerate(_split_top_level(m.group(1)))
         ]
     m = re.match(r"^dict\[(.+)\]$", name)

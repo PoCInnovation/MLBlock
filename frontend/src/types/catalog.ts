@@ -43,7 +43,7 @@ export interface PipelineNode {
   id: string
   type: string
   params: Record<string, unknown>
-  children: PipelineNode[]
+  children?: PipelineNode[]
   position?: { x: number; y: number } | null
 }
 

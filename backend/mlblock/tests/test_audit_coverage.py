@@ -15,7 +15,7 @@ def test_audit_exercises_baseline():
     exo_results, block_to_exos, all_blocks = audit_exercises()
 
     assert len(exo_results) == 12
-    assert len(all_blocks) == 91
+    assert len(all_blocks) == 95
 
     passing = {e["id"] for e in exo_results if e["valid"]}
     failing = {e["id"] for e in exo_results if not e["valid"]}

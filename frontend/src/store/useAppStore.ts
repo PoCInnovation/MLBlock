@@ -70,6 +70,7 @@ type AppState = {
   addFlowNode: (node: Node) => void
   addFlowEdges: (edges: Edge[]) => void
   updateFlowParam: (nodeId: string, k: string, v: string) => void
+  updateNodeChildren: (nodeId: string, children: PipelineNode[]) => void
   removeFlowNode: (nodeId: string) => void
   appendConsoleLines: (lines: ConsoleLine[]) => void
   clearAll: () => void
@@ -138,6 +139,14 @@ const useAppStore = create<AppState>((set, get) => ({
       ? { ...n, data: { ...(n.data as { fields?: Record<string, string> }), fields: { ...(n.data as { fields?: Record<string, string> })?.fields, [k]: v } } }
       : n),
   })),
+  updateNodeChildren: (nodeId, children) => {
+    get().commitUndoPoint()
+    set((s) => ({
+      flowNodes: s.flowNodes.map(n => n.id === nodeId
+        ? { ...n, data: { ...(n.data as Record<string, unknown>), children } }
+        : n),
+    }))
+  },
   removeFlowNode: (nodeId) => {
     const s = get()
     set({

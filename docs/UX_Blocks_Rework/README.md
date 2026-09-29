@@ -23,6 +23,7 @@ flowchart LR
 | **3** | [03-evaluation-gaps](./03-evaluation-gaps.md) | Exos §1 × 88 blocks | Tableau coverage `exo × block_path` + 5-10 gaps P0/P1 + issues créées | Tous les exos P0 passent `validation.validate` en sec |
 | **2** | [02-reduction-blocks](./02-reduction-blocks.md) | Inventaire 88 blocks + matrice §3 | Matrice `garder/fusionner/déprécier/supprimer` + cible ~45 blocks | Aucune suppression sans mapping vers exo §1 |
 | **4+5** | [04-familles-pipeline](./04-familles-pipeline.md) + [05-typage](./05-typage.md) | Patterns IA `A/B/C` (Supervisé/Non-sup/RL) | `Stage 0..4` + `Family 16→5 groupes UX` + `TypeSystem Facade` + auto-insert `convertible` | Palette filtrée par stage, `family_of` sync front/back, `incompatible` avec suggestion |
+| **6** | [06-super-blocks](./06-super-blocks.md) | 91 blocs actuels + 12 exos §01 + PyTorch / Sklearn docs | Spécification des 4 Super-Blocs (`SequentialModel`, `DeepTrainer`, `DataPipeline`, `MLPipeline`) | -73% de câbles, typage fort Macro/Micro, zéro `Any`, In-Node DOM |
 
 ## Dépendances
 
