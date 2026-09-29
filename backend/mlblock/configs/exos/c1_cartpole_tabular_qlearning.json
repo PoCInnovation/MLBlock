@@ -1,0 +1,51 @@
+{
+  "name": "CartPole-v1 Tabular Q-learning",
+  "description": "Apprentissage par renforcement tabulaire (Q-Learning) avec discrétisation des observations continues sur l'environnement Gymnasium CartPole-v1.",
+  "graph": {
+    "nodes": [
+      {
+        "id": "env",
+        "type": "create_env",
+        "params": {
+          "env_id": "CartPole-v1"
+        }
+      },
+      {
+        "id": "agent",
+        "type": "q_learning",
+        "params": {
+          "episodes": 5000,
+          "lr": 0.1,
+          "gamma": 0.99
+        }
+      },
+      {
+        "id": "eval",
+        "type": "evaluate_agent",
+        "params": {
+          "episodes": 10
+        }
+      }
+    ],
+    "edges": [
+      {
+        "source": "env",
+        "source_port": "out_1",
+        "target": "agent",
+        "target_port": "env"
+      },
+      {
+        "source": "env",
+        "source_port": "out_1",
+        "target": "eval",
+        "target_port": "env"
+      },
+      {
+        "source": "agent",
+        "source_port": "out_1",
+        "target": "eval",
+        "target_port": "policy"
+      }
+    ]
+  }
+}

@@ -3,7 +3,7 @@ from torch import nn
 
 
 def layernorm(in_1: "torch.Tensor", normalized_shape: "int") -> "torch.Tensor":
-    """Normalisation de couche.
+    """Layer Normalization.
     Normalise les activations par couche.
     
     Args:

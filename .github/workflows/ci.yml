@@ -66,4 +66,4 @@ jobs:
       - name: Lint (eslint)
         # max-warnings 0 : les seuls warnings restants sont documentés par des
         # disables ciblés dans le code — aucun warning nouveau ne doit passer.
-        run: pnpm run lint -- --max-warnings 0
+        run: pnpm exec eslint . --max-warnings 0

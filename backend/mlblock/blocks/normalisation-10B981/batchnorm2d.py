@@ -3,7 +3,7 @@ from torch import nn
 
 
 def batchnorm2d(in_1: "torch.Tensor", num_features: "int") -> "torch.Tensor":
-    """Normalisation par lots 2D.
+    """Batch Normalization 2D.
     Normalise les activations par lots (2D).
     
     Args:

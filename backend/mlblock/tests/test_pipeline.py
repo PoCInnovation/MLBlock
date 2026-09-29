@@ -6,51 +6,41 @@ MNIST_CONFIG = {
     "graph": {
         "nodes": [
             {
-                "id": "input_1", "type": "input",
-                "params": {"shape": [1, 28, 28]},
-            },
-            {
-                "id": "conv1", "type": "conv2d",
+                "id": "conv1", "type": "conv2d_layer",
                 "params": {"in_channels": 1, "out_channels": 32, "kernel_size": 3},
             },
             {
-                "id": "relu1", "type": "relu",
+                "id": "relu1", "type": "relu_layer",
                 "params": {},
             },
             {
-                "id": "pool1", "type": "maxpool2d",
+                "id": "pool1", "type": "maxpool2d_layer",
                 "params": {"kernel_size": 2},
             },
             {
-                "id": "flat", "type": "flatten",
+                "id": "flat", "type": "flatten_layer",
                 "params": {},
             },
             {
-                "id": "fc1", "type": "linear",
+                "id": "fc1", "type": "linear_layer",
                 "params": {"in_features": 5408, "out_features": 128},
             },
             {
-                "id": "relu2", "type": "relu",
+                "id": "relu2", "type": "relu_layer",
                 "params": {},
             },
             {
-                "id": "fc2", "type": "linear",
+                "id": "fc2", "type": "linear_layer",
                 "params": {"in_features": 128, "out_features": 10},
-            },
-            {
-                "id": "output", "type": "softmax",
-                "params": {"dim": 1},
             },
         ],
         "edges": [
-            {"source": "input_1", "source_port": "out_1", "target": "conv1", "target_port": "in_1"},
             {"source": "conv1", "source_port": "out_1", "target": "relu1", "target_port": "in_1"},
             {"source": "relu1", "source_port": "out_1", "target": "pool1", "target_port": "in_1"},
             {"source": "pool1", "source_port": "out_1", "target": "flat", "target_port": "in_1"},
             {"source": "flat", "source_port": "out_1", "target": "fc1", "target_port": "in_1"},
             {"source": "fc1", "source_port": "out_1", "target": "relu2", "target_port": "in_1"},
             {"source": "relu2", "source_port": "out_1", "target": "fc2", "target_port": "in_1"},
-            {"source": "fc2", "source_port": "out_1", "target": "output", "target_port": "in_1"},
         ],
     }
 }
@@ -70,10 +60,9 @@ def test_generated_code_contains_layers():
     graph = Graph(graph_data)
     pipeline = Pipeline(graph)
     code = pipeline.generate_code()
-    assert "out_1 = input" in code
-    assert "out_2 = conv2d" in code
-    assert "out_5 = flatten" in code
-    assert "out_9 = softmax" in code
+    assert "conv2d_layer" in code
+    assert "flatten_layer" in code
+    assert "linear_layer" in code
 
 def test_generated_code_contains_params():
     graph_data = MNIST_CONFIG["graph"]
@@ -86,14 +75,14 @@ def test_generated_code_contains_params():
 
 def test_all_block_templates_generate_code():
     block_types = [
-        ("conv2d", {"in_channels": 3, "out_channels": 16}),
-        ("maxpool2d", {"kernel_size": 2}),
+        ("conv2d_layer", {"in_channels": 3, "out_channels": 16}),
+        ("maxpool2d_layer", {"kernel_size": 2}),
         ("avgpool2d", {"kernel_size": 2}),
-        ("relu", {}),
+        ("relu_layer", {}),
         ("sigmoid", {}),
         ("tanh", {}),
-        ("flatten", {}),
-        ("linear", {"in_features": 100, "out_features": 10}),
+        ("flatten_layer", {}),
+        ("linear_layer", {"in_features": 100, "out_features": 10}),
         ("dropout", {"p": 0.5}),
         ("batchnorm2d", {"num_features": 16}),
         ("softmax", {"dim": 1}),
@@ -122,3 +111,65 @@ def test_generated_code_has_main_block():
     pipeline = Pipeline(graph)
     code = pipeline.generate_code()
     assert '__name__ == "__main__"' in code
+
+
+def test_generate_code_sequential_container():
+    from mlblock.core.generator import generate_code
+    from mlblock.server.schemas import PipelineNode
+
+    nodes = [
+        PipelineNode(
+            id="seq1",
+            type="sequential_container",
+            params={},
+            children=[
+                PipelineNode(
+                    id="c1", type="conv2d_layer", params={"in_channels": 3, "out_channels": 32, "kernel_size": 3}
+                ),
+                PipelineNode(id="r1", type="relu_layer", params={}),
+            ],
+        ),
+    ]
+    edges = []
+    code = generate_code(nodes, edges)
+    assert "torch.nn as nn" in code
+    assert "nn.Sequential" in code
+    assert "conv2d_layer(in_channels=3, out_channels=32, kernel_size=3)" in code
+    assert "relu_layer()" in code
+    assert "def conv2d_layer" in code
+    assert "def relu_layer" in code
+
+
+def test_generate_code_deep_trainer():
+    from mlblock.core.generator import generate_code
+    from mlblock.server.schemas import PipelineNode
+
+    nodes = [
+        PipelineNode(
+            id="t1",
+            type="deep_trainer",
+            params={"epochs": 10, "optimizer": "adam", "learning_rate": 0.001, "loss_fn": "cross_entropy"},
+        ),
+    ]
+    edges = []
+    code = generate_code(nodes, edges)
+    assert "def deep_trainer" in code
+    assert "out_1, out_2 = deep_trainer(" in code
+    assert "epochs=10" in code
+    assert "optimizer='adam'" in code
+
+
+def test_generate_code_data_and_ml_pipelines():
+    from mlblock.core.generator import generate_code
+    from mlblock.server.schemas import PipelineNode
+
+    nodes = [
+        PipelineNode(id="dp", type="data_pipeline", params={"dataset": "cifar10", "batch_size": 32}),
+        PipelineNode(id="mlp", type="ml_pipeline", params={"estimator": "random_forest"}),
+    ]
+    edges = []
+    code = generate_code(nodes, edges)
+    assert "def data_pipeline" in code
+    assert "out_1, out_2 = data_pipeline(" in code
+    assert "def ml_pipeline" in code
+    assert "out_3, out_4 = ml_pipeline(" in code

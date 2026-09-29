@@ -1,8 +1,8 @@
 from typing import Literal
 
 
-def knn(in_1: "pd.DataFrame", target_column: "str", task: Literal["classification", "regression"] = "classification", n_neighbors: "int" = 5) -> "object":  # noqa: F821 -- annotation descriptive en chaîne (métadonnées DSL, noms virtuels)
-    """K plus proches voisins.
+def knn(in_1: "pd.DataFrame", target_column: "str", task: Literal["classification", "regression"] = "classification", n_neighbors: "int" = 5) -> "Model":  # noqa: F821 -- annotation descriptive en chaîne (métadonnées DSL, noms virtuels)
+    """K-Nearest Neighbors.
     K plus proches voisins (classification ou régression).
     
     Args:

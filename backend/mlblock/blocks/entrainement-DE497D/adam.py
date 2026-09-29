@@ -2,7 +2,7 @@ import torch
 
 
 def adam(in_1: "torch.nn.Module", lr: "float" = 0.001, weight_decay: "float" = 0.0) -> "torch.optim.Adam":
-    """Optimiseur Adam.
+    """Adam Optimizer.
     Optimiseur Adam pour l'entraînement.
     
     Args:

@@ -30,11 +30,11 @@ expected:
     - from: separer
       to: evaluer
   hints:
-    load_csv: "Glisse le bloc Charger un CSV depuis Données."
-    train_test_split: "Ajoute Séparer train/test pour créer train/test."
-    linear_regression: "Choisis Régression linéaire comme modèle."
-    train_model: "Ajoute Entraîner le modèle pour lancer l'entraînement."
-    evaluate: "Termine avec Évaluer le modèle pour mesurer l'impact de ton choix."
+    load_csv: "Glisse le bloc Load CSV depuis Données."
+    train_test_split: "Ajoute Train-Test Split pour créer train/test."
+    linear_regression: "Choisis Linear Regression comme modèle."
+    train_model: "Ajoute Train Model pour lancer l'entraînement."
+    evaluate: "Termine avec Evaluate Model pour mesurer l'impact de ton choix."
 ---
 
 ## Intro
@@ -45,7 +45,7 @@ Dans ce cours, tu vas construire un pipeline qui commence par une réflexion sur
 
 ## Étape 1 — Charger CSV
 
-Glisse un bloc **Charger un CSV** (`load_csv`) depuis la catégorie **Données** sur le canvas. Ce bloc charge l'intégralité du jeu de données pour que tu puisses l'exploiter.
+Glisse un bloc **Load CSV** (`load_csv`) depuis la catégorie **Données** sur le canvas. Ce bloc charge l'intégralité du jeu de données pour que tu puisses l'exploiter.
 
 ## Étape 2 — Explorer (hors canvas)
 
@@ -53,20 +53,20 @@ Ouvre ton CSV dans un tableur : compare les distributions de tes deux colonnes c
 
 ## Étape 3 — Séparer les données
 
-Ajoute un bloc **Séparer train/test** (`train_test_split`) et connecte-le à la sortie du bloc **Charger un CSV**. Il partage les données entre jeu d'entraînement et jeu de test. Ce bloc produit deux sorties distinctes.
+Ajoute un bloc **Train-Test Split** (`train_test_split`) et connecte-le à la sortie du bloc **Load CSV**. Il partage les données entre jeu d'entraînement et jeu de test. Ce bloc produit deux sorties distinctes.
 
 ## Étape 4 — Choisir le modèle
 
-Glisse un bloc **Régression linéaire** (`linear_regression`) depuis la catégorie **Modèles** sur le canvas. Ce modèle apprendra à prédire à partir des features que tu as sélectionnées.
+Glisse un bloc **Linear Regression** (`linear_regression`) depuis la catégorie **Modèles** sur le canvas. Ce modèle apprendra à prédire à partir des features que tu as sélectionnées.
 
 ## Étape 5 — Entraîner
 
-Ajoute un bloc **Entraîner le modèle** (`train_model`) et branche-le sur la sortie d'entraînement du bloc **Séparer train/test**. Connecte-y aussi le bloc **Régression linéaire** : ce bloc prend deux entrées, les données et le modèle à entraîner.
+Ajoute un bloc **Train Model** (`train_model`) et branche-le sur la sortie d'entraînement du bloc **Train-Test Split**. Connecte-y aussi le bloc **Linear Regression** : ce bloc prend deux entrées, les données et le modèle à entraîner.
 
 ## Étape 6 — Évaluer
 
-Glisse un bloc **Évaluer le modèle** (`evaluate`) sur le canvas. Ce bloc prend deux entrées : connecte la sortie du bloc **Entraîner le modèle** d'un côté, et la sortie de test du bloc **Séparer train/test** de l'autre. Il mesure l'impact de ton choix de features sur les performances finales.
+Glisse un bloc **Evaluate Model** (`evaluate`) sur le canvas. Ce bloc prend deux entrées : connecte la sortie du bloc **Train Model** d'un côté, et la sortie de test du bloc **Train-Test Split** de l'autre. Il mesure l'impact de ton choix de features sur les performances finales.
 
 ## Lancement
 
-Le pipeline est prêt. Clique sur le bouton de lancement et vérifie dans le bloc **Évaluer le modèle** si ton choix de features améliore les métriques.
+Le pipeline est prêt. Clique sur le bouton de lancement et vérifie dans le bloc **Evaluate Model** si ton choix de features améliore les métriques.

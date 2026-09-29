@@ -3,6 +3,7 @@ import { z } from 'zod'
 import type {
   BlockDefMap,
   Category,
+  ExoTemplate,
   InternalCatalog,
   PipelineCreate,
   PipelineDetail,
@@ -114,11 +115,15 @@ export async function fetchCatalog(): Promise<InternalCatalog> {
         inputs: (b.inputs ?? []).map(p => ({ name: String(p.name), dtype: String(p.dtype) })),
         outputs: (b.outputs ?? []).map(p => ({ name: String(p.name), dtype: String(p.dtype) })),
         description: b.description ? String(b.description) : '',
+        advanced: b.advanced ?? false,
+        group: b.group ?? 'core',
+        stage: b.stage,
+        stage_name: b.stage_name,
       }
     }
   }
 
-  return { categories, blocks }
+  return { categories, blocks, stages: parsed.stages }
 }
 
 export async function createPipeline(data: PipelineCreate): Promise<PipelineDetail> {
@@ -137,6 +142,13 @@ export interface PipelinePage {
 export async function listPipelines(size = 100): Promise<PipelinePage> {
   const { data } = await http.get<unknown>('/api/pipelines', { params: { page: 1, size } })
   return parseOrThrow(pipelinePageSchema, 'GET /api/pipelines', data)
+}
+
+export async function listExos(pattern?: string): Promise<ExoTemplate[]> {
+  const { data } = await http.get<ExoTemplate[]>('/api/exos', {
+    params: pattern ? { pattern } : {},
+  })
+  return data
 }
 
 export async function getPipeline(id: string): Promise<PipelineDetail> {

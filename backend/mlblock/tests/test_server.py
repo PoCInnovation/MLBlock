@@ -20,26 +20,31 @@ def test_catalog_returns_all_blocks(catalog_client: TestClient):
     assert resp.status_code == 200
     data = resp.json()
     assert "categories" in data
+    assert "stages" in data
+    assert len(data["stages"]) == 6
+    assert [s["name"] for s in data["stages"]] == ["Ingest", "Prepare", "Represent", "Train", "Eval", "World"]
     blocks = [b for cat in data["categories"] for b in cat["blocks"]]
     assert blocks
-    assert all({"type", "params", "inputs", "outputs"} <= set(b) for b in blocks)
+    assert all({"type", "params", "inputs", "outputs", "stage", "stage_name"} <= set(b) for b in blocks)
+    assert all(isinstance(b["stage"], int) for b in blocks)
+    assert all(isinstance(b["stage_name"], str) for b in blocks)
 
 
 def test_catalog_groups_blocks_by_category(catalog_client: TestClient):
     resp = catalog_client.get("/api/catalog")
     assert resp.status_code == 200
     cats = {c["id"]: c for c in resp.json()["categories"]}
-    assert "convolution" in cats
-    assert cats["convolution"]["blocks"]
-    assert all("type" in b for b in cats["convolution"]["blocks"])
+    assert "layers" in cats
+    assert cats["layers"]["blocks"]
+    assert all("type" in b for b in cats["layers"]["blocks"])
 
 
 def test_get_block_by_type(catalog_client: TestClient):
     resp = catalog_client.get("/api/catalog")
     assert resp.status_code == 200
     blocks = {b["type"]: b for cat in resp.json()["categories"] for b in cat["blocks"]}
-    assert "conv2d" in blocks
-    data = blocks["conv2d"]
+    assert "conv2d_layer" in blocks
+    data = blocks["conv2d_layer"]
     assert "params" in data
     assert "outputs" in data
 
@@ -49,7 +54,26 @@ def test_list_categories(catalog_client: TestClient):
     assert resp.status_code == 200
     cats = resp.json()["categories"]
     ids = [c["id"] for c in cats]
-    assert "convolution" in ids
+    assert "layers" in ids
+
+
+def test_catalog_filter_advanced(catalog_client: TestClient):
+    resp_all = catalog_client.get("/api/catalog?all=true")
+    assert resp_all.status_code == 200
+    all_blocks = [b for cat in resp_all.json()["categories"] for b in cat["blocks"]]
+
+    resp_core = catalog_client.get("/api/catalog?all=false")
+    assert resp_core.status_code == 200
+    core_blocks = [b for cat in resp_core.json()["categories"] for b in cat["blocks"]]
+
+    resp_no_adv = catalog_client.get("/api/catalog?advanced=false")
+    assert resp_no_adv.status_code == 200
+    no_adv_blocks = [b for cat in resp_no_adv.json()["categories"] for b in cat["blocks"]]
+
+    assert len(core_blocks) < len(all_blocks)
+    assert len(no_adv_blocks) == len(core_blocks)
+    assert not any(b.get("advanced", False) for b in core_blocks)
+    assert any(b.get("advanced", False) for b in all_blocks)
 
 
 # ── Pipelines CRUD ─────────────────────────────────────────────────
@@ -68,8 +92,8 @@ def test_create_pipeline(client: TestClient):
 
 def test_create_pipeline_with_graph(client: TestClient):
     nodes = [
-        {"id": "n1", "type": "input", "params": {"shape": [1, 28, 28]}},
-        {"id": "n2", "type": "conv2d", "params": {"in_channels": 1, "out_channels": 4, "kernel_size": 3}},
+        {"id": "n1", "type": "conv2d_layer", "params": {"in_channels": 1, "out_channels": 4, "kernel_size": 3}},
+        {"id": "n2", "type": "relu_layer", "params": {}},
     ]
     edges = [
         {"source": "n1", "source_port": "out_1", "target": "n2", "target_port": "in_1"},
@@ -165,8 +189,8 @@ def test_validate_valid_graph(client: TestClient):
         "/api/validate",
         json={
             "nodes": [
-                {"id": "n1", "type": "input", "params": {"shape": [1, 28, 28]}},
-                {"id": "n2", "type": "relu", "params": {}},
+                {"id": "n1", "type": "conv2d_layer", "params": {"in_channels": 1, "out_channels": 4, "kernel_size": 3}},
+                {"id": "n2", "type": "relu_layer", "params": {}},
             ],
             "edges": [
                 {"source": "n1", "source_port": "out_1", "target": "n2", "target_port": "in_1"},
@@ -216,8 +240,8 @@ def test_validate_cycle(client: TestClient):
 
 def test_generate_code(client: TestClient):
     nodes = [
-        {"id": "n1", "type": "input", "params": {"shape": [1, 28, 28]}},
-        {"id": "n2", "type": "conv2d", "params": {"in_channels": 1, "out_channels": 4, "kernel_size": 3}},
+        {"id": "n1", "type": "conv2d_layer", "params": {"in_channels": 1, "out_channels": 4, "kernel_size": 3}},
+        {"id": "n2", "type": "relu_layer", "params": {}},
     ]
     edges = [
         {"source": "n1", "source_port": "out_1", "target": "n2", "target_port": "in_1"},

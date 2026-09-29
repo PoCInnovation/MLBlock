@@ -1,5 +1,5 @@
 def evaluate(model: "Model", test_data: "pd.DataFrame", target_column: "str", method: "str" = 'mse', plot: "bool" = False) -> "float":  # noqa: F821 -- annotation descriptive en chaîne (métadonnées DSL, noms virtuels)
-    """Évaluer le modèle.
+    """Evaluate Model.
     Évalue un modèle sur des données de test (mse, accuracy, f1, precision,
     recall).
 

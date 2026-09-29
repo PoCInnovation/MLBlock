@@ -2,7 +2,7 @@ import torch
 
 
 def cosine_lr(in_1: "torch.optim.Optimizer", T_max: "int" = 100, eta_min: "float" = 0.0) -> "torch.optim.lr_scheduler.CosineAnnealingLR":
-    """Taux d'apprentissage à cosinus.
+    """Cosine Learning Rate.
     Décroissance du taux d'apprentissage en cosinus.
     
     Args:

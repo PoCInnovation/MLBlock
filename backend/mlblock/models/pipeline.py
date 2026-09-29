@@ -30,8 +30,10 @@ class PipelineDef(BaseModel):
         registry = info.context.get("registry") if info.context else None
         if registry is None:
             return self
+        from mlblock.core.adapters import resolve_alias
+
         for node in self._all_nodes():
-            if node.type not in registry:
+            if resolve_alias(node.type) not in registry:
                 raise ValueError(
                     f"Unknown block type '{node.type}' (node '{node.id}')"
                 )
@@ -42,6 +44,8 @@ class PipelineDef(BaseModel):
         registry = info.context.get("registry") if info.context else None
         if registry is None:
             return self
+        from mlblock.core.adapters import resolve_alias
+
         node_map = {n.id: n for n in self._all_nodes()}
         for edge in self.edges:
             for side, port_name in [
@@ -55,7 +59,7 @@ class PipelineDef(BaseModel):
                         f"Node '{node_id}' not found "
                         f"(edge: {edge.source}.{edge.source_port} -> {edge.target}.{edge.target_port})"
                     )
-                spec = registry[node.type]
+                spec = registry[resolve_alias(node.type)]
                 direction = "outputs" if side == "source" else "inputs"
                 if not any(p["name"] == port_name for p in getattr(spec, direction)):
                     valid = [p["name"] for p in getattr(spec, direction)]
@@ -70,6 +74,7 @@ class PipelineDef(BaseModel):
         registry = info.context.get("registry") if info.context else None
         if registry is None:
             return self
+        from mlblock.core.adapters import resolve_alias
         from mlblock.core.types import build_conversion_graph, classify
 
         graph = build_conversion_graph(registry)
@@ -77,8 +82,8 @@ class PipelineDef(BaseModel):
         for edge in self.edges:
             src_node = node_map[edge.source]
             tgt_node = node_map[edge.target]
-            src_spec = registry[src_node.type]
-            tgt_spec = registry[tgt_node.type]
+            src_spec = registry[resolve_alias(src_node.type)]
+            tgt_spec = registry[resolve_alias(tgt_node.type)]
             src_dtype = next(
                 p["dtype"] for p in src_spec.outputs if p["name"] == edge.source_port
             )

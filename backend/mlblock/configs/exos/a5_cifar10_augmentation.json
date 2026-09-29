@@ -1,0 +1,195 @@
+{
+  "name": "CIFAR-10 + augmentation",
+  "description": "Entraînement CNN sur CIFAR-10 enrichi d'un pipeline d'augmentation de données en S1 (random_crop, random_flip, normalize).",
+  "graph": {
+    "nodes": [
+      {
+        "id": "dataset",
+        "type": "load_torch_dataset",
+        "params": {
+          "name": "cifar10",
+          "batch_size": 32,
+          "split": "train"
+        }
+      },
+      {
+        "id": "crop",
+        "type": "random_crop",
+        "params": {
+          "size": 32
+        }
+      },
+      {
+        "id": "flip",
+        "type": "random_flip",
+        "params": {
+          "p": 0.5
+        }
+      },
+      {
+        "id": "norm",
+        "type": "normalize",
+        "params": {
+          "mean": [0.4914, 0.4822, 0.4465],
+          "std": [0.2023, 0.1994, 0.2010]
+        }
+      },
+      {
+        "id": "loader",
+        "type": "data_loader",
+        "params": {
+          "batch_size": 32,
+          "shuffle": true
+        }
+      },
+      {
+        "id": "conv1",
+        "type": "conv2d_layer",
+        "params": {
+          "in_channels": 3,
+          "out_channels": 32,
+          "kernel_size": 3
+        }
+      },
+      {
+        "id": "relu1",
+        "type": "relu_layer",
+        "params": {}
+      },
+      {
+        "id": "pool1",
+        "type": "maxpool2d_layer",
+        "params": {
+          "kernel_size": 2
+        }
+      },
+      {
+        "id": "conv2",
+        "type": "conv2d_layer",
+        "params": {
+          "in_channels": 32,
+          "out_channels": 64,
+          "kernel_size": 3
+        }
+      },
+      {
+        "id": "flat",
+        "type": "flatten_layer",
+        "params": {}
+      },
+      {
+        "id": "fc",
+        "type": "linear_layer",
+        "params": {
+          "in_features": 4096,
+          "out_features": 10
+        }
+      },
+      {
+        "id": "loss",
+        "type": "cross_entropy_loss",
+        "params": {}
+      },
+      {
+        "id": "optimizer",
+        "type": "adam",
+        "params": {
+          "lr": 0.001
+        }
+      },
+      {
+        "id": "trainer",
+        "type": "train_model",
+        "params": {
+          "epochs": 5
+        }
+      }
+    ],
+    "edges": [
+      {
+        "source": "dataset",
+        "source_port": "out_1",
+        "target": "crop",
+        "target_port": "in_1"
+      },
+      {
+        "source": "crop",
+        "source_port": "out_1",
+        "target": "flip",
+        "target_port": "in_1"
+      },
+      {
+        "source": "flip",
+        "source_port": "out_1",
+        "target": "norm",
+        "target_port": "in_1"
+      },
+      {
+        "source": "norm",
+        "source_port": "out_1",
+        "target": "loader",
+        "target_port": "in_1"
+      },
+      {
+        "source": "loader",
+        "source_port": "out_1",
+        "target": "trainer",
+        "target_port": "in_2"
+      },
+      {
+        "source": "conv1",
+        "source_port": "out_1",
+        "target": "relu1",
+        "target_port": "in_1"
+      },
+      {
+        "source": "relu1",
+        "source_port": "out_1",
+        "target": "pool1",
+        "target_port": "in_1"
+      },
+      {
+        "source": "pool1",
+        "source_port": "out_1",
+        "target": "conv2",
+        "target_port": "in_1"
+      },
+      {
+        "source": "conv2",
+        "source_port": "out_1",
+        "target": "flat",
+        "target_port": "in_1"
+      },
+      {
+        "source": "flat",
+        "source_port": "out_1",
+        "target": "fc",
+        "target_port": "in_1"
+      },
+      {
+        "source": "fc",
+        "source_port": "out_1",
+        "target": "trainer",
+        "target_port": "in_1"
+      },
+      {
+        "source": "fc",
+        "source_port": "out_1",
+        "target": "optimizer",
+        "target_port": "in_1"
+      },
+      {
+        "source": "optimizer",
+        "source_port": "out_1",
+        "target": "trainer",
+        "target_port": "in_3"
+      },
+      {
+        "source": "loss",
+        "source_port": "out_1",
+        "target": "trainer",
+        "target_port": "in_4"
+      }
+    ]
+  }
+}

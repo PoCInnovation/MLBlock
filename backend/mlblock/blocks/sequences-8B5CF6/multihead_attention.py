@@ -3,7 +3,7 @@ from torch import nn
 
 
 def multihead_attention(in_1: "torch.Tensor", embed_dim: "int", num_heads: "int", dropout: "float" = 0.0, bias: "bool" = True, batch_first: "bool" = True) -> "torch.Tensor":
-    """Attention multi-têtes.
+    """Multi-Head Attention.
     Attention multi-têtes (transformers).
     
     Args:

@@ -2,7 +2,7 @@ import pandas as pd
 
 
 def load_text(path: "file", text_column: "str" = "texte", label_column: "str" = "") -> "pd.DataFrame":  # noqa: F821 -- annotation descriptive en chaîne (métadonnées DSL, noms virtuels)
-    """Charger un jeu de textes.
+    """Load Text Dataset.
     Charge un CSV de textes (phrases) en DataFrame, avec une colonne de label
     optionnelle — branchable sur tokenisation ou classification.
 

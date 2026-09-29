@@ -2,7 +2,7 @@ import numpy as np
 
 
 def confusion_matrix(model: "Model", test_data: "pd.DataFrame", target_column: "str") -> "numpy.ndarray":  # noqa: F821 -- annotation descriptive en chaîne (métadonnées DSL, noms virtuels)
-    """Matrice de confusion.
+    """Confusion Matrix.
     Compare les prédictions aux valeurs réelles (classification).
 
     Args:

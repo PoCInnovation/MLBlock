@@ -1,0 +1,7 @@
+{
+  "markdown.styles": [
+    "style.css"
+  ],
+  "markdown.preview.scrollPreviewWithEditor": true,
+  "markdown.preview.scrollEditorWithPreview": true
+}

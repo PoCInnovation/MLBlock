@@ -1,5 +1,5 @@
 def train_test_split(dataset: "pd.DataFrame", ratio: "float" = 0.8, shuffle: "bool" = True, seed: "int" = None) -> "tuple[pd.DataFrame, pd.DataFrame]":  # noqa: F821 -- annotation descriptive en chaîne (métadonnées DSL, noms virtuels)
-    """Séparer train/test.
+    """Train-Test Split.
     Sépare le DataFrame en train et test.
 
     Args:

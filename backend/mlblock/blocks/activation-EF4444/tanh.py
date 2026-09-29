@@ -3,7 +3,7 @@ from torch import nn
 
 
 def tanh(in_1: "torch.Tensor") -> "torch.Tensor":
-    """Tangente hyperbolique.
+    """Tanh.
     Active tangente hyperbolique : compresse entre -1 et 1.
     
     Args:

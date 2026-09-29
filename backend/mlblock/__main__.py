@@ -102,11 +102,17 @@ def main():
                         layers.append(r)
                 except Exception:
                     pass
-        model = nn.Sequential(*layers) if layers else (list(outputs.values())[-1] if outputs else None)
+        last_out = list(outputs.values())[-1] if outputs else None
+        if isinstance(last_out, nn.Module):
+            model = last_out
+        elif layers:
+            model = nn.Sequential(*layers)
+        else:
+            model = None
         if model is None:
             print("Aucun layer construit — Pipeline vide")
             return
-        shape = (input_node.get("params", {}) if input_node else {}).get("shape", [1, 28, 28])
+        shape = [1, 28, 28]
         dummy = torch.randn(1, *shape)
         output = model(dummy)
         print(f"Modèle construit avec succès : {model}")

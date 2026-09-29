@@ -56,18 +56,33 @@ class Catalog:
     def get(self, name: str) -> Any | None:
         if not self._loaded:
             self.load()
-        return self._blocks.get(name)
+        from mlblock.core.adapters import resolve_alias
+
+        canonical = resolve_alias(name)
+        return self._blocks.get(canonical)
 
     def get_source(self, name: str) -> str:
         if not self._loaded:
             self.load()
-        return self._sources.get(name, "")
+        from mlblock.core.adapters import resolve_alias
+
+        canonical = resolve_alias(name)
+        return self._sources.get(canonical, "")
 
     def snapshot(self) -> dict[str, Any]:
         """Serializable snapshot for debugging / ETag."""
         if not self._loaded:
             self.load()
         return {"blocks": list(self._blocks.keys())}
+
+    def stages(self) -> list[dict[str, Any]]:
+        """List of all stages with metadata (id, name, label, color)."""
+        from mlblock.core.stages import Stage
+
+        return [
+            {"id": int(s), "name": s.stage_name, "label": s.label, "color": s.color}
+            for s in Stage.all_stages()
+        ]
 
     # ── test adapter ────────────────────────────────────────────────
     def use_fake(self, blocks: dict[str, Any], sources: dict[str, str] | None = None) -> None:
@@ -140,6 +155,10 @@ def all_blocks() -> dict[str, Any]:
 
 def get_source(name: str) -> str:
     return catalog.get_source(name)
+
+
+def stages() -> list[dict[str, Any]]:
+    return catalog.stages()
 
 
 # Auto-load on import to preserve existing behaviour: `import mlblock` previously

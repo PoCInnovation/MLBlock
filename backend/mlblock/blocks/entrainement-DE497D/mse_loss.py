@@ -1,7 +1,7 @@
 import torch
 
 def mse_loss() -> "torch.nn.MSELoss":
-    """Perte quadratique moyenne.
+    """Mean Squared Error Loss.
     Perte quadratique moyenne (régression).
     """
     return torch.nn.MSELoss()

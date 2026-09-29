@@ -2,7 +2,7 @@ import torch
 
 
 def random_split(in_1: "torch.utils.data.Dataset", train_ratio: "float" = 0.8) -> "tuple[torch.utils.data.Dataset, torch.utils.data.Dataset]":
-    """Séparation aléatoire du dataset.
+    """Random Split.
     Sépare aléatoirement un dataset en train/test.
 
     Args:

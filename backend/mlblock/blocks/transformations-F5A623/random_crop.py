@@ -1,10 +1,12 @@
-def random_crop(in_1: "torch.Tensor", size: "int") -> "torch.Tensor":  # noqa: F821 -- annotation descriptive en chaîne (métadonnées DSL, noms virtuels)
-    """Recadrage aléatoire.
-    Recadre aléatoirement le tenseur (augmentation).
-    
+def random_crop(in_1: "torch.utils.data.Dataset", size: "int") -> "torch.utils.data.Dataset":  # noqa: F821 -- annotation descriptive en chaîne (métadonnées DSL, noms virtuels)
+    """Random Crop.
+    Recadre aléatoirement les images du dataset (augmentation, transform en tête).
+
     Args:
-        in_1: Input image.
+        in_1: Dataset image.
         size: Output size.
     """
     from torchvision import transforms
-    return transforms.RandomCrop(size)(in_1)
+    aug = transforms.RandomCrop(size)
+    in_1.transform = transforms.Compose([in_1.transform, aug]) if getattr(in_1, "transform", None) else aug
+    return in_1

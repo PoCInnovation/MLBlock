@@ -1,0 +1,101 @@
+{
+  "name": "Time-series Sequence",
+  "description": "Modélisation de séries temporelles avec découpage en séquences glissantes (sequence_dataset), couche récurrente (rnn_layer) et régression MSE.",
+  "graph": {
+    "nodes": [
+      {
+        "id": "dataset",
+        "type": "load_sklearn_dataset",
+        "params": {
+          "name": "iris"
+        }
+      },
+      {
+        "id": "seq",
+        "type": "sequence_dataset",
+        "params": {
+          "seq_len": 8
+        }
+      },
+      {
+        "id": "rnn",
+        "type": "rnn_layer",
+        "params": {
+          "input_size": 4,
+          "hidden_size": 8
+        }
+      },
+      {
+        "id": "fc",
+        "type": "linear_layer",
+        "params": {
+          "in_features": 8,
+          "out_features": 1
+        }
+      },
+      {
+        "id": "loss",
+        "type": "mse_loss",
+        "params": {}
+      },
+      {
+        "id": "optimizer",
+        "type": "adam",
+        "params": {
+          "lr": 0.001
+        }
+      },
+      {
+        "id": "trainer",
+        "type": "train_model",
+        "params": {
+          "epochs": 2
+        }
+      }
+    ],
+    "edges": [
+      {
+        "source": "dataset",
+        "source_port": "out_1",
+        "target": "seq",
+        "target_port": "in_1"
+      },
+      {
+        "source": "seq",
+        "source_port": "out_1",
+        "target": "trainer",
+        "target_port": "in_2"
+      },
+      {
+        "source": "rnn",
+        "source_port": "out_1",
+        "target": "fc",
+        "target_port": "in_1"
+      },
+      {
+        "source": "fc",
+        "source_port": "out_1",
+        "target": "trainer",
+        "target_port": "in_1"
+      },
+      {
+        "source": "fc",
+        "source_port": "out_1",
+        "target": "optimizer",
+        "target_port": "in_1"
+      },
+      {
+        "source": "optimizer",
+        "source_port": "out_1",
+        "target": "trainer",
+        "target_port": "in_3"
+      },
+      {
+        "source": "loss",
+        "source_port": "out_1",
+        "target": "trainer",
+        "target_port": "in_4"
+      }
+    ]
+  }
+}

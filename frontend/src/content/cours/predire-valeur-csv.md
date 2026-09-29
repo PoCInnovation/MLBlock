@@ -38,24 +38,24 @@ expected:
     - from: separer
       to: evaluer
   hints:
-    load_csv: "Glisse le bloc Charger CSV depuis Données."
-    train_test_split: "Ajoute Séparer les données pour créer train/test."
+    load_csv: "Glisse le bloc Load CSV depuis Données."
+    train_test_split: "Ajoute Train-Test Split pour créer train/test."
     standard_scaler: "Normalise les données avec Standard Scaler."
-    linear_regression: "Choisis Régression Linéaire comme modèle."
-    train_model: "Ajoute Entraîner le modèle pour lancer l’entraînement."
-    mse_loss: "Utilise Perte MSE pour la régression."
-    evaluate: "Termine avec Évaluer pour voir les prédictions."
+    linear_regression: "Choisis Linear Regression comme modèle."
+    train_model: "Ajoute Train Model pour lancer l’entraînement."
+    mse_loss: "Utilise MSE Loss pour la régression."
+    evaluate: "Termine avec Evaluate Model pour voir les prédictions."
 ---
 
 ## Étape 1 — Charger CSV
 
-Importe ton fichier CSV avec le bloc **Charger CSV**. Ce bloc lit le fichier et expose un DataFrame pour la suite du pipeline.
+Importe ton fichier CSV avec le bloc **Load CSV**. Ce bloc lit le fichier et expose un DataFrame pour la suite du pipeline.
 
 > Astuce : vérifie que ton CSV contient une colonne cible numérique.
 
 ## Étape 2 — Séparer les données
 
-Utilise **Séparer les données** (`train_test_split`) pour diviser ton jeu en entraînement et test. Par défaut 80 % / 20 %.
+Utilise **Train-Test Split** (`train_test_split`) pour diviser ton jeu en entraînement et test. Par défaut 80 % / 20 %.
 
 ## Étape 3 — Normaliser
 
@@ -63,15 +63,15 @@ Applique **Standard Scaler** pour centrer et réduire les features.
 
 ## Étape 4 — Choisir le modèle
 
-Ajoute **Régression Linéaire** depuis la catégorie Modèles.
+Ajoute **Linear Regression** depuis la catégorie Modèles.
 
 ## Étape 5 — Entraîner
 
-Connecte le modèle à **Entraîner le modèle** (`train_model`).
+Connecte le modèle à **Train Model** (`train_model`).
 
 ## Étape 6 — Calculer la perte
 
-Ajoute **Perte MSE** (`mse_loss`) pour mesurer l’erreur quadratique moyenne.
+Ajoute **MSE Loss** (`mse_loss`) pour mesurer l’erreur quadratique moyenne.
 
 ## Étape 7 — Démarrer
 

@@ -40,7 +40,7 @@ def test_auth_priority():
         [],
     )
     # Find the GPU_API_KEY assignment line
-    gpu_line = next((l for l in code.split("\n") if "GPU_API_KEY" in l and "os.environ" in l), "")
+    gpu_line = next((line for line in code.split("\n") if "GPU_API_KEY" in line and "os.environ" in line), "")
     if not gpu_line:
         print("FAIL: GPU_API_KEY line not found in generated code")
         return False
@@ -80,10 +80,12 @@ def test_container_wins_simulation():
     correct_sent = container_env.get("CONTAINER_API_KEY") or container_env.get("GPU_API_KEY", "mock")
 
     backend_expected = instance  # job.instance_api_key == CONTAINER_API_KEY
-    print(f"  Container env: GPU_API_KEY=<REDACTED> CONTAINER_API_KEY=<REDACTED>")
-    print(f"  Backend expects: <REDACTED-instance>")
-    print(f"  Buggy code would send:  {'<REDACTED-shared>' if buggy_sent==shared else buggy_sent} -> match={buggy_sent==backend_expected}")
-    print(f"  Correct code would send: {'<REDACTED-instance>' if correct_sent==instance else correct_sent} -> match={correct_sent==backend_expected}")
+    print("  Container env: GPU_API_KEY=<REDACTED> CONTAINER_API_KEY=<REDACTED>")
+    print("  Backend expects: <REDACTED-instance>")
+    b_val = "<REDACTED-shared>" if buggy_sent == shared else buggy_sent
+    print(f"  Buggy code would send:  {b_val} -> match={buggy_sent==backend_expected}")
+    c_val = "<REDACTED-instance>" if correct_sent == instance else correct_sent
+    print(f"  Correct code would send: {c_val} -> match={correct_sent==backend_expected}")
 
     # This test documents the bug; actual pass/fail is test_auth_priority
     return True
@@ -109,7 +111,9 @@ def test_onstart_length():
         from mlblock.core.vast import VastAI
         encoded = VastAI._encode_onstart(onstart)
         if encoded != onstart:
-            import base64, gzip, re
+            import base64
+            import gzip
+            import re
             # New format: echo '<b64>' | base64 -d | gunzip | bash
             m = re.search(r"echo '([^']+)'", encoded)
             b64 = m.group(1) if m else encoded

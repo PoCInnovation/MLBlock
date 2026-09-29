@@ -1,0 +1,64 @@
+{
+  "name": "Iris Classification — LogisticRegression",
+  "description": "Classification supervisée du jeu de données Iris via une régression logistique scikit-learn avec division train/test et évaluation de l'exactitude (accuracy).",
+  "graph": {
+    "nodes": [
+      {
+        "id": "dataset",
+        "type": "load_sklearn_dataset",
+        "params": {
+          "name": "iris"
+        }
+      },
+      {
+        "id": "split",
+        "type": "train_test_split",
+        "params": {
+          "ratio": 0.7
+        }
+      },
+      {
+        "id": "model",
+        "type": "logistic_regression",
+        "params": {
+          "target_column": "target",
+          "max_iter": 200
+        }
+      },
+      {
+        "id": "eval",
+        "type": "evaluate",
+        "params": {
+          "target_column": "target",
+          "method": "accuracy"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "source": "dataset",
+        "source_port": "out_1",
+        "target": "split",
+        "target_port": "dataset"
+      },
+      {
+        "source": "split",
+        "source_port": "out_1",
+        "target": "model",
+        "target_port": "train_data"
+      },
+      {
+        "source": "split",
+        "source_port": "out_2",
+        "target": "eval",
+        "target_port": "test_data"
+      },
+      {
+        "source": "model",
+        "source_port": "out_1",
+        "target": "eval",
+        "target_port": "model"
+      }
+    ]
+  }
+}

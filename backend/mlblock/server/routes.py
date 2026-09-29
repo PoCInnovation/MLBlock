@@ -13,7 +13,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import JSONResponse, Response
 from sqlmodel import Session, select
 
-from mlblock.blocks.registry import BLOCK_REGISTRY  # deprecated: use mlblock.catalog
+from mlblock.catalog import catalog
 from mlblock.core.vast import VastAI
 from mlblock.validation import validate as validate_pipeline
 from mlblock.server.database import get_session
@@ -41,6 +41,7 @@ pipelines_router = APIRouter(prefix="/api/pipelines")
 validation_router = APIRouter(prefix="/api/validate")
 jobs_router = APIRouter(prefix="/api/jobs")
 files_router = APIRouter(prefix="/api/files")
+exos_router = APIRouter(prefix="/api/exos")
 health_router = APIRouter()
 
 
@@ -91,8 +92,8 @@ def _cleanup_pipeline_files(pipeline_id: UUID) -> None:
 
 # ── Catalog ─────────────────────────────────────────────────────────
 
-def _fr_label(block) -> str:
-    """Label FR : première ligne de la docstring, sinon name.title()."""
+def _en_label(block) -> str:
+    """Label EN : première ligne de la docstring, sinon name.title()."""
     first = next((line.strip() for line in (block.description or "").splitlines() if line.strip()), "")
     first = first.rstrip(".")
     if len(first) >= 3 and not first.startswith(("Parameter", "Block", "Args")):
@@ -105,13 +106,28 @@ def _fr_summary(block) -> str:
     lines = [line.strip() for line in (block.description or "").splitlines() if line.strip()]
     if len(lines) >= 2 and not lines[1].startswith(("Args", "Param")):
         return lines[1].rstrip(".")
-    return _fr_label(block)
+    return _en_label(block)
 
 
 @catalog_router.get("", response_model=None)
-def get_catalog(request: Request = None):  # type: ignore[assignment]
+def get_catalog(
+    request: Request = None,  # type: ignore[assignment]
+    all: bool = True,
+    advanced: bool | None = None,
+    group: str | None = None,
+):
     categories: dict[str, dict] = {}
-    for block in BLOCK_REGISTRY.values():
+    for block in catalog.all().values():
+        block_adv = getattr(block, "advanced", False)
+        block_grp = getattr(block, "group", "core")
+
+        if not all and block_adv:
+            continue
+        if advanced is not None and block_adv != advanced:
+            continue
+        if group is not None and block_grp != group:
+            continue
+
         cat = block.category.name
         if cat not in categories:
             # id = slug brut (filtrage stable) ; name = première lettre en
@@ -122,15 +138,31 @@ def get_catalog(request: Request = None):  # type: ignore[assignment]
                 "color": block.category.color,
                 "blocks": [],
             }
+        stage_val = getattr(block, "stage", None)
+        stage_name_val = getattr(block, "stage_name", None)
+        if stage_val is None or stage_name_val is None:
+            from mlblock.core.stages import stage_of_block
+
+            st = stage_of_block(block.name, cat)
+            stage_val = int(st)
+            stage_name_val = st.stage_name
+
         categories[cat]["blocks"].append({
             "type": block.name,
-            "label": _fr_label(block),
+            "label": _en_label(block),
             "description": _fr_summary(block),
             "params": {k: v.model_dump() for k, v in block.params.items()},
             "inputs": block.inputs,
             "outputs": block.outputs,
+            "advanced": block_adv,
+            "group": block_grp,
+            "stage": stage_val,
+            "stage_name": stage_name_val,
         })
-    payload = {"categories": sorted(list(categories.values()), key=lambda c: c["id"])}
+    payload = {
+        "categories": sorted(list(categories.values()), key=lambda c: c["id"]),
+        "stages": catalog.stages(),
+    }
     # Appel direct en test (sans Request) : compatibilité — renvoie le dict brut.
     if request is None:
         return payload
@@ -170,6 +202,31 @@ def get_samples(category: str | None = None) -> list[dict]:
     if category:
         items = [i for i in items if i.get("category") == category]
     return items
+
+
+# ── Exos & Baselines ────────────────────────────────────────────────
+
+@exos_router.get("")
+def list_exos(pattern: str | None = None) -> list[dict]:
+    """Liste les pipelines de référence et baselines."""
+    from mlblock.core.exos import get_exos
+
+    items = get_exos()
+    if pattern:
+        p = pattern.strip().lower()
+        items = [e for e in items if e.get("pattern") == p]
+    return items
+
+
+@exos_router.get("/{id_or_code}")
+def get_exo_by_id(id_or_code: str) -> dict:
+    """Récupère un pipeline de référence prêt à l'import."""
+    from mlblock.core.exos import get_exo
+
+    exo = get_exo(id_or_code)
+    if not exo:
+        raise HTTPException(404, detail="Pipeline de référence introuvable")
+    return exo
 
 
 # ── Files ───────────────────────────────────────────────────────────
@@ -760,6 +817,24 @@ def build_pipeline_model(
     last_output = list(outputs.values())[-1]
     if isinstance(last_output, dict):
         last_output = list(last_output.values())[-1]  # type: ignore
+
+    if isinstance(last_output, nn.Module):
+        output_shape = None
+        try:
+            # Infer dummy shape from first layer if possible
+            first_node = nodes_by_id.get(order[0]) if order else None
+            in_ch = (first_node.params.get("in_channels", 1) if first_node else 1) or 1
+            dummy = torch.randn(1, in_ch, 28, 28)
+            out = last_output(dummy)
+            if isinstance(out, torch.Tensor):
+                output_shape = list(out.shape)
+        except Exception:
+            output_shape = None
+        return {
+            "success": True,
+            "output_shape": output_shape,
+            "layer_count": len(layers) or len(order),
+        }
 
     if not isinstance(last_output, torch.Tensor):
         return {

@@ -27,6 +27,7 @@ from mlblock.server.routes import (  # noqa: E402
     validation_router,
     jobs_router,
     files_router,
+    exos_router,
     health_router,
 )
 
@@ -36,4 +37,5 @@ app.include_router(pipelines_router)
 app.include_router(validation_router)
 app.include_router(jobs_router)
 app.include_router(files_router)
+app.include_router(exos_router)
 app.include_router(health_router)

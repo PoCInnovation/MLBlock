@@ -3,7 +3,7 @@ from torch import nn
 
 
 def leaky_relu(in_1: "torch.Tensor", negative_slope: "float" = 0.01) -> "torch.Tensor":
-    """LeakyReLU.
+    """Leaky ReLU.
     Active LeakyReLU : pente faible pour les valeurs négatives.
     
     Args:

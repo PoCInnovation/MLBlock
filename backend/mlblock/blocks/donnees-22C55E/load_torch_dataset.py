@@ -1,13 +1,13 @@
-def load_torch_dataset(name: "str", batch_size: "int" = 32, split: "str" = "train") -> "torch.utils.data.DataLoader":  # noqa: F821 -- annotation descriptive en chaîne (métadonnées DSL, noms virtuels)
-    """Charger un dataset torchvision.
-    Charge MNIST, FashionMNIST ou CIFAR10 en DataLoader (téléchargement auto).
+def load_torch_dataset(name: "str", batch_size: "int" = 32, split: "str" = "train") -> "torch.utils.data.Dataset":  # noqa: F821 -- annotation descriptive en chaîne (métadonnées DSL, noms virtuels)
+    """Load Torchvision Dataset.
+    Charge MNIST, FashionMNIST ou CIFAR10 en Dataset (téléchargement auto).
+    Déprécié : préférez torch_dataset + data_loader.
 
     Args:
         name: Dataset (choix: mnist|fashion_mnist|cifar10).
-        batch_size: Taille des lots.
+        batch_size: Taille des lots (ignoré, conservé pour compatibilité).
         split: train ou test (choix: train|test).
     """
-    from torch.utils.data import DataLoader
     from torchvision import datasets, transforms
 
     names = {"mnist": datasets.MNIST, "fashion_mnist": datasets.FashionMNIST, "cifar10": datasets.CIFAR10}
@@ -15,10 +15,9 @@ def load_torch_dataset(name: "str", batch_size: "int" = 32, split: "str" = "trai
         raise ValueError(f"Dataset inconnu : {name} (choix: mnist|fashion_mnist|cifar10)")
     if split not in ("train", "test"):
         raise ValueError("split doit être 'train' ou 'test'")
-    ds = names[name](
+    return names[name](
         root="/tmp/mlblock-datasets",
         train=split == "train",
         download=True,
         transform=transforms.ToTensor(),
     )
-    return DataLoader(ds, batch_size=batch_size, shuffle=split == "train")

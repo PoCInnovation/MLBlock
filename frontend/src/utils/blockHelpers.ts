@@ -19,7 +19,7 @@ export function toServerPayload(s: {
       id: n.id,
       type: (n.data as { type?: string } | undefined)?.type ?? n.id,
       params: (n.data as { fields?: Record<string, unknown> } | undefined)?.fields ?? {},
-      children: [],
+      children: ((n.data as { children?: PipelineNode[] } | undefined)?.children) ?? [],
       position: n.position,
     })),
     edges: s.flowEdges.map(e => ({

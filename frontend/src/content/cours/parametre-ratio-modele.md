@@ -30,11 +30,11 @@ expected:
     - from: separer
       to: evaluer
   hints:
-    load_csv: "Glisse le bloc Charger un CSV depuis Données."
-    train_test_split: "Ajoute Séparer train/test et règle son paramètre de ratio."
-    linear_regression: "Choisis Régression linéaire comme modèle."
-    train_model: "Ajoute Entraîner le modèle pour lancer l'entraînement."
-    evaluate: "Termine avec Évaluer le modèle pour observer l'effet du ratio."
+    load_csv: "Glisse le bloc Load CSV depuis Données."
+    train_test_split: "Ajoute Train-Test Split et règle son paramètre de ratio."
+    linear_regression: "Choisis Linear Regression comme modèle."
+    train_model: "Ajoute Train Model pour lancer l'entraînement."
+    evaluate: "Termine avec Evaluate Model pour observer l'effet du ratio."
 ---
 
 ## Intro
@@ -43,28 +43,28 @@ Dans ce cours, tu vas construire le même pipeline de prédiction CSV qu'en intr
 
 ## Étape 1 — Charger CSV
 
-Glisse un bloc **Charger un CSV** (`load_csv`) depuis la catégorie **Données** sur le canvas. Il lira le fichier de données que tu veux utiliser.
+Glisse un bloc **Load CSV** (`load_csv`) depuis la catégorie **Données** sur le canvas. Il lira le fichier de données que tu veux utiliser.
 
 ## Étape 2 — Séparer les données
 
-Ajoute un bloc **Séparer train/test** (`train_test_split`) et branche-le sur la sortie du bloc **Charger un CSV**. Ce bloc produit deux sorties, une pour l'entraînement et une pour le test.
+Ajoute un bloc **Train-Test Split** (`train_test_split`) et branche-le sur la sortie du bloc **Load CSV**. Ce bloc produit deux sorties, une pour l'entraînement et une pour le test.
 
 ## Étape 3 — Régler le ratio
 
-Clique sur le bloc **Séparer train/test** pour ouvrir ses paramètres. Modifie le paramètre de ratio pour passer à 0.2, ce qui réserve 20 % des données au test au lieu de la valeur par défaut. Observe comment ce chiffre correspond à l'argument que tu passerais dans un appel de fonction Python.
+Clique sur le bloc **Train-Test Split** pour ouvrir ses paramètres. Modifie le paramètre de ratio pour passer à 0.2, ce qui réserve 20 % des données au test au lieu de la valeur par défaut. Observe comment ce chiffre correspond à l'argument que tu passerais dans un appel de fonction Python.
 
 ## Étape 4 — Choisir le modèle
 
-Ajoute un bloc **Régression linéaire** (`linear_regression`) depuis la catégorie **Modèles** sur le canvas. Ce modèle apprendra à prédire des valeurs numériques à partir des colonnes sélectionnées.
+Ajoute un bloc **Linear Regression** (`linear_regression`) depuis la catégorie **Modèles** sur le canvas. Ce modèle apprendra à prédire des valeurs numériques à partir des colonnes sélectionnées.
 
 ## Étape 5 — Entraîner
 
-Glisse un bloc **Entraîner le modèle** (`train_model`) et connecte-le à la sortie d'entraînement du bloc **Séparer train/test**. Connecte-y aussi le bloc **Régression linéaire** : ce bloc prend deux entrées, les données et le modèle à entraîner.
+Glisse un bloc **Train Model** (`train_model`) et connecte-le à la sortie d'entraînement du bloc **Train-Test Split**. Connecte-y aussi le bloc **Linear Regression** : ce bloc prend deux entrées, les données et le modèle à entraîner.
 
 ## Étape 6 — Évaluer
 
-Ajoute un bloc **Évaluer le modèle** (`evaluate`). Connecte la sortie du bloc **Entraîner le modèle** d'un côté, et la sortie de test du bloc **Séparer train/test** de l'autre. Ce bloc a deux entrées pour pouvoir comparer les prédictions du modèle aux vraies valeurs.
+Ajoute un bloc **Evaluate Model** (`evaluate`). Connecte la sortie du bloc **Train Model** d'un côté, et la sortie de test du bloc **Train-Test Split** de l'autre. Ce bloc a deux entrées pour pouvoir comparer les prédictions du modèle aux vraies valeurs.
 
 ## Lancement
 
-Le pipeline est prêt. Clique sur le bouton de lancement pour l'exécuter et observe comment le ratio que tu as choisi influence les métriques affichées par le bloc **Évaluer le modèle**.
+Le pipeline est prêt. Clique sur le bouton de lancement pour l'exécuter et observe comment le ratio que tu as choisi influence les métriques affichées par le bloc **Evaluate Model**.

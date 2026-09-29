@@ -9,6 +9,7 @@ vi.mock('../api/client', () => ({
 }))
 
 import useAppStore, { fingerprintOf } from './useAppStore'
+import { toServerPayload } from './pipelineDocument'
 
 const freeNode = (id: string, x: number, y: number, extra: Record<string, unknown> = {}): Node =>
   ({
@@ -61,6 +62,16 @@ describe('fingerprintOf', () => {
     expect(fp([], [e1])).toBe(fp([], [e2]))
   })
 
+  it('detects changes to container children', () => {
+    const withoutChild = freeNode('c1', 10, 20, { data: { type: 'sequential_container', children: [] } })
+    const withChild = freeNode('c1', 10, 20, {
+      data: {
+        type: 'sequential_container',
+        children: [{ id: 'sub_1', type: 'conv2d_layer', params: {} }],
+      },
+    })
+    expect(fp([withoutChild])).not.toBe(fp([withChild]))
+  })
   it('ignores cosmetic data (label, category, colors) but detects field changes', () => {
     const a = freeNode('a', 10, 20)
     const relabeled = freeNode('a', 10, 20, {
@@ -167,5 +178,53 @@ describe('undo / redo', () => {
     expect(useAppStore.getState().canRedo()).toBe(false)
     useAppStore.getState().redo()
     expect(useAppStore.getState().flowNodes.map(n => n.id)).toEqual(['a'])
+  })
+})
+
+describe('toServerPayload with container children', () => {
+  it('preserves children array in serialized PipelineNode', () => {
+    const containerNode = freeNode('c1', 10, 20, {
+      data: {
+        type: 'sequential_container',
+        fields: {},
+        children: [
+          { id: 'step_1', type: 'conv2d_layer', params: { out_channels: 32 } },
+          { id: 'step_2', type: 'relu_layer', params: {} },
+        ],
+      },
+    })
+    const payload = toServerPayload({ flowNodes: [containerNode], flowEdges: [] })
+    const children = payload.nodes[0].children ?? []
+    expect(children).toHaveLength(2)
+    expect(children[0]?.type).toBe('conv2d_layer')
+    expect(children[1]?.type).toBe('relu_layer')
+  })
+})
+
+describe('updateNodeChildren', () => {
+  type ContainerData = { children?: unknown[] }
+
+  it('updates children of a container node and creates undo snapshot', () => {
+    const container = freeNode('c1', 10, 20, {
+      data: { type: 'sequential_container', fields: {}, children: [] },
+    })
+    useAppStore.setState({ flowNodes: [container], undoStack: [], redoStack: [] })
+
+    expect(useAppStore.getState().canUndo()).toBe(false)
+
+    useAppStore.getState().updateNodeChildren('c1', [
+      { id: 'sub1', type: 'conv2d_layer', params: { out_channels: 32 } },
+    ])
+
+    const updated = useAppStore.getState().flowNodes[0]
+    const updatedData = updated.data as ContainerData
+    expect(updatedData.children).toHaveLength(1)
+    expect(useAppStore.getState().canUndo()).toBe(true)
+
+    // Undo reverts back to empty children
+    useAppStore.getState().undo()
+    const reverted = useAppStore.getState().flowNodes[0]
+    const revertedData = reverted.data as ContainerData
+    expect(revertedData.children).toHaveLength(0)
   })
 })

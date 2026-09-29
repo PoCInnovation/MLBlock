@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Save, Play, Upload, Download, Square, MoreVertical, FolderKanban, Trash2, LogOut, Check, Undo2, Redo2 } from 'lucide-react'
+import { Save, Play, Upload, Download, Square, MoreVertical, FolderKanban, Trash2, LogOut, Check, Undo2, Redo2, Sparkles } from 'lucide-react'
 import { Icon } from '@astryxdesign/core/Icon'
 import { HStack, IconButton, Button } from '@astryxdesign/core'
 import { TextInput } from '@astryxdesign/core/TextInput'
@@ -12,9 +12,10 @@ import { usePipelineImport } from '../../hooks/usePipelineImport'
 import { useBlockRunner } from '../../hooks/useBlockRunner'
 import ExportModal from '../ui/ExportModal'
 import UnsavedChangesDialog from '../ui/UnsavedChangesDialog'
+import TemplateModal from '../ui/TemplateModal'
+import type { ExoTemplate } from '../../types/catalog'
 import { clearStash } from '../../utils/pending-stash'
 import { theme } from '../../theme'
-
 export default function EditorHeader() {
   const navigate    = useNavigate()
   const projectName = useAppStore(s => s.projectName)
@@ -41,8 +42,15 @@ export default function EditorHeader() {
   const [editingName, setEditingName] = useState(false)
   const [draftName, setDraftName] = useState('')
   const [exportOpen, setExportOpen] = useState(false)
+  const [templatesOpen, setTemplatesOpen] = useState(false)
   const [importError, setImportError] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+
+  const onSelectTemplate = (template: ExoTemplate) => {
+    useAppStore.getState().commitUndoPoint()
+    useAppStore.getState().loadPipeline(template.nodes, template.edges, '', template.name)
+    showToast({ kind: 'success', message: `Modèle « ${template.name} » chargé dans le canvas.` })
+  }
 
   const commitName = () => {
     const name = draftName.trim()
@@ -178,6 +186,7 @@ export default function EditorHeader() {
         <DropdownMenu
           button={{ label: 'Menu du projet', icon: <Icon icon={MoreVertical} size="sm" />, isIconOnly: true, variant: 'secondary' }}
           items={[
+            { label: 'Modèles & Baselines', icon: <Icon icon={Sparkles} size="sm" />, onClick: () => setTemplatesOpen(true) },
             { label: 'Importer', icon: <Icon icon={Upload} size="sm" />, onClick: () => fileRef.current?.click() },
             { label: 'Exporter', icon: <Icon icon={Download} size="sm" />, onClick: () => setExportOpen(true) },
             { type: 'divider' },
@@ -242,6 +251,12 @@ export default function EditorHeader() {
           void signOut().then(() => navigate({ to: '/' }))
         }}
         onCancel={() => setLogoutOpen(false)}
+      />
+
+      <TemplateModal
+        isOpen={templatesOpen}
+        onSelect={onSelectTemplate}
+        onClose={() => setTemplatesOpen(false)}
       />
     </div>
   )

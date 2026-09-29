@@ -6,6 +6,7 @@
 import type { InternalCatalog } from '../types/catalog'
 import type { PipelineNode, PipelineEdge } from '../types/catalog'
 import type { Node, Edge } from '@xyflow/react'
+import { stageOfBlock } from '../utils/stages'
 
 export type PersistenceAdapter = {
   createPipeline: (body: { name: string; description: string; is_draft: boolean; nodes: PipelineNode[]; edges: PipelineEdge[] }) => Promise<{ id: string; name: string }>
@@ -20,6 +21,7 @@ export function fingerprintOf(s: { flowNodes: Node[]; flowEdges: Edge[]; project
       id: n.id,
       type: (n.data as { type?: string } | undefined)?.type,
       fields: (n.data as { fields?: Record<string, string> } | undefined)?.fields,
+      children: (n.data as { children?: unknown[] } | undefined)?.children,
       segs: (n.data as { segs?: unknown } | undefined)?.segs,
       position: n.position,
     })),
@@ -35,11 +37,12 @@ export function fingerprintOf(s: { flowNodes: Node[]; flowEdges: Edge[]; project
 
 export function toServerPayload(s: { flowNodes: Node[]; flowEdges: Edge[] }): { nodes: PipelineNode[]; edges: PipelineEdge[] } {
   const nodes: PipelineNode[] = s.flowNodes.map(n => {
-    const d = n.data as { type?: string; fields?: Record<string, string> } | undefined
+    const d = n.data as { type?: string; fields?: Record<string, string>; children?: PipelineNode[] } | undefined
     return {
       id: n.id,
       type: d?.type ?? '',
       params: { ...(d?.fields ?? {}) },
+      children: d?.children ? [...d.children] : [],
       position: n.position,
     } as PipelineNode
   })
@@ -56,7 +59,7 @@ export function backfillNodes(flowNodes: Node[], catalog: InternalCatalog): Node
   const needsBackfill = flowNodes.length > 0 && flowNodes.some(n => !((n.data as { segs?: unknown[] } | undefined)?.segs?.length))
   if (!needsBackfill) return flowNodes
   return flowNodes.map(n => {
-    const d = n.data as { type?: string; fields?: Record<string, string>; segs?: unknown[] } | undefined
+    const d = n.data as { type?: string; fields?: Record<string, string>; segs?: unknown[]; children?: PipelineNode[] } | undefined
     if (d?.segs?.length) return n
     const def = d?.type ? catalog.blocks[d.type] : undefined
     const first = def?.segs[0]
@@ -69,8 +72,11 @@ export function backfillNodes(flowNodes: Node[], catalog: InternalCatalog): Node
         categoryColor: catalog.categories.find(c => c.id === def?.cat)?.color ?? '#888',
         segs: def?.segs ?? [],
         fields: d?.fields ?? {},
+        children: d?.children ?? [],
         inputs: def?.inputs ?? [],
         outputs: def?.outputs ?? [],
+        stage: def?.stage ?? (d?.type ? stageOfBlock(d.type, def?.cat) : undefined),
+        stage_name: def?.stage_name,
       },
     }
   })

@@ -1,8 +1,8 @@
 from typing import Literal
 
 
-def decision_tree(in_1: "pd.DataFrame", target_column: "str", task: Literal["classification", "regression"] = "classification", max_depth: "int | None" = None) -> "object":  # noqa: F821 -- annotation descriptive en chaîne (métadonnées DSL, noms virtuels)
-    """Arbre de décision.
+def decision_tree(in_1: "pd.DataFrame", target_column: "str", task: Literal["classification", "regression"] = "classification", max_depth: "int | None" = None) -> "Model":  # noqa: F821 -- annotation descriptive en chaîne (métadonnées DSL, noms virtuels)
+    """Decision Tree.
     Arbre de décision (classification ou régression).
     
     Args:

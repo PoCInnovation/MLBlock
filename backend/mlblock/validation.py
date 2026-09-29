@@ -17,7 +17,8 @@ from collections import deque
 from dataclasses import dataclass, field
 from typing import Any
 
-from mlblock.core.types import build_conversion_graph, classify  # canonical
+from mlblock.core.stages import Stage
+from mlblock.core.type_system import type_system
 
 
 @dataclass
@@ -57,6 +58,71 @@ def _topological_sort(nodes: list[dict[str, Any]], edges: list[dict[str, Any]]) 
     has_cycle = len(order) != len(ids)
     return order, has_cycle
 
+def validate_container_children(
+    node: dict[str, Any],
+    registry: dict[str, Any],
+    type_system_obj: Any,
+    conv_graph: Any,
+    errors: list[str],
+) -> None:
+    from mlblock.core.adapters import resolve_alias
+
+    children = node.get("children") or []
+    if not isinstance(children, list):
+        errors.append(f"Node '{node.get('id', '?')}' 'children' must be a list")
+        return
+
+    prev_child_type = None
+    prev_out_dtype = None
+
+    for idx, raw_child in enumerate(children):
+        if hasattr(raw_child, "model_dump"):
+            child = raw_child.model_dump()
+        elif hasattr(raw_child, "dict"):
+            child = raw_child.dict()
+        elif isinstance(raw_child, dict):
+            child = raw_child
+        else:
+            child = dict(raw_child)
+
+        child_type = child.get("type")
+        if not child_type:
+            errors.append(f"Child step #{idx} in container '{node.get('id', '?')}' missing 'type'")
+            continue
+
+        canonical_child_type = resolve_alias(child_type)
+        if canonical_child_type not in (registry or {}):
+            errors.append(
+                f"Unknown child block type '{child_type}' in container '{node.get('id', '?')}'"
+            )
+            continue
+
+        spec = registry.get(canonical_child_type)
+        inputs = getattr(spec, "inputs", None) or (spec.get("inputs", []) if isinstance(spec, dict) else [])
+        outputs = getattr(spec, "outputs", None) or (spec.get("outputs", []) if isinstance(spec, dict) else [])
+
+        in_dtype = None
+        if inputs:
+            p0 = inputs[0]
+            in_dtype = p0.get("dtype") if isinstance(p0, dict) else getattr(p0, "dtype", None)
+
+        out_dtype = None
+        if outputs:
+            p0 = outputs[0]
+            out_dtype = p0.get("dtype") if isinstance(p0, dict) else getattr(p0, "dtype", None)
+
+        if prev_out_dtype and in_dtype and conv_graph is not None:
+            verdict = type_system_obj.classify(prev_out_dtype, in_dtype, conv_graph)
+            if verdict == "incompatible":
+                errors.append(
+                    f"Sequential mismatch in container '{node.get('id', '?')}': "
+                    f"child #{idx-1} '{prev_child_type}' ({prev_out_dtype}) -> "
+                    f"child #{idx} '{child_type}' ({in_dtype})"
+                )
+
+        prev_child_type = child_type
+        prev_out_dtype = out_dtype
+
 
 def validate(
     nodes: list[dict[str, Any] | Any],
@@ -92,16 +158,26 @@ def validate(
         except Exception:
             registry = {}
 
+    from mlblock.core.adapters import resolve_alias
+
     # ── basic shape ──────────────────────────────────────────────
     for n in node_dicts:
         if "id" not in n:
             errors.append("Node missing 'id'")
         if "type" not in n:
             errors.append(f"Node '{n.get('id','?')}' missing 'type'")
-        elif n["type"] not in (registry or {}):
+        elif resolve_alias(n["type"]) not in (registry or {}):
             errors.append(f"Unknown block type '{n['type']}' (node '{n.get('id','?')}')")
 
     node_map = {n["id"]: n for n in node_dicts if "id" in n}
+
+    try:
+        conv_graph = type_system.build_conversion_graph(registry) if registry else {}
+    except Exception:
+        conv_graph = {}
+    for n in node_dicts:
+        if n.get("children"):
+            validate_container_children(n, registry, type_system, conv_graph, errors)
 
     # ── port existence ────────────────────────────────────────────
     for e in edge_dicts:
@@ -120,7 +196,7 @@ def validate(
                 )
                 continue
             if registry is not None:
-                spec = registry.get(node["type"])  # type: ignore
+                spec = registry.get(resolve_alias(node["type"]))  # type: ignore
                 if spec is not None:
                     direction = "outputs" if side == "source" else "inputs"
                     ports = getattr(spec, direction, None)
@@ -134,10 +210,49 @@ def validate(
                                 f"Port '{port_name}' not found on {side} '{nid}' ({node['type']}). Valid ports: {valid}"
                             )
 
+    # ── stage ordering ────────────────────────────────────────────
+    PERMITTED_FEEDBACK_LOOPS: set[tuple[Stage, Stage]] = {
+        (Stage.TRAIN, Stage.PREPARE),  # e.g. training feedback loop into data preparation
+    }
+    # Explicit SX bridges: the only legal crossings of the WORLD isolation wall.
+    # Directional pairs (bridge, neighbor): env_to_tensor only out of WORLD,
+    # module_to_policy only into WORLD.
+    WORLD_BRIDGES: set[tuple[str, str]] = {
+        ("create_env", "env_to_tensor"),
+        ("module_to_policy", "evaluate_agent"),
+    }
+
+    for e in edge_dicts:
+        if not all(k in e for k in ("source", "target")):
+            continue
+        s_node = node_map.get(e["source"])
+        t_node = node_map.get(e["target"])
+        if not s_node or not t_node or "type" not in s_node or "type" not in t_node:
+            continue
+        s_type = resolve_alias(s_node["type"])
+        t_type = resolve_alias(t_node["type"])
+        if registry and (s_type not in registry or t_type not in registry):
+            continue
+        s_stage = type_system.stage_of(s_type)
+        t_stage = type_system.stage_of(t_type)
+        if (s_stage == Stage.WORLD) != (t_stage == Stage.WORLD):
+            if (s_type, t_type) in WORLD_BRIDGES:
+                pass  # explicit bridge edge — legal crossing
+            else:
+                errors.append(
+                    f"Stage mismatch: Stage.WORLD is isolated from tensor stages "
+                    f"(cannot connect '{e['source']}' to '{e['target']}')."
+                )
+        elif int(t_stage) < int(s_stage) and (s_stage, t_stage) not in PERMITTED_FEEDBACK_LOOPS:
+            errors.append(
+                f"Stage mismatch: cannot connect Stage {int(s_stage)} ({e['source']}) "
+                f"to Stage {int(t_stage)} ({e['target']})."
+            )
+
     # ── dtype compatibility (family-aware, single table) ─────────
     if registry:
         try:
-            conv_graph = build_conversion_graph(registry)
+            conv_graph = type_system.build_conversion_graph(registry)
         except Exception:
             conv_graph = {}
         for e in edge_dicts:
@@ -147,8 +262,8 @@ def validate(
             t_node = node_map.get(e["target"])
             if not s_node or not t_node:
                 continue
-            s_spec = registry.get(s_node["type"])  # type: ignore
-            t_spec = registry.get(t_node["type"])  # type: ignore
+            s_spec = registry.get(resolve_alias(s_node["type"]))  # type: ignore
+            t_spec = registry.get(resolve_alias(t_node["type"]))  # type: ignore
             if not s_spec or not t_spec:
                 continue
             s_ports = getattr(s_spec, "outputs", None) or (  # noqa: E501
@@ -169,12 +284,16 @@ def validate(
             )
             if not s_dtype or not t_dtype:
                 continue
-            verdict = classify(s_dtype, t_dtype, conv_graph)
+            verdict = type_system.classify(s_dtype, t_dtype, conv_graph)
             if verdict == "incompatible":
-                errors.append(
+                err_msg = (
                     f"Type mismatch: {e['source']}.{e['source_port']} ({s_dtype}) -> "  # noqa: E501
                     f"{e['target']}.{e['target_port']} ({t_dtype})"  # noqa: E501
                 )
+                conv = type_system.find_converter(s_dtype, t_dtype, registry)
+                if conv:
+                    err_msg += f". Astuce : insérez un Block {conv}"
+                errors.append(err_msg)
 
     # ── cycle (topo) ──────────────────────────────────────────────
     order, has_cycle = _topological_sort(node_dicts, edge_dicts)
