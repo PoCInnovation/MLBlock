@@ -19,9 +19,10 @@ import { AlignVerticalJustifyCenter } from 'lucide-react'
 import { useShallow } from 'zustand/react/shallow'
 import useAppStore from '../../store/useAppStore'
 import { theme } from '../../theme'
-import { ClickableCard, Divider, HStack, VStack, Badge } from '@astryxdesign/core'
-import { BottomSheet } from '@astryxdesign/core/BottomSheet'
-import { Text, Heading } from '@astryxdesign/core/Text'
+import { Card } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Separator } from '@/components/ui/separator'
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from '@/components/ui/drawer'
 import BlockNode from './BlockNode'
 import SuperBlockNode from './SuperBlockNode'
 import { isSuperBlock, SUPER_BLOCK_REGISTRY } from './superBlockRegistry'
@@ -35,7 +36,6 @@ import { resolveConnection, type ResolvedConnection } from '../../utils/portReso
 import { arrangeGraph } from '../../utils/layout'
 import { stageOfBlock, getStageConfig } from '../../utils/stages'
 import type { Port } from '../../types/catalog'
-
 const nodeTypes = {
   block: BlockNode,
   superblock: SuperBlockNode,
@@ -387,68 +387,70 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
         </ReactFlow>
       </div>
 
-      {/* Unified Astryx BottomSheet for Add, Inspect, and Journal */}
-      <BottomSheet
-        isOpen={activeSheet !== null}
+      {/* Unified Shadcn Drawer for Add, Inspect, and Journal */}
+      <Drawer
+        open={activeSheet !== null}
         onOpenChange={open => !open && setActiveSheet(null)}
-        label={
-          activeSheet === 'add'
-            ? 'Ajouter un Super-Bloc'
-            : activeSheet === 'inspect'
-            ? 'Inspecteur de Paramètres'
-            : 'Journal d’Exécution'
-        }
-        height={activeSheet === 'inspect' ? 'tall' : 'capped'}
-        hasScrim={false}
       >
-        <div className="p-5 min-h-0 h-full overflow-y-auto">
-          {activeSheet === 'add' && (
-            <VStack gap={3}>
-              <Heading level={4}>Catalogue des Super-Blocs</Heading>
-              <Text type="body" color="secondary">
-                Sélectionnez un Super-Bloc à instancier directement sur votre canvas.
-              </Text>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
-                {Object.entries(SUPER_BLOCK_REGISTRY).map(([typeKey, def]) => {
-                  const stageCfg = getStageConfig(def.stage)
-                  return (
-                    <ClickableCard
-                      key={typeKey}
-                      label={`Ajouter ${def.title}`}
-                      onClick={() => {
-                        addNodeAtCenter(typeKey)
-                      }}
-                      padding={3}
-                      elevation="low"
-                    >
-                      <VStack gap={2}>
-                        <HStack gap={2} className="items-center">
-                          <Badge
-                            label={stageCfg.key}
-                            className="text-xs font-extrabold px-1.5 py-0.5 rounded border"
-                          />
-                          <span className="font-extrabold text-sm text-text">{def.title}</span>
-                        </HStack>
-                        <span className="text-xs text-text-muted">{def.subtitle}</span>
-                        <HStack gap={2} className="text-xs text-text-dim mt-1">
-                          <span>Entrées: {def.inputs.length}</span>
-                          <span>•</span>
-                          <span>Sorties: {def.outputs.length}</span>
-                        </HStack>
-                      </VStack>
-                    </ClickableCard>
-                  )
-                })}
+        <DrawerContent className="max-h-[85vh]">
+          <DrawerHeader className="sr-only">
+            <DrawerTitle>
+              {activeSheet === 'add'
+                ? 'Ajouter un Super-Bloc'
+                : activeSheet === 'inspect'
+                ? 'Inspecteur de Paramètres'
+                : 'Journal d’Exécution'}
+            </DrawerTitle>
+            <DrawerDescription>Panneau de configuration du canvas</DrawerDescription>
+          </DrawerHeader>
+          <div className="p-6 min-h-0 h-full overflow-y-auto">
+            {activeSheet === 'add' && (
+              <div className="flex flex-col gap-3">
+                <h2 className="text-lg font-heading font-bold text-foreground">Catalogue des Super-Blocs</h2>
+                <p className="text-sm text-muted-foreground">
+                  Sélectionnez un Super-Bloc à instancier directement sur votre canvas.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+                  {Object.entries(SUPER_BLOCK_REGISTRY).map(([typeKey, def]) => {
+                    const stageCfg = getStageConfig(def.stage)
+                    return (
+                      <Card
+                        key={typeKey}
+                        onClick={() => {
+                          addNodeAtCenter(typeKey)
+                        }}
+                        className="p-4 cursor-pointer hover:border-accent transition-colors flex flex-col gap-2 bg-card text-card-foreground shadow-sm"
+                      >
+                        <div className="flex flex-col gap-2">
+                          <div className="flex items-center gap-2">
+                            <Badge
+                              variant="outline"
+                              className="text-xs font-extrabold px-1.5 py-0.5 rounded border border-border"
+                            >
+                              {stageCfg.key}
+                            </Badge>
+                            <span className="font-extrabold text-sm text-foreground">{def.title}</span>
+                          </div>
+                          <span className="text-xs text-muted-foreground">{def.subtitle}</span>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground/80 mt-1">
+                            <span>Entrées: {def.inputs.length}</span>
+                            <span>•</span>
+                            <span>Sorties: {def.outputs.length}</span>
+                          </div>
+                        </div>
+                      </Card>
+                    )
+                  })}
+                </div>
               </div>
-            </VStack>
-          )}
+            )}
 
-          {activeSheet === 'inspect' && <NodeInspector />}
+            {activeSheet === 'inspect' && <NodeInspector />}
 
-          {activeSheet === 'journal' && <JournalPanel />}
-        </div>
-      </BottomSheet>
-
+            {activeSheet === 'journal' && <JournalPanel />}
+          </div>
+        </DrawerContent>
+      </Drawer>
       {converterPrompt && (
         <ConverterDialog
           open={Boolean(converterPrompt)}
@@ -482,54 +484,56 @@ function NodeInspector() {
 
   if (!selected) {
     return (
-      <VStack gap={2} className="py-8 items-center text-center">
-        <Heading level={5}>Inspecteur</Heading>
-        <Text type="body" color="secondary">
+      <div className="flex flex-col gap-2 py-8 items-center text-center">
+        <h2 className="text-lg font-heading font-bold text-foreground">Inspecteur</h2>
+        <p className="text-sm text-muted-foreground">
           Sélectionnez un bloc sur le canvas pour examiner et modifier ses paramètres.
-        </Text>
-      </VStack>
+        </p>
+      </div>
     )
   }
 
   return (
-    <VStack gap={3}>
-      <HStack gap={2} className="items-center justify-between">
-        <HStack gap={2} className="items-center">
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
           <Badge
-            label={stageConfig.key}
-            className="text-xs font-extrabold px-1.5 py-0.5 rounded border"
-          />
-          <Heading level={4}>{String(data?.label ?? selected.id)}</Heading>
-        </HStack>
-        <span className="text-xs text-text-dim font-mono">
+            variant="outline"
+            className="text-xs font-extrabold px-1.5 py-0.5 rounded border border-border"
+          >
+            {stageConfig.key}
+          </Badge>
+          <h2 className="text-lg font-heading font-bold text-foreground">{String(data?.label ?? selected.id)}</h2>
+        </div>
+        <span className="text-xs text-muted-foreground font-mono">
           {type}
         </span>
-      </HStack>
-      <Text type="body" color="secondary">
+      </div>
+      <p className="text-sm text-muted-foreground">
         {superDef?.subtitle || def?.description || 'Bloc fonctionnel'}
-      </Text>
+      </p>
 
-      <Divider />
+      <Separator />
 
-      <Heading level={5}>Paramètres du Nœud</Heading>
+      <h3 className="text-base font-heading font-bold text-foreground">Paramètres du Nœud</h3>
       {Object.keys(fields).length === 0 ? (
-        <Text type="supporting" color="secondary">Aucun paramètre configurable.</Text>
+        <p className="text-xs text-muted-foreground">Aucun paramètre configurable.</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {Object.entries(fields).map(([k, val]) => (
             <div key={k} className="flex flex-col gap-1">
-              <span className="text-xs font-bold text-text-muted">{k}</span>
+              <span className="text-xs font-bold text-muted-foreground">{k}</span>
               <input
                 type="text"
                 value={val}
                 onChange={e => updateFlowParam(selected.id, k, e.target.value)}
-                className="bg-surface border border-border rounded px-2 py-1 text-xs text-text font-mono"
+                className="bg-background border border-input rounded px-2 py-1 text-xs text-foreground font-mono focus:outline-none focus:ring-2 focus:ring-ring"
               />
             </div>
           ))}
         </div>
       )}
-    </VStack>
+    </div>
   )
 }
 

@@ -9,12 +9,6 @@ import { getSession, onAuthStateChange } from './services/auth'
 import { toServerPayload } from './utils/blockHelpers'
 import { writeStash } from './utils/pending-stash'
 import './index.css'
-import '@astryxdesign/core/reset.css'
-import '@astryxdesign/core/astryx.css'
-import '@astryxdesign/theme-neutral/theme.css'
-import { Theme } from '@astryxdesign/core/theme'
-import { ToastViewport } from '@astryxdesign/core/Toast'
-import { mlblockTheme } from './theme/mlblockTheme'
 import { routeTree } from './routeTree.gen'
 const router = createRouter({ routeTree })
 
@@ -77,9 +71,6 @@ function App() {
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <Theme theme={mlblockTheme} mode="dark">
-      <App />
-      <ToastViewport position="topEnd" />
-    </Theme>
+    <App />
   </React.StrictMode>
 )

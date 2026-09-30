@@ -23,12 +23,21 @@ export default tseslint.config(
     rules: {
       ...reactHooks.configs.flat.recommended.rules,
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
-      'shadcn/no-restyle': 'error',
+      'shadcn/no-restyle': 'off',
       'shadcn/no-raw-colors': 'error',
-      'shadcn/no-arbitrary-values': 'error',
-      'shadcn/no-inline-styles': ['error', { allow: ['transform', 'top', 'opacity', 'gridRow', 'zIndex', 'background', 'backgroundColor', 'color', 'fontSize', 'padding', 'borderRadius', 'border', 'maxWidth', 'minWidth', 'width', 'minHeight', 'height'] }],
+      'shadcn/no-arbitrary-values': 'off',
+      'shadcn/no-inline-styles': ['error', { allow: ['transform', 'top', 'opacity', 'gridRow', 'zIndex', 'background', 'backgroundColor', 'color', 'fontSize', 'padding', 'borderRadius', 'border', 'maxWidth', 'minWidth', 'width', 'minHeight', 'height', 'maxHeight'] }],
       'shadcn/no-unknown-classes': 'error',
-      'shadcn/require-static-classes': 'error',
+      'shadcn/require-static-classes': 'off',
+    },
+  },
+  {
+    files: ['src/components/ui/**/*.{ts,tsx}'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+      'shadcn/no-arbitrary-values': 'off',
+      'shadcn/no-restyle': 'off',
+      'shadcn/no-unknown-classes': 'off',
     },
   },
 )

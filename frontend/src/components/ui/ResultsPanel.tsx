@@ -1,6 +1,6 @@
 import useAppStore from '../../store/useAppStore'
-import { Card, VStack, Text } from '@astryxdesign/core'
-import { Text as AstryxText } from '@astryxdesign/core/Text'
+import { Card } from '@/components/ui/card'
+
 type TypedOutput =
   | { type: 'image'; mime: string; data: string }
   | { type: 'curve'; points: number[] }
@@ -10,8 +10,10 @@ type TypedOutput =
 
 function parseOutput(raw: string): TypedOutput {
   try {
-    const v = JSON.parse(raw)
-    if (v && typeof v === 'object' && typeof v.type === 'string') return v as TypedOutput
+    const parsed = JSON.parse(raw)
+    if (parsed && typeof parsed === 'object' && 'type' in parsed) {
+      return parsed as TypedOutput
+    }
   } catch {
     /* pas du JSON → texte */
   }
@@ -34,60 +36,61 @@ function Curve({ points }: { points: number[] }) {
     </svg>
   )
 }
+
 function OutputCard({ block, raw }: { block: string; raw: string }) {
   const out = parseOutput(raw)
-  const header = <Text type="label" className="opacity-70">{block}</Text>
+  const header = <span className="text-xs font-semibold opacity-70 text-text-muted">{block}</span>
   switch (out.type) {
     case 'image':
       return (
-        <Card variant="muted" padding={2}>
-          <VStack gap={2}>
+        <Card className="p-2 bg-surface border-border">
+          <div className="flex flex-col gap-2">
             {header}
             <img src={`data:${out.mime ?? 'image/png'};base64,${out.data}`} alt={block} className="max-w-full max-h-56 rounded-md block" />
-          </VStack>
+          </div>
         </Card>
       )
     case 'curve':
       return (
-        <Card variant="muted" padding={2}>
-          <VStack gap={2}>
+        <Card className="p-2 bg-surface border-border">
+          <div className="flex flex-col gap-2">
             {header}
             <Curve points={out.points} />
-          </VStack>
+          </div>
         </Card>
       )
     case 'metric':
       return (
-        <Card variant="muted" padding={2}>
-          <VStack gap={1}>
+        <Card className="p-2 bg-surface border-border">
+          <div className="flex flex-col gap-1">
             {header}
-            <Text className="font-extrabold text-lg text-success">{out.value}</Text>
-          </VStack>
+            <div className="font-extrabold text-lg text-success">{out.value}</div>
+          </div>
         </Card>
       )
     case 'metrics':
       return (
-        <Card variant="muted" padding={2}>
-          <VStack gap={2}>
+        <Card className="p-2 bg-surface border-border">
+          <div className="flex flex-col gap-2">
             {header}
             <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
               {Object.entries(out.values).map(([k, v]) => (
                 <div key={k} className="contents">
-                  <AstryxText type="label" className="opacity-75">{k}</AstryxText>
-                  <AstryxText type="body" className="font-extrabold">{String(v)}</AstryxText>
+                  <span className="opacity-75 text-text-muted">{k}</span>
+                  <span className="font-extrabold">{String(v)}</span>
                 </div>
               ))}
             </div>
-          </VStack>
+          </div>
         </Card>
       )
     default:
       return (
-        <Card variant="muted" padding={2}>
-          <VStack gap={2}>
+        <Card className="p-2 bg-surface border-border">
+          <div className="flex flex-col gap-2">
             {header}
-            <AstryxText type="body" className="font-mono text-xs">{out.text}</AstryxText>
-          </VStack>
+            <div className="font-mono text-xs whitespace-pre-wrap">{out.text}</div>
+          </div>
         </Card>
       )
   }
@@ -96,11 +99,11 @@ function OutputCard({ block, raw }: { block: string; raw: string }) {
 export default function ResultsPanel() {
   const results = useAppStore(s => s.results)
   if (results.length === 0) {
-    return <Text type="body" className="p-4 text-text-muted">Aucun résultat pour ce run.</Text>
+    return <div className="p-4 text-text-muted text-xs">Aucun résultat pour ce run.</div>
   }
   return (
-    <VStack gap={2} className="p-3.5 overflow-y-auto flex-1">
+    <div className="flex flex-col gap-2 p-3.5 overflow-y-auto flex-1">
       {results.map((r, i) => <OutputCard key={i} block={r.block_name} raw={r.output} />)}
-    </VStack>
+    </div>
   )
 }

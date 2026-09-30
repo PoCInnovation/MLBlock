@@ -9,7 +9,8 @@ import ExportModal from '../components/ui/ExportModal'
 import TemplateModal from '../components/ui/TemplateModal'
 import SkipLink from '../components/ui/SkipLink'
 import { Upload, Sparkles } from 'lucide-react'
-import { Card, Button } from '@astryxdesign/core'
+import { Card } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import type { ExoTemplate } from '../types/catalog'
 
 const MAX_PROJECTS = 20
@@ -105,15 +106,20 @@ export default function ProjectsPage() {
             className="hidden"
             onChange={e => { const f = e.target.files?.[0]; if (f) onImportFile(f); e.target.value = '' }}
           />
-          <Button label="Baselines" variant="secondary" icon={<Sparkles size={15} />} onClick={() => setTemplateOpen(true)} />
-          <Button label="Importer" variant="secondary" icon={<Upload size={15} />} onClick={() => fileRef.current?.click()} />
+          <Button variant="outline" size="sm" onClick={() => setTemplateOpen(true)} className="gap-2 font-bold">
+            <Sparkles className="size-4" /> Baselines
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()} className="gap-2 font-bold">
+            <Upload className="size-4" /> Importer
+          </Button>
           <Button
-            label="+ Nouveau projet"
-            variant="primary"
-            isDisabled={atLimit}
-            tooltip={atLimit ? 'Limite de 20 projets atteinte.' : undefined}
+            disabled={atLimit}
+            title={atLimit ? 'Limite de 20 projets atteinte.' : undefined}
             onClick={() => { useAppStore.getState().clearAll(); useAppStore.setState({ pipelineId: null, projectName: 'mon-premier-modèle', savedFingerprint: fingerprintOf({ flowNodes: [], flowEdges: [], projectName: 'mon-premier-modèle' }), undoStack: [], redoStack: [] }); navigate({ to: '/editor' }) }}
-          />
+            className="font-bold"
+          >
+            + Nouveau projet
+          </Button>
         </div>
       </div>
 
@@ -127,13 +133,13 @@ export default function ProjectsPage() {
 
       <div className={gridStyle}>
         {projects?.map(p => (
-          <Card key={p.id} className="hover-card flex flex-col gap-2.5 transition-all">
-            <div className="font-extrabold text-base truncate" title={p.name}>{p.name}</div>
+          <Card key={p.id} className="hover-card flex flex-col gap-2.5 transition-all p-6 bg-card border border-border rounded-2xl shadow-sm">
+            <div className="font-extrabold text-base truncate text-foreground" title={p.name}>{p.name}</div>
             <div className="text-text-muted text-xs font-semibold">Modifié le {fmtDate(p.updated_at)}</div>
             <div className="flex gap-2 mt-1">
-              <Button label="Ouvrir" variant="primary" size="sm" onClick={() => openProject(p)} />
-              <Button label="Exporter" variant="secondary" size="sm" onClick={() => setExporting(p)} />
-              <Button label="Supprimer" variant="destructive" size="sm" onClick={() => removeProject(p)} />
+              <Button size="sm" onClick={() => openProject(p)} className="font-bold">Ouvrir</Button>
+              <Button size="sm" variant="outline" onClick={() => setExporting(p)} className="font-bold">Exporter</Button>
+              <Button size="sm" variant="destructive" onClick={() => removeProject(p)} className="font-bold">Supprimer</Button>
             </div>
           </Card>
         ))}

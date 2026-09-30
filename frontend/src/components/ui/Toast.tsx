@@ -1,31 +1,32 @@
 import { useEffect, useRef } from 'react'
-import { useToast } from '@astryxdesign/core'
+import { toast } from 'sonner'
 import useAppStore from '../../store/useAppStore'
 
 export default function Toast() {
-  const showToast = useToast()
-  const toast = useAppStore(s => s.toast)
+  const appToast = useAppStore(s => s.toast)
   const clearToast = useAppStore(s => s.clearToast)
   const jobStatus = useAppStore(s => s.jobStatus)
   const prevStatus = useRef<string | null>(null)
 
-  // Bridge old store toast (kind/message) to Astryx Toast
   useEffect(() => {
-    if (!toast) return
-    showToast({ body: toast.message, type: toast.kind === 'error' ? 'error' : 'info', uniqueID: 'app-toast' })
+    if (!appToast) return
+    if (appToast.kind === 'error') {
+      toast.error(appToast.message, { id: 'app-toast' })
+    } else {
+      toast.info(appToast.message, { id: 'app-toast' })
+    }
     const t = setTimeout(clearToast, 5000)
     return () => clearTimeout(t)
-  }, [toast, showToast, clearToast])
+  }, [appToast, clearToast])
 
-  // Job status toasts: one per transition, not per line
   useEffect(() => {
     if (!jobStatus || jobStatus === prevStatus.current) return
     prevStatus.current = jobStatus
-    if (jobStatus === 'queued') showToast({ body: 'Pipeline en file d’attente…', type: 'info', uniqueID: 'job-status' })
-    else if (jobStatus === 'running') showToast({ body: 'Pipeline en cours…', type: 'info', uniqueID: 'job-status' })
-    else if (jobStatus === 'done') showToast({ body: 'Pipeline terminée', type: 'info', uniqueID: 'job-status' })
-    else if (jobStatus === 'error') showToast({ body: 'Échec — voir Journal', type: 'error', uniqueID: 'job-status', isAutoHide: false })
-  }, [jobStatus, showToast])
+    if (jobStatus === 'queued') toast.info('Pipeline en file d’attente…', { id: 'job-status' })
+    else if (jobStatus === 'running') toast.info('Pipeline en cours…', { id: 'job-status' })
+    else if (jobStatus === 'done') toast.success('Pipeline terminée', { id: 'job-status' })
+    else if (jobStatus === 'error') toast.error('Échec — voir Journal', { id: 'job-status', duration: Infinity })
+  }, [jobStatus])
 
   return null
 }

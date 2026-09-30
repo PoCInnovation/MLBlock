@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from '@tanstack/react-router'
 import { Menu, X } from 'lucide-react'
-import { Icon } from '@astryxdesign/core/Icon'
 import useAppStore from '../../store/useAppStore'
 import { signOut } from '../../services/auth'
-import { Button, HStack } from '@astryxdesign/core'
-
+import { Button } from '@/components/ui/button'
+import { ThemeToggle } from '@/components/ui/theme-toggle'
 const NAV_LINK_BASE = 'bg-transparent border-none cursor-pointer text-sm font-bold pb-0.5 border-b-2 transition-colors duration-150'
 
 function navLinkClass(active: boolean) {
@@ -80,21 +79,22 @@ export default function HomeNav() {
             <span className="font-heading font-semibold text-2xl tracking-tight">MLBlock</span>
           </div>
         </div>
-        <HStack gap={4} className="landing-nav-links items-center">
+        <div className="landing-nav-links flex items-center gap-6">
           <button onClick={handleDecouvrir} className={navLinkClass(false)}>Découvrir</button>
           <button onClick={() => navigate({ to: '/cours' })} className={navLinkClass(location.pathname.startsWith('/cours'))}>Cours</button>
           <button onClick={() => navigate({ to: '/how-it-works' })} className={navLinkClass(location.pathname === '/how-it-works')}>Comment ça marche</button>
           <button onClick={() => navigate({ to: '/about' })} className={navLinkClass(location.pathname === '/about')}>Qui sommes nous</button>
-          <Button label="Mes projets" variant="primary" size="md" onClick={() => navigate({ to: '/projets' })} />
-          <Button label={user ? 'Déconnexion' : 'Connexion'} variant="secondary" size="md" onClick={handleAuth} />
-        </HStack>
+          <Button variant="default" size="default" onClick={() => navigate({ to: '/projets' })}>Mes projets</Button>
+          <Button variant="outline" size="default" onClick={handleAuth}>{user ? 'Déconnexion' : 'Connexion'}</Button>
+          <ThemeToggle />
+        </div>
         <button
           className="landing-nav-burger"
           onClick={() => setOpen(o => !o)}
           aria-label={open ? 'Fermer le menu' : 'Ouvrir le menu'}
           aria-expanded={open}
         >
-          {open ? <Icon icon={X} size="lg" /> : <Icon icon={Menu} size="lg" />}
+          {open ? <X className="size-5" /> : <Menu className="size-5" />}
         </button>
       </nav>
       {open && (

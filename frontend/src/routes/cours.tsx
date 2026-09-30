@@ -1,10 +1,7 @@
 /* eslint-disable react-refresh/only-export-components -- TanStack Route: Route + component in same file */
 import { useState, useMemo, useEffect } from 'react'
 import { createFileRoute, Link, Outlet, useRouterState } from '@tanstack/react-router'
-import { TextInput, VStack, HStack } from '@astryxdesign/core'
-import { Breadcrumbs, BreadcrumbItem } from '@astryxdesign/core/Breadcrumbs'
-import { TreeList } from '@astryxdesign/core/TreeList'
-import { Heading, Text } from '@astryxdesign/core/Text'
+import { Input } from '@/components/ui/input'
 import SiteLayout from '../components/landing/SiteLayout'
 import { courses, courseTreeItems } from '../content/cours'
 
@@ -50,33 +47,47 @@ function CoursCatalogPage() {
   return (
     <SiteLayout>
       <div className="max-w-7xl mx-auto px-6 py-12">
-        <HStack gap={6} className="items-start">
-          <VStack gap={3} className="w-64 shrink-0 sticky top-6">
-            <Breadcrumbs>
-              <BreadcrumbItem href="/">Accueil</BreadcrumbItem>
-              <BreadcrumbItem isCurrent>Cours</BreadcrumbItem>
-            </Breadcrumbs>
-            <Heading level={1}>Cours</Heading>
-            <Text color="secondary">Apprends à construire des pipelines pas à pas.</Text>
-            <TextInput label="Rechercher un cours" isLabelHidden value={q} onChange={setQ} placeholder="Rechercher un cours…" />
-            <TreeList items={treeItems} />
-          </VStack>
-          <VStack gap={3} className="flex-1 min-w-0">
-            <HStack gap={2} className="items-center justify-between">
-              <Text color="secondary">{filtered.length} cours</Text>
+        <div className="flex flex-col md:flex-row gap-6 items-start">
+          <div className="flex flex-col gap-3 w-64 shrink-0 sticky top-6">
+            <nav className="flex text-sm text-secondary gap-2 items-center">
+              <Link to="/" className="hover:text-foreground">Accueil</Link>
+              <span>/</span>
+              <span className="text-foreground font-semibold">Cours</span>
+            </nav>
+            <h1 className="font-heading text-3xl font-extrabold text-foreground">Cours</h1>
+            <p className="text-secondary text-sm">Apprends à construire des pipelines pas à pas.</p>
+            <Input value={q} onChange={e => setQ(e.target.value)} placeholder="Rechercher un cours…" />
+            <div className="flex flex-col gap-2 mt-2">
+              {treeItems.map(group => (
+                <div key={group.id} className="flex flex-col gap-1">
+                  <div className="font-heading font-bold text-sm text-foreground uppercase tracking-wider">{group.label}</div>
+                  <div className="flex flex-col pl-2 gap-1 border-l border-border ml-1">
+                    {group.children?.map((item: { id: string; label: string; href: string }) => (
+                      <Link key={item.id} to={item.href} className="text-sm text-secondary hover:text-accent py-1 no-underline">
+                        {item.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="flex flex-col gap-3 flex-1 min-w-0">
+            <div className="flex items-center justify-between">
+              <p className="text-secondary text-sm">{filtered.length} cours</p>
               <Link to="/" className="text-accent font-bold no-underline">
                 ← Accueil
               </Link>
-            </HStack>
+            </div>
             {filtered.length === 0 ? (
-              <Text color="secondary" className="text-center py-6">
+              <p className="text-secondary text-center py-6">
                 Aucun cours trouvé
-              </Text>
+              </p>
             ) : (
-              <Text color="secondary">Sélectionne un cours dans la liste à gauche.</Text>
+              <p className="text-secondary text-sm">Sélectionne un cours dans la liste à gauche.</p>
             )}
-          </VStack>
-        </HStack>
+          </div>
+        </div>
       </div>
     </SiteLayout>
   )

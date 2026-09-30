@@ -1,9 +1,15 @@
 import { useRef, useState } from 'react'
-import { Save, Play, Upload, Download, Square, MoreVertical, FolderKanban, Trash2, LogOut, Check, Undo2, Redo2, Sparkles, Plus, Sliders, Terminal } from 'lucide-react'
-import { Icon } from '@astryxdesign/core/Icon'
-import { HStack, IconButton, Button } from '@astryxdesign/core'
-import { TextInput } from '@astryxdesign/core/TextInput'
-import { DropdownMenu } from '../ui/dropdown-menu'
+import { Save, Play, Upload, Download, Square, MoreVertical, FolderKanban, Trash2, LogOut, Check, Undo2, Redo2, Sparkles, Plus, Sliders, Terminal, ChevronDown, Boxes } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { ThemeToggle } from '@/components/ui/theme-toggle'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '../ui/dropdown-menu'
 import { useNavigate } from '@tanstack/react-router'
 import useAppStore from '../../store/useAppStore'
 import { signOut } from '../../services/auth'
@@ -83,7 +89,7 @@ export default function EditorHeader() {
     <div
       className="editor-header floating-panel shrink-0 flex items-center justify-between bg-surface border border-border rounded-2xl shadow-xl backdrop-blur-md z-20 gap-4 transition-all will-change-transform"
     >
-      <HStack gap={3} className="min-w-0 items-center">
+      <div className="flex items-center gap-3 min-w-0">
         <button type="button" onClick={() => navigate({ to: '/' })} aria-label="Retour à l'accueil" className="flex items-center gap-2.5 cursor-pointer bg-transparent border-none p-0 m-0">
           <div className="w-7 h-7 rounded-lg bg-accent flex items-center justify-center shadow-btn">
             <div className="w-2.5 h-2.5 bg-white rounded-xs" />
@@ -91,23 +97,20 @@ export default function EditorHeader() {
           <span className="font-heading font-semibold text-lg text-text">MLBlock</span>
         </button>
         <div className="w-px h-6 bg-border" />
-        <HStack gap={2} className="items-center bg-surface3 border border-border px-3 py-1.5 rounded-md min-w-0">
+        <div className="flex items-center gap-2 bg-surface3 border border-border px-3 py-1.5 rounded-md min-w-0">
           <span className="w-2 h-2 rounded-full bg-status inline-block shrink-0" />
           {editingName ? (
-            <TextInput
-              label="Nom du projet"
-              isLabelHidden
+            <Input
               value={draftName}
-              onChange={(v) => setDraftName(v)}
+              onChange={(e) => setDraftName(e.target.value)}
               onBlur={commitName}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') commitName()
                 if (e.key === 'Escape') { setDraftName(projectName); setEditingName(false) }
               }}
-              hasAutoFocus
+              autoFocus
               placeholder="Nom du projet"
-              size="sm"
-              width={180}
+              className="h-7 text-xs w-[180px]"
             />
           ) : (
             <button
@@ -120,103 +123,191 @@ export default function EditorHeader() {
               {projectName}
             </button>
           )}
-        </HStack>
-      </HStack>
-      <HStack gap={2} className="items-center">
-        <Button
-          label="Modèles & Baselines"
-          variant="secondary"
-          size="sm"
-          icon={<Icon icon={Sparkles} size="sm" />}
-          onClick={() => setTemplatesOpen(true)}
-        />
-        <Button
-          label="Ajouter Super-Bloc"
-          variant={activeSheet === 'add' ? 'primary' : 'secondary'}
-          size="sm"
-          icon={<Icon icon={Plus} size="sm" />}
-          onClick={() => setActiveSheet(activeSheet === 'add' ? null : 'add')}
-        />
-        <Button
-          label="Inspecteur"
-          variant={activeSheet === 'inspect' ? 'primary' : 'secondary'}
-          size="sm"
-          icon={<Icon icon={Sliders} size="sm" />}
-          onClick={() => setActiveSheet(activeSheet === 'inspect' ? null : 'inspect')}
-        />
-        <Button
-          label="Journal"
-          variant={activeSheet === 'journal' ? 'primary' : 'secondary'}
-          size="sm"
-          icon={<Icon icon={Terminal} size="sm" />}
-          onClick={() => setActiveSheet(activeSheet === 'journal' ? null : 'journal')}
-        />
-      </HStack>
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        {/* Dropdown 1: Blocs (Super-blocs & Baselines) */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant={activeSheet === 'add' ? 'default' : 'secondary'}
+              size="sm"
+              className="gap-1.5 font-semibold text-xs h-8"
+            >
+              <Boxes className="size-4 text-primary" />
+              <span>Blocs</span>
+              <ChevronDown className="size-3.5 opacity-70" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-56 bg-card border-border">
+            <DropdownMenuItem
+              onClick={() => setActiveSheet(activeSheet === 'add' ? null : 'add')}
+              className="cursor-pointer gap-2.5 py-2"
+            >
+              <Plus className="size-4 text-primary shrink-0" />
+              <div className="flex flex-col">
+                <span className="font-semibold text-xs text-foreground">Ajouter Super-Bloc</span>
+                <span className="text-[10px] text-muted-foreground">Créer ou configurer un super-bloc</span>
+              </div>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => setTemplatesOpen(true)}
+              className="cursor-pointer gap-2.5 py-2"
+            >
+              <Sparkles className="size-4 text-primary shrink-0" />
+              <div className="flex flex-col">
+                <span className="font-semibold text-xs text-foreground">Modèles & Baselines</span>
+                <span className="text-[10px] text-muted-foreground">Charger un pipeline complet</span>
+              </div>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
-      <HStack gap={2} className="header-actions items-center">
-        <IconButton
-          label="Annuler (Ctrl+Z)"
-          icon={<Icon icon={Undo2} size="sm" />}
+        {/* Dropdown 2: Détails (Inspecteur & Journal) */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant={activeSheet === 'inspect' || activeSheet === 'journal' ? 'default' : 'secondary'}
+              size="sm"
+              className="gap-1.5 font-semibold text-xs h-8"
+            >
+              <Sliders className="size-4 text-primary" />
+              <span>Détails</span>
+              <ChevronDown className="size-3.5 opacity-70" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-52 bg-card border-border">
+            <DropdownMenuItem
+              onClick={() => setActiveSheet(activeSheet === 'inspect' ? null : 'inspect')}
+              className="cursor-pointer gap-2.5 py-2"
+            >
+              <Sliders className="size-4 text-primary shrink-0" />
+              <div className="flex flex-col">
+                <span className="font-semibold text-xs text-foreground">Inspecteur</span>
+                <span className="text-[10px] text-muted-foreground">Paramètres et métadonnées</span>
+              </div>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => setActiveSheet(activeSheet === 'journal' ? null : 'journal')}
+              className="cursor-pointer gap-2.5 py-2"
+            >
+              <Terminal className="size-4 text-primary shrink-0" />
+              <div className="flex flex-col">
+                <span className="font-semibold text-xs text-foreground">Journal</span>
+                <span className="text-[10px] text-muted-foreground">Historique et sorties</span>
+              </div>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      <div className="flex items-center gap-2 header-actions">
+        <Button
+          title="Annuler (Ctrl+Z)"
           variant="ghost"
-          size="sm"
-          isDisabled={!canUndo}
+          size="icon"
+          disabled={!canUndo}
           onClick={undo}
-        />
-        <IconButton
-          label="Rétablir (Ctrl+Shift+Z)"
-          icon={<Icon icon={Redo2} size="sm" />}
+        >
+          <Undo2 className="size-4" />
+        </Button>
+        <Button
+          title="Rétablir (Ctrl+Shift+Z)"
           variant="ghost"
-          size="sm"
-          isDisabled={!canRedo}
+          size="icon"
+          disabled={!canRedo}
           onClick={redo}
-        />
+        >
+          <Redo2 className="size-4" />
+        </Button>
         <Button
-          label={dirty ? 'Sauvegarder' : 'Sauvegardé'}
-          variant={dirty ? 'primary' : 'secondary'}
+          variant={dirty ? 'default' : 'secondary'}
           size="sm"
-          isDisabled={!dirty || saving}
-          isLoading={saving}
-          icon={saving ? undefined : dirty ? <Icon icon={Save} size="sm" /> : <Icon icon={Check} size="sm" />}
+          disabled={!dirty || saving}
           onClick={onSave}
-        />
-        <Button
-          label={isStopping ? 'Arrêt…' : 'Arrêter'}
-          variant="destructive"
-          size="sm"
-          isDisabled={!stopActive}
-          isLoading={isStopping}
-          icon={!isStopping ? <Icon icon={Square} size="sm" /> : undefined}
-          onClick={onStop}
-        />
-        <Button
-          label={isPending ? 'Exécution…' : 'Lancer'}
-          variant="primary"
-          size="sm"
-          isDisabled={isPending}
-          isLoading={isPending}
-          icon={!isPending ? <Icon icon={Play} size="sm" /> : undefined}
-          onClick={() => {
-            setActiveSheet('journal')
-            onRun()
-          }}
-        />
-        <DropdownMenu
-          button={{ label: 'Menu du projet', icon: <Icon icon={MoreVertical} size="sm" />, isIconOnly: true, variant: 'secondary' }}
-          items={[
-            { label: 'Importer', icon: <Icon icon={Upload} size="sm" />, onClick: () => fileRef.current?.click() },
-            { label: 'Exporter', icon: <Icon icon={Download} size="sm" />, onClick: () => setExportOpen(true) },
-            { type: 'divider' },
-            { label: 'Mes projets', icon: <Icon icon={FolderKanban} size="sm" />, onClick: () => navigate({ to: '/projets' }) },
-            { label: 'Tout effacer', icon: <Icon icon={Trash2} size="sm" />, onClick: onClear },
-            { type: 'divider' },
-            { label: 'Déconnexion', icon: <Icon icon={LogOut} size="sm" />, variant: 'destructive', onClick: () => {
+        >
+          {saving ? null : dirty ? <Save className="size-4 mr-1.5" /> : <Check className="size-4 mr-1.5" />}
+          {dirty ? 'Sauvegarder' : 'Sauvegardé'}
+        </Button>
+        {/* Dropdown 3: Lancement (Lancer & Arrêter) */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant={isPending ? 'default' : 'secondary'}
+              size="sm"
+              className="gap-1.5 font-semibold text-xs h-8"
+            >
+              <Play className={`size-4 text-primary ${isPending ? 'animate-pulse' : ''}`} />
+              <span>{isPending ? 'Exécution…' : 'Lancement'}</span>
+              <ChevronDown className="size-3.5 opacity-70" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-52 bg-card border-border">
+            <DropdownMenuItem
+              disabled={isPending}
+              onClick={() => {
+                setActiveSheet('journal')
+                onRun()
+              }}
+              className="cursor-pointer gap-2.5 py-2 font-semibold text-xs text-foreground"
+            >
+              <Play className="size-4 text-success shrink-0" />
+              <div className="flex flex-col">
+                <span>Lancer</span>
+                <span className="text-[10px] text-muted-foreground font-normal">Exécuter le pipeline actif</span>
+              </div>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              disabled={!stopActive}
+              onClick={onStop}
+              className="cursor-pointer gap-2.5 py-2 font-semibold text-xs text-destructive focus:text-destructive"
+            >
+              <Square className="size-4 text-destructive shrink-0" />
+              <div className="flex flex-col">
+                <span>{isStopping ? 'Arrêt…' : 'Arrêter'}</span>
+                <span className="text-[10px] text-muted-foreground font-normal">Interrompre l'exécution</span>
+              </div>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <ThemeToggle />
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="secondary" size="icon" aria-label="Menu du projet">
+              <MoreVertical className="size-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48 bg-card border-border">
+            <DropdownMenuItem onClick={() => fileRef.current?.click()} className="cursor-pointer gap-2 text-xs">
+              <Upload className="size-4" /> Importer
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setExportOpen(true)} className="cursor-pointer gap-2 text-xs">
+              <Download className="size-4" /> Exporter
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => navigate({ to: '/projets' })} className="cursor-pointer gap-2 text-xs">
+              <FolderKanban className="size-4" /> Mes projets
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onClear} className="cursor-pointer gap-2 text-xs">
+              <Trash2 className="size-4" /> Tout effacer
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => {
                 const s = useAppStore.getState()
                 if (s.isDirty() && s.user) setLogoutOpen(true)
                 else { void signOut().then(() => { setUser(null); navigate({ to: '/' }) }) }
-              } },
-          ]}
-        />
-      </HStack>
+              }}
+              className="cursor-pointer gap-2 text-xs text-destructive focus:text-destructive"
+            >
+              <LogOut className="size-4" /> Déconnexion
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
 
       <input ref={fileRef} type="file" accept=".json,application/json" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) onImportPicked(f); e.target.value = '' }} />
 

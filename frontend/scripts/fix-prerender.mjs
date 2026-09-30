@@ -27,7 +27,9 @@ if (fs.existsSync(templatePath)) {
 
 const assetsDir = path.join(distClient, 'assets')
 const cssFiles = fs.existsSync(assetsDir) ? fs.readdirSync(assetsDir).filter(f => f.endsWith('.css')) : []
-const jsEntry = fs.existsSync(assetsDir) ? fs.readdirSync(assetsDir).find(f => /^index-.*\.js$/.test(f)) : null
+const jsEntry = fs.existsSync(assetsDir)
+  ? fs.readdirSync(assetsDir).filter(f => /^index-.*\.js$/.test(f)).sort((a, b) => fs.statSync(path.join(assetsDir, b)).size - fs.statSync(path.join(assetsDir, a)).size)[0] ?? null
+  : null
 
 const cssLinks = cssFiles.map(f => `    <link rel="stylesheet" href="/assets/${f}">`).join('\n')
 

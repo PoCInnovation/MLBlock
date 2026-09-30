@@ -1,7 +1,9 @@
 import { memo, useMemo } from 'react'
 import { Handle, Position, type NodeProps, type Node } from '@xyflow/react'
 import { useShallow } from 'zustand/react/shallow'
-import { Badge, Card, Heading, HStack, Divider } from '@astryxdesign/core'
+import { Card } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Separator } from '@/components/ui/separator'
 import { Database, Layers } from 'lucide-react'
 import useAppStore from '../../store/useAppStore'
 import { getStageConfig } from '../../utils/stages'
@@ -33,26 +35,20 @@ function SuperBlockNode({ data, id }: NodeProps<Node<SuperBlockNodeData>>) {
   const BodyComponent = def.Body
 
   return (
-    <Card
-      padding={3}
-      variant="default"
-      elevation="low"
-      className="!bg-surface2 min-w-70 max-w-85 !overflow-visible !rounded-2xl shadow-lg border-t-4"
-    >
+    <Card className="bg-surface2 min-w-70 max-w-85 overflow-visible rounded-2xl shadow-lg border-t-4 p-3 border-border">
       {/* Unified Header */}
-      <HStack justify="between" align="center" gap={2} className="pb-1.5">
-        <HStack align="center" gap={2} className="min-w-0">
+      <div className="flex items-center justify-between gap-2 pb-1.5">
+        <div className="flex items-center gap-2 min-w-0">
           <Badge
-            label={stageConfig.key}
+            variant="outline"
             className="text-xs font-extrabold px-1.5 py-0.5 rounded border"
-          />
-          <Heading
-            level={4}
-            className="text-sm font-extrabold text-text-light truncate"
           >
+            {stageConfig.key}
+          </Badge>
+          <h4 className="text-sm font-extrabold text-text-light truncate m-0">
             {data.label || def.title}
-          </Heading>
-        </HStack>
+          </h4>
+        </div>
 
         <svg
           className="block-drag-handle cursor-grab"
@@ -67,39 +63,33 @@ function SuperBlockNode({ data, id }: NodeProps<Node<SuperBlockNodeData>>) {
             <circle cx={3} cy={14} r={1.3} /><circle cx={9} cy={14} r={1.3} />
           </g>
         </svg>
-      </HStack>
+      </div>
 
       {def.subtitle && (
         <div className="text-xs text-text-muted mb-2 flex items-center gap-1">
-          {def.stage === 0 ? <Database size={12} className="text-success" /> : <Layers size={12} className="text-accent" />}
+          {def.stage === 0 ? <Database className="w-3.5 h-3.5 text-accent" /> : <Layers className="w-3.5 h-3.5 text-accent" />}
           <span>{def.subtitle}</span>
         </div>
       )}
 
-      <Divider orientation="horizontal" className="my-1.5" />
+      <Separator className="my-1.5" />
       {/* Blueprint Input Slots */}
       {def.inputs.length > 0 && (
         <div className="flex flex-col gap-1 mb-2">
-          <div className="text-xs font-extrabold uppercase tracking-wider text-text-muted px-1 flex justify-between items-center">
-            <span>Entrées :</span>
-            <span className={def.inputs.every(s => inputFed[s.id]) ? 'text-success' : 'text-warning'}>
-              {def.inputs.filter(s => inputFed[s.id]).length}/{def.inputs.length} prêtes
-            </span>
-          </div>
           {def.inputs.map(slot => (
             <div
               key={slot.id}
-              className="relative flex items-center justify-between pl-4 pr-2 py-1.5 rounded-md bg-surface border border-border"
+              className={`text-xs font-bold px-2 py-1 rounded bg-surface border border-border relative flex items-center justify-between ${inputFed[slot.id] ? 'text-success' : 'text-text-muted'}`}
             >
+              <span>{slot.label}</span>
+              <span className="text-[10px] opacity-75">{slot.dtype}</span>
               <Handle
-                id={slot.id}
                 type="target"
                 position={Position.Left}
-                className="!w-3.5 !h-3.5 !rounded-full border-2 !absolute !-left-2 !top-1/2 !-translate-y-1/2"
+                id={slot.id}
+                className={`!w-3.5 !h-3.5 !rounded-full border-2 !absolute !-left-2 !top-1/2 !-translate-y-1/2 ${inputFed[slot.id] ? '!bg-success' : '!bg-accent'} !border-surface2`}
                 title={`${slot.label}: ${slot.dtype}`}
               />
-              <span className="font-bold text-xs text-text">{slot.label}</span>
-              <span className="font-mono text-xs text-text-muted">({slot.dtype})</span>
             </div>
           ))}
         </div>
@@ -117,21 +107,18 @@ function SuperBlockNode({ data, id }: NodeProps<Node<SuperBlockNodeData>>) {
       {/* Blueprint Output Slots */}
       {def.outputs.length > 0 && (
         <div className="flex flex-col gap-1 mt-2">
-          <div className="text-xs font-extrabold uppercase tracking-wider text-text-muted px-1">
-            Sorties :
-          </div>
           {def.outputs.map(slot => (
             <div
               key={slot.id}
-              className="relative flex items-center justify-between pl-2 pr-4 py-1.5 rounded-md bg-surface border border-border"
+              className={`text-xs font-bold px-2 py-1 rounded bg-surface border border-border relative flex items-center justify-between ${outputFed[slot.id] ? 'text-success' : 'text-text-muted'}`}
             >
-              <span className="font-bold text-xs text-text">{slot.label}</span>
-              <span className="font-mono text-xs text-text-muted">({slot.dtype})</span>
+              <span>{slot.label}</span>
+              <span className="text-[10px] opacity-75">{slot.dtype}</span>
               <Handle
-                id={slot.id}
                 type="source"
                 position={Position.Right}
-                className="!w-3.5 !h-3.5 !rounded-full border-2 !absolute !-right-2 !top-1/2 !-translate-y-1/2"
+                id={slot.id}
+                className={`!w-3.5 !h-3.5 !rounded-full border-2 !absolute !-right-2 !top-1/2 !-translate-y-1/2 ${outputFed[slot.id] ? '!bg-success' : '!bg-accent'} !border-surface2`}
                 title={`${slot.label}: ${slot.dtype}`}
               />
             </div>
@@ -139,7 +126,7 @@ function SuperBlockNode({ data, id }: NodeProps<Node<SuperBlockNodeData>>) {
         </div>
       )}
 
-      <Divider orientation="horizontal" className="my-2" />
+      <Separator className="my-2" />
 
       {/* Unified Footer */}
       <div className="flex justify-end pt-1">

@@ -1,7 +1,7 @@
 import { useNavigate } from '@tanstack/react-router'
 import { Play } from 'lucide-react'
 import HeroBlockStack from './HeroBlockStack'
-import { Button, HStack } from '@astryxdesign/core'
+import { Button } from '@/components/ui/button'
 
 export default function HeroSection() {
   const navigate = useNavigate()
@@ -22,11 +22,18 @@ export default function HeroSection() {
         <p className="text-lg leading-relaxed text-text-muted max-w-117.5 mt-5 font-semibold">
           Empile des blocs pour construire un modèle qui apprend tout seul : reconnaître des images, comprendre des phrases, prédire des évènements. Pas besoin de savoir programmer, il suffit d'assembler.
         </p>
-        <HStack gap={3} className="mt-9">
-          <Button label="Mes projets" variant="primary" icon={<Play size={16} fill="currentColor" />} onClick={() => navigate({ to: '/projets' })} />
-          <Button label="Voir les cours" variant="secondary" onClick={() => navigate({ to: '/cours' })} />
-          <Button label="En savoir plus" variant="secondary" onClick={scrollToFeatures} />
-        </HStack>
+        <div className="flex flex-wrap items-center gap-3 mt-9">
+          <Button variant="default" onClick={() => navigate({ to: '/projets' })}>
+            <Play className="size-4" fill="currentColor" />
+            Mes projets
+          </Button>
+          <Button variant="secondary" onClick={() => navigate({ to: '/cours' })}>
+            Voir les cours
+          </Button>
+          <Button variant="secondary" onClick={scrollToFeatures}>
+            En savoir plus
+          </Button>
+        </div>
       </div>
       <div className="landing-hero-visual">
         <HeroBlockStack />

@@ -2,8 +2,12 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import useAppStore from '../../store/useAppStore'
 import { listPipelineJobs, getJobOutputs, getPipeline } from '../../api/client'
-import { Badge, Card, VStack, HStack, Button, ToggleButtonGroup, ToggleButton, Divider } from '@astryxdesign/core'
-import { Text, Heading } from '@astryxdesign/core/Text'
+import { Card } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Separator } from '@/components/ui/separator'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+
 type TypedOutput =
   | { type: 'image'; mime: string; data: string }
   | { type: 'curve'; points: number[] }
@@ -13,8 +17,10 @@ type TypedOutput =
 
 function parseOutput(raw: string): TypedOutput {
   try {
-    const v = JSON.parse(raw)
-    if (v && typeof v === 'object' && typeof v.type === 'string') return v as TypedOutput
+    const parsed = JSON.parse(raw)
+    if (parsed && typeof parsed === 'object' && 'type' in parsed) {
+      return parsed as TypedOutput
+    }
   } catch {
     /* pas du JSON -> texte */
   }
@@ -42,42 +48,27 @@ function OutputRenderer({ raw }: { raw: string }) {
   const out = parseOutput(raw)
   switch (out.type) {
     case 'image':
-      return (
-        <div className="mt-1">
-          <img src={`data:${out.mime ?? 'image/png'};base64,${out.data}`} alt="Résultat" className="max-w-full max-h-60 rounded-md block" />
-        </div>
-      )
+      return <img src={`data:${out.mime ?? 'image/png'};base64,${out.data}`} alt="output" className="max-w-full max-h-56 rounded-md block" />
     case 'curve':
-      return (
-        <div className="mt-1">
-          <Curve points={out.points} />
-        </div>
-      )
+      return <Curve points={out.points} />
     case 'metric':
-      return (
-        <div className="mt-1 flex items-baseline gap-1.5">
-          <Text className="font-extrabold text-xl text-success">{out.value}</Text>
-        </div>
-      )
+      return <div className="font-extrabold text-sm text-success">{out.value}</div>
     case 'metrics':
       return (
-        <div className="mt-1 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+        <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
           {Object.entries(out.values).map(([k, v]) => (
             <div key={k} className="contents">
-              <span className="text-text-muted font-semibold">{k} :</span>
-              <span className="font-extrabold text-text">{String(v)}</span>
+              <span className="opacity-75 text-text-muted">{k}</span>
+              <span className="font-extrabold">{String(v)}</span>
             </div>
           ))}
         </div>
       )
     default:
-      return (
-        <Text type="body" className="text-xs whitespace-pre-wrap break-words font-mono">
-          {raw.slice(0, 2000)}
-        </Text>
-      )
+      return <div className="font-mono text-xs whitespace-pre-wrap">{out.text}</div>
   }
 }
+
 type Filter = 'logs' | 'outputs' | 'mixte'
 
 export default function JournalPanel() {
@@ -88,15 +79,16 @@ export default function JournalPanel() {
   const [filter, setFilter] = useState<Filter>('mixte')
 
   const jobsQuery = useQuery({
-    queryKey: ['jobs', pipelineId],
+    queryKey: ['pipeline-jobs', pipelineId],
     queryFn: () => listPipelineJobs(pipelineId!),
     enabled: !!pipelineId,
+    refetchInterval: 3000,
   })
 
   const jobs = jobsQuery.data ?? []
 
   const outputsQuery = useQuery({
-    queryKey: ['jobOutputs', selectedJobId],
+    queryKey: ['job-outputs', selectedJobId],
     queryFn: () => getJobOutputs(selectedJobId!),
     enabled: !!selectedJobId,
   })
@@ -105,16 +97,14 @@ export default function JournalPanel() {
 
   const fmtTime = (iso: string) => {
     try {
-      return new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }).replace(':', 'h')
+      return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
     } catch {
       return iso
     }
   }
 
   const execType = (j: { vast_instance_id: string }) => {
-    const id = j.vast_instance_id ?? ''
-    const isLocal = id === 'local-instance-id' || id.startsWith('mock-') || !id
-    return isLocal ? 'Locale' : 'GPU Vast.ai'
+    return j.vast_instance_id ? `Vast #${j.vast_instance_id}` : 'Locale'
   }
 
   const handleRestore = async () => {
@@ -132,34 +122,27 @@ export default function JournalPanel() {
 
   if (!pipelineId) {
     return (
-      <VStack gap={2}>
-        <Heading level={5}>Journal</Heading>
-        <Text type="body" color="secondary" className="text-center py-4 px-1.5">
-          Aucune Pipeline sélectionnée
-        </Text>
-      </VStack>
+      <div className="flex flex-col gap-3 p-4 text-text-muted text-xs">
+        Aucun pipeline actif.
+      </div>
     )
   }
 
   if (jobsQuery.isLoading) {
     return (
-      <VStack gap={2}>
-        <Heading level={5}>Journal</Heading>
-        <Text type="body" color="secondary">
-          Chargement…
-        </Text>
-      </VStack>
+      <div className="flex flex-col gap-3 p-4 text-text-muted text-xs">
+        Chargement du journal…
+      </div>
     )
   }
 
   if (jobs.length === 0) {
     return (
-      <VStack gap={3} className="min-h-0">
-        <Heading level={5}>Journal</Heading>
-        <Text type="body" color="secondary" className="text-center py-4 px-1.5">
+      <div className="flex flex-col gap-3 min-h-0">
+        <div className="text-secondary text-center py-4 px-1.5 text-xs text-text-muted">
           Aucune exécution
-        </Text>
-      </VStack>
+        </div>
+      </div>
     )
   }
 
@@ -205,91 +188,90 @@ export default function JournalPanel() {
     })()
 
     return (
-      <VStack gap={3} className="min-h-0 flex-1 h-full overflow-hidden">
+      <div className="flex flex-col gap-3 min-h-0 flex-1 h-full overflow-hidden p-3">
         <button
           onClick={() => setSelectedJobId(null)}
-          className="bg-transparent border-none text-text-muted cursor-pointer text-xs font-bold text-left p-0"
+          className="bg-transparent border-none text-text-muted cursor-pointer text-xs font-bold text-left p-0 font-body hover:text-text-light"
         >
           ← Retour au journal
         </button>
-        <Heading level={5}>
+        <h5 className="text-sm font-extrabold text-text-light m-0">
           {sel ? `${fmtTime(sel.created_at)} · ${sel.status} · ${execType(sel)}` : 'Exécution'}
-        </Heading>
+        </h5>
         {outputsQuery.isLoading ? (
-          <Text type="body" color="secondary">
+          <div className="text-secondary text-xs text-text-muted">
             Chargement…
-          </Text>
+          </div>
         ) : null}
-        <ToggleButtonGroup type="single" label="Filtre" value={filter} onChange={v => v && setFilter(v as Filter)} size="sm">
-          <ToggleButton label="Logs" value="logs" />
-          <ToggleButton label="Outputs" value="outputs" />
-          <ToggleButton label="Mixte" value="mixte" />
-        </ToggleButtonGroup>
-        <Button label="Restaurer cette version" variant="primary" size="sm" onClick={handleRestore} isDisabled={!selectedJobId} />
-        <Divider />
-        <VStack gap={2} className="flex-1 min-h-0 overflow-y-auto pr-0.5">
+        <ToggleGroup type="single" value={filter} onValueChange={v => v && setFilter(v as Filter)} className="justify-start">
+          <ToggleGroupItem value="logs" aria-label="Logs" className="text-xs px-2.5 py-1">Logs</ToggleGroupItem>
+          <ToggleGroupItem value="outputs" aria-label="Outputs" className="text-xs px-2.5 py-1">Outputs</ToggleGroupItem>
+          <ToggleGroupItem value="mixte" aria-label="Mixte" className="text-xs px-2.5 py-1">Mixte</ToggleGroupItem>
+        </ToggleGroup>
+        <Button variant="default" size="sm" onClick={handleRestore} disabled={!selectedJobId} className="text-xs">
+          Restaurer cette version
+        </Button>
+        <Separator />
+        <div className="flex flex-col gap-2 flex-1 min-h-0 overflow-y-auto pr-0.5">
           {fused.length === 0 ? (
-            <Text type="body" color="secondary" className="text-center py-2.5 px-1.5">
+            <div className="text-secondary text-center py-2.5 px-1.5 text-xs text-text-muted">
               Aucune donnée
-            </Text>
+            </div>
           ) : (
-            fused.map((it, i) => (
-              <Card key={`${it.id}-${i}`} variant="muted" padding={2}>
-                <VStack gap={1}>
-                  <HStack gap={2} className="justify-between items-center">
-                    {it.block && <Text type="label" color="secondary">{it.block}</Text>}
-                    <Badge label={it.kind === 'output' ? 'Sortie' : 'Log'} variant={it.kind === 'output' ? 'success' : 'neutral'} />
-                  </HStack>
-                  {it.kind === 'output' ? (
-                    <OutputRenderer raw={it.text} />
+            fused.map(item => (
+              <Card key={item.id} className="p-2.5 bg-surface border-border">
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center justify-between text-[10px] text-text-muted font-semibold">
+                    <span>{fmtTime(new Date(item.at).toISOString())}</span>
+                    {item.block && <span className="font-extrabold text-accent">{item.block}</span>}
+                  </div>
+                  {item.kind === 'output' ? (
+                    <OutputRenderer raw={item.text} />
                   ) : (
-                    <Text type="body" className="text-xs whitespace-pre-wrap break-words font-mono">
-                      {it.text.slice(0, 2000)}
-                    </Text>
+                    <div className="font-mono text-xs whitespace-pre-wrap text-text-light">{item.text}</div>
                   )}
-                  <Text type="supporting" color="secondary" className="text-xs">
-                    {new Date(it.at).toLocaleTimeString('fr-FR')}
-                  </Text>
-                </VStack>
+                </div>
               </Card>
             ))
           )}
-        </VStack>
-      </VStack>
+        </div>
+      </div>
     )
   }
 
   // List view: all Jobs
   return (
-    <VStack gap={3} className="min-h-0 flex-1 h-full overflow-hidden">
-      <Heading level={5}>Journal</Heading>
-      <Text type="label" color="secondary">
+    <div className="flex flex-col gap-3 min-h-0 flex-1 h-full overflow-hidden p-3">
+      <h5 className="text-sm font-extrabold text-text-light m-0">Journal</h5>
+      <span className="text-xs text-text-muted font-semibold">
         Exécutions
-      </Text>
-      <VStack gap={1} className="flex-1 min-h-0 overflow-y-auto pr-0.5">
+      </span>
+      <div className="flex flex-col gap-1 flex-1 min-h-0 overflow-y-auto pr-0.5">
         {jobs.map(j => (
-          <Card key={j.id} variant="muted" padding={2} className="cursor-pointer" onClick={() => setSelectedJobId(j.id)}>
-            <VStack gap={1}>
-              <HStack gap={2} className="justify-between items-center">
-                <HStack gap={1} className="items-center">
-                  <Text type="body" className="font-bold">
+          <Card key={j.id} className="p-2.5 bg-surface border-border cursor-pointer hover:border-accent transition-colors" onClick={() => setSelectedJobId(j.id)}>
+            <div className="flex flex-col gap-1">
+              <div className="flex gap-2 justify-between items-center">
+                <div className="flex gap-1.5 items-center">
+                  <span className="font-bold text-xs text-text-light">
                     {fmtTime(j.created_at)}
-                  </Text>
-                  <Badge label={execType(j)} variant={execType(j) === 'Locale' ? 'neutral' : 'info'} />
-                </HStack>
-                <Text type="supporting" color="secondary">
+                  </span>
+                  <Badge variant={execType(j) === 'Locale' ? 'outline' : 'secondary'} className="text-[10px] px-1 py-0">
+                    {execType(j)}
+                  </Badge>
+                </div>
+                <span className="text-[10px] text-text-muted font-semibold">
                   {j.status}
-                </Text>
-              </HStack>
+                </span>
+              </div>
               {j.status === 'error' && j.error ? (
-                <Text type="body" className="text-xs text-error whitespace-pre-wrap break-words">
+                <div className="text-xs text-error whitespace-pre-wrap break-words">
                   {j.error.slice(0, 220)}
-                </Text>
+                </div>
               ) : null}
-            </VStack>
+            </div>
           </Card>
         ))}
-      </VStack>
-    </VStack>
+      </div>
+    </div>
   )
 }

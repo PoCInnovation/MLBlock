@@ -1,7 +1,6 @@
 import { useState, useRef } from 'react';
 import SiteLayout from '../components/landing/SiteLayout';
-import { Card, Grid, Stack, VStack, HStack } from '@astryxdesign/core';
-import { Heading, Text } from '@astryxdesign/core/Text';
+import { Card } from '@/components/ui/card';
 import { theme } from '../theme';
 
 type TeamMember = {
@@ -51,7 +50,7 @@ function TeamCard({ name, role, tagline, linkedin }: TeamMember) {
     const [photoFailed, setPhotoFailed] = useState(false);
 
     const inner = (
-        <VStack gap={2} className="text-center">
+        <div className="flex flex-col gap-2 text-center">
             <div className="mb-1.5 flex justify-center">
                 {!photoFailed ? (
                     <img
@@ -63,14 +62,14 @@ function TeamCard({ name, role, tagline, linkedin }: TeamMember) {
                     />
                 ) : (
                     <div className="w-24 h-24 rounded-3xl bg-surface3 flex items-center justify-center">
-                        <Heading level={2} className="text-text text-4xl">{name[0]}</Heading>
+                        <h2 className="text-text text-4xl">{name[0]}</h2>
                     </div>
                 )}
             </div>
-            <Heading level={4} className="text-center">{name}</Heading>
-            <Text type="label" className="uppercase tracking-wider text-center text-status">{role}</Text>
-            <Text type="body" color="secondary" className="italic text-center">{tagline}</Text>
-        </VStack>
+            <h4 className="font-heading font-bold text-center text-foreground text-lg">{name}</h4>
+            <p className="text-xs uppercase tracking-wider text-center text-status font-bold">{role}</p>
+            <p className="text-sm text-secondary italic text-center">{tagline}</p>
+        </div>
     );
 
     if (linkedin) {
@@ -86,11 +85,10 @@ function TeamCard({ name, role, tagline, linkedin }: TeamMember) {
     }
     return <Card className="bg-surface3 border border-white/10 rounded-2xl p-7 block">{inner}</Card>;
 }
-
 function PocLogoSlot() {
     const [logoFailed, setLogoFailed] = useState(false);
     if (logoFailed) {
-        return <Heading level={2} className="text-text-input tracking-wider">PoC</Heading>;
+        return <h2 className="text-text-input tracking-wider font-heading text-2xl font-bold">PoC</h2>;
     }
     return (
         <img
@@ -105,47 +103,47 @@ function PocLogoSlot() {
 function PocSection() {
     const textRef = useRef<HTMLDivElement>(null);
     return (
-        <Stack className="max-w-7xl mx-auto px-12 py-16">
-            <VStack gap={3}>
-                <Heading level={2}>Le projet, porté par PoC Innovation</Heading>
-                <Card variant="default" padding={4} className="bg-white">
-                    <HStack gap={4} className="items-start">
+        <div className="max-w-7xl mx-auto px-12 py-16">
+            <div className="flex flex-col gap-3">
+                <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-foreground">Le projet, porté par PoC Innovation</h2>
+                <Card className="bg-white p-6 rounded-2xl shadow-sm border border-border">
+                    <div className="flex flex-col md:flex-row gap-6 items-start">
                         <PocLogoSlot />
-                        <VStack gap={3} ref={textRef as never}>
-                            <Text type="body" className="text-text-input leading-relaxed">MLBlock est un projet officiel de PoC Innovation, le centre de R&D étudiant d'Epitech. Fondé en 2017, ce centre réunit une quarantaine d'étudiants qui travaillent sur des projets open source autour de l'IA, la sécurité, la santé, l'AR/VR, le hardware et le software, à travers ateliers, bootcamps et hackathons.</Text>
+                        <div className="flex flex-col gap-3 flex-1" ref={textRef}>
+                            <p className="text-foreground leading-relaxed text-sm sm:text-base">MLBlock est un projet officiel de PoC Innovation, le centre de R&D étudiant d'Epitech. Fondé en 2017, ce centre réunit une quarantaine d'étudiants qui travaillent sur des projets open source autour de l'IA, la sécurité, la santé, l'AR/VR, le hardware et le software, à travers ateliers, bootcamps et hackathons.</p>
                             <div>
                                 <a className="poc-btn" href="https://poc-innovation.fr/" target="_blank" rel="noopener noreferrer">Voir le site de PoC Innovation</a>
                             </div>
-                        </VStack>
-                    </HStack>
+                        </div>
+                    </div>
                 </Card>
-            </VStack>
-        </Stack>
+            </div>
+        </div>
     );
 }
 export default function AboutPage() {
     return (
         <SiteLayout>
-            <Stack className="max-w-7xl mx-auto px-12 pt-16">
-                <VStack gap={3}>
-                    <Heading level={1}>Qui sommes nous</Heading>
-                    <Heading level={3} className="text-text">Pourquoi MLBlock</Heading>
-                    <Text type="body" color="secondary" className="max-w-2xl">MLBlock existe pour que des élèves comprennent visuellement comment fonctionne un pipeline d'IA, sans écrire de code.</Text>
-                </VStack>
-            </Stack>
+            <div className="max-w-7xl mx-auto px-12 pt-16">
+                <div className="flex flex-col gap-3">
+                    <h1 className="font-heading text-3xl sm:text-4xl font-extrabold text-foreground">Qui sommes nous</h1>
+                    <h3 className="font-heading text-xl font-bold text-foreground">Pourquoi MLBlock</h3>
+                    <p className="text-secondary max-w-2xl text-base">MLBlock existe pour que des élèves comprennent visuellement comment fonctionne un pipeline d'IA, sans écrire de code.</p>
+                </div>
+            </div>
 
             <section className="bg-surface border-t border-white/5 mt-14">
-                <Stack className="max-w-7xl mx-auto px-12 py-16">
-                    <VStack gap={3}>
-                        <Heading level={2}>L'équipe</Heading>
-                        <Text type="body" color="secondary">Quatre étudiants Epitech derrière le projet.</Text>
-                        <Grid columns={4} gap={3}>
+                <div className="max-w-7xl mx-auto px-12 py-16">
+                    <div className="flex flex-col gap-3">
+                        <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-foreground">L'équipe</h2>
+                        <p className="text-secondary text-base">Quatre étudiants Epitech derrière le projet.</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                             {TEAM.map((m) => (
                                 <TeamCard key={m.name} {...m} />
                             ))}
-                        </Grid>
-                    </VStack>
-                </Stack>
+                        </div>
+                    </div>
+                </div>
             </section>
 
             <PocSection />

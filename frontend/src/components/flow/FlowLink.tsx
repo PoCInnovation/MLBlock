@@ -1,8 +1,6 @@
 import { memo, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { EdgeLabelRenderer, getSmoothStepPath, type EdgeProps } from '@xyflow/react'
 import useAppStore from '../../store/useAppStore'
-
-/** Rayon des coins du routage. */
 const CORNER = 16
 
 /** Préférence système « réduire les animations » (SMIL n'est pas désactivable par CSS). */

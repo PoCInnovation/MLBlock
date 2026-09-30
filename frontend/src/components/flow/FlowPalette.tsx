@@ -4,7 +4,12 @@ import useAppStore from '../../store/useAppStore'
 import { colorFor } from '../../utils/blockHelpers'
 import { shouldIgnoreTap } from '../../utils/tapGuard'
 import { ALL_STAGES, stageOfBlock, stageKey } from '../../utils/stages'
-import { Badge, Switch, ToggleButtonGroup, ToggleButton, Grid, ClickableCard, IconButton, TextInput } from '@astryxdesign/core'
+import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Switch } from '@/components/ui/switch'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 
 type FlowPaletteProps = {
   onDragStart: (e: React.DragEvent, type: string) => void
@@ -74,13 +79,15 @@ const FlowPalette = memo(function FlowPalette({ onDragStart, onAdd, onClose, onT
           <span>Blocks</span>
           <div className="flex items-center gap-1">
             {onToggleCollapse && (
-              <IconButton
-                label="Replier la palette"
-                icon={<PanelLeft size={16} />}
+              <Button
+                title="Replier la palette"
                 variant="ghost"
-                size="sm"
+                size="icon"
+                className="h-8 w-8"
                 onClick={onToggleCollapse}
-              />
+              >
+                <PanelLeft className="size-4" />
+              </Button>
             )}
             {onClose && (
               <button
@@ -88,52 +95,51 @@ const FlowPalette = memo(function FlowPalette({ onDragStart, onAdd, onClose, onT
                 aria-label="Fermer"
                 className="bg-transparent border-none text-text-muted cursor-pointer font-black text-base w-9 h-9 inline-flex items-center justify-center rounded-full"
               >
-                <X size={17} />
+                <X className="size-4" />
               </button>
             )}
           </div>
         </div>
-        <TextInput
-          label="Rechercher un Block"
-          isLabelHidden
+        <Input
           value={query}
-          onChange={setQuery}
+          onChange={(e) => setQuery(e.target.value)}
           placeholder="Rechercher un Block…"
+          className="mt-2 h-8 text-xs"
         />
         <div className="mt-2.5 flex items-center justify-between">
           <span className="text-xs font-bold text-text-muted">Filtres</span>
-          <IconButton
-            label={filtersOpen ? 'Replier les filtres' : 'Déplier les filtres'}
-            icon={filtersOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          <Button
+            title={filtersOpen ? 'Replier les filtres' : 'Déplier les filtres'}
             variant="ghost"
-            size="sm"
+            size="icon"
+            className="h-7 w-7"
             onClick={() => setFiltersOpen(v => !v)}
-          />
+          >
+            {filtersOpen ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
+          </Button>
         </div>
         {filtersOpen && (
           <div className="mt-2 flex flex-col gap-2.5">
-            <ToggleButtonGroup
+            <ToggleGroup
               type="single"
-              label="Stages"
               value={stageFilter}
-              onChange={(v) => setStageFilter((v as string) || 'all')}
-              size="sm"
+              onValueChange={(v: string) => setStageFilter(v || 'all')}
+              className="grid grid-cols-2 gap-1.5 justify-start"
             >
-              <Grid columns={2} gap={1.5}>
-                <ToggleButton label="Tous" value="all" />
-                {ALL_STAGES.map(s => (
-                  <ToggleButton key={s.id} label={`${s.key} ${s.label}`} value={String(s.id)} />
-                ))}
-              </Grid>
-            </ToggleButtonGroup>
+              <ToggleGroupItem value="all" className="text-xs justify-start px-2 h-7">
+                Tous
+              </ToggleGroupItem>
+              {ALL_STAGES.map(s => (
+                <ToggleGroupItem key={s.id} value={String(s.id)} className="text-xs justify-start px-2 h-7">
+                  {s.key} {s.label}
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
             <div className="flex items-center justify-between px-1 py-0.5">
               <span className="text-xs font-semibold text-text-muted">Avancé</span>
               <Switch
-                label="Avancé"
-                isLabelHidden
-                value={showAdvanced}
-                onChange={setShowAdvanced}
-                size="sm"
+                checked={showAdvanced}
+                onCheckedChange={setShowAdvanced}
               />
             </div>
           </div>
@@ -156,10 +162,11 @@ const FlowPalette = memo(function FlowPalette({ onDragStart, onAdd, onClose, onT
             <div key={s.id}>
               <div className="flex items-center gap-2 mt-3.5 mb-2">
                 <Badge
-                  label={s.key}
-                  className="text-xs font-extrabold px-1.25 py-px rounded border"
+                  className="text-xs font-extrabold px-1.5 py-0.5 rounded border"
                   style={{ backgroundColor: `${s.color}22`, color: s.color, border: `1px solid ${s.color}66` }}
-                />
+                >
+                  {s.key}
+                </Badge>
                 <span className="font-heading font-bold text-xs text-text">
                   {s.label}
                 </span>
@@ -172,34 +179,35 @@ const FlowPalette = memo(function FlowPalette({ onDragStart, onAdd, onClose, onT
                   const def = catalog.blocks[type]
                   const label = def.segs.find(s => s.t === 'text')?.v ?? type
                   return (
-                    <ClickableCard
+                    <Card
                       key={type}
-                      label={label}
                       onClick={(e) => handleItemClick(type, e as unknown as React.MouseEvent)}
-                      padding={2}
+                      className="cursor-pointer hover:border-primary/50 transition-colors p-2 bg-card border-border shadow-xs"
                     >
-                      <div
-                        draggable
-                        onDragStart={e => { dragStarted.current = true; onDragStart(e, type) }}
-                        onPointerDown={e => { dragStarted.current = false; pressStart.current = { x: e.clientX, y: e.clientY } }}
-                        onKeyDown={e => handleItemKeyDown(type, e)}
-                        className="flex items-center gap-2 w-full cursor-grab"
-                        title={def.description || undefined}
-                        role="button"
-                        tabIndex={0}
-                      >
-                        <span
-                          className="w-2.5 h-2.5 rounded-sm shrink-0"
-                          style={{ background: colorFor(def.cat, categories) }}
-                        />
-                        <span className="text-xs font-bold text-text">{label}</span>
-                        {def.advanced && (
-                          <span className="text-xs text-text-dim ml-auto font-semibold">
-                            Avancé
-                          </span>
-                        )}
-                      </div>
-                    </ClickableCard>
+                      <CardContent className="p-0">
+                        <div
+                          draggable
+                          onDragStart={e => { dragStarted.current = true; onDragStart(e, type) }}
+                          onPointerDown={e => { dragStarted.current = false; pressStart.current = { x: e.clientX, y: e.clientY } }}
+                          onKeyDown={e => handleItemKeyDown(type, e)}
+                          className="flex items-center gap-2 w-full cursor-grab"
+                          title={def.description || undefined}
+                          role="button"
+                          tabIndex={0}
+                        >
+                          <span
+                            className="w-2.5 h-2.5 rounded-sm shrink-0"
+                            style={{ background: colorFor(def.cat, categories) }}
+                          />
+                          <span className="text-xs font-bold text-text">{label}</span>
+                          {def.advanced && (
+                            <span className="text-xs text-text-dim ml-auto font-semibold">
+                              Avancé
+                            </span>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
                   )
                 })}
               </div>

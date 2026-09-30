@@ -1,7 +1,7 @@
 import { Dialog, DialogTitle, DialogDescription, DialogFooter } from './dialog'
 import { Save, LogOut, X } from 'lucide-react'
-import { Icon } from '@astryxdesign/core/Icon'
-const btnBase = "inline-flex items-center gap-2 px-4 py-2 rounded-md font-extrabold text-sm cursor-pointer border transition-all disabled:opacity-60"
+import { Button } from '@/components/ui/button'
+
 type Props = {
   open: boolean
   onSave: () => void
@@ -19,23 +19,29 @@ export default function UnsavedChangesDialog({ open, onSave, onDiscard, onCancel
         Ton projet a changé (blocs ou nom) mais n'a pas été enregistré. Que veux-tu faire ?
       </DialogDescription>
       <DialogFooter>
-        <button
+        <Button
           onClick={onSave}
           disabled={busy}
-          className={`${btnBase} bg-success/20 text-success border-success/40`}
+          variant="outline"
+          className="bg-success/20 text-success border-success/40 hover:bg-success/30"
         >
-          <Icon icon={Save} size="sm" /> Sauvegarder et quitter
-        </button>
-        <button
+          <Save className="size-4 mr-2" /> Sauvegarder et quitter
+        </Button>
+        <Button
           onClick={onDiscard}
           disabled={busy}
-          className={`${btnBase} bg-error/20 text-error-light border-error/40`}
+          variant="outline"
+          className="bg-error/20 text-error-light border-error/40 hover:bg-error/30"
         >
-          <Icon icon={LogOut} size="sm" /> Quitter sans sauvegarder
-        </button>
-        <button onClick={onCancel} disabled={busy} className={`${btnBase} bg-surface3 text-text border-border`}>
-          <Icon icon={X} size="sm" /> Rester
-        </button>
+          <LogOut className="size-4 mr-2" /> Quitter sans sauvegarder
+        </Button>
+        <Button
+          onClick={onCancel}
+          disabled={busy}
+          variant="secondary"
+        >
+          <X className="size-4 mr-2" /> Rester
+        </Button>
       </DialogFooter>
     </Dialog>
   )

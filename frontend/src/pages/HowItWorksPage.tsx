@@ -1,9 +1,8 @@
 import { useNavigate } from '@tanstack/react-router'
 import { Play } from 'lucide-react'
 import SiteLayout from '../components/landing/SiteLayout'
-import { Button, Card, VStack, HStack, Stack } from '@astryxdesign/core'
-import { Heading, Text } from '@astryxdesign/core/Text'
-import { Icon } from '@astryxdesign/core/Icon'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 export default function HowItWorksPage() {
   const navigate = useNavigate()
 
@@ -11,33 +10,33 @@ export default function HowItWorksPage() {
     <SiteLayout>
       {/* Intro */}
       <section className="px-12 pt-16">
-        <Stack className="max-w-7xl mx-auto">
-          <VStack gap={3}>
-            <Heading level={1}>Comment ça marche</Heading>
-            <Text type="body" color="secondary" className="max-w-2xl">MLBlock permet de construire un pipeline de machine learning en assemblant des blocs, sans écrire une ligne de code.</Text>
-          </VStack>
-        </Stack>
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col gap-3">
+            <h1 className="font-heading text-3xl sm:text-4xl font-extrabold text-foreground">Comment ça marche</h1>
+            <p className="text-secondary max-w-2xl text-base">MLBlock permet de construire un pipeline de machine learning en assemblant des blocs, sans écrire une ligne de code.</p>
+          </div>
+        </div>
       </section>
 
       {/* Le principe d'assemblage */}
       <section className="px-12 pt-16">
-        <Stack className="max-w-7xl mx-auto">
-          <VStack gap={3}>
-            <Heading level={2}>Le principe d'assemblage</Heading>
-            <Card variant="default" padding={4}>
-              <Text type="body" color="secondary">Les blocs s'emboîtent comme des pièces de puzzle, encoches en bas, trous en haut. Tu déposes un bloc sous un autre, il se clipse. Pas de fils à tirer, pas de connexions à faire à la main. L'ordre dans lequel tu empiles tes blocs, c'est l'ordre dans lequel ils s'exécutent.</Text>
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col gap-3">
+            <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-foreground">Le principe d'assemblage</h2>
+            <Card className="p-6 bg-card border border-border rounded-2xl shadow-sm">
+              <p className="text-secondary text-base">Les blocs s'emboîtent comme des pièces de puzzle, encoches en bas, trous en haut. Tu déposes un bloc sous un autre, il se clipse. Pas de fils à tirer, pas de connexions à faire à la main. L'ordre dans lequel tu empiles tes blocs, c'est l'ordre dans lequel ils s'exécutent.</p>
             </Card>
-          </VStack>
-        </Stack>
+          </div>
+        </div>
       </section>
 
       {/* Que se passe-t-il quand tu appuies sur Démarrer ? */}
       <section className="px-12 pt-16">
-        <Stack className="max-w-7xl mx-auto">
-          <VStack gap={3}>
-            <Heading level={2}>Que se passe-t-il quand tu appuies sur Démarrer&nbsp;?</Heading>
-            <Card variant="default" padding={4}>
-              <VStack gap={4} as="ol" className="list-none m-0 p-0">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col gap-3">
+            <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-foreground">Que se passe-t-il quand tu appuies sur Démarrer&nbsp;?</h2>
+            <Card className="p-6 bg-card border border-border rounded-2xl shadow-sm">
+              <ol className="list-none m-0 p-0 flex flex-col gap-4">
                 {[
                   {
                     title: 'Tu assembles, on construit la structure',
@@ -60,35 +59,38 @@ export default function HowItWorksPage() {
                     text: 'Une fois l\'entraînement terminé, le résultat final remonte de la machine vers notre serveur, qui te l\'affiche directement dans l\'éditeur.',
                   },
                 ].map(({ title, text }, i) => (
-                  <HStack key={i} gap={3} className="items-start">
+                  <div key={i} className="flex gap-3 items-start">
                     <div className="shrink-0 w-8 h-8 rounded-lg bg-surface2 border border-white/10 flex items-center justify-center font-heading font-bold text-base text-accent">
                       {i + 1}
                     </div>
-                    <VStack gap={1}>
-                      <Heading level={5}>{title}</Heading>
-                      <Text type="body" color="secondary">{text}</Text>
-                    </VStack>
-                  </HStack>
+                    <div className="flex flex-col gap-1">
+                      <h5 className="font-heading font-bold text-base text-foreground">{title}</h5>
+                      <p className="text-secondary text-sm sm:text-base">{text}</p>
+                    </div>
+                  </div>
                 ))}
-              </VStack>
+              </ol>
             </Card>
-          </VStack>
-        </Stack>
+          </div>
+        </div>
       </section>
 
       {/* CTA */}
       <section className="px-12 py-16">
-        <Stack className="max-w-7xl mx-auto">
-          <Card variant="default" padding={4}>
-            <HStack gap={4} className="justify-between flex-wrap">
-              <VStack gap={1}>
-                <Heading level={3}>Prêt à assembler ton premier pipeline ?</Heading>
-                <Text type="body" color="secondary">Tu peux commencer maintenant.</Text>
-              </VStack>
-              <Button label="Ouvrir l'éditeur" variant="primary" icon={<Icon icon={Play} size="sm" />} onClick={() => navigate({ to: '/editor' })} />
-            </HStack>
+        <div className="max-w-7xl mx-auto">
+          <Card className="p-6 bg-card border border-border rounded-2xl shadow-sm">
+            <div className="flex gap-4 justify-between flex-wrap items-center">
+              <div className="flex flex-col gap-1">
+                <h3 className="font-heading text-xl font-bold text-foreground">Prêt à assembler ton premier pipeline ?</h3>
+                <p className="text-secondary text-sm">Tu peux commencer maintenant.</p>
+              </div>
+              <Button onClick={() => navigate({ to: '/editor' })} className="gap-2">
+                <Play className="size-4" />
+                Ouvrir l'éditeur
+              </Button>
+            </div>
           </Card>
-        </Stack>
+        </div>
       </section>
     </SiteLayout>
   )

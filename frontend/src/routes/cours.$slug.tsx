@@ -1,11 +1,7 @@
 /* eslint-disable react-refresh/only-export-components -- TanStack Route: Route + component in same file */
 import { createFileRoute, Link, notFound } from '@tanstack/react-router'
-import { Badge, Blockquote, Divider, HStack, VStack } from '@astryxdesign/core'
-import { Breadcrumbs, BreadcrumbItem } from '@astryxdesign/core/Breadcrumbs'
-import { Markdown } from '@astryxdesign/core'
-import { TreeList } from '@astryxdesign/core/TreeList'
-import { Outline, parseOutlineFromMarkdown } from '@astryxdesign/core/Outline'
-import { Heading, Text } from '@astryxdesign/core/Text'
+import { Badge } from '@/components/ui/badge'
+import { Separator } from '@/components/ui/separator'
 import SiteLayout from '../components/landing/SiteLayout'
 import { courses, courseTreeItems, getCourse } from '../content/cours'
 
@@ -65,59 +61,69 @@ function CoursDetailPage() {
   if (!course) {
     return (
       <SiteLayout>
-        <section className="max-w-7xl mx-auto px-12 py-16">
-          <Heading level={1}>Cours introuvable</Heading>
-          <Text color="secondary">
-            Ce cours n’existe pas. <Link to="/cours" className="text-accent">Retour au catalogue</Link>
-          </Text>
-        </section>
+        <div className="max-w-7xl mx-auto px-12 py-16 flex flex-col gap-3">
+          <h1 className="font-heading text-3xl font-extrabold text-foreground">Cours introuvable</h1>
+          <p className="text-secondary text-base">
+            Ce cours n’existe pas. <Link to="/cours" className="text-accent font-bold">Retour au catalogue</Link>
+          </p>
+        </div>
       </SiteLayout>
     )
   }
 
-  const difficultyVariant = course.difficulty === 'facile' ? 'neutral' : course.difficulty === 'moyen' ? 'info' : 'warning'
   const treeItems = courseTreeItems(courses)
-  const outlineItems = parseOutlineFromMarkdown(course.body)
   const markdownSections = course.body.split(/(?=^## )/m).filter(Boolean)
-  const markdownComponents = {
-    blockquote: ({ children }: { children: React.ReactNode }) => <Blockquote>{children}</Blockquote>,
-  }
 
   return (
     <SiteLayout>
       <div className="max-w-7xl mx-auto px-6 py-12">
-        <HStack gap={6} className="items-start">
-          <VStack className="w-64 shrink-0 sticky top-6 max-h-screen overflow-y-auto">
-            <TreeList items={treeItems} />
-          </VStack>
-          <VStack gap={4} className="flex-1 min-w-0">
-            <Breadcrumbs>
-              <BreadcrumbItem href="/">Accueil</BreadcrumbItem>
-              <BreadcrumbItem href="/cours">Cours</BreadcrumbItem>
-              <BreadcrumbItem isCurrent>{course.title}</BreadcrumbItem>
-            </Breadcrumbs>
-            <VStack gap={2}>
-              <Heading level={1}>{course.title}</Heading>
-              <Text color="secondary">{course.description}</Text>
-              <HStack gap={2} className="items-center">
-                <Badge label={course.difficulty} variant={difficultyVariant as never} />
-              </HStack>
-            </VStack>
-            <VStack gap={4}>
-              {markdownSections.map((section, idx) => (
-                <VStack key={idx} gap={4}>
-                  <Divider />
-                  <Markdown components={markdownComponents}>{section}</Markdown>
-                </VStack>
+        <div className="flex flex-col lg:flex-row gap-8 items-start">
+          <div className="w-full lg:w-64 shrink-0 lg:sticky lg:top-6 max-h-screen overflow-y-auto">
+            <div className="flex flex-col gap-2">
+              <div className="font-heading font-bold text-sm text-foreground uppercase tracking-wider">Sommaire des cours</div>
+              {treeItems.map(group => (
+                <div key={group.id} className="flex flex-col gap-1 mt-2">
+                  <div className="font-heading font-bold text-xs text-foreground uppercase tracking-wider text-muted-foreground">{group.label}</div>
+                  <div className="flex flex-col pl-2 gap-1 border-l border-border ml-1">
+                    {group.children?.map((item: { id: string; label: string; href: string }) => (
+                      <Link key={item.id} to={item.href} className={`text-sm py-1 no-underline ${item.id === course.slug ? 'text-accent font-bold' : 'text-secondary hover:text-foreground'}`}>
+                        {item.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
               ))}
-            </VStack>
-          </VStack>
-          {outlineItems.length > 0 && (
-            <VStack className="w-60 shrink-0 sticky top-6 max-h-screen overflow-y-auto">
-              <Outline items={outlineItems} />
-            </VStack>
-          )}
-        </HStack>
+            </div>
+          </div>
+          <div className="flex flex-col gap-6 flex-1 min-w-0">
+            <nav className="flex text-sm text-secondary gap-2 items-center">
+              <Link to="/" className="hover:text-foreground">Accueil</Link>
+              <span>/</span>
+              <Link to="/cours" className="hover:text-foreground">Cours</Link>
+              <span>/</span>
+              <span className="text-foreground font-semibold truncate">{course.title}</span>
+            </nav>
+            <div className="flex flex-col gap-2">
+              <h1 className="font-heading text-3xl sm:text-4xl font-extrabold text-foreground">{course.title}</h1>
+              <p className="text-secondary text-base">{course.description}</p>
+              <div className="flex items-center gap-2 mt-1">
+                <Badge variant={course.difficulty === 'facile' ? 'secondary' : course.difficulty === 'moyen' ? 'default' : 'destructive'} className="uppercase">
+                  {course.difficulty}
+                </Badge>
+              </div>
+            </div>
+            <div className="flex flex-col gap-6">
+              {markdownSections.map((section, idx) => (
+                <div key={idx} className="flex flex-col gap-4">
+                  {idx > 0 && <Separator className="my-2" />}
+                  <div className="max-w-none text-foreground leading-relaxed whitespace-pre-line text-sm sm:text-base">
+                    {section}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     </SiteLayout>
   )

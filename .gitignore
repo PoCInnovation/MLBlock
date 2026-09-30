@@ -160,9 +160,9 @@ backend/mlblock.db
 
 # Agent scratch
 /.hermes
+/.pi
 /_bmad
 /_bmad-output
-
 # Captures d'écran (vérifs navigateur)
 *.check.png
 homepage-check.png

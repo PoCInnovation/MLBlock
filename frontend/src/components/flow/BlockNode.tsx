@@ -1,7 +1,9 @@
 import { memo, useEffect, useMemo, useState } from 'react'
 import { Handle, Position, type NodeProps, type Node } from '@xyflow/react'
 import { useShallow } from 'zustand/react/shallow'
-import { Badge, Card, Divider, Heading, HStack, Text, VStack } from '@astryxdesign/core'
+import { Card } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Separator } from '@/components/ui/separator'
 import useAppStore from '../../store/useAppStore'
 import BlockSegments from '../blocks/BlockSegments'
 import { resolveColumnsForPath, resolveFlowSourcePath } from '../../utils/columns'
@@ -74,25 +76,22 @@ function StandardBlockNode({ data, id }: NodeProps<Node<BlockNodeData>>) {
   }, [id, data.segs, flowNodes, flowEdges])
 
   return (
-    <Card
-      padding={3}
-      variant="default"
-      elevation="low"
-      className="!bg-surface2 min-w-45 max-w-64 !overflow-visible !rounded-2xl border-t-4"
-    >
-      <HStack justify="between" align="start" gap={2} className="py-2.5">
-        <VStack gap={0} className="min-w-0 flex-1">
+    <Card className="bg-surface2 min-w-45 max-w-64 overflow-visible rounded-2xl border-t-4 p-3 shadow-sm border-border">
+      <div className="flex items-start justify-between gap-2 py-2.5">
+        <div className="flex flex-col min-w-0 flex-1">
           <div className="flex items-center gap-1.5 min-w-0">
             <span title={`${stageConfig.name} (${stageConfig.label})`} className="inline-flex">
               <Badge
-                label={stageConfig.key}
+                variant="outline"
                 className="text-xs font-extrabold px-1.5 py-0.5 rounded shrink-0 border"
-              />
+              >
+                {stageConfig.key}
+              </Badge>
             </span>
-            <Heading level={4} className="text-sm font-extrabold text-text-light truncate m-0 leading-snug">{data.label || data.type || 'Untitled'}</Heading>
+            <h4 className="text-sm font-extrabold text-text-light truncate m-0 leading-snug">{data.label || data.type || 'Untitled'}</h4>
           </div>
-          {description && <Text className="text-xs text-text-muted line-clamp-2">{description}</Text>}
-        </VStack>
+          {description && <p className="text-xs text-text-muted line-clamp-2 m-0 mt-0.5">{description}</p>}
+        </div>
         <div className="justify-self-end self-start">
           <svg
             className="block-drag-handle cursor-grab"
@@ -108,9 +107,9 @@ function StandardBlockNode({ data, id }: NodeProps<Node<BlockNodeData>>) {
             </g>
           </svg>
         </div>
-      </HStack>
+      </div>
       {(Array.isArray(data.inputs) && data.inputs.length > 0 || Array.isArray(data.outputs) && data.outputs.length > 0 || Array.isArray(data.segs) && data.segs.length > 0) && (
-        <VStack gap={0} className="flex-auto min-h-0">
+        <div className="flex flex-col min-h-0 flex-auto">
           <div className="grid grid-cols-3 items-start gap-x-3">
             {Array.isArray(data.inputs) && data.inputs.length > 0 && (
               <div className={`${inputsClassName} col-start-1 row-start-1`}>
@@ -138,14 +137,14 @@ function StandardBlockNode({ data, id }: NodeProps<Node<BlockNodeData>>) {
               return (
                 <>
                   {sepRow > 0 && (
-                    <Divider orientation="horizontal" className="col-span-full my-2" />
+                    <Separator className="col-span-full my-2" />
                   )}
                   {Array.isArray(data.segs) && data.segs.length > 0 && (
                     <BlockSegments segs={data.segs} fields={data.fields} blockId={id} blockType={data.type} onUpdate={updateFlowParam} columnOptions={columnOptions} startRow={hasBody ? (hasParams ? 3 : 1) : 1} />
                   )}
                   {(() => {
                     if (!hasBody && !hasParams) return null
-                    return <Divider orientation="vertical" className="col-start-2 h-full" />
+                    return <Separator orientation="vertical" className="col-start-2 h-full" />
                   })()}
                 </>
               )
@@ -154,7 +153,7 @@ function StandardBlockNode({ data, id }: NodeProps<Node<BlockNodeData>>) {
               <button className="block-delete-btn border-none bg-transparent text-text-muted font-extrabold text-xs cursor-pointer p-0 font-body" onClick={() => removeFlowNode(id)}>Supprimer</button>
             </div>
           </div>
-        </VStack>
+        </div>
       )}
       {data.inputs.map((p, i, arr) => (
         <Handle

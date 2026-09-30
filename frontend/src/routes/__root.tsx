@@ -1,14 +1,13 @@
 import { createRootRoute, Outlet } from '@tanstack/react-router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
+import { ThemeProvider } from 'next-themes'
+import { Toaster } from '../components/ui/sonner'
 import useAppStore from '../store/useAppStore'
 import { getSession, onAuthStateChange } from '../services/auth'
 import { toServerPayload } from '../utils/blockHelpers'
 import { writeStash } from '../utils/pending-stash'
 import '../index.css'
-import '@astryxdesign/core/reset.css'
-import '@astryxdesign/core/astryx.css'
-import '@astryxdesign/theme-neutral/theme.css'
 
 export const Route = createRootRoute({
   beforeLoad: async () => {
@@ -64,7 +63,10 @@ export const Route = createRootRoute({
 
     return (
       <QueryClientProvider client={queryClient}>
-        <Outlet />
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+          <Outlet />
+          <Toaster />
+        </ThemeProvider>
       </QueryClientProvider>
     )
   },

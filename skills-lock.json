@@ -7,6 +7,18 @@
       "skillPath": ".agents/skills/frontend-code-review/SKILL.md",
       "computedHash": "ac8e12e30e4429a1b5f5869b9534cfcaff33d59a44faf4765cfd9d948ed1332b"
     },
+    "migrate-radix-to-base": {
+      "source": "shadcn/ui",
+      "sourceType": "github",
+      "skillPath": "skills/migrate-radix-to-base/SKILL.md",
+      "computedHash": "e1f2030ee5059be3dff0812ca0e4b995ee9fa3132176f049ebe6c90346a6755e"
+    },
+    "shadcn": {
+      "source": "shadcn/ui",
+      "sourceType": "github",
+      "skillPath": "skills/shadcn/SKILL.md",
+      "computedHash": "f615de216e085a84e31593ad0fa9062232adc40cd87b7c7ab2b8e49abf6500be"
+    },
     "supabase": {
       "source": "supabase/agent-skills",
       "sourceType": "github",

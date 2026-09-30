@@ -4,9 +4,8 @@ import type { PipelineDetail } from '../../types/catalog'
 import { generatePipelineCode } from '../../api/client'
 import { downloadFile, pipelineToJson, slugify } from '../../utils/exportImport'
 import { FileText, FileCode2 } from 'lucide-react'
-import { Icon } from '@astryxdesign/core/Icon'
 import { Dialog, DialogTitle, DialogFooter } from './dialog'
-
+import { Button } from './button'
 const btnBase = "flex items-center justify-between w-full p-4 mb-2.5 rounded-md cursor-pointer bg-surface2 border border-border text-text font-bold text-sm disabled:opacity-50"
 
 export type ExportProps = {
@@ -53,20 +52,20 @@ export default function ExportModal({ title, resolve, onClose }: ExportProps) {
   return (
     <Dialog isOpen={open} onOpenChange={(o) => { if (!o) onClose() }}>
       <DialogTitle>{title}</DialogTitle>
-      <button className={btnBase} onClick={() => doExport('json')} disabled={busy !== null}>
+      <Button variant="outline" className={btnBase} onClick={() => doExport('json')} disabled={busy !== null}>
         <span>JSON de la pipeline</span>
-        <Icon icon={FileText} size="md" />
-      </button>
-      <button className={btnBase} onClick={() => doExport('code')} disabled={busy !== null}>
+        <FileText className="size-5" />
+      </Button>
+      <Button variant="outline" className={btnBase} onClick={() => doExport('code')} disabled={busy !== null}>
         <span>Code (main.py)</span>
-        <Icon icon={FileCode2} size="md" />
-      </button>
+        <FileCode2 className="size-5" />
+      </Button>
       {error && <div className="text-error text-xs font-bold">{error}</div>}
       {busy && <div className="text-text-muted text-xs mt-2">Préparation…</div>}
       <DialogFooter>
-        <button onClick={onClose} className="bg-transparent border border-border text-text-muted rounded-md px-4 py-2 font-bold text-xs cursor-pointer">
+        <Button variant="outline" onClick={onClose} className="bg-transparent border border-border text-text-muted rounded-md px-4 py-2 font-bold text-xs cursor-pointer">
           Annuler
-        </button>
+        </Button>
       </DialogFooter>
     </Dialog>
   )

@@ -4,9 +4,11 @@ import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { signUp } from '../services/auth'
 import SiteLayout from '../components/landing/SiteLayout'
-import { FormLayout } from '../components/ui/field'
-import { CheckCircle2, Circle } from 'lucide-react'
-import { Card, Button, TextInput } from '@astryxdesign/core'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Field, FieldLabel, FieldError } from '../components/ui/field'
+import { Loader2, CheckCircle2, Circle } from 'lucide-react'
 import { registerSchema, type RegisterInput } from '../schemas/auth'
 import { mapSupabaseError } from '../schemas/errors'
 
@@ -59,68 +61,87 @@ export default function RegisterPage() {
   return (
     <SiteLayout>
       <div className={s.wrapper} style={{ minHeight: '60vh' }}>
-        <Card width="100%" maxWidth={400} className="p-10">
-          <div className={s.title}>Inscription</div>
-          {error && <div className={s.error}>{error}</div>}
-          {done ? (
-            <div className="text-base font-bold mb-6 text-center text-text-muted">
-              Compte créé ! Vérifie tes emails pour confirmer.
-            </div>
-          ) : (
-            <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
-              <FormLayout>
-              <Controller
-                name="email"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <TextInput
-                    label="Email *"
-                    type="email"
-                    placeholder="exemple@mail.com"
-                    value={field.value}
-                    onChange={v => field.onChange(v)}
-                    status={fieldState.invalid ? { type: 'error', message: fieldState.error?.message } : undefined}
-                  />
-                )}
-              />
-              <Controller
-                name="password"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <TextInput
-                    label="Mot de passe *"
-                    type="password"
-                    placeholder="••••••"
-                    value={field.value}
-                    onChange={v => field.onChange(v)}
-                    status={fieldState.invalid ? { type: 'error', message: fieldState.error?.message } : undefined}
-                  />
-                )}
-              />
-              <div className="-mt-2 mb-3">
-                {rules.map(r => (
-                  <div key={r.label} className={ruleStyle(r.ok)}>{r.ok ? <CheckCircle2 size={14} /> : <Circle size={14} />} {r.label}</div>
-                ))}
+        <Card className="w-full bg-card border-border shadow-md" style={{ maxWidth: 400 }}>
+          <CardHeader className="p-6 pb-2">
+            <CardTitle className="text-2xl font-bold text-center text-foreground">Inscription</CardTitle>
+          </CardHeader>
+          <CardContent className="p-6 pt-2">
+            {error && <div className={s.error}>{error}</div>}
+            {done ? (
+              <div className="text-base font-bold mb-6 text-center text-muted-foreground">
+                Compte créé ! Vérifie tes emails pour confirmer.
               </div>
-              <Controller
-                name="confirm"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <TextInput
-                    label="Confirmer le mot de passe *"
-                    type="password"
-                    placeholder="••••••"
-                    value={field.value}
-                    onChange={v => field.onChange(v)}
-                    status={fieldState.invalid ? { type: 'error', message: fieldState.error?.message } : undefined}
-                  />
-                )}
-              />
-              <Button label={loading ? 'Création…' : 'Créer un compte'} variant="primary" type="submit" isLoading={loading} width="100%" />
-              </FormLayout>
-            </form>
-          )}
-          <button className={`${s.link} bg-none border-none`} onClick={() => navigate({ to: '/login' })}>Déjà un compte ? Se connecter</button>
+            ) : (
+              <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
+                <div className="flex flex-col gap-4">
+                <Controller
+                  name="email"
+                  control={form.control}
+                  render={({ field, fieldState }) => (
+                    <Field dataInvalid={fieldState.invalid}>
+                      <FieldLabel htmlFor="reg-email">Email *</FieldLabel>
+                      <Input
+                        id="reg-email"
+                        type="email"
+                        placeholder="exemple@mail.com"
+                        value={field.value}
+                        onChange={field.onChange}
+                        aria-invalid={fieldState.invalid}
+                      />
+                      <FieldError errors={[fieldState.error]} />
+                    </Field>
+                  )}
+                />
+                <Controller
+                  name="password"
+                  control={form.control}
+                  render={({ field, fieldState }) => (
+                    <Field dataInvalid={fieldState.invalid}>
+                      <FieldLabel htmlFor="reg-password">Mot de passe *</FieldLabel>
+                      <Input
+                        id="reg-password"
+                        type="password"
+                        placeholder="••••••"
+                        value={field.value}
+                        onChange={field.onChange}
+                        aria-invalid={fieldState.invalid}
+                      />
+                      <FieldError errors={[fieldState.error]} />
+                    </Field>
+                  )}
+                />
+                <div className="-mt-2 mb-3">
+                  {rules.map(r => (
+                    <div key={r.label} className={ruleStyle(r.ok)}>{r.ok ? <CheckCircle2 size={14} /> : <Circle size={14} />} {r.label}</div>
+                  ))}
+                </div>
+                <Controller
+                  name="confirm"
+                  control={form.control}
+                  render={({ field, fieldState }) => (
+                    <Field dataInvalid={fieldState.invalid}>
+                      <FieldLabel htmlFor="reg-confirm">Confirmer le mot de passe *</FieldLabel>
+                      <Input
+                        id="reg-confirm"
+                        type="password"
+                        placeholder="••••••"
+                        value={field.value}
+                        onChange={field.onChange}
+                        aria-invalid={fieldState.invalid}
+                      />
+                      <FieldError errors={[fieldState.error]} />
+                    </Field>
+                  )}
+                />
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading && <Loader2 className="animate-spin size-4 mr-2" />}
+                  {loading ? 'Création…' : 'Créer un compte'}
+                </Button>
+                </div>
+              </form>
+            )}
+            <button className={`${s.link} bg-transparent border-none w-full mt-4`} onClick={() => navigate({ to: '/login' })}>Déjà un compte ? Se connecter</button>
+          </CardContent>
         </Card>
       </div>
     </SiteLayout>

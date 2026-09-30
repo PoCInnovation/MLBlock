@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react'
 import { http } from '../../api/client'
 import { FileUp } from 'lucide-react'
-import { Icon } from '@astryxdesign/core/Icon'
-import { Card, VStack, HStack, Button } from '@astryxdesign/core'
-import { Heading, Text } from '@astryxdesign/core/Text'
+import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import type { Sample } from '../../utils/samples'
 import { Dialog, DialogTitle } from './dialog'
 
@@ -36,29 +35,34 @@ export default function SampleDataModal({ category, onPick, onChooseFile, onClos
     <Dialog isOpen={open} onOpenChange={(o) => { if (!o) onClose() }}>
       <DialogTitle>Données d'entraînement</DialogTitle>
 
-      <VStack gap={2}>
-        <Text type="label" className="uppercase tracking-wider">Utiliser nos données</Text>
-        {error && <Text type="body" color="secondary" className="text-error-light">{error}</Text>}
-        {!error && samples === null && <Text type="body" color="secondary">Chargement…</Text>}
+      <div className="flex flex-col gap-2">
+        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Utiliser nos données</label>
+        {error && <p className="text-sm text-destructive">{error}</p>}
+        {!error && samples === null && <p className="text-sm text-muted-foreground">Chargement…</p>}
         {!error && samples !== null && samples.length === 0 && (
-          <Text type="body" color="secondary">Aucune donnée d'exemple dans cette catégorie.</Text>
+          <p className="text-sm text-muted-foreground">Aucune donnée d'exemple dans cette catégorie.</p>
         )}
         {samples?.map(s => (
-          <Card key={s.id} variant="muted" padding={2}>
-            <HStack gap={2} className="justify-between items-center">
-              <VStack gap={1}>
-                <Heading level={5} className="text-sm">{s.name}</Heading>
-                <Text type="supporting" color="secondary">{s.description}</Text>
-                <Text type="supporting" color="secondary">{s.columns.length > 0 ? `${s.columns.length} colonnes · ` : ''}{s.rows} ligne(s)</Text>
-              </VStack>
-              <Button label="Utiliser" variant="primary" size="sm" onClick={() => onPick(s.url, s.name)} />
-            </HStack>
+          <Card key={s.id} className="bg-muted/50 border-border/50">
+            <CardContent className="p-3 flex justify-between items-center gap-2">
+              <div className="flex flex-col gap-1 flex-1 min-w-0">
+                <h3 className="font-heading text-sm font-semibold text-foreground m-0">{s.name}</h3>
+                <p className="text-xs text-muted-foreground">{s.description}</p>
+                <p className="text-xs text-muted-foreground opacity-80">{s.columns.length > 0 ? `${s.columns.length} colonnes · ` : ''}{s.rows} ligne(s)</p>
+              </div>
+              <Button variant="default" size="sm" onClick={() => onPick(s.url, s.name)}>
+                Utiliser
+              </Button>
+            </CardContent>
           </Card>
         ))}
 
-        <Text type="label" className="uppercase tracking-wider">Apporter vos données</Text>
-        <Button label="Choisir un fichier" variant="ghost" icon={<Icon icon={FileUp} size="sm" />} onClick={onChooseFile} className="w-full" />
-      </VStack>
+        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mt-2">Apporter vos données</label>
+        <Button variant="ghost" size="sm" onClick={onChooseFile} className="w-full justify-center gap-2">
+          <FileUp className="size-4" />
+          Choisir un fichier
+        </Button>
+      </div>
     </Dialog>
   )
 }

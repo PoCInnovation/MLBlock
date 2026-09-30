@@ -1,4 +1,4 @@
-import { Button } from '@astryxdesign/core'
+import { Button } from '@/components/ui/button'
 import { Dialog, DialogTitle, DialogDescription, DialogFooter } from '../ui/dialog'
 
 type Props = {
@@ -20,17 +20,19 @@ export default function ConverterDialog({ open, blockName, blockLabel, onConfirm
       </DialogDescription>
       <DialogFooter>
         <Button
-          label="Annuler"
           variant="secondary"
           size="sm"
           onClick={onCancel}
-        />
+        >
+          Annuler
+        </Button>
         <Button
-          label="Insérer"
-          variant="primary"
+          variant="default"
           size="sm"
           onClick={onConfirm}
-        />
+        >
+          Insérer
+        </Button>
       </DialogFooter>
     </Dialog>
   )

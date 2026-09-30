@@ -10,7 +10,7 @@ import {
   Activity,
   Cpu,
 } from 'lucide-react'
-import { Button, VStack } from '@astryxdesign/core'
+import { Button } from '@/components/ui/button'
 import useAppStore from '../../store/useAppStore'
 import { trackShapes, parseShapeString, formatShape, type TensorShape } from '../../utils/shapeTracker'
 import type { PipelineNode } from '../../types/catalog'
@@ -191,13 +191,15 @@ export function SequentialDrawerBody({ id, data, updateFlowParam }: SuperBlockBo
 
           <div className="relative pt-1">
             <Button
-              label="Ajouter une couche"
-              icon={<Plus size={14} />}
+              type="button"
               variant="secondary"
               size="sm"
               onClick={() => setIsPickerOpen(!isPickerOpen)}
               className="w-full text-xs font-bold py-1 flex items-center justify-center gap-1 rounded-lg"
-            />
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Ajouter une couche
+            </Button>
 
             {isPickerOpen && (
               <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-surface2 border border-border rounded-xl shadow-2xl p-1.5 flex flex-col gap-1 max-h-56 overflow-y-auto">
@@ -233,7 +235,7 @@ export function TrainerBody({ id, data, updateFlowParam }: SuperBlockBodyProps) 
   const myResult = results.find(r => r.block_name === 'deep_trainer' || r.block_id === id)
 
   return (
-    <VStack gap={2}>
+    <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between text-xs">
         <span className="text-text-muted">Époques:</span>
         <input
@@ -293,7 +295,7 @@ export function TrainerBody({ id, data, updateFlowParam }: SuperBlockBodyProps) 
           <span className="text-text-muted">Prêt</span>
         )}
       </div>
-    </VStack>
+    </div>
   )
 }
 
@@ -304,7 +306,7 @@ export function DataPipelineBody({ id, data, updateFlowParam }: SuperBlockBodyPr
   const normalize = data.fields?.normalize ?? 'true'
 
   return (
-    <VStack gap={2}>
+    <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between text-xs">
         <span className="text-text-muted">Dataset:</span>
         <select
@@ -353,7 +355,7 @@ export function DataPipelineBody({ id, data, updateFlowParam }: SuperBlockBodyPr
           className="cursor-pointer"
         />
       </div>
-    </VStack>
+    </div>
   )
 }
 
@@ -364,7 +366,7 @@ export function MLPipelineBody({ id, data, updateFlowParam }: SuperBlockBodyProp
   const targetCol = data.fields?.target_column ?? 'target'
 
   return (
-    <VStack gap={2}>
+    <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between text-xs">
         <span className="text-text-muted">Scaler:</span>
         <select
@@ -413,6 +415,6 @@ export function MLPipelineBody({ id, data, updateFlowParam }: SuperBlockBodyProp
           className="!bg-surface !border border-border rounded px-2 py-0.5 text-xs text-text font-mono w-20 text-right"
         />
       </div>
-    </VStack>
+    </div>
   )
 }
