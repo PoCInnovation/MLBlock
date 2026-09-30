@@ -11,7 +11,7 @@ import { loginSchema, type LoginInput } from '../schemas/auth'
 import { mapSupabaseError } from '../schemas/errors'
 
 const s: Record<string, string> = {
-  wrapper: 'flex items-center justify-center min-h-96 px-5 py-10',
+  wrapper: 'flex items-center justify-center px-5 py-10',
   title: 'text-2xl font-bold mb-6 text-center text-text',
   divider: 'flex items-center gap-3 my-4 text-divider text-xs',
   line: 'flex-1 h-px bg-border',
@@ -91,8 +91,8 @@ export default function LoginPage() {
 
   return (
     <SiteLayout>
-      <div className={s.wrapper}>
-        <Card className="p-10 w-full max-w-sm">
+      <div className={s.wrapper} style={{ minHeight: '60vh' }}>
+        <Card width="100%" maxWidth={400} className="p-10">
           <div className={s.title}>Connexion</div>
           {error && <div className={s.error}>{error}</div>}
           {magicSent ? (

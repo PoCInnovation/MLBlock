@@ -9,7 +9,7 @@ export default function EditorUnavailableModal() {
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-      <div className="bg-surface2 border border-white/10 rounded-2xl p-10 text-center max-w-sm w-11/12">
+      <div className="bg-surface2 border border-white/10 rounded-2xl p-10 text-center w-11/12" style={{ maxWidth: 400 }}>
         <div className="text-4xl mb-4 text-warning"><Icon icon={CloudOff} size="lg" /></div>
         <div className="font-heading font-bold text-xl mb-2.5 text-text">
           Éditeur non disponible

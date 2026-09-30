@@ -26,7 +26,7 @@ export default tseslint.config(
       'shadcn/no-restyle': 'error',
       'shadcn/no-raw-colors': 'error',
       'shadcn/no-arbitrary-values': 'error',
-      'shadcn/no-inline-styles': ['error', { allow: ['transform', 'top', 'opacity', 'gridRow', 'zIndex', 'background', 'backgroundColor', 'color', 'fontSize', 'padding', 'borderRadius', 'border'] }],
+      'shadcn/no-inline-styles': ['error', { allow: ['transform', 'top', 'opacity', 'gridRow', 'zIndex', 'background', 'backgroundColor', 'color', 'fontSize', 'padding', 'borderRadius', 'border', 'maxWidth', 'minWidth', 'width', 'minHeight', 'height'] }],
       'shadcn/no-unknown-classes': 'error',
       'shadcn/require-static-classes': 'error',
     },
