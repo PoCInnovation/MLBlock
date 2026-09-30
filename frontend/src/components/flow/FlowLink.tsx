@@ -1,7 +1,6 @@
 import { memo, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { EdgeLabelRenderer, getSmoothStepPath, type EdgeProps } from '@xyflow/react'
 import useAppStore from '../../store/useAppStore'
-import { theme } from '../../theme'
 
 /** Rayon des coins du routage. */
 const CORNER = 16
@@ -66,7 +65,8 @@ function FlowLink({ id, sourceX, sourceY, sourcePosition, targetX, targetY, targ
       <path
         ref={pathRef}
         d={d}
-        className="react-flow__edge-path fill-none stroke-[2.5]"
+        fill="none"
+        className="react-flow__edge-path stroke-2"
         style={style}
         markerEnd={`url(#${markerId})`}
       />
@@ -92,7 +92,6 @@ function FlowLink({ id, sourceX, sourceY, sourcePosition, targetX, targetY, targ
         <EdgeLabelRenderer>
           <button
             type="button"
-            className="edge-delete-btn"
             title="Supprimer le lien"
             aria-label="Supprimer le lien"
             onClick={e => {
@@ -101,24 +100,9 @@ function FlowLink({ id, sourceX, sourceY, sourcePosition, targetX, targetY, targ
               useAppStore.getState().commitUndoPoint()
               applyFlowEdgeChanges([{ id, type: 'remove' }])
             }}
+            className="edge-delete-btn absolute w-6 h-6 rounded-full border border-border bg-surface2 text-text-muted text-xs flex items-center justify-center cursor-pointer z-10 pointer-events-auto shadow-btn"
             style={{
-              position: 'absolute',
               transform: `translate(-50%, -50%) translate(${center.x}px, ${center.y}px)`,
-              width: 24,
-              height: 24,
-              borderRadius: 999,
-              border: `1px solid ${theme.color.border}`,
-              background: theme.color.surface2,
-              color: theme.color.textMuted,
-              fontSize: 13,
-              lineHeight: 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              zIndex: 10,
-              pointerEvents: 'auto',
-              boxShadow: theme.shadow.btn,
             }}
           >
             ✕

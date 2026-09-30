@@ -4,61 +4,7 @@ import useAppStore from '../../store/useAppStore'
 import { colorFor } from '../../utils/blockHelpers'
 import { shouldIgnoreTap } from '../../utils/tapGuard'
 import { ALL_STAGES, stageOfBlock, stageKey } from '../../utils/stages'
-import { theme } from '../../theme'
 import { Badge, Switch, ToggleButtonGroup, ToggleButton, Grid, ClickableCard, IconButton, TextInput } from '@astryxdesign/core'
-
-const paletteStyle: React.CSSProperties = {
-  width: '100%',
-  height: '100%',
-  flex: 1,
-  alignSelf: 'stretch',
-  display: 'flex',
-  flexDirection: 'column',
-  minHeight: 0,
-  background: theme.color.surface2,
-  border: `1px solid ${theme.color.border}`,
-  borderRadius: theme.radius.xl,
-  boxShadow: '0 8px 32px rgba(0,0,0,.12)',
-  backdropFilter: 'blur(8px)',
-  overflow: 'hidden',
-  transition: 'none',
-}
-const headerStyle: React.CSSProperties = {
-  padding: '14px 18px 12px',
-  borderBottom: `1px solid ${theme.color.border}`,
-  flexShrink: 0,
-  fontFamily: theme.font.heading,
-  fontWeight: 600,
-  fontSize: 17,
-  color: theme.color.text,
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'stretch',
-}
-
-const scrollStyle: React.CSSProperties = {
-  flex: 1,
-  overflowY: 'auto',
-  padding: '14px 14px 28px',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 10,
-}
-
-const emptyStyle: React.CSSProperties = {
-  color: theme.color.textDim,
-  fontSize: 13,
-  textAlign: 'center',
-  padding: '20px 0',
-}
-
-const dotStyle = (color: string): React.CSSProperties => ({
-  width: 10,
-  height: 10,
-  borderRadius: 3,
-  background: color,
-  flexShrink: 0,
-})
 
 type FlowPaletteProps = {
   onDragStart: (e: React.DragEvent, type: string) => void
@@ -122,11 +68,11 @@ const FlowPalette = memo(function FlowPalette({ onDragStart, onAdd, onClose, onT
   const hasAnyMatch = Object.keys(catalog.blocks).some(matches)
 
   return (
-    <div style={paletteStyle} className="floating-panel flow-palette-inner">
-      <div style={headerStyle}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+    <div className="floating-panel w-full h-full flex-1 self-stretch flex flex-col min-h-0 bg-surface2 border border-border rounded-2xl shadow-lg backdrop-blur-sm overflow-hidden">
+      <div className="px-4.5 pt-3.5 pb-3 border-b border-border shrink-0 font-heading font-semibold text-base text-text flex flex-col items-stretch">
+        <div className="flex items-center justify-between">
           <span>Blocks</span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <div className="flex items-center gap-1">
             {onToggleCollapse && (
               <IconButton
                 label="Replier la palette"
@@ -140,7 +86,7 @@ const FlowPalette = memo(function FlowPalette({ onDragStart, onAdd, onClose, onT
               <button
                 onClick={onClose}
                 aria-label="Fermer"
-                style={{ background: 'none', border: 'none', color: theme.color.textMuted, cursor: 'pointer', fontWeight: 900, fontSize: 16, width: 36, height: 36, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: 999 }}
+                className="bg-transparent border-none text-text-muted cursor-pointer font-black text-base w-9 h-9 inline-flex items-center justify-center rounded-full"
               >
                 <X size={17} />
               </button>
@@ -154,8 +100,8 @@ const FlowPalette = memo(function FlowPalette({ onDragStart, onAdd, onClose, onT
           onChange={setQuery}
           placeholder="Rechercher un Block…"
         />
-        <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: 12, fontWeight: 700, color: theme.color.textMuted }}>Filtres</span>
+        <div className="mt-2.5 flex items-center justify-between">
+          <span className="text-xs font-bold text-text-muted">Filtres</span>
           <IconButton
             label={filtersOpen ? 'Replier les filtres' : 'Déplier les filtres'}
             icon={filtersOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
@@ -165,7 +111,7 @@ const FlowPalette = memo(function FlowPalette({ onDragStart, onAdd, onClose, onT
           />
         </div>
         {filtersOpen && (
-          <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div className="mt-2 flex flex-col gap-2.5">
             <ToggleButtonGroup
               type="single"
               label="Stages"
@@ -180,8 +126,8 @@ const FlowPalette = memo(function FlowPalette({ onDragStart, onAdd, onClose, onT
                 ))}
               </Grid>
             </ToggleButtonGroup>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '2px 4px' }}>
-              <span style={{ fontSize: 12, fontWeight: 600, color: theme.color.textMuted }}>Avancé</span>
+            <div className="flex items-center justify-between px-1 py-0.5">
+              <span className="text-xs font-semibold text-text-muted">Avancé</span>
               <Switch
                 label="Avancé"
                 isLabelHidden
@@ -193,9 +139,9 @@ const FlowPalette = memo(function FlowPalette({ onDragStart, onAdd, onClose, onT
           </div>
         )}
       </div>
-      <div style={scrollStyle}>
+      <div className="flex-1 overflow-y-auto px-3.5 pt-3.5 pb-7 flex flex-col gap-2.5">
         {!hasAnyMatch && (
-          <div style={{ color: theme.color.textMuted, fontSize: 13, fontWeight: 600, padding: '18px 6px', textAlign: 'center' }}>
+          <div className="text-text-muted text-sm font-semibold px-1.5 py-4.5 text-center">
             Aucun Block ne correspond
           </div>
         )}
@@ -208,27 +154,20 @@ const FlowPalette = memo(function FlowPalette({ onDragStart, onAdd, onClose, onT
           if (types.length === 0) return null
           return (
             <div key={s.id}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '14px 0 8px' }}>
+              <div className="flex items-center gap-2 mt-3.5 mb-2">
                 <Badge
                   label={s.key}
-                  style={{
-                    backgroundColor: `${s.color}22`,
-                    color: s.color,
-                    border: `1px solid ${s.color}66`,
-                    fontSize: 10,
-                    fontWeight: 800,
-                    padding: '1px 5px',
-                    borderRadius: 4,
-                  }}
+                  className="text-xs font-extrabold px-1.25 py-px rounded border"
+                  style={{ backgroundColor: `${s.color}22`, color: s.color, border: `1px solid ${s.color}66` }}
                 />
-                <span style={{ fontFamily: theme.font.heading, fontWeight: 700, fontSize: 13, color: theme.color.text }}>
+                <span className="font-heading font-bold text-xs text-text">
                   {s.label}
                 </span>
-                <span style={{ fontSize: 11, color: theme.color.textMuted, marginLeft: 'auto' }}>
+                <span className="text-xs text-text-muted ml-auto">
                   {types.length} {types.length > 1 ? 'Blocks' : 'Block'}
                 </span>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div className="flex flex-col gap-1.5">
                 {types.map(type => {
                   const def = catalog.blocks[type]
                   const label = def.segs.find(s => s.t === 'text')?.v ?? type
@@ -244,15 +183,18 @@ const FlowPalette = memo(function FlowPalette({ onDragStart, onAdd, onClose, onT
                         onDragStart={e => { dragStarted.current = true; onDragStart(e, type) }}
                         onPointerDown={e => { dragStarted.current = false; pressStart.current = { x: e.clientX, y: e.clientY } }}
                         onKeyDown={e => handleItemKeyDown(type, e)}
-                        style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', cursor: 'grab' }}
+                        className="flex items-center gap-2 w-full cursor-grab"
                         title={def.description || undefined}
                         role="button"
                         tabIndex={0}
                       >
-                        <span style={dotStyle(colorFor(def.cat, categories))} />
-                        <span style={{ fontSize: 13, fontWeight: 700, color: theme.color.text }}>{label}</span>
+                        <span
+                          className="w-2.5 h-2.5 rounded-sm shrink-0"
+                          style={{ background: colorFor(def.cat, categories) }}
+                        />
+                        <span className="text-xs font-bold text-text">{label}</span>
                         {def.advanced && (
-                          <span style={{ fontSize: 10, color: theme.color.textDim, marginLeft: 'auto', fontWeight: 600 }}>
+                          <span className="text-xs text-text-dim ml-auto font-semibold">
                             Avancé
                           </span>
                         )}
@@ -265,7 +207,7 @@ const FlowPalette = memo(function FlowPalette({ onDragStart, onAdd, onClose, onT
           )
         })}
         {Object.keys(catalog.blocks).filter(matches).length === 0 && (
-          <div style={emptyStyle}>Aucun Block trouvé</div>
+          <div className="text-text-dim text-xs text-center py-5">Aucun Block trouvé</div>
         )}
       </div>
     </div>

@@ -1,11 +1,18 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from '@tanstack/react-router'
 import { Menu, X } from 'lucide-react'
 import { Icon } from '@astryxdesign/core/Icon'
 import useAppStore from '../../store/useAppStore'
 import { signOut } from '../../services/auth'
-import { theme } from '../../theme'
 import { Button, HStack } from '@astryxdesign/core'
+
+const NAV_LINK_BASE = 'bg-transparent border-none cursor-pointer text-sm font-bold pb-0.5 border-b-2 transition-colors duration-150'
+
+function navLinkClass(active: boolean) {
+  return `${NAV_LINK_BASE} ${active ? 'text-accent-light border-accent-light' : 'text-text-muted border-transparent'}`
+}
+
+const MENU_LINK = 'block w-full bg-transparent border-none text-left px-5 py-3.5 text-sm font-bold text-text cursor-pointer'
 
 export default function HomeNav() {
   const location = useLocation()
@@ -47,16 +54,6 @@ export default function HomeNav() {
     }
   }
 
-  const linkStyle = (active: boolean): CSSProperties => ({
-    fontSize: 15,
-    fontWeight: 700,
-    color: active ? theme.color.accentLight : theme.color.textMuted,
-    cursor: 'pointer',
-    borderBottom: active ? `2px solid ${theme.color.accentLight}` : '2px solid transparent',
-    paddingBottom: 2,
-    transition: 'color .15s, border-color .15s',
-  })
-
   const go = (fn: () => void) => { setOpen(false); fn() }
 
   const handleAuth = () => {
@@ -69,31 +66,25 @@ export default function HomeNav() {
     })
   }
 
-  const menuLinkStyle: CSSProperties = {
-    display: 'block', width: '100%', background: 'none', border: 'none',
-    textAlign: 'left', padding: '14px 20px', fontSize: 15, fontWeight: 700,
-    color: theme.color.text, cursor: 'pointer',
-  }
-
   return (
     <div ref={navWrapRef}>
-      <nav className="landing-nav" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '22px 48px', maxWidth: 1240, margin: '0 auto' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+      <nav className="landing-nav flex items-center justify-between px-12 py-5.5 max-w-310 mx-auto">
+        <div className="flex items-center gap-2.5">
           <div
             onClick={() => navigate({ to: '/' })}
-            style={{ display: 'flex', alignItems: 'center', gap: 11, cursor: 'pointer' }}
+            className="flex items-center gap-2.5 cursor-pointer"
           >
-            <div style={{ width: 34, height: 34, borderRadius: 10, background: theme.color.accent, boxShadow: theme.shadow.btn, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <div style={{ width: 13, height: 13, background: '#fff', borderRadius: 4 }} />
+            <div className="w-8.5 h-8.5 rounded-md bg-accent shadow-btn flex items-center justify-center">
+              <div className="w-3.25 h-3.25 bg-white rounded-xs" />
             </div>
-            <span style={{ fontFamily: theme.font.heading, fontWeight: 600, fontSize: 23, letterSpacing: '-.01em' }}>MLBlock</span>
+            <span className="font-heading font-semibold text-2xl tracking-tight">MLBlock</span>
           </div>
         </div>
-        <HStack gap={4} style={{ display: 'flex', alignItems: 'center', gap: 30 } as unknown as CSSProperties} className="landing-nav-links">
-          <button onClick={handleDecouvrir} style={{ ...linkStyle(false), background: 'none', border: 'none' }}>Découvrir</button>
-          <button onClick={() => navigate({ to: '/cours' })} style={{ ...linkStyle(location.pathname.startsWith('/cours')), background: 'none', border: 'none' }}>Cours</button>
-          <button onClick={() => navigate({ to: '/how-it-works' })} style={{ ...linkStyle(location.pathname === '/how-it-works'), background: 'none', border: 'none' }}>Comment ça marche</button>
-          <button onClick={() => navigate({ to: '/about' })} style={{ ...linkStyle(location.pathname === '/about'), background: 'none', border: 'none' }}>Qui sommes nous</button>
+        <HStack gap={4} className="landing-nav-links items-center">
+          <button onClick={handleDecouvrir} className={navLinkClass(false)}>Découvrir</button>
+          <button onClick={() => navigate({ to: '/cours' })} className={navLinkClass(location.pathname.startsWith('/cours'))}>Cours</button>
+          <button onClick={() => navigate({ to: '/how-it-works' })} className={navLinkClass(location.pathname === '/how-it-works')}>Comment ça marche</button>
+          <button onClick={() => navigate({ to: '/about' })} className={navLinkClass(location.pathname === '/about')}>Qui sommes nous</button>
           <Button label="Mes projets" variant="primary" size="md" onClick={() => navigate({ to: '/projets' })} />
           <Button label={user ? 'Déconnexion' : 'Connexion'} variant="secondary" size="md" onClick={handleAuth} />
         </HStack>
@@ -108,12 +99,12 @@ export default function HomeNav() {
       </nav>
       {open && (
         <div className="landing-nav-menu">
-          <button onClick={() => go(handleDecouvrir)} style={menuLinkStyle}>Découvrir</button>
-          <button onClick={() => go(() => navigate({ to: '/cours' }))} style={menuLinkStyle}>Cours</button>
-          <button onClick={() => go(() => navigate({ to: '/how-it-works' }))} style={menuLinkStyle}>Comment ça marche</button>
-          <button onClick={() => go(() => navigate({ to: '/about' }))} style={menuLinkStyle}>Qui sommes nous</button>
-          <button onClick={() => go(() => navigate({ to: '/projets' }))} style={{ ...menuLinkStyle, color: theme.color.accentLight }}>Mes projets</button>
-          <button onClick={handleAuth} style={menuLinkStyle}>{user ? 'Déconnexion' : 'Connexion'}</button>
+          <button onClick={() => go(handleDecouvrir)} className={MENU_LINK}>Découvrir</button>
+          <button onClick={() => go(() => navigate({ to: '/cours' }))} className={MENU_LINK}>Cours</button>
+          <button onClick={() => go(() => navigate({ to: '/how-it-works' }))} className={MENU_LINK}>Comment ça marche</button>
+          <button onClick={() => go(() => navigate({ to: '/about' }))} className={MENU_LINK}>Qui sommes nous</button>
+          <button onClick={() => go(() => navigate({ to: '/projets' }))} className={`${MENU_LINK} text-accent-light`}>Mes projets</button>
+          <button onClick={handleAuth} className={MENU_LINK}>{user ? 'Déconnexion' : 'Connexion'}</button>
         </div>
       )}
     </div>

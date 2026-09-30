@@ -49,9 +49,9 @@ function CoursCatalogPage() {
   if (pathname !== '/cours') return <Outlet />
   return (
     <SiteLayout>
-      <div style={{ maxWidth: 1440, margin: '0 auto', padding: '24px 24px 48px' }}>
-        <HStack gap={6} style={{ alignItems: 'flex-start' }}>
-          <VStack gap={3} style={{ width: 260, flexShrink: 0, position: 'sticky', top: 24 }}>
+      <div className="max-w-7xl mx-auto px-6 py-12">
+        <HStack gap={6} className="items-start">
+          <VStack gap={3} className="w-64 shrink-0 sticky top-6">
             <Breadcrumbs>
               <BreadcrumbItem href="/">Accueil</BreadcrumbItem>
               <BreadcrumbItem isCurrent>Cours</BreadcrumbItem>
@@ -61,15 +61,15 @@ function CoursCatalogPage() {
             <TextInput label="Rechercher un cours" isLabelHidden value={q} onChange={setQ} placeholder="Rechercher un cours…" />
             <TreeList items={treeItems} />
           </VStack>
-          <VStack gap={3} style={{ flex: '1 1 0%', minWidth: 0 }}>
-            <HStack gap={2} style={{ alignItems: 'center', justifyContent: 'space-between' }}>
+          <VStack gap={3} className="flex-1 min-w-0">
+            <HStack gap={2} className="items-center justify-between">
               <Text color="secondary">{filtered.length} cours</Text>
-              <Link to="/" style={{ color: 'var(--color-accent)', fontWeight: 700, textDecoration: 'none' }}>
+              <Link to="/" className="text-accent font-bold no-underline">
                 ← Accueil
               </Link>
             </HStack>
             {filtered.length === 0 ? (
-              <Text color="secondary" style={{ textAlign: 'center', padding: '24px 0' }}>
+              <Text color="secondary" className="text-center py-6">
                 Aucun cours trouvé
               </Text>
             ) : (

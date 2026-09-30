@@ -1,8 +1,6 @@
 import useAppStore from '../../store/useAppStore'
-import { theme } from '../../theme'
 import { Card, VStack, Text } from '@astryxdesign/core'
 import { Text as AstryxText } from '@astryxdesign/core/Text'
-
 type TypedOutput =
   | { type: 'image'; mime: string; data: string }
   | { type: 'curve'; points: number[] }
@@ -22,7 +20,7 @@ function parseOutput(raw: string): TypedOutput {
 
 function Curve({ points }: { points: number[] }) {
   if (points.length < 2) {
-    return <div style={{ color: theme.color.textMuted, fontSize: 12 }}>Courbe insuffisante ({points.length} point(s))</div>
+    return <div className="text-text-muted text-xs">Courbe insuffisante ({points.length} point(s))</div>
   }
   const min = Math.min(...points)
   const max = Math.max(...points)
@@ -31,22 +29,21 @@ function Curve({ points }: { points: number[] }) {
     .map((v, i) => `${((i / (points.length - 1)) * 100).toFixed(2)},${(50 - ((v - min) / span) * 45 - 2.5).toFixed(2)}`)
     .join(' ')
   return (
-    <svg viewBox="0 0 100 50" preserveAspectRatio="none" style={{ width: '100%', height: 110, background: 'rgba(255,255,255,.03)', borderRadius: 8, display: 'block' }}>
-      <polyline points={pts} fill="none" stroke={theme.color.accentLight} strokeWidth="1.5" />
+    <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-28 bg-white/5 rounded-lg block">
+      <polyline points={pts} fill="none" className="stroke-accent-light" strokeWidth="1.5" />
     </svg>
   )
 }
-
 function OutputCard({ block, raw }: { block: string; raw: string }) {
   const out = parseOutput(raw)
-  const header = <Text type="label" style={{ opacity: 0.7 }}>{block}</Text>
+  const header = <Text type="label" className="opacity-70">{block}</Text>
   switch (out.type) {
     case 'image':
       return (
         <Card variant="muted" padding={2}>
           <VStack gap={2}>
             {header}
-            <img src={`data:${out.mime ?? 'image/png'};base64,${out.data}`} alt={block} style={{ maxWidth: '100%', maxHeight: 220, borderRadius: 6, display: 'block' }} />
+            <img src={`data:${out.mime ?? 'image/png'};base64,${out.data}`} alt={block} className="max-w-full max-h-56 rounded-md block" />
           </VStack>
         </Card>
       )
@@ -64,7 +61,7 @@ function OutputCard({ block, raw }: { block: string; raw: string }) {
         <Card variant="muted" padding={2}>
           <VStack gap={1}>
             {header}
-            <Text style={{ fontWeight: 800, fontSize: 18, color: theme.color.success }}>{out.value}</Text>
+            <Text className="font-extrabold text-lg text-success">{out.value}</Text>
           </VStack>
         </Card>
       )
@@ -73,11 +70,11 @@ function OutputCard({ block, raw }: { block: string; raw: string }) {
         <Card variant="muted" padding={2}>
           <VStack gap={2}>
             {header}
-            <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '4px 14px', fontSize: 13 }}>
+            <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
               {Object.entries(out.values).map(([k, v]) => (
-                <div key={k} style={{ display: 'contents' }}>
-                  <AstryxText type="label" style={{ opacity: 0.75 }}>{k}</AstryxText>
-                  <AstryxText type="body" style={{ fontWeight: 800 }}>{String(v)}</AstryxText>
+                <div key={k} className="contents">
+                  <AstryxText type="label" className="opacity-75">{k}</AstryxText>
+                  <AstryxText type="body" className="font-extrabold">{String(v)}</AstryxText>
                 </div>
               ))}
             </div>
@@ -89,7 +86,7 @@ function OutputCard({ block, raw }: { block: string; raw: string }) {
         <Card variant="muted" padding={2}>
           <VStack gap={2}>
             {header}
-            <AstryxText type="body" style={{ fontFamily: 'ui-monospace, monospace', fontSize: 12.5 }}>{out.text}</AstryxText>
+            <AstryxText type="body" className="font-mono text-xs">{out.text}</AstryxText>
           </VStack>
         </Card>
       )
@@ -99,10 +96,10 @@ function OutputCard({ block, raw }: { block: string; raw: string }) {
 export default function ResultsPanel() {
   const results = useAppStore(s => s.results)
   if (results.length === 0) {
-    return <Text type="body" style={{ padding: 18, color: theme.color.textMuted }}>Aucun résultat pour ce run.</Text>
+    return <Text type="body" className="p-4 text-text-muted">Aucun résultat pour ce run.</Text>
   }
   return (
-    <VStack gap={2} style={{ padding: 14, overflowY: 'auto', flex: 1 }}>
+    <VStack gap={2} className="p-3.5 overflow-y-auto flex-1">
       {results.map((r, i) => <OutputCard key={i} block={r.block_name} raw={r.output} />)}
     </VStack>
   )

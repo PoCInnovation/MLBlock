@@ -4,8 +4,6 @@ import useAppStore from '../../store/useAppStore'
 import { listPipelineJobs, getJobOutputs, getPipeline } from '../../api/client'
 import { Badge, Card, VStack, HStack, Button, ToggleButtonGroup, ToggleButton, Divider } from '@astryxdesign/core'
 import { Text, Heading } from '@astryxdesign/core/Text'
-import { theme } from '../../theme'
-
 type TypedOutput =
   | { type: 'image'; mime: string; data: string }
   | { type: 'curve'; points: number[] }
@@ -25,7 +23,7 @@ function parseOutput(raw: string): TypedOutput {
 
 function Curve({ points }: { points: number[] }) {
   if (points.length < 2) {
-    return <div style={{ color: theme.color.textMuted, fontSize: 12 }}>Courbe insuffisante ({points.length} point(s))</div>
+    return <div className="text-text-muted text-xs">Courbe insuffisante ({points.length} point(s))</div>
   }
   const min = Math.min(...points)
   const max = Math.max(...points)
@@ -34,8 +32,8 @@ function Curve({ points }: { points: number[] }) {
     .map((v, i) => `${((i / (points.length - 1)) * 100).toFixed(2)},${(50 - ((v - min) / span) * 45 - 2.5).toFixed(2)}`)
     .join(' ')
   return (
-    <svg viewBox="0 0 100 50" preserveAspectRatio="none" style={{ width: '100%', height: 110, background: 'rgba(255,255,255,.03)', borderRadius: 8, display: 'block' }}>
-      <polyline points={pts} fill="none" stroke={theme.color.accentLight} strokeWidth="1.5" />
+    <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-28 bg-white/5 rounded-lg block">
+      <polyline points={pts} fill="none" className="stroke-accent-light" strokeWidth="1.5" />
     </svg>
   )
 }
@@ -45,42 +43,41 @@ function OutputRenderer({ raw }: { raw: string }) {
   switch (out.type) {
     case 'image':
       return (
-        <div style={{ marginTop: 4 }}>
-          <img src={`data:${out.mime ?? 'image/png'};base64,${out.data}`} alt="Résultat" style={{ maxWidth: '100%', maxHeight: 240, borderRadius: 6, display: 'block' }} />
+        <div className="mt-1">
+          <img src={`data:${out.mime ?? 'image/png'};base64,${out.data}`} alt="Résultat" className="max-w-full max-h-60 rounded-md block" />
         </div>
       )
     case 'curve':
       return (
-        <div style={{ marginTop: 4 }}>
+        <div className="mt-1">
           <Curve points={out.points} />
         </div>
       )
     case 'metric':
       return (
-        <div style={{ marginTop: 4, display: 'flex', alignItems: 'baseline', gap: 6 }}>
-          <Text style={{ fontWeight: 800, fontSize: 20, color: theme.color.success }}>{out.value}</Text>
+        <div className="mt-1 flex items-baseline gap-1.5">
+          <Text className="font-extrabold text-xl text-success">{out.value}</Text>
         </div>
       )
     case 'metrics':
       return (
-        <div style={{ marginTop: 4, display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '4px 14px', fontSize: 12 }}>
+        <div className="mt-1 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
           {Object.entries(out.values).map(([k, v]) => (
-            <div key={k} style={{ display: 'contents' }}>
-              <span style={{ color: theme.color.textMuted, fontWeight: 600 }}>{k} :</span>
-              <span style={{ fontWeight: 800, color: theme.color.text }}>{String(v)}</span>
+            <div key={k} className="contents">
+              <span className="text-text-muted font-semibold">{k} :</span>
+              <span className="font-extrabold text-text">{String(v)}</span>
             </div>
           ))}
         </div>
       )
     default:
       return (
-        <Text type="body" style={{ fontSize: 12, whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: theme.font.mono }}>
+        <Text type="body" className="text-xs whitespace-pre-wrap break-words font-mono">
           {raw.slice(0, 2000)}
         </Text>
       )
   }
 }
-
 type Filter = 'logs' | 'outputs' | 'mixte'
 
 export default function JournalPanel() {
@@ -137,7 +134,7 @@ export default function JournalPanel() {
     return (
       <VStack gap={2}>
         <Heading level={5}>Journal</Heading>
-        <Text type="body" color="secondary" style={{ textAlign: 'center', padding: '18px 6px' }}>
+        <Text type="body" color="secondary" className="text-center py-4 px-1.5">
           Aucune Pipeline sélectionnée
         </Text>
       </VStack>
@@ -157,9 +154,9 @@ export default function JournalPanel() {
 
   if (jobs.length === 0) {
     return (
-      <VStack gap={3} style={{ minHeight: 0 }}>
+      <VStack gap={3} className="min-h-0">
         <Heading level={5}>Journal</Heading>
-        <Text type="body" color="secondary" style={{ textAlign: 'center', padding: '18px 6px' }}>
+        <Text type="body" color="secondary" className="text-center py-4 px-1.5">
           Aucune exécution
         </Text>
       </VStack>
@@ -208,19 +205,10 @@ export default function JournalPanel() {
     })()
 
     return (
-      <VStack gap={3} style={{ minHeight: 0, flex: 1, height: '100%', overflow: 'hidden' }}>
+      <VStack gap={3} className="min-h-0 flex-1 h-full overflow-hidden">
         <button
           onClick={() => setSelectedJobId(null)}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: theme.color.textMuted,
-            cursor: 'pointer',
-            fontSize: 13,
-            fontWeight: 700,
-            textAlign: 'left',
-            padding: 0,
-          }}
+          className="bg-transparent border-none text-text-muted cursor-pointer text-xs font-bold text-left p-0"
         >
           ← Retour au journal
         </button>
@@ -239,27 +227,27 @@ export default function JournalPanel() {
         </ToggleButtonGroup>
         <Button label="Restaurer cette version" variant="primary" size="sm" onClick={handleRestore} isDisabled={!selectedJobId} />
         <Divider />
-        <VStack gap={2} style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: 2 }}>
+        <VStack gap={2} className="flex-1 min-h-0 overflow-y-auto pr-0.5">
           {fused.length === 0 ? (
-            <Text type="body" color="secondary" style={{ textAlign: 'center', padding: '10px 6px' }}>
+            <Text type="body" color="secondary" className="text-center py-2.5 px-1.5">
               Aucune donnée
             </Text>
           ) : (
             fused.map((it, i) => (
               <Card key={`${it.id}-${i}`} variant="muted" padding={2}>
                 <VStack gap={1}>
-                  <HStack gap={2} style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                  <HStack gap={2} className="justify-between items-center">
                     {it.block && <Text type="label" color="secondary">{it.block}</Text>}
                     <Badge label={it.kind === 'output' ? 'Sortie' : 'Log'} variant={it.kind === 'output' ? 'success' : 'neutral'} />
                   </HStack>
                   {it.kind === 'output' ? (
                     <OutputRenderer raw={it.text} />
                   ) : (
-                    <Text type="body" style={{ fontSize: 12, whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: theme.font.mono }}>
+                    <Text type="body" className="text-xs whitespace-pre-wrap break-words font-mono">
                       {it.text.slice(0, 2000)}
                     </Text>
                   )}
-                  <Text type="supporting" color="secondary" style={{ fontSize: 10 }}>
+                  <Text type="supporting" color="secondary" className="text-xs">
                     {new Date(it.at).toLocaleTimeString('fr-FR')}
                   </Text>
                 </VStack>
@@ -273,18 +261,18 @@ export default function JournalPanel() {
 
   // List view: all Jobs
   return (
-    <VStack gap={3} style={{ minHeight: 0, flex: 1, height: '100%', overflow: 'hidden' }}>
+    <VStack gap={3} className="min-h-0 flex-1 h-full overflow-hidden">
       <Heading level={5}>Journal</Heading>
       <Text type="label" color="secondary">
         Exécutions
       </Text>
-      <VStack gap={1} style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: 2 }}>
+      <VStack gap={1} className="flex-1 min-h-0 overflow-y-auto pr-0.5">
         {jobs.map(j => (
           <Card key={j.id} variant="muted" padding={2} className="cursor-pointer" onClick={() => setSelectedJobId(j.id)}>
             <VStack gap={1}>
-              <HStack gap={2} style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-                <HStack gap={1} style={{ alignItems: 'center' }}>
-                  <Text type="body" style={{ fontWeight: 700 }}>
+              <HStack gap={2} className="justify-between items-center">
+                <HStack gap={1} className="items-center">
+                  <Text type="body" className="font-bold">
                     {fmtTime(j.created_at)}
                   </Text>
                   <Badge label={execType(j)} variant={execType(j) === 'Locale' ? 'neutral' : 'info'} />
@@ -294,7 +282,7 @@ export default function JournalPanel() {
                 </Text>
               </HStack>
               {j.status === 'error' && j.error ? (
-                <Text type="body" style={{ fontSize: 11, color: theme.color.error, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                <Text type="body" className="text-xs text-error whitespace-pre-wrap break-words">
                   {j.error.slice(0, 220)}
                 </Text>
               ) : null}

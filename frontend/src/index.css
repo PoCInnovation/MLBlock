@@ -61,6 +61,33 @@
   --shadow-btn-heavy: 0 4px 0 rgba(0,0,0,.25);
 }
 
+@utility block-drag-handle {
+  cursor: grab;
+}
+@utility react-flow__edge-path {
+  stroke-linecap: round;
+}
+@utility edge-delete-btn {
+  line-height: 1;
+}
+@utility block-delete-btn {
+  line-height: 1;
+}
+@utility hero-card-shadow {
+  box-shadow: 0 30px 60px rgba(0,0,0,.4);
+}
+@utility hero-block-shadow {
+  box-shadow: 0 2px 0 rgba(0,0,0,.18);
+}
+@utility feature-icon-shadow {
+  box-shadow: 0 3px 0 rgba(0,0,0,.2);
+}
+@utility hero-float {
+  animation: mlbFloat 5s ease-in-out infinite;
+}
+@utility hero-grid-cols {
+  grid-template-columns: 1.05fr .95fr;
+}
 @layer base {
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }

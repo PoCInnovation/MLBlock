@@ -37,17 +37,17 @@ export default function SampleDataModal({ category, onPick, onChooseFile, onClos
       <DialogTitle>Données d'entraînement</DialogTitle>
 
       <VStack gap={2}>
-        <Text type="label" style={{ textTransform: 'uppercase', letterSpacing: '.5px' }}>Utiliser nos données</Text>
-        {error && <Text type="body" color="secondary" style={{ color: 'var(--color-error-light)' }}>{error}</Text>}
+        <Text type="label" className="uppercase tracking-wider">Utiliser nos données</Text>
+        {error && <Text type="body" color="secondary" className="text-error-light">{error}</Text>}
         {!error && samples === null && <Text type="body" color="secondary">Chargement…</Text>}
         {!error && samples !== null && samples.length === 0 && (
           <Text type="body" color="secondary">Aucune donnée d'exemple dans cette catégorie.</Text>
         )}
         {samples?.map(s => (
           <Card key={s.id} variant="muted" padding={2}>
-            <HStack gap={2} style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+            <HStack gap={2} className="justify-between items-center">
               <VStack gap={1}>
-                <Heading level={5} style={{ fontSize: 13.5 }}>{s.name}</Heading>
+                <Heading level={5} className="text-sm">{s.name}</Heading>
                 <Text type="supporting" color="secondary">{s.description}</Text>
                 <Text type="supporting" color="secondary">{s.columns.length > 0 ? `${s.columns.length} colonnes · ` : ''}{s.rows} ligne(s)</Text>
               </VStack>
@@ -56,8 +56,8 @@ export default function SampleDataModal({ category, onPick, onChooseFile, onClos
           </Card>
         ))}
 
-        <Text type="label" style={{ textTransform: 'uppercase', letterSpacing: '.5px' }}>Apporter vos données</Text>
-        <Button label="Choisir un fichier" variant="ghost" icon={<Icon icon={FileUp} size="sm" />} onClick={onChooseFile} style={{ width: '100%' } as never} />
+        <Text type="label" className="uppercase tracking-wider">Apporter vos données</Text>
+        <Button label="Choisir un fichier" variant="ghost" icon={<Icon icon={FileUp} size="sm" />} onClick={onChooseFile} className="w-full" />
       </VStack>
     </Dialog>
   )

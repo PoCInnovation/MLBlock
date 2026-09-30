@@ -11,12 +11,12 @@ import { loginSchema, type LoginInput } from '../schemas/auth'
 import { mapSupabaseError } from '../schemas/errors'
 
 const s: Record<string, string> = {
-  wrapper: 'flex items-center justify-center min-h-[60vh] px-5 py-10',
+  wrapper: 'flex items-center justify-center min-h-96 px-5 py-10',
   title: 'text-2xl font-bold mb-6 text-center text-text',
-  divider: 'flex items-center gap-3 my-4 text-divider text-[13px]',
+  divider: 'flex items-center gap-3 my-4 text-divider text-xs',
   line: 'flex-1 h-px bg-border',
-  error: 'text-error text-[13px] mb-3 text-center',
-  link: 'text-[#E8915F] cursor-pointer text-center mt-3 text-sm',
+  error: 'text-error text-xs mb-3 text-center',
+  link: 'text-accent-light cursor-pointer text-center mt-3 text-sm',
 }
 
 export default function LoginPage() {
@@ -92,7 +92,7 @@ export default function LoginPage() {
   return (
     <SiteLayout>
       <div className={s.wrapper}>
-        <Card style={{ padding: 40, width: '100%', maxWidth: 400 }}>
+        <Card className="p-10 w-full max-w-sm">
           <div className={s.title}>Connexion</div>
           {error && <div className={s.error}>{error}</div>}
           {magicSent ? (
@@ -135,7 +135,7 @@ export default function LoginPage() {
               <div className={s.divider}>
                 <div className={s.line} /><span>ou</span><div className={s.line} />
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div className="flex flex-col gap-2">
                 <Button label="Envoyer un lien magique" variant="secondary" isLoading={loading} width="100%" onClick={handleMagicLink} />
                 <Button label="Continuer avec Google" variant="secondary" isLoading={loading} width="100%" onClick={handleGoogle} />
                 <Button label="Continuer avec Microsoft" variant="secondary" isLoading={loading} width="100%" onClick={handleMicrosoft} />

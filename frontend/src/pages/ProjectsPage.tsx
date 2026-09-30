@@ -17,15 +17,15 @@ const MAX_PROJECTS = 20
 const pageStyle =
   'min-h-screen bg-bg text-text font-body px-4 py-8 md:px-8 md:py-12'
 const headerStyle =
-  'max-w-[980px] mx-auto mb-7 flex items-center justify-between'
+  'max-w-5xl mx-auto mb-7 flex items-center justify-between'
 const titleStyle =
-  'font-heading text-[28px] font-extrabold m-0'
+  'font-heading text-3xl font-extrabold m-0'
 const subStyle =
   'text-text-muted text-sm mt-1'
 const gridStyle =
-  'max-w-[980px] mx-auto grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4'
+  'max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'
 const emptyStyle =
-  'max-w-[980px] mx-auto mt-15 text-center text-text-muted text-[15px] font-semibold'
+  'max-w-5xl mx-auto mt-16 text-center text-text-muted text-base font-semibold'
 
 function fmtDate(iso: string): string {
   return new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -117,7 +117,7 @@ export default function ProjectsPage() {
         </div>
       </div>
 
-      {error && <div className="max-w-[980px] mx-auto mt-15 text-center text-error text-[15px] font-semibold">{error}</div>}
+      {error && <div className="max-w-5xl mx-auto mt-16 text-center text-error text-base font-semibold">{error}</div>}
 
       {projects !== null && projects.length === 0 && !error && (
         <div className={emptyStyle}>
@@ -127,10 +127,10 @@ export default function ProjectsPage() {
 
       <div className={gridStyle}>
         {projects?.map(p => (
-          <Card key={p.id} className="hover-card" style={{ display: 'flex', flexDirection: 'column', gap: 10, transition: 'border-color .15s ease, transform .15s ease' }}>
-            <div style={{ fontWeight: 800, fontSize: 16, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={p.name}>{p.name}</div>
-            <div style={{ color: 'var(--color-text-muted)', fontSize: 13, fontWeight: 600 }}>Modifié le {fmtDate(p.updated_at)}</div>
-            <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+          <Card key={p.id} className="hover-card flex flex-col gap-2.5 transition-all">
+            <div className="font-extrabold text-base truncate" title={p.name}>{p.name}</div>
+            <div className="text-text-muted text-xs font-semibold">Modifié le {fmtDate(p.updated_at)}</div>
+            <div className="flex gap-2 mt-1">
               <Button label="Ouvrir" variant="primary" size="sm" onClick={() => openProject(p)} />
               <Button label="Exporter" variant="secondary" size="sm" onClick={() => setExporting(p)} />
               <Button label="Supprimer" variant="destructive" size="sm" onClick={() => removeProject(p)} />

@@ -56,7 +56,7 @@ export default function TemplateModal({ isOpen, onSelect, onClose }: TemplateMod
           Charge un pipeline complet (données → traitement → modèle → évaluation/visualisation) prêt à être exécuté ou modifié dans le canvas.
         </Text>
 
-        <div style={{ margin: '8px 0', overflowX: 'auto', paddingBottom: 4 }}>
+        <div className="my-2 overflow-x-auto pb-1">
           <ToggleButtonGroup
             type="single"
             label="Filtre par pattern"
@@ -64,33 +64,32 @@ export default function TemplateModal({ isOpen, onSelect, onClose }: TemplateMod
             onChange={v => setPatternFilter((v as string) || 'all')}
             size="sm"
           >
-            <div style={{ display: 'flex', gap: 6 }}>
+            <div className="flex gap-1.5">
               {Object.entries(PATTERN_LABELS).map(([key, label]) => (
                 <ToggleButton key={key} label={label} value={key} />
               ))}
             </div>
           </ToggleButtonGroup>
         </div>
-
-        {error && <Text type="body" color="secondary" style={{ color: 'var(--color-error-light)' }}>{error}</Text>}
+        {error && <Text type="body" color="secondary" className="text-error-light">{error}</Text>}
         {!error && templates === null && <Text type="body" color="secondary">Chargement des baselines…</Text>}
         {!error && templates !== null && filtered.length === 0 && (
           <Text type="body" color="secondary">Aucun modèle trouvé pour ce filtre.</Text>
         )}
 
-        <div style={{ maxHeight: '55vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8, paddingRight: 4 }}>
+        <div className="max-h-96 overflow-y-auto flex flex-col gap-2 pr-1">
           {filtered.map(t => (
             <Card key={t.id} variant="muted" padding={2}>
-              <HStack gap={2} style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-                <VStack gap={1} style={{ flex: 1, minWidth: 0 }}>
-                  <HStack gap={1.5} style={{ alignItems: 'center' }}>
-                    <Badge label={t.code} style={{ fontWeight: 800, fontSize: 11 }} />
-                    <Heading level={5} style={{ fontSize: 13.5, margin: 0 }}>{t.name}</Heading>
+              <HStack gap={2} className="justify-between items-center">
+                <VStack gap={1} className="flex-1 min-w-0">
+                  <HStack gap={1.5} className="items-center">
+                    <Badge label={t.code} className="font-extrabold text-xs" />
+                    <Heading level={5} className="text-sm m-0">{t.name}</Heading>
                   </HStack>
-                  <Text type="supporting" color="secondary" style={{ fontSize: 12, lineHeight: 1.4 }}>
+                  <Text type="supporting" color="secondary" className="text-xs leading-normal">
                     {t.description}
                   </Text>
-                  <Text type="supporting" color="secondary" style={{ fontSize: 11, opacity: 0.8 }}>
+                  <Text type="supporting" color="secondary" className="text-xs opacity-80">
                     {t.nodes.length} blocs · {t.edges.length} connexions · {t.pattern}
                   </Text>
                 </VStack>

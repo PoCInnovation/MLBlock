@@ -5,7 +5,6 @@ import { Badge, Card, Heading, HStack, Divider } from '@astryxdesign/core'
 import { Database, Layers } from 'lucide-react'
 import useAppStore from '../../store/useAppStore'
 import { getStageConfig } from '../../utils/stages'
-import { theme } from '../../theme'
 import {
   SUPER_BLOCK_REGISTRY,
   type SuperBlockNodeData,
@@ -38,39 +37,18 @@ function SuperBlockNode({ data, id }: NodeProps<Node<SuperBlockNodeData>>) {
       padding={3}
       variant="default"
       elevation="low"
-      className="bg-surface2! min-w-[280px] max-w-[340px] overflow-visible! rounded-2xl! shadow-lg"
-      style={{
-        borderTop: `4px solid ${stageConfig.color}`,
-        borderLeft: `1px solid ${stageConfig.color}33`,
-        borderRight: `1px solid ${stageConfig.color}33`,
-        borderBottom: `1px solid ${stageConfig.color}33`,
-      }}
+      className="!bg-surface2 min-w-70 max-w-85 !overflow-visible !rounded-2xl shadow-lg border-t-4"
     >
       {/* Unified Header */}
-      <HStack justify="between" align="center" gap={2} style={{ paddingBottom: 6 }}>
-        <HStack align="center" gap={2} style={{ minWidth: 0 }}>
+      <HStack justify="between" align="center" gap={2} className="pb-1.5">
+        <HStack align="center" gap={2} className="min-w-0">
           <Badge
             label={stageConfig.key}
-            style={{
-              backgroundColor: `${stageConfig.color}22`,
-              color: stageConfig.color,
-              border: `1px solid ${stageConfig.color}66`,
-              fontSize: 10,
-              fontWeight: 800,
-              padding: '1px 5px',
-              borderRadius: 4,
-            }}
+            className="text-xs font-extrabold px-1.5 py-0.5 rounded border"
           />
           <Heading
             level={4}
-            style={{
-              fontSize: 14,
-              fontWeight: 800,
-              color: 'var(--color-text-light)',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}
+            className="text-sm font-extrabold text-text-light truncate"
           >
             {data.label || def.title}
           </Heading>
@@ -83,7 +61,7 @@ function SuperBlockNode({ data, id }: NodeProps<Node<SuperBlockNodeData>>) {
           viewBox="0 0 12 16"
           aria-label={`Déplacer ${def.title}`}
         >
-          <g fill="var(--color-text-muted)">
+          <g className="fill-text-muted">
             <circle cx={3} cy={2} r={1.3} /><circle cx={9} cy={2} r={1.3} />
             <circle cx={3} cy={8} r={1.3} /><circle cx={9} cy={8} r={1.3} />
             <circle cx={3} cy={14} r={1.3} /><circle cx={9} cy={14} r={1.3} />
@@ -92,42 +70,36 @@ function SuperBlockNode({ data, id }: NodeProps<Node<SuperBlockNodeData>>) {
       </HStack>
 
       {def.subtitle && (
-        <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
+        <div className="text-xs text-text-muted mb-2 flex items-center gap-1">
           {def.stage === 0 ? <Database size={12} className="text-success" /> : <Layers size={12} className="text-accent" />}
           <span>{def.subtitle}</span>
         </div>
       )}
 
-      <Divider orientation="horizontal" style={{ margin: '4px 0 8px 0' }} />
-
+      <Divider orientation="horizontal" className="my-1.5" />
       {/* Blueprint Input Slots */}
       {def.inputs.length > 0 && (
         <div className="flex flex-col gap-1 mb-2">
-          <div className="text-[10px] font-extrabold uppercase tracking-wider text-text-muted px-1 flex justify-between items-center">
+          <div className="text-xs font-extrabold uppercase tracking-wider text-text-muted px-1 flex justify-between items-center">
             <span>Entrées :</span>
-            <span style={{ color: def.inputs.every(s => inputFed[s.id]) ? theme.color.success : theme.color.warning }}>
+            <span className={def.inputs.every(s => inputFed[s.id]) ? 'text-success' : 'text-warning'}>
               {def.inputs.filter(s => inputFed[s.id]).length}/{def.inputs.length} prêtes
             </span>
           </div>
           {def.inputs.map(slot => (
             <div
               key={slot.id}
-              className="relative flex items-center justify-between pl-4 pr-2 py-1.5 rounded-md bg-surface1 border border-border"
+              className="relative flex items-center justify-between pl-4 pr-2 py-1.5 rounded-md bg-surface border border-border"
             >
               <Handle
                 id={slot.id}
                 type="target"
                 position={Position.Left}
-                className="w-[14px]! h-[14px]! rounded-full! border-2! !absolute !-left-[7px] !top-1/2 !-translate-y-1/2"
-                style={{
-                  borderColor: slot.color,
-                  backgroundColor: inputFed[slot.id] ? slot.color : '#13151c',
-                  boxShadow: inputFed[slot.id] ? `0 0 8px ${slot.color}` : 'none',
-                }}
+                className="!w-3.5 !h-3.5 !rounded-full border-2 !absolute !-left-2 !top-1/2 !-translate-y-1/2"
                 title={`${slot.label}: ${slot.dtype}`}
               />
-              <span className="font-bold text-[11.5px] text-text">{slot.label}</span>
-              <span className="font-mono text-[10px] text-text-muted">({slot.dtype})</span>
+              <span className="font-bold text-xs text-text">{slot.label}</span>
+              <span className="font-mono text-xs text-text-muted">({slot.dtype})</span>
             </div>
           ))}
         </div>
@@ -145,26 +117,21 @@ function SuperBlockNode({ data, id }: NodeProps<Node<SuperBlockNodeData>>) {
       {/* Blueprint Output Slots */}
       {def.outputs.length > 0 && (
         <div className="flex flex-col gap-1 mt-2">
-          <div className="text-[10px] font-extrabold uppercase tracking-wider text-text-muted px-1">
+          <div className="text-xs font-extrabold uppercase tracking-wider text-text-muted px-1">
             Sorties :
           </div>
           {def.outputs.map(slot => (
             <div
               key={slot.id}
-              className="relative flex items-center justify-between pl-2 pr-4 py-1.5 rounded-md bg-surface1 border border-border"
+              className="relative flex items-center justify-between pl-2 pr-4 py-1.5 rounded-md bg-surface border border-border"
             >
-              <span className="font-bold text-[11.5px] text-text">{slot.label}</span>
-              <span className="font-mono text-[10px] text-text-muted">({slot.dtype})</span>
+              <span className="font-bold text-xs text-text">{slot.label}</span>
+              <span className="font-mono text-xs text-text-muted">({slot.dtype})</span>
               <Handle
                 id={slot.id}
                 type="source"
                 position={Position.Right}
-                className="w-[14px]! h-[14px]! rounded-full! border-2! !absolute !-right-[7px] !top-1/2 !-translate-y-1/2"
-                style={{
-                  borderColor: slot.color,
-                  backgroundColor: outputFed[slot.id] ? slot.color : '#13151c',
-                  boxShadow: outputFed[slot.id] ? `0 0 8px ${slot.color}` : 'none',
-                }}
+                className="!w-3.5 !h-3.5 !rounded-full border-2 !absolute !-right-2 !top-1/2 !-translate-y-1/2"
                 title={`${slot.label}: ${slot.dtype}`}
               />
             </div>
@@ -172,13 +139,13 @@ function SuperBlockNode({ data, id }: NodeProps<Node<SuperBlockNodeData>>) {
         </div>
       )}
 
-      <Divider orientation="horizontal" style={{ margin: '8px 0 6px 0' }} />
+      <Divider orientation="horizontal" className="my-2" />
 
       {/* Unified Footer */}
       <div className="flex justify-end pt-1">
         <button
           type="button"
-          className="border-none bg-transparent text-text-muted font-bold text-[10px] cursor-pointer hover:text-error"
+          className="border-none bg-transparent text-text-muted font-bold text-xs cursor-pointer hover:text-error"
           onClick={() => removeFlowNode(id)}
         >
           Supprimer

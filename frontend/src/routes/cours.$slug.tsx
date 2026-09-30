@@ -65,10 +65,10 @@ function CoursDetailPage() {
   if (!course) {
     return (
       <SiteLayout>
-        <section style={{ maxWidth: 1240, margin: '0 auto', padding: '64px 48px' }}>
+        <section className="max-w-7xl mx-auto px-12 py-16">
           <Heading level={1}>Cours introuvable</Heading>
           <Text color="secondary">
-            Ce cours n’existe pas. <Link to="/cours" style={{ color: 'var(--color-accent)' }}>Retour au catalogue</Link>
+            Ce cours n’existe pas. <Link to="/cours" className="text-accent">Retour au catalogue</Link>
           </Text>
         </section>
       </SiteLayout>
@@ -85,12 +85,12 @@ function CoursDetailPage() {
 
   return (
     <SiteLayout>
-      <div style={{ maxWidth: 1440, margin: '0 auto', padding: '24px 24px 48px' }}>
-        <HStack gap={6} style={{ alignItems: 'flex-start' }}>
-          <VStack style={{ width: 260, flexShrink: 0, position: 'sticky', top: 24, maxHeight: 'calc(100vh - 48px)', overflowY: 'auto' }}>
+      <div className="max-w-7xl mx-auto px-6 py-12">
+        <HStack gap={6} className="items-start">
+          <VStack className="w-64 shrink-0 sticky top-6 max-h-screen overflow-y-auto">
             <TreeList items={treeItems} />
           </VStack>
-          <VStack gap={4} style={{ flex: '1 1 0%', minWidth: 0 }}>
+          <VStack gap={4} className="flex-1 min-w-0">
             <Breadcrumbs>
               <BreadcrumbItem href="/">Accueil</BreadcrumbItem>
               <BreadcrumbItem href="/cours">Cours</BreadcrumbItem>
@@ -99,7 +99,7 @@ function CoursDetailPage() {
             <VStack gap={2}>
               <Heading level={1}>{course.title}</Heading>
               <Text color="secondary">{course.description}</Text>
-              <HStack gap={2} style={{ alignItems: 'center' }}>
+              <HStack gap={2} className="items-center">
                 <Badge label={course.difficulty} variant={difficultyVariant as never} />
               </HStack>
             </VStack>
@@ -113,7 +113,7 @@ function CoursDetailPage() {
             </VStack>
           </VStack>
           {outlineItems.length > 0 && (
-            <VStack style={{ width: 240, flexShrink: 0, position: 'sticky', top: 24, maxHeight: 'calc(100vh - 48px)', overflowY: 'auto' }}>
+            <VStack className="w-60 shrink-0 sticky top-6 max-h-screen overflow-y-auto">
               <Outline items={outlineItems} />
             </VStack>
           )}

@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import axios from 'axios'
-import { theme } from '../../theme'
 import type { PipelineDetail } from '../../types/catalog'
 import { generatePipelineCode } from '../../api/client'
 import { downloadFile, pipelineToJson, slugify } from '../../utils/exportImport'
@@ -8,13 +7,7 @@ import { FileText, FileCode2 } from 'lucide-react'
 import { Icon } from '@astryxdesign/core/Icon'
 import { Dialog, DialogTitle, DialogFooter } from './dialog'
 
-const btnBase: React.CSSProperties = {
-  display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%',
-  padding: '14px 16px', marginBottom: 10, borderRadius: theme.radius.md, cursor: 'pointer',
-  background: 'rgba(255,255,255,.05)', border: `1px solid ${theme.color.border}`,
-  color: theme.color.text, fontWeight: 700, fontSize: 14.5,
-}
-const hint: React.CSSProperties = { fontSize: 12, color: theme.color.textMuted, fontWeight: 600, marginTop: 2 }
+const btnBase = "flex items-center justify-between w-full p-4 mb-2.5 rounded-md cursor-pointer bg-surface2 border border-border text-text font-bold text-sm disabled:opacity-50"
 
 export type ExportProps = {
   title: string
@@ -60,20 +53,18 @@ export default function ExportModal({ title, resolve, onClose }: ExportProps) {
   return (
     <Dialog isOpen={open} onOpenChange={(o) => { if (!o) onClose() }}>
       <DialogTitle>{title}</DialogTitle>
-      <button style={btnBase} onClick={() => doExport('json')} disabled={busy !== null}>
+      <button className={btnBase} onClick={() => doExport('json')} disabled={busy !== null}>
         <span>JSON de la pipeline</span>
         <Icon icon={FileText} size="md" />
-        <div style={hint} />
       </button>
-      <button style={btnBase} onClick={() => doExport('code')} disabled={busy !== null}>
+      <button className={btnBase} onClick={() => doExport('code')} disabled={busy !== null}>
         <span>Code (main.py)</span>
         <Icon icon={FileCode2} size="md" />
-        <div style={hint} />
       </button>
-      {error && <div style={{ color: theme.color.error, fontSize: 13, fontWeight: 700 }}>{error}</div>}
-      {busy && <div style={{ color: theme.color.textMuted, fontSize: 13, marginTop: 8 }}>Préparation…</div>}
+      {error && <div className="text-error text-xs font-bold">{error}</div>}
+      {busy && <div className="text-text-muted text-xs mt-2">Préparation…</div>}
       <DialogFooter>
-        <button onClick={onClose} style={{ background: 'transparent', border: `1px solid ${theme.color.border}`, color: theme.color.textMuted, borderRadius: theme.radius.md, padding: '8px 16px', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+        <button onClick={onClose} className="bg-transparent border border-border text-text-muted rounded-md px-4 py-2 font-bold text-xs cursor-pointer">
           Annuler
         </button>
       </DialogFooter>

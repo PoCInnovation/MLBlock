@@ -11,10 +11,10 @@ import { registerSchema, type RegisterInput } from '../schemas/auth'
 import { mapSupabaseError } from '../schemas/errors'
 
 const s: Record<string, string> = {
-  wrapper: 'flex items-center justify-center min-h-[60vh] px-5 py-10',
+  wrapper: 'flex items-center justify-center min-h-96 px-5 py-10',
   title: 'text-2xl font-bold mb-6 text-center text-text',
-  error: 'text-error text-[13px] mb-3 text-center',
-  link: 'text-[#E8915F] cursor-pointer text-center mt-3 text-sm',
+  error: 'text-error text-xs mb-3 text-center',
+  link: 'text-accent-light cursor-pointer text-center mt-3 text-sm',
 }
 
 const ruleStyle = (ok: boolean): string =>
@@ -59,7 +59,7 @@ export default function RegisterPage() {
   return (
     <SiteLayout>
       <div className={s.wrapper}>
-        <Card style={{ padding: 40, width: '100%', maxWidth: 400 }}>
+        <Card className="p-10 w-full max-w-sm">
           <div className={s.title}>Inscription</div>
           {error && <div className={s.error}>{error}</div>}
           {done ? (

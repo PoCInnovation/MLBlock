@@ -1,4 +1,3 @@
-import { theme } from '../../theme'
 import { Play } from 'lucide-react'
 import React from 'react'
 
@@ -12,11 +11,11 @@ type HeroBlock = {
 }
 
 const BLOCKS: HeroBlock[] = [
-  { key: 0, bg: theme.color.accent, color: '#fff',     label: <><Play size={13} color="#fff" /> Démarrer le projet</>, isHat: true },
-  { key: 1, bg: theme.color.accentLight, color: '#2a211c',  label: <>Charger <span style={{ background: 'rgba(255,255,255,.85)', padding: '2px 7px', borderRadius: 6 }}>Photos</span></> },
-  { key: 2, bg: theme.color.status, color: '#2a211c',  label: <>Mettre à la même échelle</> },
-  { key: 3, bg: '#B6A0E3', color: '#2a211c',  label: <>Réseau de <span style={{ background: 'rgba(255,255,255,.85)', padding: '2px 7px', borderRadius: 6 }}>128</span> neurones</> },
-  { key: 4, bg: '#7DAFEA', color: '#2a211c',  label: <>Apprendre <span style={{ background: 'rgba(255,255,255,.85)', padding: '2px 7px', borderRadius: 6 }}>10</span> tours</>, isLast: true },
+  { key: 0, bg: 'var(--color-accent)', color: '#fff', label: <><Play size={13} color="#fff" /> Démarrer le projet</>, isHat: true },
+  { key: 1, bg: 'var(--color-accent-light)', color: '#2a211c', label: <>Charger <span className="bg-white/85 px-1.5 py-0.5 rounded-md">Photos</span></> },
+  { key: 2, bg: 'var(--color-status)', color: '#2a211c', label: <>Mettre à la même échelle</> },
+  { key: 3, bg: '#B6A0E3', color: '#2a211c', label: <>Réseau de <span className="bg-white/85 px-1.5 py-0.5 rounded-md">128</span> neurones</> },
+  { key: 4, bg: '#7DAFEA', color: '#2a211c', label: <>Apprendre <span className="bg-white/85 px-1.5 py-0.5 rounded-md">10</span> tours</>, isLast: true },
 ]
 
 // Border radii are hardcoded to match the snap-aligned result (all 5 blocks at the same width).
@@ -28,36 +27,30 @@ function blockRadius(isHat?: boolean, isLast?: boolean) {
 
 export default function HeroBlockStack() {
   return (
-    <div aria-hidden="true" style={{ animation: 'mlbFloat 5s ease-in-out infinite' }}>
-      <div style={{ position: 'relative', padding: 26, background: '#211b18', border: '1px solid rgba(255,255,255,.07)', borderRadius: 24, boxShadow: '0 30px 60px rgba(0,0,0,.4)', maxWidth: 380, marginLeft: 'auto' }}>
-        <div style={{ display: 'flex', gap: 6, marginBottom: 18 }}>
-          <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#E0705F' }} />
-          <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#E6C766' }} />
-          <span style={{ width: 10, height: 10, borderRadius: '50%', background: theme.color.status }} />
+    <div aria-hidden="true" className="hero-float">
+      <div className="relative p-6.5 bg-surface4 border border-white/[0.07] rounded-3xl shadow-2xl max-w-95 ml-auto">
+        <div className="flex gap-1.5 mb-4.5">
+          <span className="w-2.5 h-2.5 rounded-full bg-error" />
+          <span className="w-2.5 h-2.5 rounded-full bg-warning" />
+          <span className="w-2.5 h-2.5 rounded-full bg-status" />
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+        <div className="flex flex-col items-start">
           {BLOCKS.map(({ key, bg, color, label, isHat, isLast }) => (
             <div
               key={key}
+              className="relative inline-flex gap-1.5 items-center font-extrabold hero-block-shadow min-w-67.5"
               style={{
-                position: 'relative',
                 zIndex: BLOCKS.length - key,
                 background: bg,
                 color,
-                fontWeight: 800,
                 fontSize: isHat ? 14 : 13.5,
                 padding: isHat ? '11px 16px 13px' : '13px 16px 11px',
                 borderRadius: blockRadius(isHat, isLast),
-                boxShadow: '0 2px 0 rgba(0,0,0,.18)',
-                display: 'inline-flex',
-                gap: 7,
-                alignItems: 'center',
-                minWidth: 270,
               }}
             >
-              {!isHat && <div style={{ position: 'absolute', top: 0, left: 20, width: 24, height: 11, background: '#211b18', borderRadius: '0 0 999px 999px' }} />}
+              {!isHat && <div className="absolute top-0 left-5 w-6 h-2.5 bg-surface4 rounded-b-full" />}
               {label}
-              <div style={{ position: 'absolute', bottom: -11, left: 20, width: 24, height: 11, background: bg, borderRadius: '0 0 999px 999px' }} />
+              <div className="absolute -bottom-2.75 left-5 w-6 h-2.5 rounded-b-full" style={{ background: bg }} />
             </div>
           ))}
         </div>

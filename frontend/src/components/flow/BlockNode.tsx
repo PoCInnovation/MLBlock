@@ -9,15 +9,14 @@ import SuperBlockNode from './SuperBlockNode'
 import { isSuperBlock } from './superBlockRegistry'
 import { isAmbiguous } from '../../utils/portResolution'
 import { getStageConfig, stageOfBlock } from '../../utils/stages'
-import { theme } from '../../theme'
 import type { Port, Segment } from '../../types/catalog'
 
 // Taille/bordure du handle : classes !important car le CSS ReactFlow
 // (non-layé) écraserait les utilitaires Tailwind sinon.
-const handleClassName = 'w-[14px]! h-[14px]! rounded-full! bg-accent! border-2! border-surface2!'
-const handleFedClassName = 'w-[14px]! h-[14px]! rounded-full! bg-success! border-2! border-surface2!'
+const handleClassName = '!w-3.5 !h-3.5 !rounded-full !bg-accent !border-2 !border-surface2'
+const handleFedClassName = '!w-3.5 !h-3.5 !rounded-full !bg-success !border-2 !border-surface2'
 
-const outputsClassName = 'flex flex-col gap-0.5 text-[11px] font-bold text-text-muted'
+const outputsClassName = 'flex flex-col gap-0.5 text-xs font-bold text-text-muted'
 
 const inputsClassName = `${outputsClassName} mb-2`
 
@@ -79,35 +78,22 @@ function StandardBlockNode({ data, id }: NodeProps<Node<BlockNodeData>>) {
       padding={3}
       variant="default"
       elevation="low"
-      className="bg-surface2! min-w-[180px] max-w-[260px] overflow-visible! rounded-2xl!"
-      style={{
-        borderTop: `3px solid ${data.categoryColor || theme.color.accent}`,
-      }}
+      className="!bg-surface2 min-w-45 max-w-64 !overflow-visible !rounded-2xl border-t-4"
     >
-      <HStack justify="between" align="start" gap={2} style={{ paddingBlock: 10 }}>
-        <VStack gap={0} style={{ minWidth: 0, flex: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
-            <span title={`${stageConfig.name} (${stageConfig.label})`} style={{ display: 'inline-flex' }}>
+      <HStack justify="between" align="start" gap={2} className="py-2.5">
+        <VStack gap={0} className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span title={`${stageConfig.name} (${stageConfig.label})`} className="inline-flex">
               <Badge
                 label={stageConfig.key}
-                style={{
-                  backgroundColor: `${stageConfig.color}22`,
-                  color: stageConfig.color,
-                  border: `1px solid ${stageConfig.color}66`,
-                  fontSize: 10,
-                  fontWeight: 800,
-                  padding: '1px 5px',
-                  borderRadius: 4,
-                  lineHeight: 1.2,
-                  flexShrink: 0,
-                }}
+                className="text-xs font-extrabold px-1.5 py-0.5 rounded shrink-0 border"
               />
             </span>
-            <Heading level={4} style={{ fontSize: 13.5, fontWeight: 800, lineHeight: 1.3, color: 'var(--color-text-light)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{data.label || data.type || 'Untitled'}</Heading>
+            <Heading level={4} className="text-sm font-extrabold text-text-light truncate m-0 leading-snug">{data.label || data.type || 'Untitled'}</Heading>
           </div>
-          {description && <Text style={{ fontSize: 12, color: 'var(--color-text-muted)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{description}</Text>}
+          {description && <Text className="text-xs text-text-muted line-clamp-2">{description}</Text>}
         </VStack>
-        <div style={{ justifySelf: 'end', alignSelf: 'start' }}>
+        <div className="justify-self-end self-start">
           <svg
             className="block-drag-handle cursor-grab"
             width={12}
@@ -115,7 +101,7 @@ function StandardBlockNode({ data, id }: NodeProps<Node<BlockNodeData>>) {
             viewBox="0 0 12 16"
             aria-label="Déplacer le bloc"
           >
-            <g fill="var(--color-text-muted)">
+            <g className="fill-text-muted">
               <circle cx={3} cy={2} r={1.3} /><circle cx={9} cy={2} r={1.3} />
               <circle cx={3} cy={8} r={1.3} /><circle cx={9} cy={8} r={1.3} />
               <circle cx={3} cy={14} r={1.3} /><circle cx={9} cy={14} r={1.3} />
@@ -124,21 +110,21 @@ function StandardBlockNode({ data, id }: NodeProps<Node<BlockNodeData>>) {
         </div>
       </HStack>
       {(Array.isArray(data.inputs) && data.inputs.length > 0 || Array.isArray(data.outputs) && data.outputs.length > 0 || Array.isArray(data.segs) && data.segs.length > 0) && (
-        <VStack gap={0} style={{ flex: '1 1 auto', minHeight: 0 }}>
-          <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-x-3">
+        <VStack gap={0} className="flex-auto min-h-0">
+          <div className="grid grid-cols-3 items-start gap-x-3">
             {Array.isArray(data.inputs) && data.inputs.length > 0 && (
-              <div className={inputsClassName} style={{ gridColumn: 1, gridRow: 1 }}>
+              <div className={`${inputsClassName} col-start-1 row-start-1`}>
                 {data.inputs.map(p => (
-                  <div key={p.name} style={inputFed[p.name] ? { color: theme.color.success } : undefined}>
+                  <div key={p.name} className={inputFed[p.name] ? 'text-success' : undefined}>
                     {p.name} · {p.dtype}
                   </div>
                 ))}
               </div>
             )}
             {Array.isArray(data.outputs) && data.outputs.length > 0 && (
-              <div className={outputsClassName} style={{ gridColumn: 3, gridRow: 1 }}>
+              <div className={`${outputsClassName} col-start-3 row-start-1`}>
                 {data.outputs.map(p => (
-                  <div key={p.name} style={outputFed[p.name] ? { color: theme.color.success } : undefined}>
+                  <div key={p.name} className={outputFed[p.name] ? 'text-success' : undefined}>
                     {p.name} · {p.dtype}
                   </div>
                 ))}
@@ -152,23 +138,20 @@ function StandardBlockNode({ data, id }: NodeProps<Node<BlockNodeData>>) {
               return (
                 <>
                   {sepRow > 0 && (
-                    // Ligne horizontale body/params : rangée col-span-3 pleine largeur
-                    <Divider orientation="horizontal" style={{ gridColumn: '1 / -1', gridRow: sepRow, margin: '8px 0' }} />
+                    <Divider orientation="horizontal" className="col-span-full my-2" />
                   )}
                   {Array.isArray(data.segs) && data.segs.length > 0 && (
                     <BlockSegments segs={data.segs} fields={data.fields} blockId={id} blockType={data.type} onUpdate={updateFlowParam} columnOptions={columnOptions} startRow={hasBody ? (hasParams ? 3 : 1) : 1} />
                   )}
                   {(() => {
-                    // Séparateur vertical unique : traverse body + ligne horizontale + params
                     if (!hasBody && !hasParams) return null
-                    const totalRows = (hasBody ? 1 : 0) + (sepRow > 0 ? 1 : 0) + paramCount
-                    return <Divider orientation="vertical" style={{ gridColumn: 2, gridRow: `1 / ${totalRows + 1}` }} />
+                    return <Divider orientation="vertical" className="col-start-2 h-full" />
                   })()}
                 </>
               )
             })()}
             <div className="col-span-3 flex justify-end pt-2">
-              <button className="block-delete-btn border-none bg-none text-text-muted font-extrabold text-[11px] cursor-pointer p-0 font-body" onClick={() => removeFlowNode(id)}>Supprimer</button>
+              <button className="block-delete-btn border-none bg-transparent text-text-muted font-extrabold text-xs cursor-pointer p-0 font-body" onClick={() => removeFlowNode(id)}>Supprimer</button>
             </div>
           </div>
         </VStack>
@@ -179,12 +162,11 @@ function StandardBlockNode({ data, id }: NodeProps<Node<BlockNodeData>>) {
           id={p.name}
           type="target"
           position={Position.Left}
-          className={inputFed[p.name] ? handleFedClassName : handleClassName}
+          className={`${inputFed[p.name] ? handleFedClassName : handleClassName} ${isAmbiguous(data.inputs) || i === 0 ? '' : 'pointer-events-none'}`}
           // Côté non-ambigu : tous les handles empilés au centre (50%), un seul visible (i === 0)
           style={{
             top: isAmbiguous(data.inputs) ? topFor(i, arr.length) : '50%',
             opacity: isAmbiguous(data.inputs) || i === 0 ? 1 : 0,
-            pointerEvents: isAmbiguous(data.inputs) || i === 0 ? undefined : 'none',
           }}
           title={`${p.name}: ${p.dtype}`}
         />
@@ -195,12 +177,11 @@ function StandardBlockNode({ data, id }: NodeProps<Node<BlockNodeData>>) {
           id={p.name}
           type="source"
           position={Position.Right}
-          className={outputFed[p.name] ? handleFedClassName : handleClassName}
+          className={`${outputFed[p.name] ? handleFedClassName : handleClassName} ${isAmbiguous(data.outputs) || i === 0 ? '' : 'pointer-events-none'}`}
           // Côté non-ambigu : empilé au centre, un seul visible
           style={{
             top: isAmbiguous(data.outputs) ? topFor(i, arr.length) : '50%',
             opacity: isAmbiguous(data.outputs) || i === 0 ? 1 : 0,
-            pointerEvents: isAmbiguous(data.outputs) || i === 0 ? undefined : 'none',
           }}
           title={`${p.name}: ${p.dtype}`}
         />

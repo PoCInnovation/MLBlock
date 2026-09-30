@@ -15,7 +15,6 @@ import UnsavedChangesDialog from '../ui/UnsavedChangesDialog'
 import TemplateModal from '../ui/TemplateModal'
 import type { ExoTemplate } from '../../types/catalog'
 import { clearStash } from '../../utils/pending-stash'
-import { theme } from '../../theme'
 export default function EditorHeader() {
   const navigate    = useNavigate()
   const projectName = useAppStore(s => s.projectName)
@@ -82,34 +81,18 @@ export default function EditorHeader() {
 
   return (
     <div
-      className="editor-header floating-panel"
-      style={{
-        flexShrink: 0,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        background: theme.color.surface,
-        border: `1px solid ${theme.color.border}`,
-        borderRadius: theme.radius.xl,
-        boxShadow: '0 8px 32px rgba(0,0,0,.12)',
-        backdropFilter: 'blur(8px)',
-        WebkitBackdropFilter: 'blur(8px)',
-        zIndex: 20,
-        gap: 16,
-        transition: 'transform 200ms ease, opacity 200ms ease',
-        willChange: 'transform, opacity',
-      }}
+      className="editor-header floating-panel shrink-0 flex items-center justify-between bg-surface border border-border rounded-2xl shadow-xl backdrop-blur-md z-20 gap-4 transition-all will-change-transform"
     >
-      <HStack gap={3} style={{ minWidth: 0, alignItems: 'center' }}>
-        <button type="button" onClick={() => navigate({ to: '/' })} aria-label="Retour à l'accueil" style={{ display: 'flex', alignItems: 'center', gap: 9, cursor: 'pointer', background: 'none', border: 'none', padding: 0, margin: 0 }}>
-          <div style={{ width: 30, height: 30, borderRadius: 9, background: theme.color.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: theme.shadow.btn }}>
-            <div style={{ width: 11, height: 11, background: '#fff', borderRadius: 3 }} />
+      <HStack gap={3} className="min-w-0 items-center">
+        <button type="button" onClick={() => navigate({ to: '/' })} aria-label="Retour à l'accueil" className="flex items-center gap-2.5 cursor-pointer bg-transparent border-none p-0 m-0">
+          <div className="w-7 h-7 rounded-lg bg-accent flex items-center justify-center shadow-btn">
+            <div className="w-2.5 h-2.5 bg-white rounded-xs" />
           </div>
-          <span style={{ fontFamily: theme.font.heading, fontWeight: 600, fontSize: 19 }}>MLBlock</span>
+          <span className="font-heading font-semibold text-lg text-text">MLBlock</span>
         </button>
-        <div style={{ width: 1, height: 26, background: theme.color.border }} />
-        <HStack gap={2} style={{ alignItems: 'center', background: theme.color.surface3, border: `1px solid ${theme.color.border}`, padding: '6px 12px', borderRadius: theme.radius.md, minWidth: 0 }}>
-          <span style={{ width: 7, height: 7, borderRadius: '50%', background: theme.color.status, display: 'inline-block', flexShrink: 0 }} />
+        <div className="w-px h-6 bg-border" />
+        <HStack gap={2} className="items-center bg-surface3 border border-border px-3 py-1.5 rounded-md min-w-0">
+          <span className="w-2 h-2 rounded-full bg-status inline-block shrink-0" />
           {editingName ? (
             <TextInput
               label="Nom du projet"
@@ -132,15 +115,14 @@ export default function EditorHeader() {
               onClick={() => { setDraftName(projectName); setEditingName(true) }}
               title="Cliquer pour renommer"
               aria-label="Modifier le nom du projet"
-              className="project-name"
-              style={{ fontWeight: 800, fontSize: 14, cursor: 'pointer', borderBottom: '1px dashed rgba(255,255,255,.28)', background: 'none', border: 'none', padding: 0, margin: 0 }}
+              className="project-name font-extrabold text-sm cursor-pointer border-b border-dashed border-white/30 bg-transparent p-0 m-0 text-text"
             >
               {projectName}
             </button>
           )}
         </HStack>
       </HStack>
-      <HStack gap={2} style={{ alignItems: 'center' }}>
+      <HStack gap={2} className="items-center">
         <Button
           label="Modèles & Baselines"
           variant="secondary"
@@ -171,7 +153,7 @@ export default function EditorHeader() {
         />
       </HStack>
 
-      <HStack gap={2} className="header-actions" style={{ alignItems: 'center' }}>
+      <HStack gap={2} className="header-actions items-center">
         <IconButton
           label="Annuler (Ctrl+Z)"
           icon={<Icon icon={Undo2} size="sm" />}
@@ -236,12 +218,12 @@ export default function EditorHeader() {
         />
       </HStack>
 
-      <input ref={fileRef} type="file" accept=".json,application/json" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) onImportPicked(f); e.target.value = '' }} />
+      <input ref={fileRef} type="file" accept=".json,application/json" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) onImportPicked(f); e.target.value = '' }} />
 
       {importError && (
-        <div style={{ position: 'fixed', bottom: 18, right: 18, background: theme.color.surface3, border: `1px solid ${theme.color.error}`, color: theme.color.errorLight, padding: '10px 16px', borderRadius: theme.radius.md, fontWeight: 700, fontSize: 13, zIndex: 120 }}>
+        <div className="fixed bottom-5 right-5 bg-surface3 border border-error text-error-light px-4 py-2.5 rounded-md font-bold text-xs z-50">
           {importError}
-          <button onClick={() => setImportError(null)} aria-label="Fermer" style={{ marginLeft: 10, background: 'none', border: 'none', color: theme.color.errorLight, cursor: 'pointer', fontWeight: 900 }}>×</button>
+          <button onClick={() => setImportError(null)} aria-label="Fermer" className="ml-2.5 bg-transparent border-none text-error-light cursor-pointer font-black">×</button>
         </div>
       )}
 

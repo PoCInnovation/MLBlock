@@ -1,4 +1,3 @@
-import { theme } from '../../theme'
 import { useNavigate } from '@tanstack/react-router'
 import useAppStore from '../../store/useAppStore'
 import { CloudOff, ArrowLeft } from 'lucide-react'
@@ -9,18 +8,18 @@ export default function EditorUnavailableModal() {
   const message = useAppStore(s => s.catalogErrorMessage)
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.72)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
-      <div style={{ background: '#221c19', border: '1px solid rgba(255,255,255,.1)', borderRadius: 18, padding: '40px 48px', textAlign: 'center', maxWidth: 420, width: '90%' }}>
-        <div style={{ fontSize: 36, marginBottom: 16, color: theme.color.warning }}><Icon icon={CloudOff} size="lg" /></div>
-        <div style={{ fontFamily: "'Fredoka', sans-serif", fontWeight: 700, fontSize: 22, marginBottom: 10, color: '#f0e9e3' }}>
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+      <div className="bg-surface2 border border-white/10 rounded-2xl p-10 text-center max-w-sm w-11/12">
+        <div className="text-4xl mb-4 text-warning"><Icon icon={CloudOff} size="lg" /></div>
+        <div className="font-heading font-bold text-xl mb-2.5 text-text">
           Éditeur non disponible
         </div>
-        <div style={{ fontSize: 14, color: theme.color.textMuted, marginBottom: 28, lineHeight: 1.6 }}>
+        <div className="text-sm text-text-muted mb-7 leading-relaxed">
           {message ?? 'Impossible de joindre le serveur. Vérifie que le backend est lancé et réessaie.'}
         </div>
         <button
           onClick={() => navigate({ to: '/' })}
-          style={{ background: 'rgba(255,255,255,.08)', color: '#e8e0d8', border: '1px solid rgba(255,255,255,.15)', padding: '10px 24px', borderRadius: 10, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}
+          className="bg-white/10 text-text border border-white/15 px-6 py-2.5 rounded-lg font-bold text-sm cursor-pointer inline-flex items-center gap-2"
         >
           <Icon icon={ArrowLeft} size="sm" /> Retour
         </button>

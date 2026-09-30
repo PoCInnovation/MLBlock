@@ -93,7 +93,7 @@ export function SequentialDrawerBody({ id, data, updateFlowParam }: SuperBlockBo
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between text-[11px] text-text-muted py-1 border-b border-border/40">
+      <div className="flex items-center justify-between text-xs text-text-muted py-1 border-b border-border/40">
         <button
           type="button"
           onClick={() => setIsExpanded(!isExpanded)}
@@ -108,7 +108,7 @@ export function SequentialDrawerBody({ id, data, updateFlowParam }: SuperBlockBo
             type="text"
             value={inputShapeStr}
             onChange={e => updateFlowParam(id, 'input_shape', e.target.value)}
-            className="bg-surface1! border border-border! rounded px-1.5 py-0.5 text-[11px] text-text font-mono w-[85px] text-right"
+            className="!bg-surface !border border-border rounded px-2 py-0.5 text-xs text-text font-mono w-20 text-right"
           />
         </div>
       </div>
@@ -116,11 +116,11 @@ export function SequentialDrawerBody({ id, data, updateFlowParam }: SuperBlockBo
       {isExpanded && (
         <>
           {children.length === 0 ? (
-            <div className="p-3 text-center border border-dashed border-border rounded-xl text-text-muted text-[11px]">
+            <div className="p-3 text-center border border-dashed border-border rounded-xl text-text-muted text-xs">
               Aucune couche empilée.
             </div>
           ) : (
-            <div className="flex flex-col gap-1.5 max-h-[260px] overflow-y-auto pr-1">
+            <div className="flex flex-col gap-1.5 max-h-64 overflow-y-auto pr-1">
               {children.map((child, idx) => {
                 const res = shapeResults[idx]
                 const outFormatted = res?.outShape ? formatShape(res.outShape) : null
@@ -129,11 +129,11 @@ export function SequentialDrawerBody({ id, data, updateFlowParam }: SuperBlockBo
                 return (
                   <div
                     key={child.id}
-                    className="p-2 rounded-lg bg-surface1 border border-border/60 flex flex-col gap-1 text-[11px]"
+                    className="p-2 rounded-lg bg-surface border border-border/60 flex flex-col gap-1 text-xs"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="text-[10px] font-bold text-text-muted w-3">{idx + 1}.</span>
+                        <span className="text-xs font-bold text-text-muted w-3">{idx + 1}.</span>
                         <span className="font-bold text-text truncate">{label}</span>
                       </div>
                       <div className="flex items-center gap-1">
@@ -141,35 +141,35 @@ export function SequentialDrawerBody({ id, data, updateFlowParam }: SuperBlockBo
                           type="button"
                           disabled={idx === 0}
                           onClick={() => handleMove(idx, -1)}
-                          className="p-0.5 text-text-muted hover:text-text disabled:opacity-30 cursor-pointer border-none bg-transparent"
+                          className="p-1 text-text-muted hover:text-text disabled:opacity-30 cursor-pointer border-none bg-transparent"
                           title="Monter"
                         >
-                          <ArrowUp size={12} />
+                          <ArrowUp size={14} />
                         </button>
                         <button
                           type="button"
                           disabled={idx === children.length - 1}
                           onClick={() => handleMove(idx, 1)}
-                          className="p-0.5 text-text-muted hover:text-text disabled:opacity-30 cursor-pointer border-none bg-transparent"
+                          className="p-1 text-text-muted hover:text-text disabled:opacity-30 cursor-pointer border-none bg-transparent"
                           title="Descendre"
                         >
-                          <ArrowDown size={12} />
+                          <ArrowDown size={14} />
                         </button>
                         <button
                           type="button"
                           onClick={() => handleRemove(idx)}
-                          className="p-0.5 text-error/80 hover:text-error cursor-pointer border-none bg-transparent ml-1"
+                          className="p-1 text-error/80 hover:text-error cursor-pointer border-none bg-transparent ml-1"
                           title="Supprimer"
                         >
-                          <Trash2 size={12} />
+                          <Trash2 size={14} />
                         </button>
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between text-[10px]">
+                    <div className="flex items-center justify-between text-xs">
                       <span className="text-text-muted">Sortie:</span>
                       {outFormatted ? (
-                        <span className="font-mono px-1.5 py-0.2 rounded bg-accent/15 text-accent font-semibold">
+                        <span className="font-mono px-2 py-0.5 rounded bg-accent/15 text-accent font-semibold">
                           [{outFormatted}]
                         </span>
                       ) : (
@@ -178,8 +178,8 @@ export function SequentialDrawerBody({ id, data, updateFlowParam }: SuperBlockBo
                     </div>
 
                     {res?.warning && (
-                      <div className="flex items-center gap-1 text-[10px] text-error font-medium bg-error/10 p-1 rounded">
-                        <AlertTriangle size={11} className="shrink-0" />
+                      <div className="flex items-center gap-1 text-xs text-error font-medium bg-error/10 p-1 rounded">
+                        <AlertTriangle size={14} className="shrink-0" />
                         <span className="truncate" title={res.warning}>{res.warning}</span>
                       </div>
                     )}
@@ -196,15 +196,12 @@ export function SequentialDrawerBody({ id, data, updateFlowParam }: SuperBlockBo
               variant="secondary"
               size="sm"
               onClick={() => setIsPickerOpen(!isPickerOpen)}
-              className="w-full text-[11px] font-bold py-1 flex items-center justify-center gap-1 rounded-lg"
+              className="w-full text-xs font-bold py-1 flex items-center justify-center gap-1 rounded-lg"
             />
 
             {isPickerOpen && (
-              <div
-                className="absolute z-20 top-full left-0 right-0 mt-1 bg-surface2 border border-border rounded-xl shadow-2xl p-1.5 flex flex-col gap-1 max-h-[220px] overflow-y-auto"
-                style={{ backgroundColor: 'var(--color-surface2, #1e293b)' }}
-              >
-                <div className="text-[10px] font-bold text-text-muted px-2 py-0.5 uppercase tracking-wider">
+              <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-surface2 border border-border rounded-xl shadow-2xl p-1.5 flex flex-col gap-1 max-h-56 overflow-y-auto">
+                <div className="text-xs font-bold text-text-muted px-2 py-0.5 uppercase tracking-wider">
                   Couches Disponibles
                 </div>
                 {CANDIDATE_LAYERS.map(c => (
@@ -214,8 +211,8 @@ export function SequentialDrawerBody({ id, data, updateFlowParam }: SuperBlockBo
                     onClick={() => handleAddLayer(c.type)}
                     className="flex flex-col text-left px-2 py-1.5 rounded-lg hover:bg-surface3 border-none bg-transparent cursor-pointer text-text transition-colors"
                   >
-                    <span className="font-bold text-[11px] text-text-light">{c.label}</span>
-                    <span className="text-[10px] text-text-muted">{c.desc}</span>
+                    <span className="font-bold text-xs text-text-light">{c.label}</span>
+                    <span className="text-xs text-text-muted">{c.desc}</span>
                   </button>
                 ))}
               </div>
@@ -237,7 +234,7 @@ export function TrainerBody({ id, data, updateFlowParam }: SuperBlockBodyProps) 
 
   return (
     <VStack gap={2}>
-      <div className="flex items-center justify-between text-[11px]">
+      <div className="flex items-center justify-between text-xs">
         <span className="text-text-muted">Époques:</span>
         <input
           type="number"
@@ -245,52 +242,52 @@ export function TrainerBody({ id, data, updateFlowParam }: SuperBlockBodyProps) 
           max={100}
           value={epochs}
           onChange={e => updateFlowParam(id, 'epochs', e.target.value)}
-          className="bg-surface1! border border-border! rounded px-1.5 py-0.5 text-[11px] text-text font-mono w-[65px] text-right"
+          className="!bg-surface !border border-border rounded px-2 py-0.5 text-xs text-text font-mono w-16 text-right"
         />
       </div>
 
-      <div className="flex items-center justify-between text-[11px]">
+      <div className="flex items-center justify-between text-xs">
         <span className="text-text-muted">Optimiseur:</span>
         <select
           value={optimizer}
           onChange={e => updateFlowParam(id, 'optimizer', e.target.value)}
-          className="bg-surface1! border border-border! rounded px-1.5 py-0.5 text-[11px] text-text font-body w-[90px]"
+          className="!bg-surface !border border-border rounded px-2 py-0.5 text-xs text-text font-body w-24"
         >
           <option value="adam">Adam</option>
           <option value="sgd">SGD</option>
         </select>
       </div>
 
-      <div className="flex items-center justify-between text-[11px]">
+      <div className="flex items-center justify-between text-xs">
         <span className="text-text-muted">Learning Rate:</span>
         <input
           type="text"
           value={lr}
           onChange={e => updateFlowParam(id, 'learning_rate', e.target.value)}
-          className="bg-surface1! border border-border! rounded px-1.5 py-0.5 text-[11px] text-text font-mono w-[65px] text-right"
+          className="!bg-surface !border border-border rounded px-2 py-0.5 text-xs text-text font-mono w-16 text-right"
         />
       </div>
 
-      <div className="flex items-center justify-between text-[11px]">
+      <div className="flex items-center justify-between text-xs">
         <span className="text-text-muted">Loss Function:</span>
         <select
           value={lossFn}
           onChange={e => updateFlowParam(id, 'loss_fn', e.target.value)}
-          className="bg-surface1! border border-border! rounded px-1.5 py-0.5 text-[11px] text-text font-body w-[110px]"
+          className="!bg-surface !border border-border rounded px-2 py-0.5 text-xs text-text font-body w-28"
         >
           <option value="cross_entropy">CrossEntropy</option>
           <option value="mse">MSE</option>
         </select>
       </div>
 
-      <div className="flex items-center justify-between text-[10px] p-1.5 rounded-lg bg-surface1 border border-border/50">
+      <div className="flex items-center justify-between text-xs p-1.5 rounded-lg bg-surface border border-border/50">
         <div className="flex items-center gap-1.5">
-          <Activity size={12} className="text-accent" />
+          <Activity size={14} className="text-accent" />
           <span className="text-text-muted">Statut:</span>
         </div>
         {myResult ? (
           <span className="text-success font-semibold flex items-center gap-1">
-            <Cpu size={11} /> Entraîné
+            <Cpu size={14} /> Entraîné
           </span>
         ) : (
           <span className="text-text-muted">Prêt</span>
@@ -308,12 +305,12 @@ export function DataPipelineBody({ id, data, updateFlowParam }: SuperBlockBodyPr
 
   return (
     <VStack gap={2}>
-      <div className="flex items-center justify-between text-[11px]">
+      <div className="flex items-center justify-between text-xs">
         <span className="text-text-muted">Dataset:</span>
         <select
           value={dataset}
           onChange={e => updateFlowParam(id, 'dataset', e.target.value)}
-          className="bg-surface1! border border-border! rounded px-1.5 py-0.5 text-[11px] text-text font-body w-[110px]"
+          className="!bg-surface !border border-border rounded px-2 py-0.5 text-xs text-text font-body w-28"
         >
           <option value="cifar10">CIFAR-10</option>
           <option value="mnist">MNIST</option>
@@ -322,7 +319,7 @@ export function DataPipelineBody({ id, data, updateFlowParam }: SuperBlockBodyPr
         </select>
       </div>
 
-      <div className="flex items-center justify-between text-[11px]">
+      <div className="flex items-center justify-between text-xs">
         <span className="text-text-muted">Batch Size:</span>
         <input
           type="number"
@@ -330,11 +327,11 @@ export function DataPipelineBody({ id, data, updateFlowParam }: SuperBlockBodyPr
           max={512}
           value={batchSize}
           onChange={e => updateFlowParam(id, 'batch_size', e.target.value)}
-          className="bg-surface1! border border-border! rounded px-1.5 py-0.5 text-[11px] text-text font-mono w-[65px] text-right"
+          className="!bg-surface !border border-border rounded px-2 py-0.5 text-xs text-text font-mono w-16 text-right"
         />
       </div>
 
-      <div className="flex items-center justify-between text-[11px]">
+      <div className="flex items-center justify-between text-xs">
         <span className="text-text-muted">Train / Val Ratio:</span>
         <input
           type="number"
@@ -343,11 +340,11 @@ export function DataPipelineBody({ id, data, updateFlowParam }: SuperBlockBodyPr
           max={0.95}
           value={trainRatio}
           onChange={e => updateFlowParam(id, 'train_ratio', e.target.value)}
-          className="bg-surface1! border border-border! rounded px-1.5 py-0.5 text-[11px] text-text font-mono w-[65px] text-right"
+          className="!bg-surface !border border-border rounded px-2 py-0.5 text-xs text-text font-mono w-16 text-right"
         />
       </div>
 
-      <div className="flex items-center justify-between text-[11px]">
+      <div className="flex items-center justify-between text-xs">
         <span className="text-text-muted">Normaliser:</span>
         <input
           type="checkbox"
@@ -368,12 +365,12 @@ export function MLPipelineBody({ id, data, updateFlowParam }: SuperBlockBodyProp
 
   return (
     <VStack gap={2}>
-      <div className="flex items-center justify-between text-[11px]">
+      <div className="flex items-center justify-between text-xs">
         <span className="text-text-muted">Scaler:</span>
         <select
           value={scaler}
           onChange={e => updateFlowParam(id, 'scaler', e.target.value)}
-          className="bg-surface1! border border-border! rounded px-1.5 py-0.5 text-[11px] text-text font-body w-[100px]"
+          className="!bg-surface !border border-border rounded px-2 py-0.5 text-xs text-text font-body w-24"
         >
           <option value="standard">StandardScaler</option>
           <option value="minmax">MinMaxScaler</option>
@@ -381,7 +378,7 @@ export function MLPipelineBody({ id, data, updateFlowParam }: SuperBlockBodyProp
         </select>
       </div>
 
-      <div className="flex items-center justify-between text-[11px]">
+      <div className="flex items-center justify-between text-xs">
         <span className="text-text-muted">PCA (dims):</span>
         <input
           type="number"
@@ -389,16 +386,16 @@ export function MLPipelineBody({ id, data, updateFlowParam }: SuperBlockBodyProp
           max={50}
           value={pcaComponents}
           onChange={e => updateFlowParam(id, 'pca_components', e.target.value)}
-          className="bg-surface1! border border-border! rounded px-1.5 py-0.5 text-[11px] text-text font-mono w-[65px] text-right"
+          className="!bg-surface !border border-border rounded px-2 py-0.5 text-xs text-text font-mono w-16 text-right"
         />
       </div>
 
-      <div className="flex items-center justify-between text-[11px]">
+      <div className="flex items-center justify-between text-xs">
         <span className="text-text-muted">Modèle:</span>
         <select
           value={estimator}
           onChange={e => updateFlowParam(id, 'estimator', e.target.value)}
-          className="bg-surface1! border border-border! rounded px-1.5 py-0.5 text-[11px] text-text font-body w-[125px]"
+          className="!bg-surface !border border-border rounded px-2 py-0.5 text-xs text-text font-body w-32"
         >
           <option value="logistic_regression">LogisticRegression</option>
           <option value="random_forest">RandomForest</option>
@@ -407,13 +404,13 @@ export function MLPipelineBody({ id, data, updateFlowParam }: SuperBlockBodyProp
         </select>
       </div>
 
-      <div className="flex items-center justify-between text-[11px]">
+      <div className="flex items-center justify-between text-xs">
         <span className="text-text-muted">Colonne Cible:</span>
         <input
           type="text"
           value={targetCol}
           onChange={e => updateFlowParam(id, 'target_column', e.target.value)}
-          className="bg-surface1! border border-border! rounded px-1.5 py-0.5 text-[11px] text-text font-mono w-[80px] text-right"
+          className="!bg-surface !border border-border rounded px-2 py-0.5 text-xs text-text font-mono w-20 text-right"
         />
       </div>
     </VStack>

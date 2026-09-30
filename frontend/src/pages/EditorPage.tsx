@@ -13,7 +13,6 @@ import UnsavedChangesDialog from '../components/ui/UnsavedChangesDialog'
 import Toast from '../components/ui/Toast'
 import { CheckCircle2 } from 'lucide-react'
 import FlowCanvas from '../components/flow/FlowCanvas'
-import { theme } from '../theme'
 function stashIfDirty(): void {
   const s = useAppStore.getState()
   const u = s.user as { id?: string } | null
@@ -171,31 +170,17 @@ export default function EditorPage() {
     )
   }
   return (
-    <main id="main" style={{ height: '100vh', background: theme.color.bg, color: theme.color.text, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <main id="main" className="h-screen bg-bg text-text flex flex-col overflow-hidden">
       <SkipLink />
       <div className="editor-outer">
         <EditorHeader />
         {restoredWork && (
-          <div className="flex items-center justify-between gap-3 px-4 py-[9px] bg-[rgba(143,209,168,.13)] border border-[rgba(143,209,168,.35)] text-success-muted text-[13px] font-bold shrink-0" style={{ borderRadius: theme.radius.xl }}>
+          <div className="flex items-center justify-between gap-3 px-4 py-2 bg-success/15 border border-success/30 text-success-muted text-xs font-bold shrink-0 rounded-2xl">
             <span className="inline-flex items-center gap-2"><CheckCircle2 size={15} /> Travail récupéré — clique sur Sauvegarder pour conserver</span>
             <button onClick={() => setRestoredWork(false)} className="bg-none border-none text-success-muted cursor-pointer font-black text-sm" aria-label="Fermer">×</button>
           </div>
         )}
-        <div
-          className="floating-panel floating-canvas"
-          style={{
-            flex: 1,
-            height: '100%',
-            minHeight: 0,
-            alignSelf: 'stretch',
-            borderRadius: theme.radius.xl,
-            overflow: 'hidden',
-            boxShadow: '0 8px 32px rgba(0,0,0,.12)',
-            display: 'flex',
-            flexDirection: 'column',
-            background: theme.color.canvas,
-          }}
-        >
+        <div className="floating-panel floating-canvas flex-1 h-full min-h-0 self-stretch rounded-2xl overflow-hidden shadow-2xl flex flex-col bg-canvas">
           <FlowCanvas />
         </div>
       </div>

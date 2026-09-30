@@ -42,10 +42,7 @@ const nodeTypes = {
 }
 const edgeTypes = { flow: FlowLink }
 
-const reactFlowStyle: React.CSSProperties = {
-  background: theme.color.canvas,
-  borderRadius: 20,
-}
+const reactFlowClassName = 'bg-canvas rounded-2xl'
 
 const edgeColor: Record<string, string> = {
   compatible: theme.color.success,
@@ -352,22 +349,10 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
 
   const handleNodeClick = useCallback(() => setActiveSheet('inspect'), [setActiveSheet])
   return (
-    <div style={{ flex: 1, position: 'relative', display: 'flex', width: '100%', minWidth: 0, minHeight: 0, height: '100%', alignItems: 'stretch' }}>
+    <div className="flex-1 relative flex w-full min-w-0 min-h-0 h-full items-stretch">
       <div
         ref={wrapperRef}
-        className="floating-panel floating-canvas"
-        style={{
-          flex: 1,
-          width: '100%',
-          alignSelf: 'stretch',
-          height: '100%',
-          minHeight: 0,
-          borderRadius: theme.radius.xl,
-          overflow: 'hidden',
-          boxShadow: '0 8px 32px rgba(0,0,0,.12)',
-          minWidth: 0,
-          position: 'relative',
-        }}
+        className="floating-panel floating-canvas flex-1 w-full self-stretch h-full min-h-0 rounded-2xl overflow-hidden shadow-2xl min-w-0 relative"
       >
         <ReactFlow
           nodes={flowNodes}
@@ -381,26 +366,19 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
           nodeTypes={nodeTypes}
           connectionRadius={40}
           edgeTypes={edgeTypes}
-          style={reactFlowStyle}
+          className={reactFlowClassName}
           fitView
           fitViewOptions={{ padding: 0.2 }}
         >
           <Controls
-            style={{
-              borderRadius: theme.radius.xl,
-              overflow: 'hidden',
-              boxShadow: '0 8px 32px rgba(0,0,0,.12)',
-              backdropFilter: 'blur(8px)',
-              WebkitBackdropFilter: 'blur(8px)',
-            }}
-            className="floating-panel"
+            className="floating-panel rounded-2xl overflow-hidden shadow-2xl backdrop-blur-md"
           >
             <ControlButton
               onClick={handleArrange}
               title="Disposer"
               aria-label="Disposer les blocs automatiquement"
               disabled={flowNodes.length < 2}
-              style={{ color: '#1a192b' }}
+              className="text-surface"
             >
               <AlignVerticalJustifyCenter size={18} />
             </ControlButton>
@@ -423,14 +401,14 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
         height={activeSheet === 'inspect' ? 'tall' : 'capped'}
         hasScrim={false}
       >
-        <div style={{ padding: '16px 20px', minHeight: 0, height: '100%', overflowY: 'auto' }}>
+        <div className="p-5 min-h-0 h-full overflow-y-auto">
           {activeSheet === 'add' && (
             <VStack gap={3}>
               <Heading level={4}>Catalogue des Super-Blocs</Heading>
               <Text type="body" color="secondary">
                 Sélectionnez un Super-Bloc à instancier directement sur votre canvas.
               </Text>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 12, marginTop: 8 }}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
                 {Object.entries(SUPER_BLOCK_REGISTRY).map(([typeKey, def]) => {
                   const stageCfg = getStageConfig(def.stage)
                   return (
@@ -439,29 +417,20 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
                       label={`Ajouter ${def.title}`}
                       onClick={() => {
                         addNodeAtCenter(typeKey)
-                        setActiveSheet(null)
                       }}
                       padding={3}
                       elevation="low"
                     >
                       <VStack gap={2}>
-                        <HStack gap={2} style={{ alignItems: 'center' }}>
+                        <HStack gap={2} className="items-center">
                           <Badge
                             label={stageCfg.key}
-                            style={{
-                              backgroundColor: `${stageCfg.color}22`,
-                              color: stageCfg.color,
-                              border: `1px solid ${stageCfg.color}66`,
-                              fontSize: 10,
-                              fontWeight: 800,
-                              padding: '2px 6px',
-                              borderRadius: 4,
-                            }}
+                            className="text-xs font-extrabold px-1.5 py-0.5 rounded border"
                           />
-                          <span style={{ fontWeight: 800, fontSize: 15, color: theme.color.text }}>{def.title}</span>
+                          <span className="font-extrabold text-sm text-text">{def.title}</span>
                         </HStack>
-                        <span style={{ fontSize: 12, color: theme.color.textMuted }}>{def.subtitle}</span>
-                        <HStack gap={2} style={{ fontSize: 11, color: theme.color.textDim, marginTop: 4 }}>
+                        <span className="text-xs text-text-muted">{def.subtitle}</span>
+                        <HStack gap={2} className="text-xs text-text-dim mt-1">
                           <span>Entrées: {def.inputs.length}</span>
                           <span>•</span>
                           <span>Sorties: {def.outputs.length}</span>
@@ -513,7 +482,7 @@ function NodeInspector() {
 
   if (!selected) {
     return (
-      <VStack gap={2} style={{ padding: '32px 0', alignItems: 'center', textAlign: 'center' }}>
+      <VStack gap={2} className="py-8 items-center text-center">
         <Heading level={5}>Inspecteur</Heading>
         <Text type="body" color="secondary">
           Sélectionnez un bloc sur le canvas pour examiner et modifier ses paramètres.
@@ -524,19 +493,15 @@ function NodeInspector() {
 
   return (
     <VStack gap={3}>
-      <HStack gap={2} style={{ alignItems: 'center', justifyContent: 'space-between' }}>
-        <HStack gap={2} style={{ alignItems: 'center' }}>
+      <HStack gap={2} className="items-center justify-between">
+        <HStack gap={2} className="items-center">
           <Badge
             label={stageConfig.key}
-            style={{
-              backgroundColor: `${stageConfig.color}22`,
-              color: stageConfig.color,
-              border: `1px solid ${stageConfig.color}66`,
-            }}
+            className="text-xs font-extrabold px-1.5 py-0.5 rounded border"
           />
           <Heading level={4}>{String(data?.label ?? selected.id)}</Heading>
         </HStack>
-        <span style={{ fontSize: 12, color: theme.color.textDim, fontFamily: theme.font.mono }}>
+        <span className="text-xs text-text-dim font-mono">
           {type}
         </span>
       </HStack>
@@ -550,15 +515,15 @@ function NodeInspector() {
       {Object.keys(fields).length === 0 ? (
         <Text type="supporting" color="secondary">Aucun paramètre configurable.</Text>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {Object.entries(fields).map(([k, val]) => (
-            <div key={k} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: theme.color.textMuted }}>{k}</span>
+            <div key={k} className="flex flex-col gap-1">
+              <span className="text-xs font-bold text-text-muted">{k}</span>
               <input
                 type="text"
                 value={val}
                 onChange={e => updateFlowParam(selected.id, k, e.target.value)}
-                className="bg-surface1 border border-border rounded px-2 py-1 text-[12px] text-text font-mono"
+                className="bg-surface border border-border rounded px-2 py-1 text-xs text-text font-mono"
               />
             </div>
           ))}

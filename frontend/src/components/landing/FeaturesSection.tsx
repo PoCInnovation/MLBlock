@@ -1,5 +1,4 @@
 import { Link } from '@tanstack/react-router'
-import { theme } from '../../theme'
 import { Play } from 'lucide-react'
 import React from 'react'
 
@@ -12,48 +11,18 @@ type Feature = {
 
 const FEATURES: Feature[] = [
     {
-        color: theme.color.accentLight,
-        icon: (
-            <div
-                style={{
-                    width: 18,
-                    height: 18,
-                    borderRadius: 6,
-                    background: 'rgba(255,255,255,.85)',
-                }}
-            />
-        ),
+        color: 'var(--color-accent-light)',
+        icon: <div className="w-4.5 h-4.5 rounded-md bg-white/85" />,
         title: 'Comme un jeu de construction',
         desc: "Attrape un bloc, dépose-le dans ton projet. Il s'emboîte tout seul à la bonne place. Aucune ligne à taper.",
     },
     {
         color: 'var(--color-lilac)',
         icon: (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                <div
-                    style={{
-                        width: 18,
-                        height: 4,
-                        borderRadius: 2,
-                        background: 'rgba(255,255,255,.85)',
-                    }}
-                />
-                <div
-                    style={{
-                        width: 18,
-                        height: 4,
-                        borderRadius: 2,
-                        background: 'rgba(255,255,255,.85)',
-                    }}
-                />
-                <div
-                    style={{
-                        width: 11,
-                        height: 4,
-                        borderRadius: 2,
-                        background: 'rgba(255,255,255,.85)',
-                    }}
-                />
+            <div className="flex flex-col gap-1">
+                <div className="w-4.5 h-1 rounded-sm bg-white/85" />
+                <div className="w-4.5 h-1 rounded-sm bg-white/85" />
+                <div className="w-2.5 h-1 rounded-sm bg-white/85" />
             </div>
         ),
         title: 'Images, textes, tableaux',
@@ -71,100 +40,38 @@ export default function FeaturesSection() {
     return (
         <section
             id="fonctionnalites"
-            style={{
-                background: '#1f1916',
-                borderTop: '1px solid rgba(255,255,255,.05)',
-            }}
+            className="bg-surface4 border-t border-white/5"
         >
-            <div
-                className="landing-section-pad"
-                style={{
-                    maxWidth: 1240,
-                    margin: '0 auto',
-                    padding: '48px 48px 72px',
-                }}
-            >
-                <h2
-                    style={{
-                        fontFamily: "'Fredoka', sans-serif",
-                        fontWeight: 600,
-                        fontSize: 34,
-                        letterSpacing: '-.01em',
-                        margin: '0 0 8px',
-                    }}
-                >
+            <div className="landing-section-pad max-w-310 mx-auto px-12 pt-12 pb-18">
+                <h2 className="font-heading font-semibold text-4xl tracking-tight mb-2 mt-0">
                     L'intelligence artificielle, en pièces à assembler
                 </h2>
-                <p
-                    style={{
-                        color: '#b7ada3',
-                        fontSize: 17,
-                        fontWeight: 600,
-                        margin: '0 0 44px',
-                    }}
-                >
+                <p className="text-text-muted text-lg font-semibold mb-11 mt-0">
                     Chaque étape de l'apprentissage devient un bloc.
                 </p>
-                <div
-                    className="landing-features-grid"
-                    style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(3, 1fr)',
-                        gap: 22,
-                    }}
-                >
+                <div className="landing-features-grid grid grid-cols-3 gap-5.5">
                     {FEATURES.map(({ color, icon, title, desc }) => (
                         <div
                             key={title}
-                            style={{
-                                background: '#251e1a',
-                                border: '1px solid rgba(255,255,255,.06)',
-                                borderRadius: 24,
-                                padding: 28,
-                            }}
+                            className="bg-surface3 border border-white/[0.06] rounded-3xl p-7"
                         >
                             <div
-                                style={{
-                                    width: 46,
-                                    height: 46,
-                                    borderRadius: 14,
-                                    background: color,
-                                    boxShadow: '0 3px 0 rgba(0,0,0,.2)',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    marginTop: 2,
-                                    marginBottom: 16,
-                                }}
+                                className="w-11.5 h-11.5 rounded-lg feature-icon-shadow flex items-center justify-center mt-0.5 mb-4"
+                                style={{ background: color }}
                             >
                                 {icon}
                             </div>
-                            <h3
-                                style={{
-                                    fontFamily: "'Fredoka', sans-serif",
-                                    fontWeight: 600,
-                                    fontSize: 21,
-                                    margin: '0 0 8px',
-                                }}
-                            >
+                            <h3 className="font-heading font-semibold text-xl mb-2 mt-0">
                                 {title}
                             </h3>
-                            <p
-                                style={{
-                                    color: theme.color.textMuted,
-                                    fontSize: 15,
-                                    lineHeight: 1.55,
-                                    fontWeight: 600,
-                                    margin: 0,
-                                }}
-                            >
+                            <p className="text-text-muted text-sm leading-relaxed font-semibold m-0">
                                 {desc}
                             </p>
                         </div>
                     ))}
                 </div>
-                <div style={{ textAlign: 'center', marginTop: 36 }}>
-                    <Link to="/cours" className="poc-btn" style={{ textDecoration: 'none' }} aria-label="Tous les cours">Tous les cours →</Link>
+                <div className="text-center mt-9">
+                    <Link to="/cours" className="poc-btn no-underline" aria-label="Tous les cours">Tous les cours →</Link>
                 </div>
             </div>
         </section>

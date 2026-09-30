@@ -18,13 +18,13 @@ export function Dialog({ isOpen, onOpenChange, children }: DialogProps) {
 }
 
 export function DialogTitle({ children }: { children: ReactNode }) {
-  return <div style={{ fontSize: 17, fontWeight: 800, margin: 0 }}>{children}</div>
+  return <div className="text-base font-extrabold m-0">{children}</div>
 }
 
 export function DialogDescription({ children }: { children: ReactNode }) {
-  return <div style={{ color: 'var(--color-text-muted)', fontSize: 13.5, fontWeight: 600, lineHeight: 1.55, marginTop: 10, marginBottom: 20 }}>{children}</div>
+  return <div className="text-text-muted text-sm font-semibold leading-relaxed mt-2.5 mb-5">{children}</div>
 }
 
 export function DialogFooter({ children }: { children: ReactNode }) {
-  return <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', flexWrap: 'wrap' }}>{children}</div>
+  return <div className="flex gap-2.5 justify-end flex-wrap">{children}</div>
 }

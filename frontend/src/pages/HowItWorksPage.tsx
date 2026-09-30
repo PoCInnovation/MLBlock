@@ -4,26 +4,24 @@ import SiteLayout from '../components/landing/SiteLayout'
 import { Button, Card, VStack, HStack, Stack } from '@astryxdesign/core'
 import { Heading, Text } from '@astryxdesign/core/Text'
 import { Icon } from '@astryxdesign/core/Icon'
-import { theme } from '../theme'
-
 export default function HowItWorksPage() {
   const navigate = useNavigate()
 
   return (
     <SiteLayout>
       {/* Intro */}
-      <section style={{ padding: '64px 48px 0' }}>
-        <Stack style={{ maxWidth: 1240, margin: '0 auto' }}>
+      <section className="px-12 pt-16">
+        <Stack className="max-w-7xl mx-auto">
           <VStack gap={3}>
             <Heading level={1}>Comment ça marche</Heading>
-            <Text type="body" color="secondary" style={{ maxWidth: 680 }}>MLBlock permet de construire un pipeline de machine learning en assemblant des blocs, sans écrire une ligne de code.</Text>
+            <Text type="body" color="secondary" className="max-w-2xl">MLBlock permet de construire un pipeline de machine learning en assemblant des blocs, sans écrire une ligne de code.</Text>
           </VStack>
         </Stack>
       </section>
 
       {/* Le principe d'assemblage */}
-      <section style={{ padding: '64px 48px 0' }}>
-        <Stack style={{ maxWidth: 1240, margin: '0 auto' }}>
+      <section className="px-12 pt-16">
+        <Stack className="max-w-7xl mx-auto">
           <VStack gap={3}>
             <Heading level={2}>Le principe d'assemblage</Heading>
             <Card variant="default" padding={4}>
@@ -34,12 +32,12 @@ export default function HowItWorksPage() {
       </section>
 
       {/* Que se passe-t-il quand tu appuies sur Démarrer ? */}
-      <section style={{ padding: '64px 48px 0' }}>
-        <Stack style={{ maxWidth: 1240, margin: '0 auto' }}>
+      <section className="px-12 pt-16">
+        <Stack className="max-w-7xl mx-auto">
           <VStack gap={3}>
             <Heading level={2}>Que se passe-t-il quand tu appuies sur Démarrer&nbsp;?</Heading>
             <Card variant="default" padding={4}>
-              <VStack gap={4} as="ol" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+              <VStack gap={4} as="ol" className="list-none m-0 p-0">
                 {[
                   {
                     title: 'Tu assembles, on construit la structure',
@@ -62,8 +60,8 @@ export default function HowItWorksPage() {
                     text: 'Une fois l\'entraînement terminé, le résultat final remonte de la machine vers notre serveur, qui te l\'affiche directement dans l\'éditeur.',
                   },
                 ].map(({ title, text }, i) => (
-                  <HStack key={i} gap={3} style={{ alignItems: 'flex-start' }}>
-                    <div style={{ flexShrink: 0, width: 32, height: 32, borderRadius: 10, background: '#2e2420', border: '1px solid rgba(255,255,255,.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Fredoka', sans-serif", fontWeight: 700, fontSize: 15, color: theme.color.accent }}>
+                  <HStack key={i} gap={3} className="items-start">
+                    <div className="shrink-0 w-8 h-8 rounded-lg bg-surface2 border border-white/10 flex items-center justify-center font-heading font-bold text-base text-accent">
                       {i + 1}
                     </div>
                     <VStack gap={1}>
@@ -79,10 +77,10 @@ export default function HowItWorksPage() {
       </section>
 
       {/* CTA */}
-      <section style={{ padding: '72px 48px' }}>
-        <Stack style={{ maxWidth: 1240, margin: '0 auto' }}>
+      <section className="px-12 py-16">
+        <Stack className="max-w-7xl mx-auto">
           <Card variant="default" padding={4}>
-            <HStack gap={4} style={{ justifyContent: 'space-between', flexWrap: 'wrap' }}>
+            <HStack gap={4} className="justify-between flex-wrap">
               <VStack gap={1}>
                 <Heading level={3}>Prêt à assembler ton premier pipeline ?</Heading>
                 <Text type="body" color="secondary">Tu peux commencer maintenant.</Text>
