@@ -45,6 +45,10 @@ class Block(BaseModel):
     group: str = "core"
     stage: int = 0
     stage_name: str = "Ingest"
+    macro_stage: int = 1
+    macro_stage_name: str = "Data"
+    engine: str = "generic"
+    is_transition: bool = False
 
 
 class BlockSummary(BaseModel):
