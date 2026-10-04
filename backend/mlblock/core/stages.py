@@ -189,3 +189,50 @@ def get_s2a_substate(block_name: str) -> str | None:
     if canonical in S2A_SEQ_BLOCKS:
         return "S2A-Seq"
     return None
+
+
+class MacroStage(IntEnum):
+    """3 canonical industry pipeline stages + transition bridges.
+
+    Additive alongside Stage (which stays the single source for the
+    existing 6 micro-stages). MacroStage is the pedagogical grouping
+    exposed by the openspec backend-three-stage-blocks change:
+
+    DATA:         Données / Environnement + Préparation (ingestion, envs
+                  Gymnasium, nettoyage, encodage, découpage, DataLoader).
+    MODEL_TRAIN:  Modèle + Entraînement (architectures nn.Module,
+                  estimateurs sklearn, boosting, optimiseurs, boucles).
+    RESULTS:      Évaluation + Visualisation (métriques, tracés, packaging).
+    TRANSITION:   Passerelles de conversion inter-frameworks
+                  (df_to_tensor, to_tensor, env_to_tensor, module_to_policy).
+    """
+
+    DATA = 1
+    MODEL_TRAIN = 2
+    RESULTS = 3
+    TRANSITION = 99
+
+    @property
+    def stage_name(self) -> str:
+        return MACRO_STAGE_METADATA[self]["name"]
+
+    @property
+    def label(self) -> str:
+        return MACRO_STAGE_METADATA[self]["label"]
+
+    @property
+    def color(self) -> str:
+        return MACRO_STAGE_METADATA[self]["color"]
+
+    @classmethod
+    def all_stages(cls) -> list[MacroStage]:
+        return [cls.DATA, cls.MODEL_TRAIN, cls.RESULTS, cls.TRANSITION]
+
+
+MACRO_STAGE_METADATA: dict[MacroStage, dict[str, Any]] = {
+    MacroStage.DATA: {"id": 1, "name": "Data", "label": "Données", "color": "#22C55E"},
+    MacroStage.MODEL_TRAIN: {"id": 2, "name": "ModelTrain", "label": "Modèle + Entraînement", "color": "#6366F1"},
+    MacroStage.RESULTS: {"id": 3, "name": "Results", "label": "Résultats", "color": "#06B6D4"},
+    MacroStage.TRANSITION: {"id": 99, "name": "Transition", "label": "Transition", "color": "#F5A623"},
+}
+
