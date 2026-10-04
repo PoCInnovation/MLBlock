@@ -176,10 +176,16 @@ def get_catalog(
             "group": block_grp,
             "stage": stage_val,
             "stage_name": stage_name_val,
+            "macro_stage": macro_val,
+            "macro_stage_name": macro_name_val,
+            "engine": engine_val,
+            "is_transition": is_transition_val,
         })
     payload = {
         "categories": sorted(list(categories.values()), key=lambda c: c["id"]),
         "stages": catalog.stages(),
+        "macro_stages": catalog.macro_stages(),
+        "superblocks": catalog.superblocks(),
     }
     # Appel direct en test (sans Request) : compatibilité — renvoie le dict brut.
     if request is None:
