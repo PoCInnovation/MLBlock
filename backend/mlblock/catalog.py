@@ -84,6 +84,22 @@ class Catalog:
             for s in Stage.all_stages()
         ]
 
+    def macro_stages(self) -> list[dict[str, Any]]:
+        """List of the 3 canonical macro-stages + transition (additive)."""
+        from mlblock.core.stages import MacroStage
+
+        return [
+            {"id": int(s), "name": s.stage_name, "label": s.label, "color": s.color}
+            for s in MacroStage.all_stages()
+        ]
+
+    def superblocks(self) -> list[dict[str, Any]]:
+        """Standard SuperBlock pedagogical titles ("Action (Moteur)")."""
+        return [
+            {"id": sb_id, "label": title, "title": title, "macro_stage": macro}
+            for sb_id, title, macro in SUPERBLOCK_TITLES
+        ]
+
     # ── test adapter ────────────────────────────────────────────────
     def use_fake(self, blocks: dict[str, Any], sources: dict[str, str] | None = None) -> None:
         """Install an in-memory catalog for tests — second adapter justifying the seam."""
