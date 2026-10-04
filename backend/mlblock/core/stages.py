@@ -301,3 +301,109 @@ def macro_of_block(block_name: str, category: str | None = None) -> MacroStage:
     return MacroStage.DATA
 
 
+# ── Framework engine tags (strict per-framework sealing) ──────────────
+# Each block declares the runtime framework it belongs to. Engines
+# "sklearn" / "pytorch" / "gym" are mutually exclusive inside a SuperBlock
+# (see validation.validate_container_children); "mlflow" / "viz" /
+# "generic" are cross-cutting and allowed anywhere; "transition" marks the
+# 4 conversion bridges allowed at container boundaries.
+
+ENGINE_OF_CATEGORY: dict[str, str] = {
+    "donnees": "generic",
+    "chargement": "generic",
+    "transformations": "generic",
+    "texte": "generic",
+    "layers": "pytorch",
+    "activation": "pytorch",
+    "normalisation": "pytorch",
+    "regroupement": "pytorch",
+    "sequences": "pytorch",
+    "convolution": "pytorch",
+    "modeles": "sklearn",
+    "entrainement": "pytorch",
+    "visualisation": "viz",
+    "renforcement": "gym",
+}
+
+ENGINE_OF_BLOCK_OVERRIDES: dict[str, str] = {
+    # Transition bridges (also MacroStage.TRANSITION)
+    "df_to_tensor": "transition",
+    "to_tensor": "transition",
+    "env_to_tensor": "transition",
+    "module_to_policy": "transition",
+    # sklearn blocks hosted outside modeles-*
+    "load_csv": "sklearn",
+    "load_sklearn_dataset": "sklearn",
+    "train_test_split": "sklearn",
+    "standard_scaler": "sklearn",
+    "logistic_regression": "sklearn",
+    "random_forest": "sklearn",
+    "decision_tree": "sklearn",
+    "svm": "sklearn",
+    "linear_regression": "sklearn",
+    "kmeans": "sklearn",
+    "pca": "sklearn",
+    "tsne": "sklearn",
+    "evaluate": "sklearn",
+    "confusion_matrix": "sklearn",
+    # pytorch data pipeline hosted in donnees-*
+    "load_torch_dataset": "pytorch",
+    "data_loader": "pytorch",
+    "normalize": "pytorch",
+    "random_crop": "pytorch",
+    "random_flip": "pytorch",
+    "resize": "pytorch",
+    # gym / rl hosted in entrainement-*
+    "q_learning": "gym",
+    "evaluate_agent": "gym",
+    # mlflow tracking
+    "mlflow_tracker": "mlflow",
+    "mlflow_model_logger": "mlflow",
+    "mlflow_model_exporter": "mlflow",
+    # static visualisation hosted in entrainement-*
+    "plot_predictions": "viz",
+    "loss_curve": "viz",
+    "silhouette": "viz",
+}
+
+TRANSITION_BLOCKS: frozenset[str] = frozenset({
+    "df_to_tensor",
+    "to_tensor",
+    "env_to_tensor",
+    "module_to_policy",
+})
+
+# Framework engines that must not be mixed inside one SuperBlock.
+STRICT_ENGINES: frozenset[str] = frozenset({"sklearn", "pytorch", "gym"})
+
+
+def engine_of_block(block_name: str, category: str | None = None) -> str:
+    """Map a block name (and optional category) to its framework engine."""
+    from mlblock.core.adapters import resolve_alias
+
+    canonical = resolve_alias(block_name)
+    if canonical in ENGINE_OF_BLOCK_OVERRIDES:
+        return ENGINE_OF_BLOCK_OVERRIDES[canonical]
+
+    if category:
+        cat = category.split("-")[0].strip().lower()
+        return ENGINE_OF_CATEGORY.get(cat, "generic")
+
+    try:
+        from mlblock.catalog import catalog
+
+        block = catalog.get(canonical)
+        if block is not None:
+            cat = getattr(block.category, "name", None) or str(block.category)
+            return ENGINE_OF_CATEGORY.get(cat.split("-")[0].strip().lower(), "generic")
+    except Exception:
+        pass
+
+    return "generic"
+
+
+def is_transition_block(block_name: str) -> bool:
+    """True if the block is a conversion bridge allowed at container boundaries."""
+    from mlblock.core.adapters import resolve_alias
+
+    return resolve_alias(block_name) in TRANSITION_BLOCKS
