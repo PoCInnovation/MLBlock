@@ -59,6 +59,10 @@ class BlockSummary(BaseModel):
     stage_name: str
     advanced: bool = False
     group: str = "core"
+    macro_stage: int = 1
+    macro_stage_name: str = "Data"
+    engine: str = "generic"
+    is_transition: bool = False
 
 
 class BlockResponse(BaseModel):
