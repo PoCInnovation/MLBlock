@@ -60,7 +60,10 @@ class VastBackend:
         env_str = " ".join(f"{k}='{v}'" for k, v in env.items())
         # pip peut échouer (image sans pip, network) — on ne bloque pas le run : || true puis ;
         # python3 explicite (pytorch image a python → python3 symlink, mais python peut manquer)
-        deps = "pip install -q --disable-pip-version-check scikit-learn gymnasium torchvision pandas requests || true"
+        deps = (
+            "pip install -q --disable-pip-version-check "
+            "scikit-learn gymnasium torchvision pandas requests xgboost mlflow || true"
+        )
         onstart = deps + "; " + env_str + " python3 - << 'MLBLOCK_EOF'\n" + code + "\nMLBLOCK_EOF"
         instance = self._vast.launch_instance(  # noqa: E501
             gpu_name="RTX 3090", num_gpus=1, image="pytorch/pytorch:latest", disk=50, onstart=onstart
