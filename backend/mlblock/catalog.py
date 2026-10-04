@@ -144,6 +144,27 @@ class Catalog:
 # Module-level singleton — interface is catalog.get / catalog.all / catalog.get_source
 catalog = Catalog()
 
+# Standard SuperBlocks: (id, pedagogical title "Action (Moteur)", macro_stage).
+# Titles are exposed via GET /api/catalog for the palette (frontend spec);
+# execution of any container (standard or custom) goes through node children.
+SUPERBLOCK_TITLES: list[tuple[str, str, int]] = [
+    ("tabular_data_pipeline", "Préparation Tabulaire (Scikit-Learn)", 1),
+    ("torch_data_pipeline", "Chargement d'Images & Lots (PyTorch)", 1),
+    ("gym_env_pipeline", "Monde Virtuel & Simulation (Gymnasium)", 1),
+    ("nlp_data_pipeline", "Préparation de Texte (PyTorch)", 1),
+    ("sequential_model", "Réseau de Neurones Séquentiel (PyTorch)", 2),
+    ("deep_trainer", "Entraînement de Réseau (PyTorch)", 2),
+    ("sklearn_model_trainer", "Modèle Statistique & Arbres (Scikit-Learn)", 2),
+    ("xgboost_trainer", "Modèle de Boosting Rapide (XGBoost)", 2),
+    ("rl_agent_trainer", "Apprentissage par Renforcement (Gymnasium)", 2),
+    ("mlflow_tracker", "Suivi & Historique d'Expérience (MLflow)", 2),
+    ("deep_evaluator", "Score & Courbes d'Apprentissage (Plotly / PyTorch)", 3),
+    ("confusion_matrix_eval", "Matrice de Confusion & Précision (Seaborn / Scikit-Learn)", 3),
+    ("clustering_visualizer", "Visualisation de Groupes & Carte 2D (Plotly / Scikit-Learn)", 3),
+    ("agent_rollout_viewer", "Score & Démonstration de l'Agent (Gymnasium / Plotly)", 3),
+    ("mlflow_model_exporter", "Export de Modèle Prêt à l'Emploi (MLflow)", 3),
+]
+
 # Convenience module functions (so callers can `from mlblock.catalog import get` if they prefer)
 def get(name: str) -> Any | None:
     return catalog.get(name)
