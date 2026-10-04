@@ -146,6 +146,24 @@ def get_catalog(
             st = stage_of_block(block.name, cat)
             stage_val = int(st)
             stage_name_val = st.stage_name
+        macro_val = getattr(block, "macro_stage", None)
+        macro_name_val = getattr(block, "macro_stage_name", None)
+        if macro_val is None or macro_name_val is None:
+            from mlblock.core.stages import macro_of_block
+
+            macro = macro_of_block(block.name, cat)
+            macro_val = int(macro)
+            macro_name_val = macro.stage_name
+        engine_val = getattr(block, "engine", None)
+        if engine_val is None:
+            from mlblock.core.stages import engine_of_block
+
+            engine_val = engine_of_block(block.name, cat)
+        is_transition_val = getattr(block, "is_transition", None)
+        if is_transition_val is None:
+            from mlblock.core.stages import is_transition_block
+
+            is_transition_val = is_transition_block(block.name)
 
         categories[cat]["blocks"].append({
             "type": block.name,
