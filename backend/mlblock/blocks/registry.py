@@ -281,9 +281,10 @@ def _inspect_function(name: str, fn: Callable, category: Any) -> Any:
         or "(avancé)" in (fn.__doc__ or "").lower()
     )
     group = getattr(fn, "__group__", "advanced" if is_advanced else "core")
-    from mlblock.core.stages import stage_of_block
+    from mlblock.core.stages import engine_of_block, is_transition_block, macro_of_block, stage_of_block
 
     st = stage_of_block(name, cat_name)
+    macro = macro_of_block(name, cat_name)
     return Block(
         name=name,
         description=fn.__doc__ or "",
@@ -295,6 +296,10 @@ def _inspect_function(name: str, fn: Callable, category: Any) -> Any:
         group=group,
         stage=int(st),
         stage_name=st.stage_name,
+        macro_stage=int(macro),
+        macro_stage_name=macro.stage_name,
+        engine=engine_of_block(name, cat_name),
+        is_transition=is_transition_block(name),
     )
 
 
