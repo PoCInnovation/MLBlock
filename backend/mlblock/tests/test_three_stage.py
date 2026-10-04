@@ -24,3 +24,12 @@ def test_macro_and_engine_tags():
     assert int(catalog.get("df_to_tensor").macro_stage) == 99
     assert catalog.get("df_to_tensor").is_transition is True
     assert catalog.get("conv2d_layer").is_transition is False
+
+
+def test_superblocks_expose_pedagogical_titles():
+    from mlblock.catalog import catalog
+
+    sbs = {sb["id"]: sb for sb in catalog.superblocks()}
+    assert sbs["mlflow_tracker"]["label"] == sbs["mlflow_tracker"]["title"]
+    assert sbs["mlflow_tracker"]["title"] == "Suivi & Historique d'Expérience (MLflow)"
+    assert sbs["xgboost_trainer"]["macro_stage"] == 2
