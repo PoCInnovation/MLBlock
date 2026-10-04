@@ -536,7 +536,10 @@ def execute_pipeline(
             "BACKEND_TIMEOUT": os.environ.get("BACKEND_TIMEOUT", "90"),
         }
         env_str = " ".join(f"{k}='{v}'" for k, v in env.items())
-        deps = "pip install -q --disable-pip-version-check scikit-learn gymnasium torchvision pandas requests || true"
+        deps = (
+            "pip install -q --disable-pip-version-check "
+            "scikit-learn gymnasium torchvision pandas requests xgboost mlflow || true"
+        )
         # Script exécuté au boot de l'instance (onstart) — pas de SSH requis.
         # Concaténation (le code généré contient des accolades). `;` pas `&&`
         # pour que python tourne même si pip échoue; python3 explicite.
