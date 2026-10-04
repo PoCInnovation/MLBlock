@@ -236,3 +236,68 @@ MACRO_STAGE_METADATA: dict[MacroStage, dict[str, Any]] = {
     MacroStage.TRANSITION: {"id": 99, "name": "Transition", "label": "Transition", "color": "#F5A623"},
 }
 
+MACRO_OF_CATEGORY: dict[str, MacroStage] = {
+    # Étape 1 : Données / Environnement + Préparation
+    "donnees": MacroStage.DATA,
+    "chargement": MacroStage.DATA,
+    "transformations": MacroStage.DATA,
+    "texte": MacroStage.DATA,
+    "renforcement": MacroStage.DATA,
+    # Étape 2 : Modèle + Entraînement
+    "layers": MacroStage.MODEL_TRAIN,
+    "activation": MacroStage.MODEL_TRAIN,
+    "normalisation": MacroStage.MODEL_TRAIN,
+    "regroupement": MacroStage.MODEL_TRAIN,
+    "sequences": MacroStage.MODEL_TRAIN,
+    "convolution": MacroStage.MODEL_TRAIN,
+    "modeles": MacroStage.MODEL_TRAIN,
+    "entrainement": MacroStage.MODEL_TRAIN,
+    # Étape 3 : Évaluation + Visualisation
+    "visualisation": MacroStage.RESULTS,
+}
+
+# Block overrides where the block macro-stage differs from its category.
+# The 4 transition bridges always map to TRANSITION; eval-flavoured blocks
+# hosted in the training category map to RESULTS.
+MACRO_OF_BLOCK_OVERRIDES: dict[str, MacroStage] = {
+    "df_to_tensor": MacroStage.TRANSITION,
+    "to_tensor": MacroStage.TRANSITION,
+    "env_to_tensor": MacroStage.TRANSITION,
+    "module_to_policy": MacroStage.TRANSITION,
+    "evaluate": MacroStage.RESULTS,
+    "confusion_matrix": MacroStage.RESULTS,
+    "silhouette": MacroStage.RESULTS,
+    "plot_predictions": MacroStage.RESULTS,
+}
+
+
+def macro_of_category(category_name: str) -> MacroStage:
+    """Map category folder or category name to its MacroStage."""
+    cat = category_name.split("-")[0].strip().lower()
+    return MACRO_OF_CATEGORY.get(cat, MacroStage.DATA)
+
+
+def macro_of_block(block_name: str, category: str | None = None) -> MacroStage:
+    """Map a block name (and optional category) to its MacroStage."""
+    from mlblock.core.adapters import resolve_alias
+
+    canonical = resolve_alias(block_name)
+    if canonical in MACRO_OF_BLOCK_OVERRIDES:
+        return MACRO_OF_BLOCK_OVERRIDES[canonical]
+
+    if category:
+        return macro_of_category(category)
+
+    try:
+        from mlblock.catalog import catalog
+
+        block = catalog.get(canonical)
+        if block is not None:
+            cat = getattr(block.category, "name", None) or str(block.category)
+            return macro_of_category(cat)
+    except Exception:
+        pass
+
+    return MacroStage.DATA
+
+
