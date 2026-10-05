@@ -417,6 +417,9 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
     warnMissingChildren(children)
     useAppStore.getState().commitUndoPoint()
     addFlowNode(node)
+    useAppStore.setState(s => ({
+      flowNodes: s.flowNodes.map(n => ({ ...n, selected: n.id === node.id })),
+    }))
     setActiveSheet('inspect')
     setTimeout(() => fitView({ padding: 0.2, duration: 300 }), 50)
   }, [buildNode, screenToFlowPosition, addFlowNode, fitView, setActiveSheet, warnMissingChildren])
@@ -424,20 +427,46 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
   const addCompatNode = useCallback((type: string) => {
     const src = compatSource
     if (!src) return
-    const { flowNodes } = useAppStore.getState()
-    const srcNode = flowNodes.find(n => n.id === src.nodeId)
+    const store = useAppStore.getState()
+    const srcNode = store.flowNodes.find(n => n.id === src.nodeId)
     const position = srcNode?.position
       ? { x: srcNode.position.x + 280, y: srcNode.position.y }
       : screenToFlowPosition({ x: window.innerWidth / 2, y: window.innerHeight / 2 })
     const node = buildNode(type, position)
     if (!node) return
-    useAppStore.getState().commitUndoPoint()
+    store.commitUndoPoint()
     addFlowNode(node)
     setActiveSheet(null)
-    // Append-only : la nouvelle arête s'ajoute, les existantes sont intactes.
-    onConnect({ source: src.nodeId, target: node.id, sourceHandle: src.port, targetHandle: null })
+    // Append-only : arête créée depuis le store frais (après l'ajout du nœud),
+    // sans passer par onConnect dont la closure `flowNodes` serait périmée.
+    const fresh = useAppStore.getState()
+    const freshSrc = fresh.flowNodes.find(n => n.id === src.nodeId)
+    const freshTgt = fresh.flowNodes.find(n => n.id === node.id)
+    if (freshSrc && freshTgt) {
+      const resolved = resolveConnection(
+        portList(freshSrc, 'outputs'),
+        portList(freshTgt, 'inputs'),
+        src.port,
+        null,
+        graph,
+      )
+      if (resolved?.targetPort) {
+        const edge: Edge = {
+          id: `e-${node.id}-${resolved.targetPort}`,
+          source: src.nodeId,
+          target: node.id,
+          sourceHandle: resolved.sourcePort,
+          targetHandle: resolved.targetPort,
+          type: 'flow',
+          style: edgeStyleFor({ source: src.nodeId, target: node.id, sourceHandle: resolved.sourcePort, targetHandle: resolved.targetPort } as Edge, fresh.flowNodes, graph),
+        }
+        useAppStore.getState().addFlowEdges([edge])
+      } else {
+        showToast({ kind: 'error', message: "Aucun port d'entrée compatible sur la cible" })
+      }
+    }
     setTimeout(() => fitView({ padding: 0.2, duration: 300 }), 50)
-  }, [compatSource, buildNode, screenToFlowPosition, addFlowNode, setActiveSheet, onConnect, fitView])
+  }, [compatSource, buildNode, screenToFlowPosition, addFlowNode, setActiveSheet, graph, showToast, fitView])
 
   const handleArrange = useCallback(() => {
     if (useAppStore.getState().flowNodes.length < 2) return
