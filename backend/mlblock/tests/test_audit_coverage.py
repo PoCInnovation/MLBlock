@@ -15,7 +15,9 @@ def test_audit_exercises_baseline():
     exo_results, block_to_exos, all_blocks = audit_exercises()
 
     assert len(exo_results) == 12
-    # 95 baseline + 3 (xgboost_classifier, xgboost_regressor, mlflow_tracker)
+    # 95 baseline + 4 three-stage-blocks (xgboost_classifier, xgboost_regressor,
+    # mlflow_tracker, dropout_layer) - 1 legacy dropout.py removed in favour of
+    # the dropout_layer canonical block (legacy name kept via alias)
     assert len(all_blocks) == 98
 
     passing = {e["id"] for e in exo_results if e["valid"]}

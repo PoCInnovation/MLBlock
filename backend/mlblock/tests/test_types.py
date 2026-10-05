@@ -373,10 +373,23 @@ def test_validate_rejects_incompatible_edges():
 def test_validate_accepts_convertible_edges():
     nodes = [
         PipelineNode(id="n1", type="load_csv"),
-        PipelineNode(id="n2", type="dropout"),
+        PipelineNode(id="n2", type="avgpool2d"),
     ]
     edges = [PipelineEdge(source="n1", source_port="out_1", target="n2", target_port="in_1")]
     _validate(nodes, edges)  # convertible — allowed, converter materializes in UI
+
+
+def test_validate_rejects_df_to_composable_layer():
+    # dropout (legacy Tensor op) migrated to dropout_layer (composable Module):
+    # a raw df edge into a Module port is now incompatible — an explicit
+    # transition bridge (df_to_tensor, to_tensor) is required.
+    nodes = [
+        PipelineNode(id="n1", type="load_csv"),
+        PipelineNode(id="n2", type="dropout"),
+    ]
+    edges = [PipelineEdge(source="n1", source_port="out_1", target="n2", target_port="in_1")]
+    with pytest.raises(ValueError, match="Type mismatch"):
+        _validate(nodes, edges)
 
 
 # ── TypeSystem facade integration ────────────────────────────────────

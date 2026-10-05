@@ -2,11 +2,12 @@ import torch
 from torch import nn
 
 
-def gelu(in_1: "torch.Tensor") -> "torch.Tensor":
+def gelu(in_1: "torch.nn.Module" = None) -> "torch.nn.Module":
     """GELU.
-    Active GELU : approximation gaussienne.
-    
+    Active GELU composable : approximation gaussienne.
+
     Args:
-        in_1: Input tensor.
+        in_1: Couche précédente (optionnelle).
     """
-    return nn.Gelu()(in_1)
+    layer = nn.GELU()
+    return nn.Sequential(in_1, layer) if in_1 is not None else layer

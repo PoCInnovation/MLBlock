@@ -184,6 +184,20 @@ def generate_code(nodes: list[PipelineNode], edges: list[PipelineEdge]) -> str:
     lines.append("def main():")
     lines.append("    _fetch_instance_id()")
     lines.append("    try:")
+    # MLflow tracking (three-stage-blocks): when an mlflow_tracker block is
+    # present, initialise tracking + autologging before any training block
+    # runs, regardless of the topological position of the tracker node.
+    mlflow_experiments = [
+        (n.params or {}).get("experiment_name", "default_experiment")
+        for n in nodes
+        if resolve_alias(n.type) == "mlflow_tracker"
+    ]
+    if mlflow_experiments:
+        _exp = mlflow_experiments[0] or "default_experiment"
+        lines.append("        import mlflow")
+        lines.append('        mlflow.set_tracking_uri("file:./mlruns")')
+        lines.append(f"        mlflow.set_experiment({_exp!r})")
+        lines.append("        mlflow.autolog()")
 
     order = _topological_sort(nodes, edges)
     if len(order) != len(nodes):
@@ -234,7 +248,10 @@ def generate_code(nodes: list[PipelineNode], edges: list[PipelineEdge]) -> str:
         # block_id = node.id for per-block Inspecteur mapping (type for display, id for mapping)
         bid = repr(node.id)
         lines.append(f"        notify_status({node.type!r}, 'running', {bid})")
-        if b_type == "sequential_container":
+        # Container branch: any node carrying children (sequential_container or
+        # custom SuperBlock) composes its children sequentially and forwards
+        # the composed output to the rest of the graph.
+        if getattr(node, "children", None):
             output_counter += 1
             output_map[node_id] = output_counter
             child_calls = []

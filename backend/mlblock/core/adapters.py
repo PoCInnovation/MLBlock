@@ -10,6 +10,7 @@ LEGACY_BLOCK_ALIASES: dict[str, str] = {
     "relu": "relu_layer",
     "maxpool2d": "maxpool2d_layer",
     "flatten": "flatten_layer",
+    "dropout": "dropout_layer",
 }
 
 

@@ -2,12 +2,13 @@ import torch
 from torch import nn
 
 
-def elu(in_1: "torch.Tensor", alpha: "float" = 1.0) -> "torch.Tensor":
+def elu(in_1: "torch.nn.Module" = None, alpha: "float" = 1.0) -> "torch.nn.Module":
     """ELU.
-    Active ELU : exponentiel pour les valeurs négatives.
-    
+    Active ELU composable : exponentiel pour les valeurs négatives.
+
     Args:
-        in_1: Input tensor.
+        in_1: Couche précédente (optionnelle).
         alpha: Parameter.
     """
-    return nn.Elu(alpha=alpha)(in_1)
+    layer = nn.ELU(alpha=alpha)
+    return nn.Sequential(in_1, layer) if in_1 is not None else layer

@@ -58,6 +58,28 @@ def _topological_sort(nodes: list[dict[str, Any]], edges: list[dict[str, Any]]) 
     has_cycle = len(order) != len(ids)
     return order, has_cycle
 
+def _spec_engine(spec: Any) -> str | None:
+    """Framework engine of a registry spec (pydantic Block or plain dict)."""
+    if spec is None:
+        return None
+    if isinstance(spec, dict):
+        return spec.get("engine")
+    return getattr(spec, "engine", None)
+
+
+def _spec_is_transition(spec: Any, block_name: str) -> bool:
+    if spec is not None:
+        if isinstance(spec, dict):
+            val = spec.get("is_transition")
+        else:
+            val = getattr(spec, "is_transition", None)
+        if val is not None:
+            return bool(val)
+    from mlblock.core.stages import is_transition_block
+
+    return is_transition_block(block_name)
+
+
 def validate_container_children(
     node: dict[str, Any],
     registry: dict[str, Any],
@@ -66,11 +88,22 @@ def validate_container_children(
     errors: list[str],
 ) -> None:
     from mlblock.core.adapters import resolve_alias
+    from mlblock.core.stages import STRICT_ENGINES
 
     children = node.get("children") or []
     if not isinstance(children, list):
         errors.append(f"Node '{node.get('id', '?')}' 'children' must be a list")
         return
+
+    # Container engine: declared engine of the container block itself when it
+    # is a strict framework engine, else inferred from the first resolvable
+    # strict-engine child (custom SuperBlocks have no declared engine).
+    container_engine: str | None = None
+    node_type = node.get("type")
+    if node_type and registry is not None:
+        container_engine = _spec_engine(registry.get(resolve_alias(node_type)))
+        if container_engine not in STRICT_ENGINES:
+            container_engine = None
 
     prev_child_type = None
     prev_out_dtype = None
@@ -119,6 +152,26 @@ def validate_container_children(
                     f"child #{idx-1} '{prev_child_type}' ({prev_out_dtype}) -> "
                     f"child #{idx} '{child_type}' ({in_dtype})"
                 )
+
+        # Strict framework sealing: a SuperBlock (standard or custom) must not
+        # mix strict engines (sklearn/pytorch/gym) without a transition bridge.
+        # Cross-cutting engines (mlflow/viz/generic) are allowed anywhere.
+        child_engine = _spec_engine(spec)
+        if container_engine is None and child_engine in STRICT_ENGINES:
+            container_engine = child_engine
+        if (
+            container_engine in STRICT_ENGINES
+            and child_engine in STRICT_ENGINES
+            and child_engine != container_engine
+            and not _spec_is_transition(spec, canonical_child_type)
+        ):
+            errors.append(
+                f"Framework mismatch in container '{node.get('id', '?')}': "
+                f"child '{child_type}' (engine '{child_engine}') incompatible "
+                f"with container engine '{container_engine}' — "
+                f"use a transition bridge (df_to_tensor, to_tensor, "
+                f"env_to_tensor, module_to_policy)"
+            )
 
         prev_child_type = child_type
         prev_out_dtype = out_dtype

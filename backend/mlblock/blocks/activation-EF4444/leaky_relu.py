@@ -2,12 +2,13 @@ import torch
 from torch import nn
 
 
-def leaky_relu(in_1: "torch.Tensor", negative_slope: "float" = 0.01) -> "torch.Tensor":
+def leaky_relu(in_1: "torch.nn.Module" = None, negative_slope: "float" = 0.01) -> "torch.nn.Module":
     """Leaky ReLU.
-    Active LeakyReLU : pente faible pour les valeurs négatives.
-    
+    Active LeakyReLU composable : pente faible pour les valeurs négatives.
+
     Args:
-        in_1: Input tensor.
+        in_1: Couche précédente (optionnelle).
         negative_slope: Parameter.
     """
-    return nn.LeakyReLU(negative_slope=negative_slope)(in_1)
+    layer = nn.LeakyReLU(negative_slope=negative_slope)
+    return nn.Sequential(in_1, layer) if in_1 is not None else layer

@@ -83,7 +83,7 @@ def test_all_block_templates_generate_code():
         ("tanh", {}),
         ("flatten_layer", {}),
         ("linear_layer", {"in_features": 100, "out_features": 10}),
-        ("dropout", {"p": 0.5}),
+        ("dropout_layer", {"p": 0.5}),
         ("batchnorm2d", {"num_features": 16}),
         ("softmax", {"dim": 1}),
     ]
