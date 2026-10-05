@@ -8,9 +8,9 @@ import useAppStore from '../../store/useAppStore'
 import BlockSegments from '../blocks/BlockSegments'
 import { resolveColumnsForPath, resolveFlowSourcePath } from '../../utils/columns'
 import SuperBlockNode from './SuperBlockNode'
-import { isSuperBlock } from './superBlockRegistry'
 import { isAmbiguous } from '../../utils/portResolution'
 import { getStageConfig, stageOfBlock } from '../../utils/stages'
+import { TRANSITION_GRADIENT, engineColor } from '../../utils/superblocks'
 import type { Port, Segment } from '../../types/catalog'
 
 // Taille/bordure du handle : classes !important car le CSS ReactFlow
@@ -49,6 +49,11 @@ function StandardBlockNode({ data, id }: NodeProps<Node<BlockNodeData>>) {
   const description = catalog?.blocks[data.type]?.description
   const stageNum = data.stage ?? catalog?.blocks[data.type]?.stage ?? stageOfBlock(data.type, data.category)
   const stageConfig = getStageConfig(stageNum)
+  // Bloc de transition : fond en dégradé bicolore entrée → sortie (spec §5).
+  const transitionPair = TRANSITION_GRADIENT[data.type]
+  const transitionStyle = transitionPair
+    ? { background: `linear-gradient(135deg, ${engineColor(transitionPair[0])}33 0%, ${engineColor(transitionPair[1])}33 100%)` }
+    : undefined
 
   // Ports fournis (état dérivé des edges — jamais stocké) : un input est
   // fourni s'il a une edge entrante, un output s'il a une edge sortante.
@@ -76,7 +81,10 @@ function StandardBlockNode({ data, id }: NodeProps<Node<BlockNodeData>>) {
   }, [id, data.segs, flowNodes, flowEdges])
 
   return (
-    <Card className="bg-surface2 min-w-45 max-w-64 overflow-visible rounded-2xl border-t-4 p-3 shadow-sm border-border">
+    <Card
+      style={transitionStyle}
+      className="bg-surface2 min-w-45 max-w-64 overflow-visible rounded-2xl border-t-4 p-3 shadow-sm border-border"
+    >
       <div className="flex items-start justify-between gap-2 py-2.5">
         <div className="flex flex-col min-w-0 flex-1">
           <div className="flex items-center gap-1.5 min-w-0">
@@ -190,7 +198,9 @@ function StandardBlockNode({ data, id }: NodeProps<Node<BlockNodeData>>) {
 }
 
 function BlockNode(props: NodeProps<Node<BlockNodeData>>) {
-  if (isSuperBlock(props.data.type)) {
+  const catalog = useAppStore(s => s.catalog)
+  const isCatalogSuperBlock = catalog?.superblocks.some(s => s.id === props.data.type) ?? false
+  if (isCatalogSuperBlock) {
     return <SuperBlockNode {...props} />
   }
   return <StandardBlockNode {...props} />

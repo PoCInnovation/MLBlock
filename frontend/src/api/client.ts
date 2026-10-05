@@ -96,6 +96,11 @@ function toSegments(key: string, raw: unknown): Segment {
 
 export async function fetchCatalog(): Promise<InternalCatalog> {
   const { data } = await http.get<unknown>('/api/catalog')
+  return parseCatalog(data)
+}
+
+/** Pure catalogue mapping (testable sans HTTP) : zod + forme interne. */
+export function parseCatalog(data: unknown): InternalCatalog {
   const parsed = parseOrThrow(catalogSchema, 'GET /api/catalog', data)
 
   const categories: Category[] = parsed.categories.map(c => ({ id: c.id, name: c.name, color: c.color }))
@@ -119,11 +124,29 @@ export async function fetchCatalog(): Promise<InternalCatalog> {
         group: b.group ?? 'core',
         stage: b.stage,
         stage_name: b.stage_name,
+        engine: b.engine ?? 'generic',
+        macro_stage: b.macro_stage,
+        macro_stage_name: b.macro_stage_name,
+        is_transition: b.is_transition ?? false,
       }
     }
   }
 
-  return { categories, blocks, stages: parsed.stages }
+  return {
+    categories,
+    blocks,
+    stages: parsed.stages,
+    macro_stages: parsed.macro_stages,
+    superblocks: (parsed.superblocks ?? [])
+      .filter(s => s.macro_stage !== undefined)
+      .map(s => ({
+        id: s.id,
+        title: s.title,
+        macro_stage: s.macro_stage as number,
+        engine: s.engine ?? 'generic',
+        children: [...s.children],
+      })),
+  }
 }
 
 export async function createPipeline(data: PipelineCreate): Promise<PipelineDetail> {

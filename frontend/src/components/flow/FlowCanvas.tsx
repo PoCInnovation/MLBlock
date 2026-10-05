@@ -15,17 +15,21 @@ import {
   type EdgeChange,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { AlignVerticalJustifyCenter } from 'lucide-react'
+import { AlignVerticalJustifyCenter, Flame, Layers, Gamepad2, Activity, Eye, Boxes, ChevronRight } from 'lucide-react'
 import { useShallow } from 'zustand/react/shallow'
 import useAppStore from '../../store/useAppStore'
 import { theme } from '../../theme'
-import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Separator } from '@/components/ui/separator'
+import { Switch } from '@/components/ui/switch'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from '@/components/ui/drawer'
 import BlockNode from './BlockNode'
 import SuperBlockNode from './SuperBlockNode'
-import { isSuperBlock, SUPER_BLOCK_REGISTRY } from './superBlockRegistry'
+import SuperBlockConfigSheet from './SuperBlockConfigSheet'
+import CompatSheet from './CompatSheet'
 import FlowLink from './FlowLink'
 import JournalPanel from './JournalPanel'
 import ConverterDialog from './ConverterDialog'
@@ -35,7 +39,8 @@ import { typeSystem } from '../../utils/typeSystem'
 import { resolveConnection, type ResolvedConnection } from '../../utils/portResolution'
 import { arrangeGraph } from '../../utils/layout'
 import { stageOfBlock, getStageConfig } from '../../utils/stages'
-import type { Port } from '../../types/catalog'
+import { matchEngine, groupSuperblocks, defaultChildren, resolveEdgeStyle, availableChildren } from '../../utils/superblocks'
+import type { Port, SuperBlockEntry, PipelineNode as CatalogNode } from '../../types/catalog'
 const nodeTypes = {
   block: BlockNode,
   superblock: SuperBlockNode,
@@ -43,6 +48,40 @@ const nodeTypes = {
 const edgeTypes = { flow: FlowLink }
 
 const reactFlowClassName = 'bg-canvas rounded-2xl'
+
+// Moteurs : libellé + couleur (spec §5 — tokens CSS dédiés en Task 7).
+const ENGINE_META: Record<string, { label: string; color: string }> = {
+  pytorch: { label: 'PyTorch', color: '#EA580C' },
+  sklearn: { label: 'Scikit-Learn', color: '#2563EB' },
+  gym: { label: 'Gymnasium', color: '#059669' },
+  mlflow: { label: 'MLflow', color: '#9333EA' },
+  viz: { label: 'Viz', color: '#D97706' },
+  generic: { label: 'Générique', color: '#6B7280' },
+}
+
+const ENGINE_ICON: Record<string, typeof Flame> = {
+  pytorch: Flame,
+  sklearn: Layers,
+  gym: Gamepad2,
+  mlflow: Activity,
+  viz: Eye,
+  generic: Boxes,
+}
+
+const ENGINE_FILTERS = [
+  { value: 'all', label: 'Tous' },
+  { value: 'pytorch', label: 'PyTorch' },
+  { value: 'sklearn', label: 'Scikit-Learn & XGBoost' },
+  { value: 'gym', label: 'Gymnasium RL' },
+  { value: 'mlflow-viz', label: 'MLflow & Viz' },
+]
+
+// Titres des 3 macro-étapes (fallback si le catalogue ne les sert pas).
+const MACRO_FALLBACK: Record<number, string> = {
+  1: 'Données / Environnement & Préparation',
+  2: 'Modèle & Entraînement',
+  3: 'Évaluation & Visualisation',
+}
 
 const edgeColor: Record<string, string> = {
   compatible: theme.color.success,
@@ -81,6 +120,18 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
   const showToast = useAppStore(s => s.showToast)
   const activeSheet = useAppStore(s => s.activeSheet)
   const setActiveSheet = useAppStore(s => s.setActiveSheet)
+  const setConfigTarget = useAppStore(s => s.setConfigTarget)
+  const configTarget = useAppStore(s => s.configTarget)
+  const configSb = useMemo(
+    () => catalog?.superblocks.find(s => s.id === configTarget) ?? null,
+    [catalog, configTarget],
+  )
+  const compatSource = useAppStore(s => s.compatSource)
+  const setCompatSource = useAppStore(s => s.setCompatSource)
+  // Tap sur un Handle de sortie (sans drag) → sheet 'compat'. Seuil 8px (cf. tapGuard).
+  const connectStart = useRef<{ nodeId: string; handleId: string; handleType: string; x: number; y: number } | null>(null)
+  const [engineFilter, setEngineFilter] = useState('all')
+  const [showAdvanced, setShowAdvanced] = useState(false)
   const jobStatus = useAppStore(s => s.jobStatus)
 
   const { screenToFlowPosition, fitView, getZoom } = useReactFlow()
@@ -189,16 +240,21 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
     useAppStore.getState().setFlowNodes([...flowNodes, convNode].map(n => ({ ...n, position: positions[n.id] ?? n.position })))
   }, [catalog, addFlowNode])
 
-  const buildNode = useCallback((type: string, position: { x: number; y: number }): Node | null => {
+  const buildNode = useCallback((type: string, position: { x: number; y: number }, opts?: {
+    children?: string[]
+    fields?: Record<string, string>
+  }): Node | null => {
     if (!catalog) return null
     const def = catalog.blocks[type]
     if (!def) return null
     const cat = catalog.categories.find(c => c.id === def.cat)
     const label = def.segs.find(s => s.t === 'text')?.v ?? type
     const stage = def.stage ?? stageOfBlock(type, def.cat)
-    const isSuper = isSuperBlock(type)
+    const sbEntry = catalog.superblocks.find(s => s.id === type)
+    const isSuper = Boolean(sbEntry)
+    const nodeId = `${type}_${Date.now()}`
     return {
-      id: `${type}_${Date.now()}`,
+      id: nodeId,
       type: isSuper ? 'superblock' : 'block',
       dragHandle: '.block-drag-handle',
       position,
@@ -208,10 +264,12 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
         category: def.cat,
         categoryColor: cat?.color ?? theme.color.accent,
         segs: def.segs,
-        fields: segsToFields(def),
+        fields: opts?.fields ?? segsToFields(def),
         inputs: def.inputs,
         outputs: def.outputs,
-        children: type === 'sequential_container' ? [] : undefined,
+        children: sbEntry
+          ? defaultChildren({ ...sbEntry, children: opts?.children ?? sbEntry.children }, catalog, nodeId)
+          : (type === 'sequential_container' ? [] : undefined),
         stage,
         stage_name: def.stage_name,
       },
@@ -220,6 +278,7 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
 
   const onConnect = useCallback((params: Connection) => {
     if (!params.source || !params.target || !catalog) return
+    connectStart.current = null
     const { flowNodes, flowEdges } = useAppStore.getState()
     const src = flowNodes.find(n => n.id === params.source)
     const tgt = flowNodes.find(n => n.id === params.target)
@@ -280,6 +339,34 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
     e.dataTransfer.dropEffect = 'move'
   }, [])
 
+  const pointOf = (e: unknown): { x: number; y: number } => {
+    const evt = e as { clientX?: number; clientY?: number; touches?: { clientX: number; clientY: number }[] } | undefined
+    const t = evt?.touches?.[0]
+    return { x: t?.clientX ?? evt?.clientX ?? 0, y: t?.clientY ?? evt?.clientY ?? 0 }
+  }
+
+  const onConnectStart = useCallback((_e: unknown, params: { nodeId?: string | null; handleId?: string | null; handleType?: string | null }) => {
+    if (!params.nodeId || !params.handleId) { connectStart.current = null; return }
+    const p = pointOf(_e)
+    connectStart.current = {
+      nodeId: params.nodeId,
+      handleId: params.handleId,
+      handleType: params.handleType ?? '',
+      x: p.x,
+      y: p.y,
+    }
+  }, [])
+
+  const onConnectEnd = useCallback((e: unknown) => {
+    const start = connectStart.current
+    connectStart.current = null
+    if (!start || start.handleType !== 'source') return
+    const p = pointOf(e)
+    if (Math.hypot(p.x - start.x, p.y - start.y) > 8) return
+    setCompatSource({ nodeId: start.nodeId, port: start.handleId })
+    setActiveSheet('compat')
+  }, [setCompatSource, setActiveSheet])
+
   const onDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault()
@@ -297,6 +384,15 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
     [catalog, screenToFlowPosition, buildNode, addFlowNode, fitView]
   )
 
+  const warnMissingChildren = useCallback((requested: string[]) => {
+    if (!catalog || requested.length === 0) return
+    const available = new Set(availableChildren({ id: '', title: '', macro_stage: 0, engine: '', children: requested }, catalog))
+    const missing = requested.filter(t => !available.has(t))
+    if (missing.length > 0) {
+      showToast({ kind: 'error', message: `Sous-bloc(s) indisponible(s) : ${missing.join(', ')}` })
+    }
+  }, [catalog, showToast])
+
   const addNodeAtCenter = useCallback((type: string) => {
     const rect = wrapperRef.current?.getBoundingClientRect()
     const x = rect ? rect.left + rect.width / 2 : window.innerWidth / 2
@@ -304,11 +400,44 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
     const position = screenToFlowPosition({ x, y: y + (tapSeq.current++ % 6) * 22 })
     const node = buildNode(type, position)
     if (!node) return
+    warnMissingChildren(catalog?.superblocks.find(s => s.id === type)?.children ?? [])
     useAppStore.getState().commitUndoPoint()
     addFlowNode(node)
     setActiveSheet(null)
     setTimeout(() => fitView({ padding: 0.2, duration: 300 }), 50)
-  }, [buildNode, screenToFlowPosition, addFlowNode, fitView, setActiveSheet])
+  }, [buildNode, screenToFlowPosition, addFlowNode, fitView, setActiveSheet, catalog, warnMissingChildren])
+
+  const addConfiguredNode = useCallback((type: string, children: string[], fields: Record<string, string>) => {
+    const rect = wrapperRef.current?.getBoundingClientRect()
+    const x = rect ? rect.left + rect.width / 2 : window.innerWidth / 2
+    const y = rect ? rect.top + rect.height / 2 : window.innerHeight / 2
+    const position = screenToFlowPosition({ x, y: y + (tapSeq.current++ % 6) * 22 })
+    const node = buildNode(type, position, { children, fields })
+    if (!node) return
+    warnMissingChildren(children)
+    useAppStore.getState().commitUndoPoint()
+    addFlowNode(node)
+    setActiveSheet('inspect')
+    setTimeout(() => fitView({ padding: 0.2, duration: 300 }), 50)
+  }, [buildNode, screenToFlowPosition, addFlowNode, fitView, setActiveSheet, warnMissingChildren])
+
+  const addCompatNode = useCallback((type: string) => {
+    const src = compatSource
+    if (!src) return
+    const { flowNodes } = useAppStore.getState()
+    const srcNode = flowNodes.find(n => n.id === src.nodeId)
+    const position = srcNode?.position
+      ? { x: srcNode.position.x + 280, y: srcNode.position.y }
+      : screenToFlowPosition({ x: window.innerWidth / 2, y: window.innerHeight / 2 })
+    const node = buildNode(type, position)
+    if (!node) return
+    useAppStore.getState().commitUndoPoint()
+    addFlowNode(node)
+    setActiveSheet(null)
+    // Append-only : la nouvelle arête s'ajoute, les existantes sont intactes.
+    onConnect({ source: src.nodeId, target: node.id, sourceHandle: src.port, targetHandle: null })
+    setTimeout(() => fitView({ padding: 0.2, duration: 300 }), 50)
+  }, [compatSource, buildNode, screenToFlowPosition, addFlowNode, setActiveSheet, onConnect, fitView])
 
   const handleArrange = useCallback(() => {
     if (useAppStore.getState().flowNodes.length < 2) return
@@ -342,12 +471,25 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
   const renderEdges = useMemo(
     () => flowEdges.map(e => {
       const base = edgeStyleFor(e, flowNodes, graph)
-      return { ...e, type: 'flow' as const, style: base }
+      const engineOf = (id: string | null | undefined) => {
+        const n = flowNodes.find(n => n.id === id)
+        const t = (n?.data as { type?: string } | undefined)?.type
+        return (t && catalog?.blocks[t]?.engine) || 'generic'
+      }
+      const from = engineOf(e.source)
+      const to = engineOf(e.target)
+      const gradient = from !== to && from !== 'generic' && to !== 'generic' ? { from, to } : undefined
+      const { style } = resolveEdgeStyle(base, gradient)
+      return { ...e, type: 'flow' as const, style, data: { ...((e.data as object) ?? {}), gradient } }
     }),
-    [flowEdges, flowNodes, graph]
+    [flowEdges, flowNodes, graph, catalog]
   )
 
-  const handleNodeClick = useCallback(() => setActiveSheet('inspect'), [setActiveSheet])
+  const handleNodeClick = useCallback((e: React.MouseEvent) => {
+    // Tap sur un port (Handle) → géré par onConnectStart/End ('compat'), pas l'inspecteur.
+    if ((e.target as HTMLElement).closest?.('.react-flow__handle')) return
+    setActiveSheet('inspect')
+  }, [setActiveSheet])
   return (
     <div className="flex-1 relative flex w-full min-w-0 min-h-0 h-full items-stretch">
       <div
@@ -360,6 +502,8 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
+          onConnectStart={onConnectStart}
+          onConnectEnd={onConnectEnd}
           onDragOver={onDragOver}
           onDrop={onDrop}
           onNodeClick={handleNodeClick}
@@ -397,6 +541,10 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
             <DrawerTitle>
               {activeSheet === 'add'
                 ? 'Ajouter un Super-Bloc'
+                : activeSheet === 'config'
+                ? 'Configurer le Super-Bloc'
+                : activeSheet === 'compat'
+                ? 'Blocs compatibles'
                 : activeSheet === 'inspect'
                 ? 'Inspecteur de Paramètres'
                 : 'Journal d’Exécution'}
@@ -404,46 +552,100 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
             <DrawerDescription>Panneau de configuration du canvas</DrawerDescription>
           </DrawerHeader>
           <div className="p-6 min-h-0 h-full overflow-y-auto">
-            {activeSheet === 'add' && (
+            {activeSheet === 'add' && catalog && (
               <div className="flex flex-col gap-3">
-                <h2 className="text-lg font-heading font-bold text-foreground">Catalogue des Super-Blocs</h2>
-                <p className="text-sm text-muted-foreground">
-                  Sélectionnez un Super-Bloc à instancier directement sur votre canvas.
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
-                  {Object.entries(SUPER_BLOCK_REGISTRY).map(([typeKey, def]) => {
-                    const stageCfg = getStageConfig(def.stage)
-                    return (
-                      <Card
-                        key={typeKey}
-                        onClick={() => {
-                          addNodeAtCenter(typeKey)
-                        }}
-                        className="p-4 cursor-pointer hover:border-accent transition-colors flex flex-col gap-2 bg-card text-card-foreground shadow-sm"
-                      >
-                        <div className="flex flex-col gap-2">
-                          <div className="flex items-center gap-2">
-                            <Badge
-                              variant="outline"
-                              className="text-xs font-extrabold px-1.5 py-0.5 rounded border border-border"
-                            >
-                              {stageCfg.key}
-                            </Badge>
-                            <span className="font-extrabold text-sm text-foreground">{def.title}</span>
-                          </div>
-                          <span className="text-xs text-muted-foreground">{def.subtitle}</span>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground/80 mt-1">
-                            <span>Entrées: {def.inputs.length}</span>
-                            <span>•</span>
-                            <span>Sorties: {def.outputs.length}</span>
-                          </div>
-                        </div>
-                      </Card>
-                    )
-                  })}
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-lg font-heading font-bold text-foreground">Catalogue des Super-Blocs</h2>
+                    <p className="text-sm text-muted-foreground">
+                      Touchez une carte pour la configurer avant de l'ajouter au canvas.
+                    </p>
+                  </div>
+                  <label className="flex items-center gap-2 text-xs font-bold text-muted-foreground shrink-0">
+                    Avancé
+                    <Switch checked={showAdvanced} onCheckedChange={setShowAdvanced} aria-label="Mode avancé" />
+                  </label>
                 </div>
+                <ToggleGroup
+                  type="single"
+                  value={engineFilter}
+                  onValueChange={v => v && setEngineFilter(v)}
+                  className="justify-start flex-wrap"
+                >
+                  {ENGINE_FILTERS.map(f => (
+                    <ToggleGroupItem key={f.value} value={f.value} className="text-xs px-2.5 py-1">
+                      {f.label}
+                    </ToggleGroupItem>
+                  ))}
+                </ToggleGroup>
+                {!showAdvanced ? (
+                  groupSuperblocks(catalog.superblocks.filter(sb => matchEngine(sb.engine, engineFilter))).map(group => (
+                    <div key={group.stage} className="flex flex-col gap-2">
+                      <h3 className="text-sm font-heading font-bold text-foreground">
+                        {(catalog.macro_stages?.find(m => m.id === group.stage)?.label) ?? MACRO_FALLBACK[group.stage] ?? `Étape ${group.stage}`}
+                      </h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {group.items.map(sb => (
+                          <SuperBlockCard
+                            key={sb.id}
+                            sb={sb}
+                            macroColor={catalog.macro_stages?.find(m => m.id === group.stage)?.color}
+                            onOpen={() => { setConfigTarget(sb.id); setActiveSheet('config') }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="flex flex-col gap-1.5">
+                    {Object.keys(catalog.blocks)
+                      .filter(t => matchEngine(catalog.blocks[t].engine, engineFilter))
+                      .map(type => {
+                        const def = catalog.blocks[type]
+                        const label = def.segs.find(s => s.t === 'text')?.v ?? type
+                        return (
+                          <button
+                            key={type}
+                            type="button"
+                            onClick={() => addNodeAtCenter(type)}
+                            className="flex items-center gap-2 w-full text-left p-2.5 rounded-xl bg-card border border-border hover:border-accent transition-colors cursor-pointer min-h-11"
+                          >
+                            <span
+                              className="w-2.5 h-2.5 rounded-sm shrink-0"
+                              style={{ background: catalog.categories.find(c => c.id === def.cat)?.color ?? '#888' }}
+                            />
+                            <span className="text-xs font-bold text-foreground truncate">{label}</span>
+                            {def.advanced && (
+                              <Badge variant="outline" className="ml-auto text-[10px] shrink-0">avancé</Badge>
+                            )}
+                          </button>
+                        )
+                      })}
+                  </div>
+                )}
               </div>
             )}
+
+            {activeSheet === 'config' && (configSb ? (
+              <SuperBlockConfigSheet
+                key={configSb.id}
+                sb={configSb}
+                onAdd={(children, fields) => addConfiguredNode(configSb.id, children, fields)}
+              />
+            ) : (
+              <p className="text-sm text-muted-foreground">Super-Bloc introuvable.</p>
+            ))}
+
+            {activeSheet === 'compat' && (compatSource ? (
+              <CompatSheet
+                key={`${compatSource.nodeId}:${compatSource.port}`}
+                nodeId={compatSource.nodeId}
+                port={compatSource.port}
+                onPick={addCompatNode}
+              />
+            ) : (
+              <p className="text-sm text-muted-foreground">Aucune sortie sélectionnée.</p>
+            ))}
 
             {activeSheet === 'inspect' && <NodeInspector />}
 
@@ -469,18 +671,75 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
   )
 })
 
+/** Carte SuperBlock BB (spec §5) : titre FR catalogue + badge moteur haut-droite. */
+function SuperBlockCard({ sb, macroColor, onOpen }: {
+  sb: SuperBlockEntry
+  macroColor: string | undefined
+  onOpen: () => void
+}) {
+  const catalog = useAppStore(s => s.catalog)
+  const def = catalog?.blocks[sb.id]
+  const meta = ENGINE_META[sb.engine] ?? ENGINE_META.generic
+  const Icon = ENGINE_ICON[sb.engine] ?? ENGINE_ICON.generic
+  const color = macroColor ?? '#6366F1'
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onOpen}
+      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen() } }}
+      className="relative p-3 pr-4 cursor-pointer rounded-2xl bg-card text-card-foreground border border-border shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg hover:border-accent active:translate-y-0 min-h-22 text-left"
+    >
+      <Badge
+        variant="outline"
+        className="absolute top-2.5 right-2.5 text-[10px] font-extrabold px-1.5 py-0.5 rounded-full"
+      >
+        {meta.label}
+      </Badge>
+      <div className="flex gap-2.5 items-start">
+        <span
+          className="w-8 h-8 rounded-[9px] shrink-0 flex items-center justify-center"
+          style={{ background: color }}
+        >
+          <Icon className="size-4 text-white" />
+        </span>
+        <div className="min-w-0 pr-20">
+          <h4 className="font-extrabold text-sm text-foreground leading-snug m-0">{sb.title}</h4>
+          {def?.description && (
+            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{def.description}</p>
+          )}
+        </div>
+      </div>
+      <div className="flex items-center gap-2 mt-2 text-[11px] text-muted-foreground">
+        <span>{sb.children.length > 0 ? `${sb.children.length} sous-bloc${sb.children.length > 1 ? 's' : ''}` : 'bloc plat'}</span>
+        <ChevronRight className="size-3.5 ml-auto" />
+      </div>
+      <div
+        className="h-[3px] rounded-full mt-2"
+        style={{ background: meta.color }}
+      />
+    </div>
+  )
+}
+
 function NodeInspector() {
   const flowNodes = useAppStore(s => s.flowNodes)
   const catalog = useAppStore(s => s.catalog)
   const updateFlowParam = useAppStore(s => s.updateFlowParam)
+  const updateNodeChildren = useAppStore(s => s.updateNodeChildren)
+  const setCompatSource = useAppStore(s => s.setCompatSource)
+  const setActiveSheet = useAppStore(s => s.setActiveSheet)
   const selected = flowNodes.find(n => n.selected)
   const data = selected?.data as Record<string, unknown> | undefined
   const type = (data?.type as string) ?? ''
-  const superDef = SUPER_BLOCK_REGISTRY[type]
   const def = type ? catalog?.blocks[type] : undefined
-  const stageNum = (data?.stage as number) ?? def?.stage ?? superDef?.stage ?? 2
+  const sbTitle = catalog?.superblocks.find(s => s.id === type)?.title
+  const stageNum = (data?.stage as number) ?? def?.stage ?? 2
   const stageConfig = getStageConfig(stageNum)
   const fields = (data?.fields as Record<string, string>) ?? {}
+  const sbEntry = catalog?.superblocks.find(s => s.id === type)
+  const children = (data?.children as CatalogNode[] | undefined) ?? []
+  const outputs = (data?.outputs as { name: string; dtype: string }[] | undefined) ?? []
 
   if (!selected) {
     return (
@@ -510,10 +769,68 @@ function NodeInspector() {
         </span>
       </div>
       <p className="text-sm text-muted-foreground">
-        {superDef?.subtitle || def?.description || 'Bloc fonctionnel'}
+        {sbTitle ?? def?.description ?? 'Bloc fonctionnel'}
       </p>
 
       <Separator />
+
+      {sbEntry && sbEntry.children.length > 0 && (
+        <div className="flex flex-col gap-1.5">
+          <h3 className="text-base font-heading font-bold text-foreground">Sous-blocs</h3>
+          {sbEntry.children.map(childType => {
+            const child = children.find(c => c.type === childType)
+            const on = Boolean(child)
+            const missing = !catalog?.blocks[childType]
+            const label = catalog?.blocks[childType]?.segs.find(s => s.t === 'text')?.v ?? childType
+            return (
+              <label
+                key={childType}
+                className={`flex items-center gap-3 p-2.5 rounded-xl border border-border bg-card cursor-pointer min-h-11 ${on ? '' : 'opacity-55'}`}
+              >
+                <Checkbox
+                  checked={on}
+                  disabled={missing}
+                  onCheckedChange={() => {
+                    if (!selected) return
+                    if (child) {
+                      updateNodeChildren(selected.id, children.filter(c => c.type !== childType))
+                    } else if (catalog) {
+                      const fresh = defaultChildren(
+                        { ...sbEntry, children: [childType] },
+                        catalog,
+                        selected.id,
+                      )
+                      updateNodeChildren(selected.id, [...children, ...fresh])
+                    }
+                  }}
+                  aria-label={label}
+                />
+                <span className="text-sm font-bold text-foreground flex-1">{label}</span>
+                <Badge variant="outline" className="text-[10px] shrink-0">
+                  {missing ? 'indisponible' : on ? 'inclus' : 'exclu'}
+                </Badge>
+              </label>
+            )
+          })}
+        </div>
+      )}
+
+      {outputs.length > 0 && selected && (
+        <div className="flex flex-col gap-1.5">
+          <h3 className="text-base font-heading font-bold text-foreground">Blocs suivants</h3>
+          {outputs.map(o => (
+            <Button
+              key={o.name}
+              variant="outline"
+              className="justify-between font-bold text-xs min-h-11"
+              onClick={() => { setCompatSource({ nodeId: selected.id, port: o.name }); setActiveSheet('compat') }}
+            >
+              <span>Voir après « {o.name} »</span>
+              <ChevronRight className="size-4" />
+            </Button>
+          ))}
+        </div>
+      )}
 
       <h3 className="text-base font-heading font-bold text-foreground">Paramètres du Nœud</h3>
       {Object.keys(fields).length === 0 ? (

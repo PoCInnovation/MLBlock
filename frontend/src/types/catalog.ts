@@ -20,8 +20,20 @@ export type BlockDef = {
   group?: string
   stage?: number
   stage_name?: string
+  engine: string
+  macro_stage?: number
+  macro_stage_name?: string
+  is_transition?: boolean
 }
 export type BlockDefMap = Record<string, BlockDef>
+
+export type SuperBlockEntry = {
+  id: string
+  title: string
+  macro_stage: number
+  engine: string
+  children: string[]
+}
 
 export type Category = { id: string; name: string; color: string }
 
@@ -37,6 +49,8 @@ export interface InternalCatalog {
   categories: Category[]
   blocks: BlockDefMap
   stages?: StageInfo[]
+  macro_stages?: StageInfo[]
+  superblocks: SuperBlockEntry[]
 }
 
 export interface PipelineNode {

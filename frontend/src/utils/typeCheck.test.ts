@@ -8,6 +8,7 @@ const def = (cat: string, inputs: Port[], outputs: Port[]): BlockDef => ({
   inputs,
   outputs,
   description: '',
+  engine: 'generic',
 })
 
 const blocks: BlockDefMap = {

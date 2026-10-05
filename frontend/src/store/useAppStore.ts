@@ -55,8 +55,12 @@ type AppState = {
   savedFingerprint: string | null
   restoredWork: boolean
   toast: Toast | null
-  activeSheet: 'add' | 'inspect' | 'journal' | null
-  setActiveSheet: (sheet: 'add' | 'inspect' | 'journal' | null) => void
+  activeSheet: 'add' | 'config' | 'compat' | 'inspect' | 'journal' | null
+  setActiveSheet: (sheet: 'add' | 'config' | 'compat' | 'inspect' | 'journal' | null) => void
+  configTarget: string | null
+  setConfigTarget: (id: string | null) => void
+  compatSource: { nodeId: string; port: string } | null
+  setCompatSource: (src: { nodeId: string; port: string } | null) => void
 
   undoStack: UndoSnapshot[]
   redoStack: UndoSnapshot[]
@@ -125,6 +129,10 @@ const useAppStore = create<AppState>((set, get) => ({
   toast: null,
   activeSheet: null,
   setActiveSheet: (sheet) => set({ activeSheet: sheet }),
+  configTarget: null,
+  setConfigTarget: (id) => set({ configTarget: id }),
+  compatSource: null,
+  setCompatSource: (src) => set({ compatSource: src }),
   undoStack: [],
   redoStack: [],
 

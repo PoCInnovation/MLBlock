@@ -43,6 +43,12 @@
   --color-lilac: #B6A0E3;
   --color-sky: #7DAFEA;
 
+  --color-engine-pytorch: #EA580C;
+  --color-engine-sklearn: #2563EB;
+  --color-engine-gym: #059669;
+  --color-engine-mlflow: #9333EA;
+  --color-engine-viz: #D97706;
+
   --spacing-xs: 4px;
   --spacing-sm: 8px;
   --spacing-md: 12px;
@@ -543,4 +549,40 @@
   --sidebar-accent-foreground: #F0E9E3;
   --sidebar-border: #3A332E;
   --sidebar-ring: #D97757;
+}
+@layer components {
+  /* Arête inter-moteurs : dégradé via custom properties (voir FlowLink). */
+  .react-flow__edge-path.mlb-edge {
+    stroke: var(--mlb-edge-stroke);
+    stroke-dasharray: var(--mlb-edge-dash);
+  }
+}
+
+@layer components {
+  /* Dégradés inter-moteurs : stops + paires (voir FlowLink). */
+  .mlb-stop-pytorch { stop-color: var(--color-engine-pytorch); }
+  .mlb-stop-sklearn { stop-color: var(--color-engine-sklearn); }
+  .mlb-stop-gym { stop-color: var(--color-engine-gym); }
+  .mlb-stop-mlflow { stop-color: var(--color-engine-mlflow); }
+  .mlb-stop-viz { stop-color: var(--color-engine-viz); }
+  .react-flow__edge-path.mlb-edge-pytorch-to-sklearn { stroke: url(#mlb-grad-pytorch-to-sklearn); }
+  .react-flow__edge-path.mlb-edge-pytorch-to-gym { stroke: url(#mlb-grad-pytorch-to-gym); }
+  .react-flow__edge-path.mlb-edge-pytorch-to-mlflow { stroke: url(#mlb-grad-pytorch-to-mlflow); }
+  .react-flow__edge-path.mlb-edge-pytorch-to-viz { stroke: url(#mlb-grad-pytorch-to-viz); }
+  .react-flow__edge-path.mlb-edge-sklearn-to-pytorch { stroke: url(#mlb-grad-sklearn-to-pytorch); }
+  .react-flow__edge-path.mlb-edge-sklearn-to-gym { stroke: url(#mlb-grad-sklearn-to-gym); }
+  .react-flow__edge-path.mlb-edge-sklearn-to-mlflow { stroke: url(#mlb-grad-sklearn-to-mlflow); }
+  .react-flow__edge-path.mlb-edge-sklearn-to-viz { stroke: url(#mlb-grad-sklearn-to-viz); }
+  .react-flow__edge-path.mlb-edge-gym-to-pytorch { stroke: url(#mlb-grad-gym-to-pytorch); }
+  .react-flow__edge-path.mlb-edge-gym-to-sklearn { stroke: url(#mlb-grad-gym-to-sklearn); }
+  .react-flow__edge-path.mlb-edge-gym-to-mlflow { stroke: url(#mlb-grad-gym-to-mlflow); }
+  .react-flow__edge-path.mlb-edge-gym-to-viz { stroke: url(#mlb-grad-gym-to-viz); }
+  .react-flow__edge-path.mlb-edge-mlflow-to-pytorch { stroke: url(#mlb-grad-mlflow-to-pytorch); }
+  .react-flow__edge-path.mlb-edge-mlflow-to-sklearn { stroke: url(#mlb-grad-mlflow-to-sklearn); }
+  .react-flow__edge-path.mlb-edge-mlflow-to-gym { stroke: url(#mlb-grad-mlflow-to-gym); }
+  .react-flow__edge-path.mlb-edge-mlflow-to-viz { stroke: url(#mlb-grad-mlflow-to-viz); }
+  .react-flow__edge-path.mlb-edge-viz-to-pytorch { stroke: url(#mlb-grad-viz-to-pytorch); }
+  .react-flow__edge-path.mlb-edge-viz-to-sklearn { stroke: url(#mlb-grad-viz-to-sklearn); }
+  .react-flow__edge-path.mlb-edge-viz-to-gym { stroke: url(#mlb-grad-viz-to-gym); }
+  .react-flow__edge-path.mlb-edge-viz-to-mlflow { stroke: url(#mlb-grad-viz-to-mlflow); }
 }
