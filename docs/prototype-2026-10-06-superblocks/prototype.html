@@ -73,11 +73,17 @@
   .drawerbtn{width:100%;display:flex;justify-content:space-between;align-items:center;
     background:var(--bg);border:1px solid var(--border);color:var(--text);
     border-radius:8px;padding:8px 10px;font-size:12px;cursor:pointer;margin-top:4px}
-  .opts{border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;overflow:hidden}
-  .opts button{display:block;width:100%;text-align:left;background:var(--surface2);
+  .ddwrap{position:relative}
+  .opts{position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:30;
+    border:1px solid var(--border);border-radius:8px;overflow:auto;max-height:180px;
+    box-shadow:0 12px 32px rgba(0,0,0,.5);background:var(--surface2)}
+  .opts button{display:block;width:100%;text-align:left;background:transparent;
     border:none;border-top:1px solid var(--border);color:var(--text);
     padding:10px;font-size:13px;cursor:pointer}
+  .opts button:first-child{border-top:none}
   .opts button:active{background:#2c323d}
+  .pdesc{font-size:11px;color:var(--muted);margin:3px 0 2px}
+  .req{color:#f87171;font-size:11px;margin-left:4px}
   .hint{font-size:11px;color:var(--muted);margin:2px 0 6px}
   @media(min-width:900px){#sheet{inset:0 0 0 auto;max-width:420px;border-radius:0;border-left:1px solid var(--border);max-height:none}}
 </style>
@@ -147,25 +153,27 @@ const UNITS=["load_csv","standard_scaler","conv2d_layer","dropout_layer","logist
    choice = (choix: a|b) -> drawer ; num = (entre: min-max) -> input + bornes ; free -> input + badge "libre" */
 const PARAMS={
  "Monde Virtuel & Simulation":[
-  {k:"env_name",kind:"choice",opts:["cartpole","mountaincar","acrobot","pendulum"]},
-  {k:"episodes",kind:"num",hint:"entre 10 et 1000, pas 10"},
-  {k:"note",kind:"free"}],
+  {k:"env_name",kind:"choice",desc:"Environnement Gymnasium à instancier.",req:1,opts:["cartpole","mountaincar","acrobot","pendulum"]},
+  {k:"episodes",kind:"num",desc:"États à échantillonner.",hint:"entre 10 et 1000, pas 10"},
+  {k:"note",kind:"free",desc:"Annotation libre du run.",fmt:"string"}],
  "Préparation Tabulaire":[
-  {k:"path",kind:"free"},
-  {k:"target_column",kind:"choice",opts:["col1","col2","col3 (colonnes du CSV)"]}],
+  {k:"path",kind:"free",desc:"Fichier CSV sur le serveur d'exécution.",fmt:"string · format .csv",req:1},
+  {k:"target_column",kind:"choice",desc:"Colonne cible lue dans le CSV chargé.",opts:["col1","col2","col3 (colonnes du CSV)"]}],
  "Chargement d'Images & Lots":[
-  {k:"dataset",kind:"choice",opts:["cifar10","mnist","fashion_mnist","personnalisé"]},
-  {k:"batch_size",kind:"num",hint:"entre 1 et 512"}],
+  {k:"dataset",kind:"choice",desc:"Jeu d'images à télécharger.",opts:["cifar10","mnist","fashion_mnist","personnalisé"]},
+  {k:"batch_size",kind:"num",desc:"Images par lot.",hint:"entre 1 et 512"}],
 };
-const DEFPARAMS=[{k:"experiment_name",kind:"free"},{k:"epochs",kind:"num",hint:"entre 1 et 100"}];
+const DEFPARAMS=[{k:"experiment_name",kind:"free",desc:"Nom du run côté serveur MLflow.",fmt:"string"},{k:"epochs",kind:"num",desc:"Passes d'entraînement.",hint:"entre 1 et 100"}];
 function paramRows(title){
   return (PARAMS[title]||DEFPARAMS).map((p,i)=>{
-    if(p.kind==="choice")return`<div class="field" style="display:block"><span>${p.k}</span>
-      <button class="drawerbtn" data-dd="${i}"><span>${p.opts[0]}</span><span>›</span></button>
-      <div class="opts" id="dd-${i}" style="display:none">${p.opts.map(o=>`<button data-pick="${o}" data-dd="${i}">${o}</button>`).join("")}</div></div>`;
-    if(p.kind==="num")return`<div class="field" style="display:block"><span>${p.k}</span>
+    const req=p.req?'<span class="req">requis</span>':'';
+    const d=p.desc?`<div class="pdesc">${p.desc}</div>`:'';
+    if(p.kind==="choice")return`<div class="field" style="display:block"><span>${p.k}${req}</span>${d}
+      <div class="ddwrap"><button class="drawerbtn" data-dd="${i}"><span>${p.opts[0]}</span><span>▾</span></button>
+      <div class="opts" id="dd-${i}" style="display:none">${p.opts.map(o=>`<button data-pick="${o}" data-dd="${i}">${o}</button>`).join("")}</div></div></div>`;
+    if(p.kind==="num")return`<div class="field" style="display:block"><span>${p.k}${req}</span>${d}
       <input type="number" value="10" style="width:100%;margin-top:4px"><div class="hint">${p.hint}</div></div>`;
-    return`<div class="field"><span>${p.k}<span class="libre">libre</span></span><input placeholder="valeur libre"></div>`;
+    return`<div class="field"><span>${p.k}${req}<span class="libre">libre</span></span><input placeholder="valeur libre"></div>${d}${p.fmt?`<div class="hint">attendu : ${p.fmt}</div>`:''}`;
   }).join("");
 }
 let variant="a", eng="all";
@@ -219,11 +227,18 @@ function openSheet(c){
     <button class="cta">Ajouter au canvas</button>
     <button class="cta ghost" onclick="document.getElementById('sheet').classList.remove('open')">Fermer</button>`;
   document.getElementById("sheet").classList.add("open");
+  const closeAll=()=>document.querySelectorAll("#sheetbody .opts").forEach(o=>o.style.display="none");
+  document.getElementById("sheetbody").onclick=e=>{
+    if(!e.target.closest(".ddwrap"))closeAll();
+  };
   document.querySelectorAll("#sheetbody [data-dd]").forEach(b=>{
     if(b.dataset.pick)return;
-    b.onclick=()=>{
+    b.onclick=e=>{
+      e.stopPropagation();
       const o=document.getElementById("dd-"+b.dataset.dd);
-      o.style.display=o.style.display==="none"?"block":"none";
+      const was=o.style.display==="none";
+      closeAll();
+      o.style.display=was?"block":"none";
     };
   });
   document.querySelectorAll("#sheetbody [data-pick]").forEach(b=>b.onclick=e=>{
