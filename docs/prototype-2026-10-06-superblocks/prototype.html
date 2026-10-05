@@ -37,8 +37,12 @@
   .card .meta{display:flex;gap:6px;align-items:center;font-size:11px;color:var(--muted);margin-top:8px}
   .pastille{width:10px;height:10px;border-radius:3px}
   .chev{position:absolute;bottom:10px;right:12px;color:var(--muted)}
-  /* Variante B : pastille moteur + ligne enfants */
-  .card.b .kids{font-size:11px;color:var(--muted);margin-top:6px}
+  /* BB : icône (C) + liseré moteur (B) sur base A */
+  .card .top{display:flex;gap:10px;align-items:flex-start}
+  .card .ico{width:32px;height:32px;border-radius:9px;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    font-size:14px;font-weight:800;color:#fff}
+  .card .bar{height:3px;border-radius:99px;margin-top:8px;background:var(--ec,var(--sklearn))}
   .card.b .bar{height:3px;border-radius:99px;margin-top:8px;background:var(--ec,var(--sklearn))}
   /* Variante C : icône + une ligne */
   .card.c{display:flex;gap:10px;align-items:flex-start;min-height:0}
@@ -142,8 +146,10 @@ function cardHTML(s){
     <span class="pastille" style="background:${past};width:12px;height:12px;margin-top:2px"></span>
     <div><h3 style="margin-right:80px">${title}</h3><p>${kids.length?kids.length+" sous-blocs":"bloc plat"}</p></div>${badge}</div>`;
   return`<div class="card" data-t="${title}" data-m="${moteur}" data-d="${desc}" data-k="${kids.join(", ")}">
-    ${badge}<h3>${title}</h3><p>${desc}</p>
-    <div class="meta"><span class="pastille" style="background:${past}"></span><span>${kids.length?kids.length+" sous-blocs":"bloc plat"}</span></div>
+    ${badge}<div class="top"><span class="ico" style="background:${past}">${title.trim().charAt(0)}</span>
+    <div><h3 style="margin:0 80px 0 0">${title}</h3><p>${desc}</p></div></div>
+    <div class="meta"><span>${kids.length?kids.length+" sous-blocs":"bloc plat"}</span></div>
+    <div class="bar" style="--ec:${EC[e]}"></div>
     <span class="chev">›</span></div>`;
 }
 function render(){
