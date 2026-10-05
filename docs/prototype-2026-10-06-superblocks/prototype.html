@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prototype cartes SuperBlocks — 2026-10-06</title>
+<style>
+  :root{
+    --pytorch:#EA580C; --sklearn:#2563EB; --gym:#059669; --mlflow:#9333EA; --viz:#D97706;
+    --bg:#0f1115; --surface:#1a1d24; --surface2:#22262f; --border:#333946;
+    --text:#f2f4f8; --muted:#9aa3b2;
+  }
+  *{box-sizing:border-box} body{background:var(--bg);color:var(--text);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;margin:0;padding:20px}
+  h1{font-size:20px;margin:0 0 4px} h2{font-size:15px;margin:26px 0 10px;color:var(--muted);
+    text-transform:uppercase;letter-spacing:.06em}
+  .sub{color:var(--muted);font-size:13px;margin-bottom:16px}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:14px 0}
+  .chip{border:1px solid var(--border);background:var(--surface);color:var(--text);
+    border-radius:999px;padding:6px 12px;font-size:12px;cursor:pointer}
+  .chip[aria-pressed="true"]{background:var(--text);color:#111}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:99px;margin-right:6px}
+  .switch{display:flex;align-items:center;gap:8px;font-size:13px;margin-left:auto;cursor:pointer}
+  .track{width:34px;height:19px;border-radius:99px;background:#3a4150;position:relative;transition:.15s}
+  .switch[aria-checked="true"] .track{background:var(--text)}
+  .knob{position:absolute;top:2px;left:2px;width:15px;height:15px;border-radius:99px;background:#fff;transition:.15s}
+  .switch[aria-checked="true"] .knob{left:17px;background:#111}
+  .variantbar{display:flex;gap:8px;margin:6px 0 4px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;
+    padding:12px;cursor:pointer;position:relative;transition:border-color .12s;min-height:88px}
+  .card:hover{border-color:#5b657a}
+  .card .eng{position:absolute;top:10px;right:10px;font-size:10px;font-weight:700;
+    border:1px solid var(--border);border-radius:99px;padding:2px 8px;color:var(--muted)}
+  .card h3{font-size:13.5px;margin:0 90px 2px 0}
+  .card p{font-size:12px;color:var(--muted);margin:4px 0}
+  .card .meta{display:flex;gap:6px;align-items:center;font-size:11px;color:var(--muted);margin-top:8px}
+  .pastille{width:10px;height:10px;border-radius:3px}
+  .chev{position:absolute;bottom:10px;right:12px;color:var(--muted)}
+  /* Variante B : pastille moteur + ligne enfants */
+  .card.b .kids{font-size:11px;color:var(--muted);margin-top:6px}
+  .card.b .bar{height:3px;border-radius:99px;margin-top:8px;background:var(--ec,var(--sklearn))}
+  /* Variante C : icône + une ligne */
+  .card.c{display:flex;gap:10px;align-items:flex-start;min-height:0}
+  .card.c .ico{width:32px;height:32px;border-radius:9px;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;font-size:16px;background:var(--surface2)}
+  /* transition */
+  .card.tr{background:linear-gradient(135deg,rgba(37,99,235,.25),rgba(234,88,12,.25))}
+  /* sheet */
+  #sheet{position:fixed;inset:auto 0 0 0;max-height:82vh;overflow:auto;background:var(--surface);
+    border-top:1px solid var(--border);border-radius:16px 16px 0 0;padding:18px;display:none}
+  #sheet.open{display:block}
+  #sheet .grab{width:100px;height:4px;border-radius:99px;background:#3a4150;margin:0 auto 14px}
+  .row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px}
+  .row input[type=checkbox]{width:18px;height:18px;accent-color:#fff}
+  .row .tag{margin-left:auto;font-size:10px;color:var(--muted);border:1px solid var(--border);
+    border-radius:99px;padding:2px 8px}
+  .compat{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .compat button{background:var(--surface2);border:1px solid var(--border);color:var(--text);
+    border-radius:10px;padding:8px 10px;font-size:12px;cursor:pointer}
+  .cta{display:block;width:100%;margin-top:16px;padding:13px;border:none;border-radius:12px;
+    background:var(--text);color:#111;font-weight:700;font-size:14px;cursor:pointer}
+  .ghost{background:transparent;color:var(--muted);border:1px solid var(--border);margin-top:8px}
+  .field{display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:7px 0}
+  .field input{background:var(--bg);border:1px solid var(--border);color:var(--text);
+    border-radius:8px;padding:6px 8px;width:150px;font-size:12px}
+  @media(min-width:900px){#sheet{inset:0 0 0 auto;max-width:420px;border-radius:0;border-left:1px solid var(--border);max-height:none}}
+</style>
+</head>
+<body>
+<h1>SuperBlocks — 3 variantes de cartes + sheet</h1>
+<div class="sub">Mock statique · cliquez une carte pour ouvrir la sheet · à raffiner ensemble</div>
+
+<div class="toolbar" id="engfilter">
+  <button class="chip" data-eng="all" aria-pressed="true">Tous</button>
+  <button class="chip" data-eng="pytorch" aria-pressed="false"><span class="dot" style="background:var(--pytorch)"></span>PyTorch</button>
+  <button class="chip" data-eng="sklearn" aria-pressed="false"><span class="dot" style="background:var(--sklearn)"></span>Sklearn/XGB</button>
+  <button class="chip" data-eng="gym" aria-pressed="false"><span class="dot" style="background:var(--gym)"></span>Gymnasium</button>
+  <button class="chip" data-eng="mlflow" aria-pressed="false"><span class="dot" style="background:var(--mlflow)"></span>MLflow/Viz</button>
+  <div class="switch" id="adv" role="switch" aria-checked="false" tabindex="0"><span>Mode avancé</span><span class="track"><span class="knob"></span></span></div>
+</div>
+
+<div class="variantbar toolbar">
+  <button class="chip" data-v="a" aria-pressed="true">Variante A · badge haut-droite</button>
+  <button class="chip" data-v="b" aria-pressed="false">Variante B · liseré moteur + enfants</button>
+  <button class="chip" data-v="c" aria-pressed="false">Variante C · compacte icône</button>
+</div>
+
+<h2>Étape 1 — Données / Environnement &amp; Préparation</h2>
+<div class="grid" data-stage="1"></div>
+<h2>Étape 2 — Modèle &amp; Entraînement</h2>
+<div class="grid" data-stage="2"></div>
+<h2>Blocs de transition (dégradés bicolores)</h2>
+<div class="grid" id="trans"></div>
+<h2>Étape 3 — Évaluation &amp; Visualisation</h2>
+<div class="grid" data-stage="3"></div>
+<h2 id="advtitle" style="display:none">Blocs unitaires (mode avancé)</h2>
+<div class="grid" id="advgrid" style="display:none"></div>
+
+<div id="sheet" role="dialog" aria-label="Configuration du SuperBlock">
+  <div class="grab"></div>
+  <div id="sheetbody"></div>
+</div>
+
+<script>
+const EC={pytorch:"var(--pytorch)",sklearn:"var(--sklearn)",gym:"var(--gym)",mlflow:"var(--mlflow)",viz:"var(--viz)"};
+const SB=[
+ [1,"Préparation Tabulaire","Scikit-Learn","sklearn","Charge un CSV puis standardise.",["load_csv","standard_scaler"],"#22C55E"],
+ [1,"Chargement d'Images & Lots","PyTorch","pytorch","Dataset d'images → DataLoader.",["load_torch_dataset","data_loader"],"#22C55E"],
+ [1,"Monde Virtuel & Simulation","Gymnasium","gym","Instancie un environnement.",["create_env"],"#E8C77A"],
+ [1,"Préparation de Texte","PyTorch","pytorch","Tokens → vocabulaire.",["tokenize","build_vocab"],"#F5A623"],
+ [2,"Réseau Séquentiel","PyTorch","pytorch","Conteneur vide de couches.",[],"#6366F1"],
+ [2,"Entraînement de Réseau","PyTorch","pytorch","Bloc plat d'entraînement.",[],"#DE497D"],
+ [2,"Modèle Statistique & Arbres","Scikit-Learn","sklearn","Estimateur tabulaire.",["logistic_regression"],"#6366F1"],
+ [2,"Boosting Rapide","XGBoost","sklearn","Boosting tabulaire.",["xgboost_classifier"],"#6366F1"],
+ [2,"Apprentissage par Renforcement","Gymnasium","gym","Table Q sur env discret.",["q_learning"],"#E8C77A"],
+ [2,"Suivi d'Expérience","MLflow","mlflow","set_experiment + autolog.",[],"#9333EA"],
+ [3,"Score & Courbes","Plotly / PyTorch","pytorch","Prédictions vs réel.",["plot_predictions"],"#06B6D4"],
+ [3,"Matrice de Confusion","Seaborn / Sklearn","sklearn","Précision par classe.",["confusion_matrix"],"#06B6D4"],
+ [3,"Groupes & Carte 2D","Plotly / Sklearn","sklearn","Clusters K-means.",["kmeans"],"#06B6D4"],
+ [3,"Démo de l'Agent","Gymnasium / Plotly","gym","Épisodes + récompense.",["evaluate_agent"],"#06B6D4"],
+ [3,"Export de Modèle","MLflow","mlflow","Modèle servable.",[],"#D97706"],
+];
+const TR=[
+ ["df_to_tensor","sklearn","pytorch","DataFrame → Tensor"],
+ ["to_tensor","viz","pytorch","Image → Tensor"],
+ ["env_to_tensor","gym","pytorch","Env → Tensor"],
+ ["module_to_policy","pytorch","gym","Réseau → Politique"],
+];
+const UNITS=["load_csv","standard_scaler","conv2d_layer","dropout_layer","logistic_regression","xgboost_classifier","q_learning","plot_predictions","confusion_matrix","kmeans","to_tensor","df_to_tensor"];
+let variant="a", eng="all";
+const engOf=t=>t;
+function cardHTML(s){
+  const[st,title,moteur,e,desc,kids,past]=s;
+  if(eng!=="all"&&e!==eng&&!(eng==="mlflow"&&(e==="mlflow"||e==="viz")))return"";
+  const badge=`<span class="eng">${moteur}</span>`;
+  if(variant==="b")return`<div class="card b" data-t="${title}" data-m="${moteur}" data-d="${desc}" data-k="${kids.join(", ")}">
+    ${badge}<h3>${title}</h3><p>${desc}</p>
+    <div class="kids">${kids.length?kids.join(" → "):"bloc plat — rien à cocher"}</div>
+    <div class="bar" style="--ec:${EC[e]}"></div></div>`;
+  if(variant==="c")return`<div class="card c" data-t="${title}" data-m="${moteur}" data-d="${desc}" data-k="${kids.join(", ")}">
+    <span class="pastille" style="background:${past};width:12px;height:12px;margin-top:2px"></span>
+    <div><h3 style="margin-right:80px">${title}</h3><p>${kids.length?kids.length+" sous-blocs":"bloc plat"}</p></div>${badge}</div>`;
+  return`<div class="card" data-t="${title}" data-m="${moteur}" data-d="${desc}" data-k="${kids.join(", ")}">
+    ${badge}<h3>${title}</h3><p>${desc}</p>
+    <div class="meta"><span class="pastille" style="background:${past}"></span><span>${kids.length?kids.length+" sous-blocs":"bloc plat"}</span></div>
+    <span class="chev">›</span></div>`;
+}
+function render(){
+  document.querySelectorAll(".grid[data-stage]").forEach(g=>{
+    g.innerHTML=SB.filter(s=>s[0]==g.dataset.stage).map(cardHTML).join("")||"<p class=sub>Aucun (filtre moteur)</p>";
+  });
+  document.getElementById("trans").innerHTML=TR.map(t=>
+    `<div class="card tr" data-t="${t[0]}" data-m="transition" data-d="${t[3]}" data-k="">
+    <span class="eng">${t[1]} → ${t[2]}</span><h3>${t[0]}</h3><p>${t[3]}</p></div>`).join("");
+  const on=document.getElementById("adv").getAttribute("aria-checked")==="true";
+  document.getElementById("advgrid").style.display=on?"grid":"none";
+  document.getElementById("advtitle").style.display=on?"block":"none";
+  if(on)document.getElementById("advgrid").innerHTML=UNITS.map(u=>
+    `<div class="card c"><div><h3 style="margin:0">${u}</h3><p>bloc unitaire</p></div></div>`).join("");
+  bindCards();
+}
+function bindCards(){
+  document.querySelectorAll(".card[data-t]").forEach(c=>c.onclick=()=>openSheet(c));
+}
+function openSheet(c){
+  const kids=(c.dataset.k||"").split(", ").filter(Boolean);
+  document.getElementById("sheetbody").innerHTML=`
+    <h3 style="margin:0 0 2px">${c.dataset.t}</h3>
+    <p class="sub">${c.dataset.m} · ${c.dataset.d}</p>
+    <h2>Sous-blocs (1 tap = on/off)</h2>
+    ${kids.length?kids.map(k=>`<label class="row"><input type="checkbox" checked> ${k}<span class="tag">inclus</span></label>`).join(""):'<p class="sub">Bloc plat — aucun sous-bloc, params ci-dessous.</p>'}
+    <h2>Paramètres</h2>
+    <div class="field"><span>experiment_name</span><input value="exp1"></div>
+    <div class="field"><span>epochs</span><input value="10"></div>
+    <h2>Blocs suivants compatibles</h2>
+    <div class="compat"><button>standard_scaler ✓</button><button>df_to_tensor ⇄ adaptateur</button><button>logistic_regression ✓</button></div>
+    <button class="cta">Ajouter au canvas</button>
+    <button class="cta ghost" onclick="document.getElementById('sheet').classList.remove('open')">Fermer</button>`;
+  document.getElementById("sheet").classList.add("open");
+}
+document.querySelectorAll("#engfilter .chip").forEach(ch=>ch.onclick=()=>{
+  document.querySelectorAll("#engfilter .chip").forEach(x=>x.setAttribute("aria-pressed","false"));
+  ch.setAttribute("aria-pressed","true"); eng=ch.dataset.eng; render();
+});
+document.querySelectorAll(".variantbar .chip").forEach(ch=>ch.onclick=()=>{
+  document.querySelectorAll(".variantbar .chip").forEach(x=>x.setAttribute("aria-pressed","false"));
+  ch.setAttribute("aria-pressed","true"); variant=ch.dataset.v; render();
+});
+const adv=document.getElementById("adv");
+adv.onclick=()=>adv.setAttribute("aria-checked",adv.getAttribute("aria-checked")==="true"?"false":"true")||render();
+adv.onkeydown=e=>{if(e.key===" "||e.key==="Enter"){e.preventDefault();adv.click();}};
+render();
+</script>
+</body>
+</html>
