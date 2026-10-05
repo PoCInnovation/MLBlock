@@ -10,6 +10,9 @@ class PipelineNode(BaseModel):
     params: dict[str, Any] = {}
     children: list[PipelineNode] = []
     position: dict[str, float] | None = None
+    # Declared execution engine for containers (SuperBlocks). When set,
+    # validation enforces it instead of inferring from the block category.
+    engine: str | None = None
 
 
 class PipelineEdge(BaseModel):

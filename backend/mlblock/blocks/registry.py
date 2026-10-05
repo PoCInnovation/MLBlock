@@ -350,5 +350,14 @@ def _discover():
             except Exception as e:
                 print(f"Error discovering block {module_name}: {e}")
 
+    # Standard SuperBlock containers (three-stage-blocks): named templates
+    # with declared engine + default children, resolvable like any block.
+    try:
+        from mlblock.core.superblocks import register_superblocks
+
+        register_superblocks()
+    except Exception as e:
+        print(f"Error registering superblocks: {e}")
+
 
 _discover()

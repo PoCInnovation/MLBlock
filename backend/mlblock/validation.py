@@ -88,22 +88,27 @@ def validate_container_children(
     errors: list[str],
 ) -> None:
     from mlblock.core.adapters import resolve_alias
-    from mlblock.core.stages import STRICT_ENGINES
+    from mlblock.core.stages import KNOWN_ENGINES, STRICT_ENGINES
 
     children = node.get("children") or []
     if not isinstance(children, list):
         errors.append(f"Node '{node.get('id', '?')}' 'children' must be a list")
         return
 
-    # Container engine: declared engine of the container block itself when it
-    # is a strict framework engine, else inferred from the first resolvable
-    # strict-engine child (custom SuperBlocks have no declared engine).
+    # Container engine, by precedence:
+    # 1. engine declared by the user on the node (custom SuperBlocks),
+    # 2. engine of the registered container block itself (standard SuperBlocks),
+    # 3. inferred from the first strict-engine child.
     container_engine: str | None = None
-    node_type = node.get("type")
-    if node_type and registry is not None:
-        container_engine = _spec_engine(registry.get(resolve_alias(node_type)))
-        if container_engine not in STRICT_ENGINES:
-            container_engine = None
+    declared = node.get("engine") if isinstance(node, dict) else getattr(node, "engine", None)
+    if declared in KNOWN_ENGINES:
+        container_engine = declared
+    if container_engine is None:
+        node_type = node.get("type") if isinstance(node, dict) else getattr(node, "type", None)
+        if node_type and registry is not None:
+            container_engine = _spec_engine(registry.get(resolve_alias(node_type)))
+            if container_engine not in STRICT_ENGINES:
+                container_engine = None
 
     prev_child_type = None
     prev_out_dtype = None

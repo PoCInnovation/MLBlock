@@ -94,11 +94,39 @@ class Catalog:
         ]
 
     def superblocks(self) -> list[dict[str, Any]]:
-        """Standard SuperBlock pedagogical titles ("Action (Moteur)")."""
-        return [
-            {"id": sb_id, "label": title, "title": title, "macro_stage": macro}
-            for sb_id, title, macro in SUPERBLOCK_TITLES
-        ]
+        """Standard SuperBlocks: pedagogical titles + engine + default children.
+
+        Shape stays backward compatible ({id, label, title, macro_stage})
+        and gains engine/children so the palette can expand a SuperBlock
+        into plain simple blocks (advanced mode).
+        """
+        from mlblock.core.superblocks import EXTRA_TITLES, SUPERBLOCK_DEFS
+
+        _extra_engines = {
+            "deep_trainer": "pytorch",
+            "mlflow_tracker": "mlflow",
+            "mlflow_model_exporter": "mlflow",
+        }
+        out = []
+        for sb_id, d in SUPERBLOCK_DEFS.items():
+            out.append({
+                "id": sb_id,
+                "label": d["title"],
+                "title": d["title"],
+                "macro_stage": int(d["macro_stage"]),
+                "engine": d["engine"],
+                "children": [c["type"] for c in d["children"]],
+            })
+        for sb_id, title, macro in EXTRA_TITLES:
+            out.append({
+                "id": sb_id,
+                "label": title,
+                "title": title,
+                "macro_stage": macro,
+                "engine": _extra_engines.get(sb_id, "generic"),
+                "children": [],
+            })
+        return out
 
     # ── test adapter ────────────────────────────────────────────────
     def use_fake(self, blocks: dict[str, Any], sources: dict[str, str] | None = None) -> None:
@@ -161,25 +189,19 @@ class Catalog:
 catalog = Catalog()
 
 # Standard SuperBlocks: (id, pedagogical title "Action (Moteur)", macro_stage).
-# Titles are exposed via GET /api/catalog for the palette (frontend spec);
-# execution of any container (standard or custom) goes through node children.
-SUPERBLOCK_TITLES: list[tuple[str, str, int]] = [
-    ("tabular_data_pipeline", "Préparation Tabulaire (Scikit-Learn)", 1),
-    ("torch_data_pipeline", "Chargement d'Images & Lots (PyTorch)", 1),
-    ("gym_env_pipeline", "Monde Virtuel & Simulation (Gymnasium)", 1),
-    ("nlp_data_pipeline", "Préparation de Texte (PyTorch)", 1),
-    ("sequential_model", "Réseau de Neurones Séquentiel (PyTorch)", 2),
-    ("deep_trainer", "Entraînement de Réseau (PyTorch)", 2),
-    ("sklearn_model_trainer", "Modèle Statistique & Arbres (Scikit-Learn)", 2),
-    ("xgboost_trainer", "Modèle de Boosting Rapide (XGBoost)", 2),
-    ("rl_agent_trainer", "Apprentissage par Renforcement (Gymnasium)", 2),
-    ("mlflow_tracker", "Suivi & Historique d'Expérience (MLflow)", 2),
-    ("deep_evaluator", "Score & Courbes d'Apprentissage (Plotly / PyTorch)", 3),
-    ("confusion_matrix_eval", "Matrice de Confusion & Précision (Seaborn / Scikit-Learn)", 3),
-    ("clustering_visualizer", "Visualisation de Groupes & Carte 2D (Plotly / Scikit-Learn)", 3),
-    ("agent_rollout_viewer", "Score & Démonstration de l'Agent (Gymnasium / Plotly)", 3),
-    ("mlflow_model_exporter", "Export de Modèle Prêt à l'Emploi (MLflow)", 3),
-]
+# Single source is mlblock.core.superblocks.SUPERBLOCK_DEFS (+ EXTRA_TITLES
+# for the real flat blocks deep_trainer / mlflow_tracker); this alias keeps
+# the historical name importable.
+def _titles_alias() -> list[tuple[str, str, int]]:
+    from mlblock.core.superblocks import EXTRA_TITLES, SUPERBLOCK_DEFS
+
+    return [
+        (sb_id, d["title"], int(d["macro_stage"]))
+        for sb_id, d in SUPERBLOCK_DEFS.items()
+    ] + list(EXTRA_TITLES)
+
+
+SUPERBLOCK_TITLES: list[tuple[str, str, int]] = _titles_alias()
 
 # Convenience module functions (so callers can `from mlblock.catalog import get` if they prefer)
 def get(name: str) -> Any | None:

@@ -103,6 +103,7 @@ STAGE_OF_BLOCK_OVERRIDES: dict[str, Stage] = {
     "plot_predictions": Stage.EVAL,
     "env_to_tensor": Stage.PREPARE,
     "module_to_policy": Stage.EVAL,
+    "mlflow_model_exporter": Stage.EVAL,
 }
 
 # S2A sub-state annotations / notes:
@@ -162,6 +163,14 @@ def stage_of_block(block_name: str, category: str | None = None) -> Stage:
     canonical = resolve_alias(block_name)
     if canonical in STAGE_OF_BLOCK_OVERRIDES:
         return STAGE_OF_BLOCK_OVERRIDES[canonical]
+
+    try:
+        from mlblock.core.superblocks import SUPERBLOCK_DEFS
+
+        if canonical in SUPERBLOCK_DEFS:
+            return Stage(int(SUPERBLOCK_DEFS[canonical]["stage"]))
+    except Exception:
+        pass
 
     if category:
         return stage_of_category(category)
@@ -249,7 +258,6 @@ MACRO_OF_CATEGORY: dict[str, MacroStage] = {
     "normalisation": MacroStage.MODEL_TRAIN,
     "regroupement": MacroStage.MODEL_TRAIN,
     "sequences": MacroStage.MODEL_TRAIN,
-    "convolution": MacroStage.MODEL_TRAIN,
     "modeles": MacroStage.MODEL_TRAIN,
     "entrainement": MacroStage.MODEL_TRAIN,
     # Étape 3 : Évaluation + Visualisation
@@ -268,6 +276,7 @@ MACRO_OF_BLOCK_OVERRIDES: dict[str, MacroStage] = {
     "confusion_matrix": MacroStage.RESULTS,
     "silhouette": MacroStage.RESULTS,
     "plot_predictions": MacroStage.RESULTS,
+    "mlflow_model_exporter": MacroStage.RESULTS,
 }
 
 
@@ -284,6 +293,14 @@ def macro_of_block(block_name: str, category: str | None = None) -> MacroStage:
     canonical = resolve_alias(block_name)
     if canonical in MACRO_OF_BLOCK_OVERRIDES:
         return MACRO_OF_BLOCK_OVERRIDES[canonical]
+
+    try:
+        from mlblock.core.superblocks import SUPERBLOCK_DEFS
+
+        if canonical in SUPERBLOCK_DEFS:
+            return MacroStage(int(SUPERBLOCK_DEFS[canonical]["macro_stage"]))
+    except Exception:
+        pass
 
     if category:
         return macro_of_category(category)
@@ -318,7 +335,6 @@ ENGINE_OF_CATEGORY: dict[str, str] = {
     "normalisation": "pytorch",
     "regroupement": "pytorch",
     "sequences": "pytorch",
-    "convolution": "pytorch",
     "modeles": "sklearn",
     "entrainement": "pytorch",
     "visualisation": "viz",
@@ -376,6 +392,11 @@ TRANSITION_BLOCKS: frozenset[str] = frozenset({
 # Framework engines that must not be mixed inside one SuperBlock.
 STRICT_ENGINES: frozenset[str] = frozenset({"sklearn", "pytorch", "gym"})
 
+# All known engine tags (accepted as a declared container engine).
+KNOWN_ENGINES: frozenset[str] = frozenset({
+    "sklearn", "pytorch", "gym", "mlflow", "viz", "generic", "transition",
+})
+
 
 def engine_of_block(block_name: str, category: str | None = None) -> str:
     """Map a block name (and optional category) to its framework engine."""
@@ -384,6 +405,14 @@ def engine_of_block(block_name: str, category: str | None = None) -> str:
     canonical = resolve_alias(block_name)
     if canonical in ENGINE_OF_BLOCK_OVERRIDES:
         return ENGINE_OF_BLOCK_OVERRIDES[canonical]
+
+    try:
+        from mlblock.core.superblocks import SUPERBLOCK_DEFS
+
+        if canonical in SUPERBLOCK_DEFS:
+            return str(SUPERBLOCK_DEFS[canonical]["engine"])
+    except Exception:
+        pass
 
     if category:
         cat = category.split("-")[0].strip().lower()

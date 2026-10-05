@@ -248,14 +248,26 @@ def generate_code(nodes: list[PipelineNode], edges: list[PipelineEdge]) -> str:
         # block_id = node.id for per-block Inspecteur mapping (type for display, id for mapping)
         bid = repr(node.id)
         lines.append(f"        notify_status({node.type!r}, 'running', {bid})")
-        # Container branch: any node carrying children (sequential_container or
-        # custom SuperBlock) composes its children sequentially and forwards
-        # the composed output to the rest of the graph.
-        if getattr(node, "children", None):
+        # mlflow_tracker setup is already injected at the top of main(): emit
+        # a placeholder output but skip the call so set_experiment/autolog
+        # run exactly once per script.
+        if mlflow_experiments and b_type == "mlflow_tracker":
             output_counter += 1
             output_map[node_id] = output_counter
-            child_calls = []
-            for child in (getattr(node, "children", None) or []):
+            lines.append(f"        out_{output_counter} = None  # mlflow setup injected above")
+            lines.append(f"        notify_output({node.type!r}, json.dumps(_serialize_output(out_{output_counter})), {bid})")  # noqa: E501
+            lines.append(f"        notify_status({node.type!r}, 'done', {bid})")
+            continue
+        # Container branch: standard SuperBlocks, sequential_container and any
+        # custom node carrying children. Module-only chains compose into
+        # nn.Sequential; other chains thread each output into the next
+        # child's first input; the last value feeds the rest of the graph.
+        from mlblock.core.superblocks import SUPERBLOCK_DEFS
+
+        children = list(getattr(node, "children", None) or [])
+        if children or b_type in SUPERBLOCK_DEFS or b_type == "sequential_container":
+            steps: list[tuple] = []  # (cb_type, args, first_input, n_outputs, is_module)
+            for child in children:
                 cb_type = resolve_alias(child.type)
                 cblock = BLOCK_REGISTRY.get(cb_type)
                 c_cleaned = {k: v for k, v in getattr(child, "params", {}).items() if not k.startswith("_")}
@@ -267,13 +279,47 @@ def generate_code(nodes: list[PipelineNode], edges: list[PipelineEdge]) -> str:
                         v = _coerce_param_value(cblock.name if cblock else cb_type, k, v, ptype)
                     c_emitted.append(f"{k}={v!r}")
                 c_args = ", ".join(c_emitted)
-                child_calls.append(f"{cb_type}({c_args})")
-            lines.append("        import torch.nn as nn")
-            if child_calls:
-                inner_layers = ",\n            ".join(child_calls)
-                lines.append(f"        out_{output_counter} = nn.Sequential(\n            {inner_layers}\n        )")
+                cins = list(getattr(cblock, "inputs", None) or []) if cblock else []
+                first_in = None
+                if cins:
+                    i0 = cins[0]
+                    first_in = i0.get("name") if isinstance(i0, dict) else getattr(i0, "name", None)
+                couts = list(getattr(cblock, "outputs", None) or []) if cblock else []
+                is_module = bool(couts) and (
+                    (couts[0].get("dtype") if isinstance(couts[0], dict)
+                     else getattr(couts[0], "dtype", None)) == "torch.nn.Module"
+                )
+                steps.append((cb_type, c_args, first_in, max(len(couts), 1), is_module))
+            if not steps or all(s[4] for s in steps):
+                output_counter += 1
+                output_map[node_id] = output_counter
+                lines.append("        import torch.nn as nn")
+                if steps:
+                    inner_layers = ",\n            ".join(f"{t}({a})" for t, a, _, _, _ in steps)
+                    lines.append(f"        out_{output_counter} = nn.Sequential(")
+                    lines.append(f"            {inner_layers}")
+                    lines.append("        )")
+                else:
+                    lines.append(f"        out_{output_counter} = nn.Sequential()")
             else:
-                lines.append(f"        out_{output_counter} = nn.Sequential()")
+                prev = None
+                for t, a, first_in, n_outs, _ in steps:
+                    if prev is not None and first_in:
+                        call = f"{t}({first_in}={prev}" + (f", {a}" if a else "") + ")"
+                    else:
+                        call = f"{t}({a})"
+                    if n_outs <= 1:
+                        output_counter += 1
+                        lines.append(f"        out_{output_counter} = {call}")
+                        prev = f"out_{output_counter}"
+                    else:
+                        targets = []
+                        for _ in range(n_outs):
+                            output_counter += 1
+                            targets.append(f"out_{output_counter}")
+                        lines.append(f"        {', '.join(targets)} = {call}")
+                        prev = targets[0]
+                output_map[node_id] = output_counter
             lines.append(f"        notify_output({node.type!r}, json.dumps(_serialize_output(out_{output_counter})), {bid})")  # noqa: E501
             lines.append(f"        notify_status({node.type!r}, 'done', {bid})")
             continue
