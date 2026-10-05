@@ -68,6 +68,17 @@
   .field{display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:7px 0}
   .field input{background:var(--bg);border:1px solid var(--border);color:var(--text);
     border-radius:8px;padding:6px 8px;width:150px;font-size:12px}
+  .libre{font-size:10px;color:var(--muted);border:1px dashed var(--border);
+    border-radius:99px;padding:2px 8px;margin-left:6px}
+  .drawerbtn{width:100%;display:flex;justify-content:space-between;align-items:center;
+    background:var(--bg);border:1px solid var(--border);color:var(--text);
+    border-radius:8px;padding:8px 10px;font-size:12px;cursor:pointer;margin-top:4px}
+  .opts{border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;overflow:hidden}
+  .opts button{display:block;width:100%;text-align:left;background:var(--surface2);
+    border:none;border-top:1px solid var(--border);color:var(--text);
+    padding:10px;font-size:13px;cursor:pointer}
+  .opts button:active{background:#2c323d}
+  .hint{font-size:11px;color:var(--muted);margin:2px 0 6px}
   @media(min-width:900px){#sheet{inset:0 0 0 auto;max-width:420px;border-radius:0;border-left:1px solid var(--border);max-height:none}}
 </style>
 </head>
@@ -132,6 +143,31 @@ const TR=[
  ["module_to_policy","pytorch","gym","Réseau → Politique"],
 ];
 const UNITS=["load_csv","standard_scaler","conv2d_layer","dropout_layer","logistic_regression","xgboost_classifier","q_learning","plot_predictions","confusion_matrix","kmeans","to_tensor","df_to_tensor"];
+/* Params par carte — reflete les metadonnees catalogue backend :
+   choice = (choix: a|b) -> drawer ; num = (entre: min-max) -> input + bornes ; free -> input + badge "libre" */
+const PARAMS={
+ "Monde Virtuel & Simulation":[
+  {k:"env_name",kind:"choice",opts:["cartpole","mountaincar","acrobot","pendulum"]},
+  {k:"episodes",kind:"num",hint:"entre 10 et 1000, pas 10"},
+  {k:"note",kind:"free"}],
+ "Préparation Tabulaire":[
+  {k:"path",kind:"free"},
+  {k:"target_column",kind:"choice",opts:["col1","col2","col3 (colonnes du CSV)"]}],
+ "Chargement d'Images & Lots":[
+  {k:"dataset",kind:"choice",opts:["cifar10","mnist","fashion_mnist","personnalisé"]},
+  {k:"batch_size",kind:"num",hint:"entre 1 et 512"}],
+};
+const DEFPARAMS=[{k:"experiment_name",kind:"free"},{k:"epochs",kind:"num",hint:"entre 1 et 100"}];
+function paramRows(title){
+  return (PARAMS[title]||DEFPARAMS).map((p,i)=>{
+    if(p.kind==="choice")return`<div class="field" style="display:block"><span>${p.k}</span>
+      <button class="drawerbtn" data-dd="${i}"><span>${p.opts[0]}</span><span>›</span></button>
+      <div class="opts" id="dd-${i}" style="display:none">${p.opts.map(o=>`<button data-pick="${o}" data-dd="${i}">${o}</button>`).join("")}</div></div>`;
+    if(p.kind==="num")return`<div class="field" style="display:block"><span>${p.k}</span>
+      <input type="number" value="10" style="width:100%;margin-top:4px"><div class="hint">${p.hint}</div></div>`;
+    return`<div class="field"><span>${p.k}<span class="libre">libre</span></span><input placeholder="valeur libre"></div>`;
+  }).join("");
+}
 let variant="a", eng="all";
 const engOf=t=>t;
 function cardHTML(s){
@@ -146,7 +182,7 @@ function cardHTML(s){
     <span class="pastille" style="background:${past};width:12px;height:12px;margin-top:2px"></span>
     <div><h3 style="margin-right:80px">${title}</h3><p>${kids.length?kids.length+" sous-blocs":"bloc plat"}</p></div>${badge}</div>`;
   return`<div class="card" data-t="${title}" data-m="${moteur}" data-d="${desc}" data-k="${kids.join(", ")}">
-    ${badge}<div class="top"><span class="ico" style="background:${past}">${title.trim().charAt(0)}</span>
+    ${badge}<div class="top"><span class="ico" style="background:${past}"></span>
     <div><h3 style="margin:0 80px 0 0">${title}</h3><p>${desc}</p></div></div>
     <div class="meta"><span>${kids.length?kids.length+" sous-blocs":"bloc plat"}</span></div>
     <div class="bar" style="--ec:${EC[e]}"></div>
@@ -176,14 +212,26 @@ function openSheet(c){
     <p class="sub">${c.dataset.m} · ${c.dataset.d}</p>
     <h2>Sous-blocs (1 tap = on/off)</h2>
     ${kids.length?kids.map(k=>`<label class="row"><input type="checkbox" checked> ${k}<span class="tag">inclus</span></label>`).join(""):'<p class="sub">Bloc plat — aucun sous-bloc, params ci-dessous.</p>'}
-    <h2>Paramètres</h2>
-    <div class="field"><span>experiment_name</span><input value="exp1"></div>
-    <div class="field"><span>epochs</span><input value="10"></div>
+    <h2>Paramètres (du catalogue backend)</h2>
+    ${paramRows(c.dataset.t)}
     <h2>Blocs suivants compatibles</h2>
     <div class="compat"><button>standard_scaler ✓</button><button>df_to_tensor ⇄ adaptateur</button><button>logistic_regression ✓</button></div>
     <button class="cta">Ajouter au canvas</button>
     <button class="cta ghost" onclick="document.getElementById('sheet').classList.remove('open')">Fermer</button>`;
   document.getElementById("sheet").classList.add("open");
+  document.querySelectorAll("#sheetbody [data-dd]").forEach(b=>{
+    if(b.dataset.pick)return;
+    b.onclick=()=>{
+      const o=document.getElementById("dd-"+b.dataset.dd);
+      o.style.display=o.style.display==="none"?"block":"none";
+    };
+  });
+  document.querySelectorAll("#sheetbody [data-pick]").forEach(b=>b.onclick=e=>{
+    e.stopPropagation();
+    const target=document.querySelector(`#sheetbody [data-dd="${b.dataset.dd}"]:not([data-pick]) span`);
+    if(target)target.textContent=b.dataset.pick;
+    document.getElementById("dd-"+b.dataset.dd).style.display="none";
+  });
 }
 document.querySelectorAll("#engfilter .chip").forEach(ch=>ch.onclick=()=>{
   document.querySelectorAll("#engfilter .chip").forEach(x=>x.setAttribute("aria-pressed","false"));

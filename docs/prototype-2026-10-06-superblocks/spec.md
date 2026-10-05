@@ -27,6 +27,9 @@ sidebar `FlowPalette.tsx` dédiée repoussée à après-démo.
 - Sheet `'config'` (pré-ajout, nouvelle valeur `activeSheet`) : description, `Checkbox` des sous-options
   (défauts cochés depuis le catalogue), params via `BlockSegments`, bouton Ajouter → `addFlowNode`
   avec `children`, bascule auto sur `'inspect'`.
+  Rendu des params piloté par les métadonnées catalogue backend : `sel`/`sug` (choix:) → `Select`
+  shadcn en drawer bottom sur mobile ; `num` (entre:) → input + hint bornes ; champ libre → input
+  + badge pointillé "libre".
 - Sheet `'inspect'` (`NodeInspector` étendu, post-ajout) : mêmes toggles (`updateNodeChildren`,
   undo inclus) + params + section "Blocs suivants compatibles".
 - Sheet `'compat'` (nouvelle) : ouverte au tap sur une sortie (canvas ou config), liste compatible/`convertible`.
