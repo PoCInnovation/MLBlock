@@ -14,4 +14,7 @@ def multihead_attention(in_1: "torch.Tensor", embed_dim: "int", num_heads: "int"
         bias: Parameter.
         batch_first: Parameter.
     """
-    return nn.MultiheadAttention(embed_dim=embed_dim, num_heads=num_heads, dropout=dropout, bias=bias, batch_first=batch_first)(in_1)
+    # Self-attention: query == key == value. Note: forward() returns the
+    # (attn_output, attn_weights) tuple — callers consume the full tuple.
+    # TODO: expose attn_weights on a second output port instead.
+    return nn.MultiheadAttention(embed_dim=embed_dim, num_heads=num_heads, dropout=dropout, bias=bias, batch_first=batch_first)(in_1, in_1, in_1)
