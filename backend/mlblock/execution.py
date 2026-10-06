@@ -32,7 +32,7 @@ class LocalBackend:
             f.write(code)
         env = dict(os.environ)
         env.update({
-            "BACKEND_URL": "http://localhost:8000",
+            "BACKEND_URL": os.environ.get("BACKEND_URL", "http://localhost:8000"),
             "JOB_ID": str(job_id),
             "GPU_API_KEY": os.environ.get("GPU_API_KEY", "mock-gpu-key"),
             "BACKEND_TIMEOUT": os.environ.get("BACKEND_TIMEOUT", "90"),
