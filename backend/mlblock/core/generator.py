@@ -1,7 +1,12 @@
 from mlblock.server.schemas import PipelineNode, PipelineEdge
 
+import re
+
 
 TRUNCATE_AT = 20000  # single owner for truncation (was duplicated 3×)
+
+# Matches a __future__ import line (leading whitespace tolerated).
+_FUTURE_IMPORT_RE = re.compile(r"^\s*from\s+__future__\s+import\s+annotations\s*$")
 
 # Canonical serialize shape — single owner (was duplicated in generator string + InspectorPanel)
 def _serialize_value(v: object) -> dict:
