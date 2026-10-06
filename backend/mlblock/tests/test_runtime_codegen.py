@@ -50,3 +50,69 @@ def test_all_canonical_exercises_compile():
         p_edges = [PipelineEdge(**e) for e in edges]
         code = generate_code(p_nodes, p_edges)
         compile(code, f"<{stem}>", "exec")
+
+
+def test_pooling_blocks_run_without_attribute_error():
+    import torch
+
+    avgpool2d = _load_block("regroupement-F59E0B/avgpool2d.py", "avgpool2d")
+    out = avgpool2d(torch.randn(1, 4, 8, 8), kernel_size=2)
+    assert tuple(out.shape) == (1, 4, 4, 4)
+
+    adaptive_avg = _load_block("regroupement-F59E0B/adaptive_avgpool2d.py", "adaptive_avgpool2d")
+    out = adaptive_avg(torch.randn(1, 4, 8, 8), output_size=4)
+    assert tuple(out.shape) == (1, 4, 4, 4)
+
+    adaptive_max = _load_block("regroupement-F59E0B/adaptive_maxpool2d.py", "adaptive_maxpool2d")
+    out = adaptive_max(torch.randn(1, 4, 8, 8), output_size=2)
+    assert tuple(out.shape) == (1, 4, 2, 2)
+
+
+def test_recurrent_blocks_run_without_attribute_error():
+    import torch
+
+    x = torch.randn(2, 5, 16)
+    lstm = _load_block("sequences-8B5CF6/lstm.py", "lstm")
+    out, _ = lstm(x, input_size=16, hidden_size=8)
+    assert tuple(out.shape) == (2, 5, 8)
+
+    gru = _load_block("sequences-8B5CF6/gru.py", "gru")
+    out, _ = gru(x, input_size=16, hidden_size=8)
+    assert tuple(out.shape) == (2, 5, 8)
+
+    rnn = _load_block("sequences-8B5CF6/rnn.py", "rnn")
+    out, _ = rnn(x, input_size=16, hidden_size=8)
+    assert tuple(out.shape) == (2, 5, 8)
+
+
+def test_multihead_attention_self_attention_call():
+    import torch
+
+    mha = _load_block("sequences-8B5CF6/multihead_attention.py", "multihead_attention")
+    # Must not raise TypeError about missing key/value (self-attention).
+    out, weights = mha(torch.randn(2, 4, 8), embed_dim=8, num_heads=2)
+    assert tuple(out.shape) == (2, 4, 8)
+    assert tuple(weights.shape) == (2, 4, 4)
+
+
+def test_local_backend_relays_backend_url_env(monkeypatch):
+    from unittest.mock import patch
+
+    from mlblock.execution import LocalBackend
+
+    captured: dict = {}
+
+    class FakePopen:
+        def __init__(self, *args, **kwargs):
+            captured.update(kwargs.get("env", {}))
+
+    monkeypatch.setenv("BACKEND_URL", "http://custom:9000")
+    with patch("mlblock.execution.subprocess.Popen", FakePopen):
+        LocalBackend().launch("print('hi')", "00000000-0000-0000-0000-000000000000")
+    assert captured["BACKEND_URL"] == "http://custom:9000"
+
+    monkeypatch.delenv("BACKEND_URL", raising=False)
+    captured.clear()
+    with patch("mlblock.execution.subprocess.Popen", FakePopen):
+        LocalBackend().launch("print('hi')", "00000000-0000-0000-0000-000000000000")
+    assert captured["BACKEND_URL"] == "http://localhost:8000"
