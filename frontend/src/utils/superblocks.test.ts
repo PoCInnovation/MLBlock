@@ -113,6 +113,35 @@ describe('resolveEdgeStyle', () => {
   })
 })
 
+describe('blockCardInfo', () => {
+  it('donne nom, ports, moteur et couleur depuis le catalogue', async () => {
+    const { blockCardInfo } = await import('./superblocks')
+    const info = blockCardInfo(catalog, 'load_csv')
+    expect(info.title).toBe('Load CSV')
+    expect(info.inputs).toEqual([])
+    expect(info.outputs).toEqual([{ name: 'out_1', dtype: 'pd.DataFrame' }])
+    expect(info.color).toBeDefined()
+  })
+
+  it('prend le titre pédagogique FR pour un SuperBlock', async () => {
+    const { blockCardInfo } = await import('./superblocks')
+    const sb: SuperBlockEntry = {
+      id: 'tabular_data_pipeline',
+      title: 'Préparation Tabulaire (Scikit-Learn)',
+      macro_stage: 1,
+      engine: 'sklearn',
+      children: [],
+    }
+    const withSb = { ...catalog, superblocks: [sb] } as InternalCatalog
+    expect(blockCardInfo(withSb, 'tabular_data_pipeline').title).toBe(sb.title)
+  })
+
+  it('retombe sur le type quand le bloc est absent du catalogue', async () => {
+    const { blockCardInfo } = await import('./superblocks')
+    expect(blockCardInfo(catalog, 'fantome').title).toBe('fantome')
+  })
+})
+
 describe('availableChildren', () => {
   it('ne garde que les enfants présents au catalogue', async () => {
     const { availableChildren } = await import('./superblocks')

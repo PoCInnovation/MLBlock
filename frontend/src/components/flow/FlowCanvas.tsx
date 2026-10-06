@@ -15,7 +15,7 @@ import {
   type EdgeChange,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { AlignVerticalJustifyCenter, Flame, Layers, Gamepad2, Activity, Eye, Boxes, ChevronRight } from 'lucide-react'
+import { AlignVerticalJustifyCenter, ChevronRight } from 'lucide-react'
 import { useShallow } from 'zustand/react/shallow'
 import useAppStore from '../../store/useAppStore'
 import { theme } from '../../theme'
@@ -27,7 +27,6 @@ import { Switch } from '@/components/ui/switch'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from '@/components/ui/drawer'
 import BlockNode from './BlockNode'
-import SuperBlockNode from './SuperBlockNode'
 import SuperBlockConfigSheet from './SuperBlockConfigSheet'
 import CompatSheet from './CompatSheet'
 import FlowLink from './FlowLink'
@@ -40,33 +39,16 @@ import { resolveConnection, type ResolvedConnection } from '../../utils/portReso
 import { arrangeGraph } from '../../utils/layout'
 import { stageOfBlock, getStageConfig } from '../../utils/stages'
 import { matchEngine, groupSuperblocks, defaultChildren, resolveEdgeStyle, availableChildren } from '../../utils/superblocks'
-import type { Port, SuperBlockEntry, PipelineNode as CatalogNode } from '../../types/catalog'
+import BlockCard from './BlockCard'
+import BlockSegments from '../blocks/BlockSegments'
+import type { Port, PipelineNode as CatalogNode } from '../../types/catalog'
 const nodeTypes = {
   block: BlockNode,
-  superblock: SuperBlockNode,
+  superblock: BlockNode,
 }
 const edgeTypes = { flow: FlowLink }
 
 const reactFlowClassName = 'bg-canvas rounded-2xl'
-
-// Moteurs : libellé + couleur (spec §5 — tokens CSS dédiés en Task 7).
-const ENGINE_META: Record<string, { label: string; color: string }> = {
-  pytorch: { label: 'PyTorch', color: '#EA580C' },
-  sklearn: { label: 'Scikit-Learn', color: '#2563EB' },
-  gym: { label: 'Gymnasium', color: '#059669' },
-  mlflow: { label: 'MLflow', color: '#9333EA' },
-  viz: { label: 'Viz', color: '#D97706' },
-  generic: { label: 'Générique', color: '#6B7280' },
-}
-
-const ENGINE_ICON: Record<string, typeof Flame> = {
-  pytorch: Flame,
-  sklearn: Layers,
-  gym: Gamepad2,
-  mlflow: Activity,
-  viz: Eye,
-  generic: Boxes,
-}
 
 const ENGINE_FILTERS = [
   { value: 'all', label: 'Tous' },
@@ -407,12 +389,12 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
     setTimeout(() => fitView({ padding: 0.2, duration: 300 }), 50)
   }, [buildNode, screenToFlowPosition, addFlowNode, fitView, setActiveSheet, catalog, warnMissingChildren])
 
-  const addConfiguredNode = useCallback((type: string, children: string[], fields: Record<string, string>) => {
+  const addConfiguredNode = useCallback((type: string, children: string[]) => {
     const rect = wrapperRef.current?.getBoundingClientRect()
     const x = rect ? rect.left + rect.width / 2 : window.innerWidth / 2
     const y = rect ? rect.top + rect.height / 2 : window.innerHeight / 2
     const position = screenToFlowPosition({ x, y: y + (tapSeq.current++ % 6) * 22 })
-    const node = buildNode(type, position, { children, fields })
+    const node = buildNode(type, position, { children })
     if (!node) return
     warnMissingChildren(children)
     useAppStore.getState().commitUndoPoint()
@@ -615,11 +597,10 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
                       </h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {group.items.map(sb => (
-                          <SuperBlockCard
+                          <BlockCard
                             key={sb.id}
-                            sb={sb}
-                            macroColor={catalog.macro_stages?.find(m => m.id === group.stage)?.color}
-                            onOpen={() => { setConfigTarget(sb.id); setActiveSheet('config') }}
+                            type={sb.id}
+                            onClick={() => { setConfigTarget(sb.id); setActiveSheet('config') }}
                           />
                         ))}
                       </div>
@@ -629,27 +610,9 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
                   <div className="flex flex-col gap-1.5">
                     {Object.keys(catalog.blocks)
                       .filter(t => matchEngine(catalog.blocks[t].engine, engineFilter))
-                      .map(type => {
-                        const def = catalog.blocks[type]
-                        const label = def.segs.find(s => s.t === 'text')?.v ?? type
-                        return (
-                          <button
-                            key={type}
-                            type="button"
-                            onClick={() => addNodeAtCenter(type)}
-                            className="flex items-center gap-2 w-full text-left p-2.5 rounded-xl bg-card border border-border hover:border-accent transition-colors cursor-pointer min-h-11"
-                          >
-                            <span
-                              className="w-2.5 h-2.5 rounded-sm shrink-0"
-                              style={{ background: catalog.categories.find(c => c.id === def.cat)?.color ?? '#888' }}
-                            />
-                            <span className="text-xs font-bold text-foreground truncate">{label}</span>
-                            {def.advanced && (
-                              <Badge variant="outline" className="ml-auto text-[10px] shrink-0">avancé</Badge>
-                            )}
-                          </button>
-                        )
-                      })}
+                      .map(type => (
+                        <BlockCard key={type} type={type} onClick={() => addNodeAtCenter(type)} />
+                      ))}
                   </div>
                 )}
               </div>
@@ -659,7 +622,7 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
               <SuperBlockConfigSheet
                 key={configSb.id}
                 sb={configSb}
-                onAdd={(children, fields) => addConfiguredNode(configSb.id, children, fields)}
+                onAdd={children => addConfiguredNode(configSb.id, children)}
               />
             ) : (
               <p className="text-sm text-muted-foreground">Super-Bloc introuvable.</p>
@@ -701,61 +664,13 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
 })
 
 /** Carte SuperBlock BB (spec §5) : titre FR catalogue + badge moteur haut-droite. */
-function SuperBlockCard({ sb, macroColor, onOpen }: {
-  sb: SuperBlockEntry
-  macroColor: string | undefined
-  onOpen: () => void
-}) {
-  const catalog = useAppStore(s => s.catalog)
-  const def = catalog?.blocks[sb.id]
-  const meta = ENGINE_META[sb.engine] ?? ENGINE_META.generic
-  const Icon = ENGINE_ICON[sb.engine] ?? ENGINE_ICON.generic
-  const color = macroColor ?? '#6366F1'
-  return (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={onOpen}
-      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen() } }}
-      className="relative p-3 pr-4 cursor-pointer rounded-2xl bg-card text-card-foreground border border-border shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg hover:border-accent active:translate-y-0 min-h-22 text-left"
-    >
-      <Badge
-        variant="outline"
-        className="absolute top-2.5 right-2.5 text-[10px] font-extrabold px-1.5 py-0.5 rounded-full"
-      >
-        {meta.label}
-      </Badge>
-      <div className="flex gap-2.5 items-start">
-        <span
-          className="w-8 h-8 rounded-[9px] shrink-0 flex items-center justify-center"
-          style={{ background: color }}
-        >
-          <Icon className="size-4 text-white" />
-        </span>
-        <div className="min-w-0 pr-20">
-          <h4 className="font-extrabold text-sm text-foreground leading-snug m-0">{sb.title}</h4>
-          {def?.description && (
-            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{def.description}</p>
-          )}
-        </div>
-      </div>
-      <div className="flex items-center gap-2 mt-2 text-[11px] text-muted-foreground">
-        <span>{sb.children.length > 0 ? `${sb.children.length} sous-bloc${sb.children.length > 1 ? 's' : ''}` : 'bloc plat'}</span>
-        <ChevronRight className="size-3.5 ml-auto" />
-      </div>
-      <div
-        className="h-[3px] rounded-full mt-2"
-        style={{ background: meta.color }}
-      />
-    </div>
-  )
-}
 
 function NodeInspector() {
   const flowNodes = useAppStore(s => s.flowNodes)
   const catalog = useAppStore(s => s.catalog)
   const updateFlowParam = useAppStore(s => s.updateFlowParam)
   const updateNodeChildren = useAppStore(s => s.updateNodeChildren)
+  const removeFlowNode = useAppStore(s => s.removeFlowNode)
   const setCompatSource = useAppStore(s => s.setCompatSource)
   const setActiveSheet = useAppStore(s => s.setActiveSheet)
   const selected = flowNodes.find(n => n.selected)
@@ -861,24 +776,30 @@ function NodeInspector() {
         </div>
       )}
 
-      <h3 className="text-base font-heading font-bold text-foreground">Paramètres du Nœud</h3>
-      {Object.keys(fields).length === 0 ? (
-        <p className="text-xs text-muted-foreground">Aucun paramètre configurable.</p>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {Object.entries(fields).map(([k, val]) => (
-            <div key={k} className="flex flex-col gap-1">
-              <span className="text-xs font-bold text-muted-foreground">{k}</span>
-              <input
-                type="text"
-                value={val}
-                onChange={e => updateFlowParam(selected.id, k, e.target.value)}
-                className="bg-background border border-input rounded px-2 py-1 text-xs text-foreground font-mono focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-            </div>
-          ))}
-        </div>
+      {def && def.segs.filter(s => s.t !== 'text').length > 0 && (
+        <>
+          <Separator />
+          <h3 className="text-base font-heading font-bold text-foreground">Paramètres</h3>
+          <div className="grid grid-cols-3 items-start gap-x-3">
+            <BlockSegments
+              segs={def.segs}
+              fields={fields}
+              blockId={selected.id}
+              blockType={type}
+              onUpdate={updateFlowParam}
+            />
+          </div>
+        </>
       )}
+
+      <Separator />
+      <Button
+        variant="outline"
+        className="w-full justify-center gap-2 font-bold text-xs text-destructive"
+        onClick={() => { removeFlowNode(selected.id); setActiveSheet(null) }}
+      >
+        Supprimer le bloc
+      </Button>
     </div>
   )
 }

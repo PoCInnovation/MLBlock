@@ -55,6 +55,30 @@ export function resolveEdgeStyle(
   return { style: rest, pairClass: ` mlb-edge-${gradient.from}-to-${gradient.to}` }
 }
 
+export type BlockCardInfo = {
+  title: string
+  inputs: { name: string; dtype: string }[]
+  outputs: { name: string; dtype: string }[]
+  engine: string
+  color: string
+  advanced: boolean
+}
+
+/** Données d'affichage d'un bloc — une seule source pour la palette ET le canvas. */
+export function blockCardInfo(catalog: InternalCatalog, type: string): BlockCardInfo {
+  const def = catalog.blocks[type]
+  const sb = catalog.superblocks.find(s => s.id === type)
+  const label = def?.segs.find(s => s.t === 'text')?.v
+  return {
+    title: sb?.title ?? label ?? type,
+    inputs: def?.inputs ?? [],
+    outputs: def?.outputs ?? [],
+    engine: sb?.engine ?? def?.engine ?? 'generic',
+    color: catalog.categories.find(c => c.id === def?.cat)?.color ?? '#888',
+    advanced: def?.advanced ?? false,
+  }
+}
+
 /** Enfants d'un SuperBlock réellement présents au catalogue (anti-fantômes). */
 export function availableChildren(sb: SuperBlockEntry, catalog: InternalCatalog): string[] {
   return sb.children.filter(t => Boolean(catalog.blocks[t]))
