@@ -3,6 +3,7 @@
 Behavioral tests: generated scripts must compile, fixed blocks must run,
 LocalBackend must relay BACKEND_URL.
 """
+
 from __future__ import annotations
 
 import importlib.util
@@ -116,3 +117,49 @@ def test_local_backend_relays_backend_url_env(monkeypatch):
     with patch("mlblock.execution.subprocess.Popen", FakePopen):
         LocalBackend().launch("print('hi')", "00000000-0000-0000-0000-000000000000")
     assert captured["BACKEND_URL"] == "http://localhost:8000"
+
+
+def test_generated_iris_pipeline_runs_end_to_end(monkeypatch):
+    """Exo b1 : le code généré s'exécute vraiment et produit une accuracy réelle.
+
+    `requests` est stubé (callbacks capturés, zéro HTTP) : seule la logique
+    métier des blocs tourne — iris → split → logreg → evaluate.
+    """
+    import sys
+    import types
+
+    from mlblock.core.generator import generate_code
+    from mlblock.server.schemas import PipelineEdge, PipelineNode
+
+    for stem, nodes, edges in _exo_graphs():
+        if stem != "b1_iris_logistic_regression":
+            continue
+        break
+    else:
+        raise AssertionError("exo b1 introuvable")
+
+    code = generate_code([PipelineNode(**n) for n in nodes], [PipelineEdge(**e) for e in edges])
+    compile(code, "<b1_iris>", "exec")
+
+    posts: list[dict] = []
+
+    class FakeResponse:
+        def json(self):
+            return {}
+
+    fake = types.ModuleType("requests")
+    fake.post = lambda url, **kw: posts.append({"url": url, **kw}) or FakeResponse()  # type: ignore
+    fake.get = lambda url, **kw: FakeResponse()  # type: ignore
+    monkeypatch.setitem(sys.modules, "requests", fake)
+
+    mod = types.ModuleType("gen_b1")
+    exec(compile(code, "<b1_iris>", "exec"), mod.__dict__)
+    mod.main()  # type: ignore
+
+    done = {p["json"]["block"] for p in posts if p["url"].endswith("/status") and p["json"]["status"] == "done"}
+    assert {"load_sklearn_dataset", "train_test_split", "logistic_regression", "evaluate", "pipeline"} <= done
+
+    eval_out = [p["json"]["output"] for p in posts if p["url"].endswith("/output") and p["json"]["block"] == "evaluate"]
+    inner = json.loads(eval_out[-1])
+    acc = inner["values"]["accuracy"] if inner["type"] == "metrics" else inner["value"]
+    assert acc > 0.9, f"accuracy iris/logreg attendue > 0.9, eu {acc}"
