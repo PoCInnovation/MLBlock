@@ -1,9 +1,8 @@
 import { useMemo } from 'react'
-import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { ChevronRight } from 'lucide-react'
 import useAppStore from '../../store/useAppStore'
 import { compatibleBlocks } from '../../utils/superblocks'
+import BlockCard from './BlockCard'
 
 type Props = {
   nodeId: string
@@ -24,30 +23,19 @@ export default function CompatSheet({ nodeId, port, onPick }: Props) {
     return compatibleBlocks(catalog, outDtype, data?.type)
   }, [catalog, outDtype, data?.type])
 
-  const labelOf = (type: string) =>
-    catalog?.blocks[type]?.segs.find(s => s.t === 'text')?.v ?? type
-
   if (!outDtype) {
     return <p className="text-sm text-muted-foreground">Sortie introuvable.</p>
   }
 
   const section = (title: string, items: string[], convertible: boolean) => (
     items.length > 0 ? (
-      <div className="flex flex-col gap-1.5">
-        <h3 className="text-sm font-heading font-bold text-foreground">{title}</h3>
+      <div className="flex flex-col gap-2">
+        <h3 className="text-sm font-heading font-bold text-foreground">
+          {title}
+          {convertible && <span className="text-xs font-semibold text-muted-foreground"> · adaptateur automatique</span>}
+        </h3>
         {items.slice(0, 12).map(type => (
-          <button
-            key={type}
-            type="button"
-            onClick={() => onPick(type)}
-            className="flex items-center gap-2 w-full text-left p-2.5 rounded-xl bg-card border border-border hover:border-accent transition-colors cursor-pointer min-h-11"
-          >
-            <span className="text-xs font-bold text-foreground flex-1 truncate">{labelOf(type)}</span>
-            {convertible && (
-              <Badge variant="outline" className="text-[10px] shrink-0">adaptateur</Badge>
-            )}
-            <ChevronRight className="size-4 text-muted-foreground shrink-0" />
-          </button>
+          <BlockCard key={type} type={type} onClick={() => onPick(type)} />
         ))}
       </div>
     ) : null

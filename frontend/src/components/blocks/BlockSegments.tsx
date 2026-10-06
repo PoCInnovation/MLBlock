@@ -6,18 +6,14 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card'
 import useAppStore from '../../store/useAppStore'
+import { describeParam } from '../../utils/paramHints'
 import { ACCEPT_BY_BLOCK, DEFAULT_ACCEPT, SAMPLE_CATEGORY_BY_BLOCK } from '../../utils/samples'
 import SampleDataModal from '../ui/SampleDataModal'
 
-const FILE_CARD = 'flex items-center gap-1.5 basis-full bg-file/15 rounded-lg px-2 py-1 text-xs font-bold'
-const FILE_NAME = 'text-file max-w-25 overflow-hidden text-ellipsis whitespace-nowrap'
-const FILE_META = 'text-file-meta text-xs font-semibold'
-const FILE_BTN = 'bg-file/20 border border-dashed border-file/50 rounded-sm px-2 py-0.5 text-file-btn font-bold text-xs cursor-pointer inline-block'
-const REMOVE_BTN = 'w-6 h-6 rounded-full border-none bg-black/20 text-file text-xs leading-6 cursor-pointer p-0 inline-flex items-center justify-center'
-const ERR_CLS = 'text-error-light text-xs font-semibold cursor-pointer'
-
+const FILE_CARD = 'flex items-center gap-2 rounded-lg bg-file/15 px-3 py-2 text-xs font-bold'
+const FILE_BTN = 'bg-file/20 border border-dashed border-file/50 rounded-sm px-3 py-1 text-file-btn font-bold text-xs cursor-pointer inline-flex items-center gap-1'
+const REMOVE_BTN = 'w-6 h-6 rounded-full border-none bg-black/20 text-file text-xs cursor-pointer p-0 inline-flex items-center justify-center'
 
 function fmtSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} o`
@@ -30,70 +26,6 @@ function uploadPath(userId: string | undefined, blockId: string): string {
   return `${userId ?? 'anonymous'}/${blockId}_${Date.now()}.csv`
 }
 
-/** HoverCard d'un paramètre : description + métadonnées (type, défaut, bornes). — Astryx deep seam */
-function ParamInfo({ seg, children }: { seg: Exclude<Segment, { t: 'text' }>; children: React.ReactNode }) {
-  const p = seg as unknown as {
-    k: string
-    t: string
-    desc?: string
-    def?: string
-    min?: number
-    max?: number
-    step?: number
-    odd?: boolean
-    opts?: string[]
-    format?: string
-  }
-  return (
-    <HoverCard>
-      <HoverCardTrigger asChild>
-        <span className="inline">{children}</span>
-      </HoverCardTrigger>
-      <HoverCardContent className="min-w-50 flex flex-col gap-1.5">
-        <span className="font-semibold text-sm text-foreground">{p.k}</span>
-        {p.desc && <span className="text-xs text-muted-foreground">{p.desc}</span>}
-        <div className="text-xs text-muted-foreground flex flex-col gap-0.75">
-          <span>Type : {p.t}</span>
-          {p.def !== undefined && p.def !== '' && <span>Défaut : {p.def}</span>}
-          {p.min != null && <span>Min : {p.min}</span>}
-          {p.max != null && <span>Max : {p.max}</span>}
-          {p.step != null && <span>Pas : {p.step}</span>}
-          {p.odd === true && <span>Valeurs impaires uniquement</span>}
-          {p.opts && p.opts.length > 0 && <span>Choix : {p.opts.join(', ')}</span>}
-          {p.format && <span>Format : {p.format}</span>}
-        </div>
-      </HoverCardContent>
-    </HoverCard>
-  )
-}
-
-/** Live validation of a segment value against its metadata. */
-function validateSeg(seg: Segment, value: string): { ok: boolean; msg?: string } {
-  if (seg.t === 'num') {
-    if (value.trim() === '') return { ok: true }
-    // Sans métadonnées numériques, le champ est libre (str/bool fallback) — pas de validation
-    if (seg.min == null && seg.max == null && seg.step == null && !seg.odd) return { ok: true }
-    const n = Number(value)
-    if (Number.isNaN(n)) return { ok: false, msg: 'Valeur numérique attendue' }
-    if (seg.min != null && n < seg.min) return { ok: false, msg: `Doit être ≥ ${seg.min}` }
-    if (seg.max != null && n > seg.max) return { ok: false, msg: `Doit être ≤ ${seg.max}` }
-    if (seg.odd && n % 2 === 0) return { ok: false, msg: 'Doit être impair' }
-    return { ok: true }
-  }
-  if (seg.t === 'list') {
-    if (value.trim() === '') return { ok: true }
-    try {
-      const arr = JSON.parse(value)
-      if (!Array.isArray(arr)) return { ok: false, msg: 'Format attendu : [1, 2, 3]' }
-      if (seg.len != null && arr.length !== seg.len) return { ok: false, msg: `${arr.length}/${seg.len} éléments` }
-      return { ok: true }
-    } catch {
-      return { ok: false, msg: 'Format attendu : [1, 2, 3]' }
-    }
-  }
-  return { ok: true }
-}
-
 type BlockSegmentsProps = {
   segs: Segment[]
   fields?: Record<string, string>
@@ -102,11 +34,31 @@ type BlockSegmentsProps = {
   onUpdate?: (id: string, k: string, v: string) => void
   /** Autocomplete options per param key (e.g. target_column from the source CSV). */
   columnOptions?: Record<string, string[]>
-  /** Première rangée de la grille commune (BlockNode) occupée par les params. */
-  startRow?: number
 }
 
-const BlockSegments = memo(function BlockSegments({ segs, fields, blockId, blockType, onUpdate, columnOptions, startRow = 1 }: BlockSegmentsProps): React.ReactNode {
+/** Libellé lisible d'une clé de paramètre : target_column → target column. */
+function humanKey(k: string): string {
+  return k.replace(/_/g, ' ')
+}
+
+const LABEL_CLS = 'text-xs font-extrabold uppercase tracking-wide text-foreground'
+const DESC_CLS = 'text-xs text-muted-foreground leading-snug'
+const HINT_CLS = 'text-[11px] text-muted-foreground/90 font-semibold'
+const ERR_CLS = 'text-xs font-bold text-destructive'
+
+/**
+ * Paramètres d'un bloc — liste verticale aérée : libellé, description backend,
+ * champ pleine largeur, contrainte (« entre 1 et 100 ») et erreur live. Les
+ * suggestions sont des chips cliquables plutôt qu'un datalist invisible.
+ */
+const BlockSegments = memo(function BlockSegments({
+  segs,
+  fields,
+  blockId,
+  blockType,
+  onUpdate,
+  columnOptions,
+}: BlockSegmentsProps): React.ReactNode {
   const [uploadState, setUploadState] = useState<Record<string, 'uploading' | 'error'>>({})
   const [fileMetaState, setFileMetaState] = useState<Record<string, { name: string; size: number }>>({})
   const [sampleOpen, setSampleOpen] = useState<string | null>(null)
@@ -134,190 +86,150 @@ const BlockSegments = memo(function BlockSegments({ segs, fields, blockId, block
     }
   }
 
-
   const activeSampleCat = blockType ? SAMPLE_CATEGORY_BY_BLOCK[blockType] : undefined
-
-  // Cellules de la grille commune (portée par BlockNode : grid-cols-[1fr_auto_1fr]).
-  // Chaque segment occupe une rangée (gridRow = startRow + i) : le label à droite
-  // de sa colonne (collé au séparateur), le champ à gauche de la sienne. Le
-  // séparateur central est rendu par BlockNode et traverse body + params.
-  // Pas de gap-y : les cellules portent leur padding vertical, sinon le
-  // séparateur serait segmenté aux gaps.
-  const labelCell = (s: Exclude<Segment, { t: 'text' }>, row: number) => (
-    <span key={`l${row}`} className="col-start-1 justify-self-end self-center py-0.75 leading-none text-xs font-semibold text-muted-foreground" style={{ gridRow: row }}>
-      {s.k}:
-    </span>
-  )
-  const fieldCell = (row: number, children: React.ReactNode) => (
-    <span key={`f${row}`} className="col-start-3 justify-self-start py-0.75" style={{ gridRow: row }}>
-      {children}
-    </span>
-  )
-  // Ligne de séparation body/params : gérée par BlockNode (rangée dédiée
-  // col-span-3). Un borderTop par cellule créait un escalier au croisement
-  // avec le séparateur vertical (label et champ n'ont pas la même hauteur).
-  
-  // Le label du bloc (text seg ajouté par fetchCatalog) est déjà dans le
-  // CardTitle — on ne le re-rend pas dans les params.
   const paramSegs = segs.filter(s => s.t !== 'text')
 
+  const set = (k: string, v: string) => {
+    if (!onUpdate || !blockId) return
+    useAppStore.getState().commitUndoPoint()
+    onUpdate(blockId, k, v)
+  }
+
+  /** Chips de suggestion : un tap remplit le champ (au lieu d'un datalist caché). */
+  const suggestions = (k: string, opts: string[], current: string) =>
+    opts.length > 0 ? (
+      <div className="flex flex-wrap gap-1.5 pt-1">
+        <span className="text-[10px] font-extrabold uppercase tracking-wide text-muted-foreground/80 self-center">
+          Suggestions
+        </span>
+        {opts.slice(0, 8).map(o => (
+          <button
+            key={o}
+            type="button"
+            onClick={() => set(k, o)}
+            className={`rounded-full px-2.5 py-1 text-[11px] font-bold border transition-colors cursor-pointer ${
+              o === current
+                ? 'bg-primary text-primary-foreground border-primary'
+                : 'bg-muted/40 text-foreground border-border hover:bg-muted'
+            }`}
+          >
+            {o}
+          </button>
+        ))}
+      </div>
+    ) : null
+
+  const row = (s: Exclude<Segment, { t: 'text' }>, field: React.ReactNode) => {
+    const value = fields?.[s.k] ?? s.def ?? ''
+    const { description, hint, invalid } = describeParam(s, value)
+    return (
+      <div key={s.k} className="flex flex-col gap-2 rounded-xl border border-border/60 bg-muted/15 p-3.5">
+        <div className="flex flex-col gap-1">
+          <div className="flex items-baseline justify-between gap-2">
+            <span className={LABEL_CLS}>{humanKey(s.k)}</span>
+            {s.t !== 'bool' && s.t !== 'file' && (
+              <span className="text-[11px] font-bold text-muted-foreground/70">{s.t}</span>
+            )}
+          </div>
+          {description && <p className={DESC_CLS}>{description}</p>}
+        </div>
+        {field}
+        {invalid
+          ? <span className={ERR_CLS}>{invalid}</span>
+          : hint ? <span className={HINT_CLS}>{hint}</span> : null}
+      </div>
+    )
+  }
+
   return (
-    <>
-      {paramSegs.map((s, i) => {
-        const row = startRow + i
-        if (!onUpdate) {
-          return (
-            <React.Fragment key={row}>
-              {labelCell(s, row)}
-              {fieldCell(row, <Badge variant="outline">{s.def ?? ''}</Badge>)}
-            </React.Fragment>
-          )
-        }
-
-        const value = fields![s.k] ?? s.def ?? ''
-        const cols = columnOptions?.[s.k]
-
-        // Suggestions (datalist) pour un champ libre — choices docstring ou colonnes CSV
-        if (cols || s.t === 'sug') {
-          const opts = cols ?? (s.t === 'sug' ? s.opts : [])
-          const dlId = `mlb-dl-${blockId}-${s.k}`
-          return (
-            <React.Fragment key={row}>
-              {labelCell(s, row)}
-              {fieldCell(row,
-                <ParamInfo seg={s}>
-                  <Input
-                    type="text"
-                    value={value}
-                    onChange={(e) => onUpdate(blockId!, s.k, e.target.value)}
-                    onFocus={() => useAppStore.getState().commitUndoPoint()}
-                    placeholder={cols ? 'colonne…' : undefined}
-                    className="h-7 w-[110px] text-xs px-2"
-                    list={dlId}
-                  />
-                </ParamInfo>
-              )}
-              <datalist id={dlId}>{opts.map(o => <option key={o} value={o} />)}</datalist>
-            </React.Fragment>
-          )
-        }
+    <div className="flex flex-col gap-3">
+      {paramSegs.map(s => {
+        const value = fields?.[s.k] ?? s.def ?? ''
+        const readOnly = !onUpdate || !blockId
 
         if (s.t === 'sel') {
-          return (
-            <React.Fragment key={row}>
-              {labelCell(s, row)}
-              {fieldCell(row,
-                <ParamInfo seg={s}>
-                  <Select value={value} onValueChange={(v) => { useAppStore.getState().commitUndoPoint(); onUpdate(blockId!, s.k, v) }}>
-                    <SelectTrigger size="sm" className="h-7 w-[130px] text-xs">
-                      <SelectValue placeholder="Sélectionner…" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {s.opts?.map(opt => (
-                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </ParamInfo>
-              )}
-            </React.Fragment>
+          return row(
+            s,
+            readOnly
+              ? <Badge variant="outline" className="w-fit">{value || '—'}</Badge>
+              : (
+                <Select value={value} onValueChange={(v) => set(s.k, v)}>
+                  <SelectTrigger size="sm" className="h-9 w-full text-sm">
+                    <SelectValue placeholder="Choisir…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {s.opts?.map(opt => (
+                      <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ),
+          )
+        }
+
+        if (s.t === 'sug') {
+          return row(
+            s,
+            <>
+              <Input
+                type="text"
+                value={value}
+                onChange={e => set(s.k, e.target.value)}
+                placeholder="Valeur libre…"
+                className="h-9 text-sm"
+                disabled={readOnly}
+              />
+              {suggestions(s.k, columnOptions?.[s.k] ?? s.opts ?? [], value)}
+            </>,
           )
         }
 
         if (s.t === 'bool') {
-          const checked = value === 'true'
-          return (
-            <React.Fragment key={row}>
-              {labelCell(s, row)}
-              {fieldCell(row,
-                <ParamInfo seg={s}>
-                  <div className="flex items-center h-7">
-                    <Checkbox
-                      checked={checked}
-                      onCheckedChange={(c) => {
-                        useAppStore.getState().commitUndoPoint()
-                        onUpdate(blockId!, s.k, c ? 'true' : 'false')
-                      }}
-                    />
-                  </div>
-                </ParamInfo>
-              )}
-            </React.Fragment>
+          return row(
+            s,
+            <label className="flex items-center gap-3 cursor-pointer">
+              <Checkbox
+                checked={value === 'true'}
+                disabled={readOnly}
+                onCheckedChange={c => set(s.k, c ? 'true' : 'false')}
+              />
+              <span className="text-sm text-foreground">{value === 'true' ? 'Activé' : 'Désactivé'}</span>
+            </label>,
           )
         }
+
         if (s.t === 'num') {
-          const v = validateSeg(s, value)
-          const placeholder = s.min != null && s.max != null ? `entre ${s.min} et ${s.max}` : undefined
-          const useText = !!s.opts && s.opts.length > 0
-          if (useText) {
-            const dlId = `mlb-dl-${blockId}-${s.k}`
-            return (
-              <React.Fragment key={row}>
-                {labelCell(s, row)}
-                {fieldCell(row,
-                  <ParamInfo seg={s}>
-                    <Input
-                      type="text"
-                      value={value}
-                      onChange={(e) => onUpdate(blockId!, s.k, e.target.value)}
-                      onFocus={() => useAppStore.getState().commitUndoPoint()}
-                      placeholder={placeholder}
-                      className={`h-7 w-[${s.w ?? 90}px] text-xs px-2 ${!v.ok && value.trim() !== '' ? 'border-destructive' : ''}`}
-                      list={dlId}
-                    />
-                  </ParamInfo>
-                )}
-                <datalist id={dlId}>{s.opts!.map(o => <option key={o} value={o} />)}</datalist>
-              </React.Fragment>
-            )
-          }
-          return (
-            <React.Fragment key={row}>
-              {labelCell(s, row)}
-              {fieldCell(row,
-                <ParamInfo seg={s}>
-                  <Input
-                    type="number"
-                    value={value}
-                    onChange={(e) => {
-                      useAppStore.getState().commitUndoPoint()
-                      onUpdate(blockId!, s.k, e.target.value)
-                    }}
-                    min={s.min ?? undefined}
-                    max={s.max ?? undefined}
-                    step={s.step ?? undefined}
-                    placeholder={placeholder}
-                    className={`h-7 w-[${s.w ?? 90}px] text-xs px-2 ${!v.ok ? 'border-destructive' : ''}`}
-                  />
-                </ParamInfo>
-              )}
-            </React.Fragment>
+          const { invalid } = describeParam(s, value)
+          return row(
+            s,
+            <>
+              <Input
+                type="number"
+                value={value}
+                onChange={e => set(s.k, e.target.value)}
+                min={s.min ?? undefined}
+                max={s.max ?? undefined}
+                step={s.step ?? undefined}
+                className={`h-9 text-sm ${invalid ? 'border-destructive' : ''}`}
+                disabled={readOnly}
+              />
+              {suggestions(s.k, s.opts ?? [], value)}
+            </>,
           )
         }
 
         if (s.t === 'list') {
-          const v = validateSeg(s, value)
-          const dlId = `mlb-dl-${blockId}-${s.k}`
-          return (
-            <React.Fragment key={row}>
-              {labelCell(s, row)}
-              {fieldCell(row,
-                <ParamInfo seg={s}>
-                  <Input
-                    type="text"
-                    value={value}
-                    onChange={(e) => onUpdate(blockId!, s.k, e.target.value)}
-                    onFocus={() => useAppStore.getState().commitUndoPoint()}
-                    placeholder={s.format ?? '[1, 2, 3]'}
-                    className={`h-7 w-[110px] text-xs px-2 ${!v.ok && value.trim() !== '' ? 'border-destructive' : ''}`}
-                    {...(s.opts && s.opts.length > 0 ? { list: dlId } : {})}
-                  />
-                </ParamInfo>
-              )}
-              {s.opts && s.opts.length > 0 && (
-                <datalist id={dlId}>{s.opts.map(o => <option key={o} value={o} />)}</datalist>
-              )}
-            </React.Fragment>
+          const { invalid } = describeParam(s, value)
+          return row(
+            s,
+            <Input
+              type="text"
+              value={value}
+              onChange={e => set(s.k, e.target.value)}
+              placeholder="[1, 2, 3]"
+              className={`h-9 font-mono text-sm ${invalid ? 'border-destructive' : ''}`}
+              disabled={readOnly}
+            />,
           )
         }
 
@@ -328,88 +240,71 @@ const BlockSegments = memo(function BlockSegments({ segs, fields, blockId, block
           const meta = fileMetaState[s.k]
           const hasUrl = fields?.[s.k]?.startsWith('https://')
           const fname = meta?.name ?? (hasUrl ? fields![s.k].split('/').pop() : null)
-          const fsize = meta?.size
-          
-          if (state === 'uploading') return (
-            <React.Fragment key={row}>
-              {labelCell(s, row)}
-              {fieldCell(row,
-                <div className={FILE_CARD}>
-                  <span className={FILE_NAME}>{meta?.name ?? 'Upload…'}</span>
-                  <span className={FILE_META}><Loader2 className="size-3 animate-spin" /></span>
-                </div>
-              )}
-            </React.Fragment>
+          const hidden = (
+            <input
+              ref={el => { inputRefs.current[s.k] = el }}
+              type="file"
+              accept={fileAccept}
+              className="hidden"
+              onChange={e => handleFile(s.k, e)}
+            />
           )
 
-          if (state === 'error') return (
-            <React.Fragment key={row}>
-              {labelCell(s, row)}
-              {fieldCell(row,
-                <div className={FILE_CARD}>
-                  <span className={`${ERR_CLS} inline-flex items-center gap-1`}><TriangleAlert className="size-3" /> Échec</span>
-                  <button type="button" className={`${ERR_CLS} bg-transparent border-none p-0 font-body`} onClick={() => inputRefs.current[s.k]?.click()}>Réessayer</button>
-                  <input ref={el => { inputRefs.current[s.k] = el }} type="file" accept={fileAccept} className="hidden" onChange={e => handleFile(s.k, e)} />
-                </div>
-              )}
-            </React.Fragment>
-          )
-
-          if (hasUrl && fname) return (
-            <React.Fragment key={row}>
-              {labelCell(s, row)}
-              {fieldCell(row,
-                <div className={FILE_CARD}>
-                  <span className={FILE_NAME}>{fname}</span>
-                  {fsize && <span className={FILE_META}>{fmtSize(fsize)}</span>}
-                  <button className={REMOVE_BTN} onClick={() => { onUpdate(blockId!, s.k, ''); setFileMetaState(m => { const n = { ...m }; delete n[s.k]; return n }) }}>×</button>
-                  <input ref={el => { inputRefs.current[s.k] = el }} type="file" accept={fileAccept} className="hidden" onChange={e => handleFile(s.k, e)} />
-                </div>
-              )}
-            </React.Fragment>
-          )
-
-          if (sampleCat) {
-            return (
-              <React.Fragment key={row}>
-                {labelCell(s, row)}
-                {fieldCell(row,
-                  <span className="flex">
-                    <input ref={el => { inputRefs.current[s.k] = el }} type="file" accept={fileAccept} className="hidden" onChange={e => handleFile(s.k, e)} />
-                    <button type="button" onClick={() => setSampleOpen(s.k)} className={`${FILE_BTN} font-body`} title={s.desc}>
-                      <FileUp className="size-3 inline-block mr-1" /> Données
-                    </button>
-                  </span>
-                )}
-              </React.Fragment>
-            )
+          if (state === 'uploading') {
+            return row(s, <div className={FILE_CARD}><span className="truncate">{meta?.name ?? 'Upload…'}</span><Loader2 className="size-3.5 animate-spin shrink-0" />{hidden}</div>)
           }
-
-          return (
-            <React.Fragment key={row}>
-              {labelCell(s, row)}
-              {fieldCell(row,
-                <span className="flex">
-                  <input ref={el => { inputRefs.current[s.k] = el }} type="file" accept={fileAccept} className="hidden" onChange={e => handleFile(s.k, e)} />
-                  <button type="button" onClick={() => inputRefs.current[s.k]?.click()} className={`${FILE_BTN} font-body`} title={s.desc}>
-                    <FileUp className="size-3 inline-block mr-1" /> CSV
-                  </button>
-                </span>
+          if (state === 'error') {
+            return row(s, (
+              <div className={FILE_CARD}>
+                <span className="text-error-light inline-flex items-center gap-1"><TriangleAlert className="size-3.5" /> Échec</span>
+                <button type="button" className="bg-transparent border-none p-0 font-bold text-error-light cursor-pointer" onClick={() => inputRefs.current[s.k]?.click()}>Réessayer</button>
+                {hidden}
+              </div>
+            ))
+          }
+          if (hasUrl && fname) {
+            return row(s, (
+              <div className={FILE_CARD}>
+                <span className="truncate flex-1">{fname}</span>
+                {meta && <span className="text-file-meta shrink-0">{fmtSize(meta.size)}</span>}
+                <button
+                  className={REMOVE_BTN}
+                  onClick={() => {
+                    set(s.k, '')
+                    setFileMetaState(m => { const n = { ...m }; delete n[s.k]; return n })
+                  }}
+                >×</button>
+                {hidden}
+              </div>
+            ))
+          }
+          return row(s, (
+            <span className="flex gap-2">
+              {sampleCat && (
+                <button type="button" onClick={() => setSampleOpen(s.k)} className={FILE_BTN}>
+                  <FileUp className="size-3.5" /> Données d’exemple
+                </button>
               )}
-            </React.Fragment>
-          )
+              <button type="button" onClick={() => inputRefs.current[s.k]?.click()} className={FILE_BTN}>
+                <FileUp className="size-3.5" /> Choisir un fichier
+              </button>
+              {hidden}
+            </span>
+          ))
         }
+
         return null
       })}
+
       {sampleOpen && activeSampleCat && (
         <SampleDataModal
           category={activeSampleCat}
-          onPick={(url) => { onUpdate?.(blockId!, sampleOpen, url); setSampleOpen(null) }}
-          onChooseFile={() => { setSampleOpen(null); setTimeout(() => inputRefs.current[sampleOpen]?.click(), 0) }}
+          onPick={(url) => { set(sampleOpen, url); setSampleOpen(null) }}
+          onChooseFile={() => { const k = sampleOpen; setSampleOpen(null); setTimeout(() => inputRefs.current[k]?.click(), 0) }}
           onClose={() => setSampleOpen(null)}
         />
       )}
-    </>
+    </div>
   )
 })
 

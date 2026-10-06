@@ -42,11 +42,14 @@ function BlockCard({
       tabIndex={onClick ? 0 : undefined}
       onClick={onClick}
       onKeyDown={onClick ? e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick() } } : undefined}
-      className="group/card relative flex flex-col gap-2 w-full text-left p-3 rounded-2xl bg-card text-card-foreground border border-border shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg hover:border-accent active:translate-y-0 min-h-22 cursor-pointer"
+      className={`group/card relative flex flex-col w-full text-left rounded-2xl bg-card text-card-foreground border border-border shadow-sm transition-all min-h-22 ${
+        draggable ? '' : 'cursor-pointer hover:-translate-y-0.5 hover:shadow-lg hover:border-accent active:translate-y-0'
+      }`}
     >
-      <div className="flex items-start gap-2.5 min-w-0">
+      {/* Tout le bandeau du haut sert de poignée : on déplace le bloc par son titre. */}
+      <div className={`flex items-start gap-3 p-4 pb-3 ${draggable ? 'block-drag-handle cursor-grab' : ''}`}>
         <span
-          className="w-3 h-3 rounded-sm shrink-0 mt-1"
+          className="w-3.5 h-3.5 rounded-sm shrink-0 mt-1"
           style={{ background: info.color }}
           aria-hidden="true"
         />
@@ -57,7 +60,7 @@ function BlockCard({
         </div>
         {draggable && (
           <svg
-            className="block-drag-handle cursor-grab shrink-0 mt-0.5"
+            className="shrink-0 mt-0.5 opacity-60"
             width={12}
             height={16}
             viewBox="0 0 12 16"
@@ -77,34 +80,35 @@ function BlockCard({
         >
           {ENGINE_LABEL[info.engine] ?? ENGINE_LABEL.generic}
         </Badge>
+        {onDelete && (
+          <button
+            type="button"
+            onClick={e => { e.stopPropagation(); onDelete() }}
+            aria-label={`Supprimer ${info.title}`}
+            className="block-delete-btn shrink-0 border-none bg-transparent text-text-muted hover:text-destructive cursor-pointer p-0 text-xs font-extrabold opacity-0 transition-opacity focus-visible:opacity-100 group-hover/card:opacity-100"
+          >
+            Supprimer
+          </button>
+        )}
       </div>
 
       {(info.inputs.length > 0 || info.outputs.length > 0) && (
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-1.5 px-4 pb-4 pt-0.5">
           {info.inputs.map(p => (
-            <div key={p.name} className="flex items-center justify-between gap-2 text-[11px]">
+            <div key={p.name} className="flex items-center justify-between gap-3 text-xs">
               <span className="text-text-muted font-bold truncate">{p.name}</span>
-              <span className="text-text-dim opacity-75 truncate">{p.dtype}</span>
+              <span className="text-text-dim opacity-70 font-mono truncate">{p.dtype}</span>
             </div>
           ))}
           {info.outputs.map(p => (
-            <div key={p.name} className="flex items-center justify-between gap-2 text-[11px]">
+            <div key={p.name} className="flex items-center justify-between gap-3 text-xs">
               <span className="text-text font-bold truncate">{p.name}</span>
-              <span className="text-text-muted opacity-75 truncate">{p.dtype}</span>
+              <span className="text-text-muted opacity-70 font-mono truncate">{p.dtype}</span>
             </div>
           ))}
         </div>
       )}
-
-      {onDelete && (
-        <button
-          type="button"
-          onClick={e => { e.stopPropagation(); onDelete() }}
-          className="block-delete-btn absolute -top-2 -right-2 border-none bg-transparent text-text-muted font-extrabold text-xs cursor-pointer p-0 font-body opacity-0 transition-opacity group-hover/card:opacity-100"
-        >
-          Supprimer
-        </button>
-      )}
+      {info.inputs.length === 0 && info.outputs.length === 0 && <div className="px-4 pb-4" />}
     </div>
   )
 }

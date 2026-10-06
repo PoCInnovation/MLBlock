@@ -41,7 +41,8 @@ import { stageOfBlock, getStageConfig } from '../../utils/stages'
 import { matchEngine, groupSuperblocks, defaultChildren, resolveEdgeStyle, availableChildren } from '../../utils/superblocks'
 import BlockCard from './BlockCard'
 import BlockSegments from '../blocks/BlockSegments'
-import type { Port, PipelineNode as CatalogNode } from '../../types/catalog'
+import { resolveColumnsForPath, resolveFlowSourcePath } from '../../utils/columns'
+import type { Port, Segment, PipelineNode as CatalogNode } from '../../types/catalog'
 const nodeTypes = {
   block: BlockNode,
   superblock: BlockNode,
@@ -684,6 +685,24 @@ function NodeInspector() {
   const sbEntry = catalog?.superblocks.find(s => s.id === type)
   const children = (data?.children as CatalogNode[] | undefined) ?? []
   const outputs = (data?.outputs as { name: string; dtype: string }[] | undefined) ?? []
+  const segs = (data?.segs as Segment[] | undefined) ?? []
+  const [columnOptions, setColumnOptions] = useState<Record<string, string[]>>({})
+
+  // Colonnes du CSV amont : suggestions de `target_column` (était porté par BlockNode).
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Reset synchrone : évite d'afficher les colonnes périmées de l'ancien bloc pendant le fetch.
+    setColumnOptions({})
+    if (!segs.some(s => 'k' in s && s.k === 'target_column')) return
+    const { flowNodes: nodes, flowEdges: edges } = useAppStore.getState()
+    const path = resolveFlowSourcePath(nodes, edges, selected?.id ?? '')
+    if (!path) return
+    let cancelled = false
+    resolveColumnsForPath(path).then(cols => {
+      if (cols && !cancelled) setColumnOptions({ target_column: cols })
+    })
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- On re-résout au changement de nœud sélectionné, pas à chaque rendu.
+  }, [selected?.id])
 
   if (!selected) {
     return (
@@ -780,15 +799,14 @@ function NodeInspector() {
         <>
           <Separator />
           <h3 className="text-base font-heading font-bold text-foreground">Paramètres</h3>
-          <div className="grid grid-cols-3 items-start gap-x-3">
-            <BlockSegments
-              segs={def.segs}
-              fields={fields}
-              blockId={selected.id}
-              blockType={type}
-              onUpdate={updateFlowParam}
-            />
-          </div>
+          <BlockSegments
+            segs={def.segs}
+            fields={fields}
+            blockId={selected.id}
+            blockType={type}
+            onUpdate={updateFlowParam}
+            columnOptions={columnOptions}
+          />
         </>
       )}
 
