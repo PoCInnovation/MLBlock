@@ -16,4 +16,4 @@ def gru(in_1: "torch.Tensor", input_size: "int", hidden_size: "int", num_layers:
         dropout: Probabilité de dropout. (entre: 0-1) (suggestions: 0.1|0.25|0.5)
         bidirectional: Parameter.
     """
-    return nn.Gru(input_size=input_size, hidden_size=hidden_size, num_layers=num_layers, bias=bias, batch_first=batch_first, dropout=dropout, bidirectional=bidirectional)(in_1)
+    return nn.GRU(input_size=input_size, hidden_size=hidden_size, num_layers=num_layers, bias=bias, batch_first=batch_first, dropout=dropout, bidirectional=bidirectional)(in_1)
