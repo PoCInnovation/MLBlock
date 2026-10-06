@@ -75,3 +75,14 @@ Charge : aucun test ne fait transiter d'octets par l'API.
 Import/export JSON pipeline (inchangé), création de SuperBlocks custom, poids modèles
 côté entraînement distribué, migration des URL existantes, RLS fine autre que
 lecture publique / écriture service-role.
+
+## 9. Périmètre concret d'usage (cadré, non spéculé)
+
+- **Blocs lecteurs de fichier : 3**, tous S0 Ingest (`donnees-22C55E/`) — `load_csv`, `load_text`,
+  `load_image` (`path: "file"`). Aucun loader de poids `.pt` n'existe : à créer pour le scope modèles.
+- **SuperBlock porteur d'un enfant fichier : 1** — `tabular_data_pipeline`
+  (`load_csv` + `standard_scaler`). Les 11 autres : aucun enfant fichier.
+- **Décision : upload uniquement dans l'inspecteur du nœud posé.** La sheet `config`
+  reste muette (carte + « Ajouter au canvas », enfants matérialisés avec `seg.def`,
+  donc `path` vide à l'ajout). Pas de dropzone en config — ni pour les blocs simples,
+  ni pour les enfants de SuperBlocks (l'inspecteur expose déjà les params des enfants).
