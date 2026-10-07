@@ -104,4 +104,18 @@ describe('parseCatalog', () => {
     expect(cat.superblocks[0].children).toEqual(['load_csv', 'standard_scaler'])
     expect(cat.superblocks[0].engine).toBe('sklearn')
   })
+
+  it('mappe format vers FileSeg.accept', () => {
+    const cat = parseCatalog({
+      categories: [{
+        id: 'c', name: 'C', color: '#fff',
+        blocks: [{
+          type: 'load_csv', label: 'Load CSV', description: '', advanced: false, group: 'core',
+          params: { path: { type: 'file', default: '', format: '.csv' } },
+          inputs: [], outputs: [],
+        }],
+      }],
+    })
+    expect(cat.blocks['load_csv'].segs).toContainEqual({ t: 'file', k: 'path', def: '', accept: '.csv' })
+  })
 })

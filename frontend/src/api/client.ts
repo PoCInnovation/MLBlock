@@ -21,11 +21,15 @@ import { supabase } from '../services/supabase'
 import {
   buildResponseSchema,
   catalogSchema,
+  confirmUploadResponseSchema,
+  fileAssetSchema,
+  filePreviewSchema,
   generateResponseSchema,
   jobOutputSchema,
   jobSchema,
   pipelineDetailSchema,
   pipelinePageSchema,
+  requestUploadResponseSchema,
   validationSchema,
 } from '../schemas/api'
 
@@ -64,7 +68,10 @@ function toSegments(key: string, raw: unknown): Segment {
     const def = String(p.default ?? '')
     const typ = String(p.type ?? '')
     const desc = p.description ? String(p.description) : undefined
-    if (typ === 'file') return { t: 'file', k: key, def, desc }
+    if (typ === 'file') {
+      const accept = p.format ? String(p.format) : undefined
+      return { t: 'file', k: key, def, desc, ...(accept ? { accept } : {}) }
+    }
     if (typ === 'bool') return { t: 'bool', k: key, def, desc }
     if (Array.isArray(p.options) && p.options.length > 0) {
       return { t: 'sel', k: key, def, opts: p.options.map(String), desc }
@@ -217,6 +224,55 @@ export async function fetchFileColumns(url: string): Promise<string[] | null> {
     columnsCache.set(url, null)
     return null
   }
+}
+
+export type FileAssetItem = z.infer<typeof fileAssetSchema>
+export type FilePreview = z.infer<typeof filePreviewSchema>
+export type RequestUploadInput = { name: string; size_bytes: number; mime: string; block_type?: string }
+
+/** Réserve le quota et obtient une URL signée d'écriture (les octets ne transitent pas par le backend). */
+export async function requestUpload(input: RequestUploadInput): Promise<z.infer<typeof requestUploadResponseSchema>> {
+  const { data } = await http.post<unknown>('/api/files/request-upload', input)
+  return parseOrThrow(requestUploadResponseSchema, 'POST /api/files/request-upload', data)
+}
+
+/** Valide taille + contenu sniffé, passe l'asset en ready. Rend l'URL publique et l'aperçu. */
+export async function confirmUpload(id: string): Promise<z.infer<typeof confirmUploadResponseSchema>> {
+  const { data } = await http.post<unknown>(`/api/files/${id}/confirm`)
+  return parseOrThrow(confirmUploadResponseSchema, `POST /api/files/${id}/confirm`, data)
+}
+
+/** Galerie « Mes fichiers » : assets ready de l'utilisateur. */
+export async function listFiles(): Promise<FileAssetItem[]> {
+  const { data } = await http.get<unknown>('/api/files')
+  return parseOrThrow(z.array(fileAssetSchema), 'GET /api/files', data)
+}
+
+/** Aperçu à la demande (lignes CSV/texte, miniature image). */
+export async function previewFile(id: string): Promise<FilePreview> {
+  const { data } = await http.get<unknown>(`/api/files/${id}/preview`)
+  return parseOrThrow(filePreviewSchema, `GET /api/files/${id}/preview`, data)
+}
+
+/** Supprime ligne + objet, libère le quota immédiatement. */
+export async function deleteFile(id: string): Promise<void> {
+  await http.delete(`/api/files/${id}`)
+}
+
+/** URL user-uploads absente de la galerie chargée = expirée/supprimée → réimporter. */
+export function isFileAssetExpired(url: string, assets: FileAssetItem[], loaded: boolean): boolean {
+  if (!loaded || !url.startsWith('https://')) return false
+  if (!url.includes('/storage/v1/object/') || !url.includes('/user-uploads/')) return false
+  return !assets.some(a => a.public_url === url)
+}
+
+/** Refuse un drop hors accept avant tout upload (le file input natif ne filtre que le dialogue). */
+export function acceptsFile(accept: string | undefined, filename: string): boolean {
+  if (!accept?.trim()) return true
+  const parts = filename.toLowerCase().split('.')
+  const ext = parts.length > 1 ? parts[parts.length - 1] : ''
+  const wanted = accept.toLowerCase().split(/[|,]/).map(a => a.replace(/^\./, '').trim()).filter(Boolean)
+  return wanted.includes(ext)
 }
 
 export async function executePipeline(id: string): Promise<Job> {

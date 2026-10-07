@@ -149,3 +149,36 @@ export const buildResponseSchema = z.object({
 export const generateResponseSchema = z.object({
   code: z.string(),
 })
+
+export const fileAssetSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  size_bytes: z.number(),
+  kind: z.string(),
+  public_url: z.string(),
+  expires_at: z.string(),
+})
+
+export const requestUploadResponseSchema = z.object({
+  id: z.string(),
+  signed_url: z.string(),
+  expires_at: z.string(),
+})
+
+export const confirmPreviewSchema = z.object({
+  rows: z.array(z.array(z.string())).optional(),
+  url: z.string().optional(),
+})
+
+export const filePreviewSchema = z.object({
+  kind: z.string(),
+  rows: z.array(z.array(z.string())).optional(),
+  url: z.string().optional(),
+})
+
+export const confirmUploadResponseSchema = z.object({
+  id: z.string(),
+  public_url: z.string(),
+  kind: z.string(),
+  preview: confirmPreviewSchema,
+})

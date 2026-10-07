@@ -7,11 +7,15 @@ def load_text(path: "file", text_column: "str" = "texte", label_column: "str" = 
     optionnelle — branchable sur tokenisation ou classification.
 
     Args:
-        path: Parameter.
+        path: URL du fichier texte (CSV). (format: .csv|.txt)
         text_column: Colonne contenant les textes.
         label_column: Colonne de label (vide = aucun).
     """
     import pandas as pd
-    df = pd.read_csv(path)
+
+    try:
+        df = pd.read_csv(path)
+    except Exception as e:
+        raise ValueError(f"Fichier illisible ({e}) — vérifie qu'il existe ou réimporte-le") from e
     cols = [c for c in [text_column, label_column] if c]
     return df[cols] if cols else df

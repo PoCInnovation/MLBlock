@@ -10,6 +10,7 @@ if TYPE_CHECKING:
 
 class Profile(SQLModel, table=True):
     """Supabase-managed auth profile. Backend reads user_id from JWT, does not create rows."""
+
     __tablename__ = "profiles"
 
     id: uuid.UUID = Field(primary_key=True)
@@ -20,9 +21,7 @@ class Profile(SQLModel, table=True):
 
 class Pipeline(SQLModel, table=True):
     __tablename__ = "pipelines"
-    __table_args__ = (
-        ForeignKeyConstraint(["user_id"], ["profiles.id"], ondelete="CASCADE"),
-    )
+    __table_args__ = (ForeignKeyConstraint(["user_id"], ["profiles.id"], ondelete="CASCADE"),)
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     user_id: uuid.UUID = Field(index=True)
@@ -67,9 +66,7 @@ class Job(SQLModel, table=True):
 
 class JobOutput(SQLModel, table=True):
     __tablename__ = "job_outputs"
-    __table_args__ = (
-        ForeignKeyConstraint(["job_id"], ["jobs.id"], ondelete="CASCADE"),
-    )
+    __table_args__ = (ForeignKeyConstraint(["job_id"], ["jobs.id"], ondelete="CASCADE"),)
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     job_id: uuid.UUID = Field(index=True)
@@ -79,3 +76,22 @@ class JobOutput(SQLModel, table=True):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     job: "Job" = Relationship(back_populates="outputs")
+
+
+class FileAsset(SQLModel, table=True):
+    """Fichier utilisateur : réservé avant upload, prêt après confirm, TTL + quota."""
+
+    __tablename__ = "file_assets"
+    __table_args__ = (ForeignKeyConstraint(["owner_id"], ["profiles.id"], ondelete="CASCADE"),)
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    owner_id: uuid.UUID = Field(index=True)
+    name: str = ""
+    storage_path: str = ""
+    public_url: str = ""
+    mime: str = ""
+    size_bytes: int = 0
+    kind: str = "other"
+    status: str = Field(default="pending", index=True)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    expires_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

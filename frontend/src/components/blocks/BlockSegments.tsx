@@ -1,19 +1,31 @@
-import React, { memo, useRef, useState } from 'react'
+import React, { memo, useCallback, useEffect, useRef, useState } from 'react'
 import type { Segment } from '../../types/catalog'
-import { uploadFile, supabase } from '../../services/supabase'
-import { FileUp, Loader2, TriangleAlert } from 'lucide-react'
+import axios from 'axios'
+import { FileUp, TriangleAlert } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Progress } from '@/components/ui/progress'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import useAppStore from '../../store/useAppStore'
 import { describeParam } from '../../utils/paramHints'
-import { ACCEPT_BY_BLOCK, DEFAULT_ACCEPT, SAMPLE_CATEGORY_BY_BLOCK } from '../../utils/samples'
+import {
+  acceptsFile,
+  confirmUpload,
+  deleteFile,
+  isFileAssetExpired,
+  listFiles,
+  previewFile,
+  requestUpload,
+  type FileAssetItem,
+  type FilePreview,
+} from '../../api/client'
+import { DEFAULT_ACCEPT, SAMPLE_CATEGORY_BY_BLOCK, kindOf } from '../../utils/samples'
 import SampleDataModal from '../ui/SampleDataModal'
 
 const FILE_CARD = 'flex items-center gap-2 rounded-lg bg-file/15 px-3 py-2 text-xs font-bold'
-const FILE_BTN = 'bg-file/20 border border-dashed border-file/50 rounded-sm px-3 py-1 text-file-btn font-bold text-xs cursor-pointer inline-flex items-center gap-1'
-const REMOVE_BTN = 'w-6 h-6 rounded-full border-none bg-black/20 text-file text-xs cursor-pointer p-0 inline-flex items-center justify-center'
+const FILE_BTN = 'bg-file/20 border border-dashed border-file/50 rounded-sm px-3 py-1 min-h-11 text-file-btn font-bold text-xs cursor-pointer inline-flex items-center gap-1'
+const REMOVE_BTN = 'w-11 h-11 rounded-full border-none bg-black/20 text-file text-xs cursor-pointer p-0 inline-flex items-center justify-center shrink-0'
 
 function fmtSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} o`
@@ -21,9 +33,14 @@ function fmtSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`
 }
 
-/** Chemin de stockage unique pour un upload : horodaté pour éviter les collisions de noms. */
-function uploadPath(userId: string | undefined, blockId: string): string {
-  return `${userId ?? 'anonymous'}/${blockId}_${Date.now()}.csv`
+/** Message FR d'un échec d'envoi : détail serveur d'abord, jamais de code HTTP brut. */
+function fileErrorMessage(e: unknown): string {
+  if (axios.isAxiosError(e)) {
+    const detail = (e.response?.data as { detail?: unknown } | undefined)?.detail
+    if (typeof detail === 'string' && detail.trim()) return detail
+    if (!e.response) return 'Envoi interrompu — vérifie ta connexion puis réessaie'
+  }
+  return "Échec de l'envoi — réessaie dans un moment"
 }
 
 type BlockSegmentsProps = {
@@ -61,33 +78,146 @@ const BlockSegments = memo(function BlockSegments({
 }: BlockSegmentsProps): React.ReactNode {
   const [uploadState, setUploadState] = useState<Record<string, 'uploading' | 'error'>>({})
   const [fileMetaState, setFileMetaState] = useState<Record<string, { name: string; size: number }>>({})
+  const [progressState, setProgressState] = useState<Record<string, number>>({})
+  const [fileErrorState, setFileErrorState] = useState<Record<string, string>>({})
+  const [previewState, setPreviewState] = useState<Record<string, { kind: string } & FilePreview>>({})
+  const [dragState, setDragState] = useState<Record<string, boolean>>({})
+  const [gallery, setGallery] = useState<{
+    open: string | null; items: FileAssetItem[]; loading: boolean; loaded: boolean; error: string | null
+  }>({ open: null, items: [], loading: false, loaded: false, error: null })
   const [sampleOpen, setSampleOpen] = useState<string | null>(null)
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({})
+  const abortRefs = useRef<Record<string, AbortController>>({})
+  // Garde de fetch galerie : un flag posé DANS un updater setState ne serait lu
+  // qu'après le batch React — la ref reste synchrone.
+  const galleryOkRef = useRef(false)
 
-  const handleFile = async (k: string, e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file || !onUpdate || !blockId) return
-    setUploadState(s => ({ ...s, [k]: 'uploading' }))
-    setFileMetaState(s => ({ ...s, [k]: { name: file.name, size: file.size } }))
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      const path = uploadPath(user?.id, blockId)
-      const url = await uploadFile(file, 'user-uploads', path)
-      if (url) {
-        onUpdate(blockId, k, url)
-        setUploadState(s => {
-          const next = { ...s }
-          delete next[k]
-          return next
-        })
-      }
-    } catch {
+  const clearUploadFlag = (k: string) => {
+    setUploadState(s => {
+      const next = { ...s }
+      delete next[k]
+      return next
+    })
+  }
+
+  /** request-upload → PUT direct signé → confirm : les octets ne transitent pas par le backend. */
+  const handleFile = async (k: string, file: File, accept: string) => {
+    if (!onUpdate || !blockId) return
+    if (!acceptsFile(accept, file.name)) {
       setUploadState(s => ({ ...s, [k]: 'error' }))
+      setFileErrorState(s => ({ ...s, [k]: `Ce bloc attend ${accept} — choisis un fichier compatible` }))
+      return
+    }
+    if (file.size <= 0) {
+      setUploadState(s => ({ ...s, [k]: 'error' }))
+      setFileErrorState(s => ({ ...s, [k]: 'Fichier vide — choisis un fichier non vide' }))
+      return
+    }
+    const ctrl = new AbortController()
+    abortRefs.current[k] = ctrl
+    let assetId: string | null = null
+    setUploadState(s => ({ ...s, [k]: 'uploading' }))
+    setProgressState(s => ({ ...s, [k]: 0 }))
+    setFileMetaState(s => ({ ...s, [k]: { name: file.name, size: file.size } }))
+    setFileErrorState(s => {
+      const next = { ...s }
+      delete next[k]
+      return next
+    })
+    try {
+      const req = await requestUpload({
+        name: file.name,
+        size_bytes: file.size,
+        mime: file.type || 'application/octet-stream',
+        ...(blockType ? { block_type: blockType } : {}),
+      })
+      assetId = req.id
+      await axios.put(req.signed_url, file, {
+        headers: { 'Content-Type': file.type || 'application/octet-stream' },
+        signal: ctrl.signal,
+        onUploadProgress: e => {
+          const total = e.total ?? 0
+          if (total > 0) setProgressState(s => ({ ...s, [k]: Math.round((e.loaded / total) * 100) }))
+        },
+      })
+      const done = await confirmUpload(req.id)
+      onUpdate(blockId, k, done.public_url)
+      setPreviewState(s => ({ ...s, [k]: { kind: done.kind, ...done.preview } }))
+      galleryOkRef.current = false
+      setGallery(g => ({ ...g, loaded: false }))
+      clearUploadFlag(k)
+      setProgressState(s => {
+        const next = { ...s }
+        delete next[k]
+        return next
+      })
+    } catch (e) {
+      if (ctrl.signal.aborted) {
+        clearUploadFlag(k)
+        // La réservation pending ne doit pas bloquer le quota 30 j : on la supprime.
+        if (assetId) void deleteFile(assetId).catch(() => {})
+      } else {
+        setUploadState(s => ({ ...s, [k]: 'error' }))
+        setFileErrorState(s => ({ ...s, [k]: fileErrorMessage(e) }))
+      }
+    } finally {
+      delete abortRefs.current[k]
+    }
+  }
+
+  const cancelUpload = (k: string) => abortRefs.current[k]?.abort()
+
+  const ensureGallery = useCallback(async () => {
+    if (galleryOkRef.current) return
+    galleryOkRef.current = true
+    setGallery(g => ({ ...g, loading: true, error: null }))
+    try {
+      const items = await listFiles()
+      setGallery(g => ({ ...g, items, loaded: true, loading: false }))
+    } catch (e) {
+      galleryOkRef.current = false
+      setGallery(g => ({ ...g, loading: false, error: fileErrorMessage(e) }))
+    }
+  }, [])
+
+  const toggleGallery = (k: string) => {
+    setGallery(g => ({ ...g, open: g.open === k ? null : k }))
+    void ensureGallery()
+  }
+
+  const applyGalleryFile = async (k: string, item: FileAssetItem) => {
+    if (!onUpdate || !blockId) return
+    useAppStore.getState().commitUndoPoint()
+    onUpdate(blockId, k, item.public_url)
+    setFileMetaState(s => ({ ...s, [k]: { name: item.name, size: item.size_bytes } }))
+    try {
+      const preview = await previewFile(item.id)
+      setPreviewState(s => ({ ...s, [k]: { kind: item.kind, rows: preview.rows, url: preview.url } }))
+    } catch {
+      // Aperçu indisponible : le fichier reste utilisable.
+    }
+    setGallery(g => ({ ...g, open: null }))
+  }
+
+  const removeGalleryFile = async (id: string) => {
+    try {
+      await deleteFile(id)
+      setGallery(g => ({ ...g, items: g.items.filter(i => i.id !== id) }))
+    } catch (e) {
+      setGallery(g => ({ ...g, error: fileErrorMessage(e) }))
     }
   }
 
   const activeSampleCat = blockType ? SAMPLE_CATEGORY_BY_BLOCK[blockType] : undefined
   const paramSegs = segs.filter(s => s.t !== 'text')
+  const needsGalleryCheck = paramSegs.some(
+    s => s.t === 'file' && (fields?.[s.k] ?? '').startsWith('https://'),
+  )
+
+  // Badge « expiré » : charge la galerie quand un param fichier pointe déjà une URL.
+  useEffect(() => {
+    if (needsGalleryCheck) void ensureGallery()
+  }, [needsGalleryCheck, ensureGallery])
 
   const set = (k: string, v: string) => {
     if (!onUpdate || !blockId) return
@@ -235,61 +365,184 @@ const BlockSegments = memo(function BlockSegments({
 
         if (s.t === 'file') {
           const sampleCat = blockType ? SAMPLE_CATEGORY_BY_BLOCK[blockType] : undefined
-          const fileAccept = (blockType ? ACCEPT_BY_BLOCK[blockType] : undefined) ?? DEFAULT_ACCEPT
+          const fileAccept = s.accept ?? DEFAULT_ACCEPT
           const state = uploadState[s.k]
           const meta = fileMetaState[s.k]
-          const hasUrl = fields?.[s.k]?.startsWith('https://')
-          const fname = meta?.name ?? (hasUrl ? fields![s.k].split('/').pop() : null)
+          const progress = progressState[s.k] ?? 0
+          const errorMsg = fileErrorState[s.k]
+          const preview = previewState[s.k]
+          const fileValue = fields?.[s.k] ?? ''
+          const hasUrl = fileValue.startsWith('https://')
+          const expired = hasUrl && isFileAssetExpired(fileValue, gallery.items, gallery.loaded)
+          const fname = meta?.name ?? (hasUrl ? fileValue.split('/').pop() : null)
+          const kind = preview?.kind ?? kindOf(fileAccept)
           const hidden = (
             <input
               ref={el => { inputRefs.current[s.k] = el }}
               type="file"
               accept={fileAccept}
               className="hidden"
-              onChange={e => handleFile(s.k, e)}
+              onChange={e => {
+                const f = e.target.files?.[0]
+                e.target.value = ''
+                if (f) void handleFile(s.k, f, fileAccept)
+              }}
             />
           )
-
-          if (state === 'uploading') {
-            return row(s, <div className={FILE_CARD}><span className="truncate">{meta?.name ?? 'Upload…'}</span><Loader2 className="size-3.5 animate-spin shrink-0" />{hidden}</div>)
+          const pickFile = (f: File | undefined) => {
+            if (f) void handleFile(s.k, f, fileAccept)
           }
-          if (state === 'error') {
-            return row(s, (
-              <div className={FILE_CARD}>
-                <span className="text-error-light inline-flex items-center gap-1"><TriangleAlert className="size-3.5" /> Échec</span>
-                <button type="button" className="bg-transparent border-none p-0 font-bold text-error-light cursor-pointer" onClick={() => inputRefs.current[s.k]?.click()}>Réessayer</button>
-                {hidden}
-              </div>
-            ))
-          }
-          if (hasUrl && fname) {
-            return row(s, (
-              <div className={FILE_CARD}>
-                <span className="truncate flex-1">{fname}</span>
-                {meta && <span className="text-file-meta shrink-0">{fmtSize(meta.size)}</span>}
-                <button
-                  className={REMOVE_BTN}
-                  onClick={() => {
-                    set(s.k, '')
-                    setFileMetaState(m => { const n = { ...m }; delete n[s.k]; return n })
-                  }}
-                >×</button>
-                {hidden}
-              </div>
-            ))
-          }
-          return row(s, (
-            <span className="flex gap-2">
+          const previewBlock = preview && (kind === 'csv' || kind === 'text') && preview.rows?.length ? (
+            <div className="flex flex-col gap-0.5 rounded-lg bg-background/60 p-2 font-mono text-[11px] leading-snug max-h-28 overflow-hidden">
+              {preview.rows.slice(0, 5).map((r, i) => (
+                <span key={i} className="truncate text-muted-foreground">{r.join(' · ')}</span>
+              ))}
+            </div>
+          ) : preview && kind === 'image' && preview.url ? (
+            <img src={preview.url} alt="" className="max-h-28 w-fit rounded-lg border border-border/60" />
+          ) : null
+          const galleryBlock = gallery.open === s.k ? (
+            <div className="flex flex-col gap-1.5 rounded-lg border border-border/60 p-2">
+              <span className="text-[10px] font-extrabold uppercase tracking-wide text-muted-foreground/80">
+                Mes fichiers
+              </span>
+              {gallery.loading && <span className={HINT_CLS}>Chargement…</span>}
+              {gallery.error && <span className={ERR_CLS}>{gallery.error}</span>}
+              {!gallery.loading && !gallery.error && gallery.items.length === 0 && (
+                <span className={HINT_CLS}>Aucun fichier — dépose ton premier ci-dessus.</span>
+              )}
+              {gallery.items.map(item => (
+                <div key={item.id} className="flex items-center gap-2 text-xs">
+                  <span className="truncate flex-1 font-bold">{item.name}</span>
+                  <span className="text-file-meta shrink-0">{fmtSize(item.size_bytes)}</span>
+                  <button type="button" className={FILE_BTN} onClick={() => void applyGalleryFile(s.k, item)}>
+                    Utiliser
+                  </button>
+                  <button
+                    type="button"
+                    className={REMOVE_BTN}
+                    aria-label={`Supprimer ${item.name}`}
+                    onClick={() => void removeGalleryFile(item.id)}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : null
+          const sourceButtons = (
+            <span className="flex flex-wrap gap-2">
               {sampleCat && (
                 <button type="button" onClick={() => setSampleOpen(s.k)} className={FILE_BTN}>
                   <FileUp className="size-3.5" /> Données d’exemple
                 </button>
               )}
-              <button type="button" onClick={() => inputRefs.current[s.k]?.click()} className={FILE_BTN}>
-                <FileUp className="size-3.5" /> Choisir un fichier
+              <button type="button" onClick={() => toggleGallery(s.k)} className={FILE_BTN}>
+                <FileUp className="size-3.5" /> Mes fichiers
               </button>
-              {hidden}
             </span>
+          )
+
+          if (state === 'uploading') {
+            return row(s, (
+              <div className="flex flex-col gap-2">
+                <div className={FILE_CARD}>
+                  <span className="truncate flex-1">{meta?.name ?? 'Upload…'}</span>
+                  <span className="text-file-meta shrink-0">{progress} %</span>
+                  <button
+                    type="button"
+                    className="bg-transparent border-none p-0 font-bold text-file-btn cursor-pointer"
+                    onClick={() => cancelUpload(s.k)}
+                  >
+                    Annuler
+                  </button>
+                  {hidden}
+                </div>
+                <Progress value={progress} />
+              </div>
+            ))
+          }
+          if (state === 'error') {
+            return row(s, (
+              <div className="flex flex-col gap-2">
+                <div className={FILE_CARD}>
+                  <span className="text-error-light inline-flex items-center gap-1 flex-1">
+                    <TriangleAlert className="size-3.5 shrink-0" /> {errorMsg ?? 'Échec'}
+                  </span>
+                  <button
+                    type="button"
+                    className="bg-transparent border-none p-0 font-bold text-error-light cursor-pointer shrink-0"
+                    onClick={() => inputRefs.current[s.k]?.click()}
+                  >
+                    Réessayer
+                  </button>
+                  {hidden}
+                </div>
+                {sourceButtons}
+                {galleryBlock}
+              </div>
+            ))
+          }
+          if (hasUrl && fname) {
+            return row(s, (
+              <div className="flex flex-col gap-2">
+                <div className={FILE_CARD}>
+                  <span className="truncate flex-1">{fname}</span>
+                  {meta && <span className="text-file-meta shrink-0">{fmtSize(meta.size)}</span>}
+                  {expired && <span className="text-error-light shrink-0">Expiré — réimporte</span>}
+                  <button type="button" className={FILE_BTN} onClick={() => inputRefs.current[s.k]?.click()}>
+                    Remplacer
+                  </button>
+                  <button
+                    className={REMOVE_BTN}
+                    aria-label="Retirer le fichier"
+                    onClick={() => {
+                      set(s.k, '')
+                      setFileMetaState(m => { const n = { ...m }; delete n[s.k]; return n })
+                      setPreviewState(p => { const n = { ...p }; delete n[s.k]; return n })
+                    }}
+                  >
+                    ×
+                  </button>
+                  {hidden}
+                </div>
+                {previewBlock}
+                {sourceButtons}
+                {galleryBlock}
+              </div>
+            ))
+          }
+          return row(s, (
+            <div className="flex flex-col gap-2">
+              <div
+                role="button"
+                tabIndex={readOnly ? undefined : 0}
+                onClick={() => inputRefs.current[s.k]?.click()}
+                onKeyDown={e => {
+                  if ((e.key === 'Enter' || e.key === ' ') && !readOnly) {
+                    e.preventDefault()
+                    inputRefs.current[s.k]?.click()
+                  }
+                }}
+                onDragOver={e => { e.preventDefault(); setDragState(d => ({ ...d, [s.k]: true })) }}
+                onDragLeave={() => setDragState(d => ({ ...d, [s.k]: false }))}
+                onDrop={e => {
+                  e.preventDefault()
+                  setDragState(d => ({ ...d, [s.k]: false }))
+                  pickFile(e.dataTransfer.files?.[0])
+                }}
+                className={`flex flex-col items-center gap-1 rounded-xl border border-dashed px-3 py-5 text-center cursor-pointer transition-colors ${
+                  dragState[s.k] ? 'border-accent bg-accent/10' : 'border-file/50 bg-file/10'
+                }`}
+              >
+                <FileUp className="size-5 text-file-btn" />
+                <span className="text-xs font-bold">Dépose ton fichier ici ou touche pour choisir</span>
+                <span className={HINT_CLS}>Formats : {fileAccept}</span>
+                {hidden}
+              </div>
+              {sourceButtons}
+              {galleryBlock}
+            </div>
           ))
         }
 

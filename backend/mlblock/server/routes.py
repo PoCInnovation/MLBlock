@@ -52,6 +52,7 @@ def health() -> dict:
     mode = os.environ.get("MLBLOCK_RUN_MODE", "local").lower()
     return {"status": "ok", "run_mode": mode if mode in ("local", "gpu") else "local"}
 
+
 SUPABASE_STORAGE_URL = re.compile(r"^https://[^/]+/storage/v1/object/(?:public|authenticated)/([^/]+)/(.+)$")
 
 
@@ -78,6 +79,7 @@ def _cleanup_pipeline_files(pipeline_id: UUID) -> None:
     """Find all file-type params in a pipeline and delete them from storage."""
     from mlblock.server.database import _get_engine
     from sqlmodel import Session as SqlSession
+
     with SqlSession(_get_engine()) as s:
         row = s.get(PipelineTable, pipeline_id)
         if not row or not row.nodes:
@@ -91,6 +93,7 @@ def _cleanup_pipeline_files(pipeline_id: UUID) -> None:
 
 
 # ── Catalog ─────────────────────────────────────────────────────────
+
 
 def _en_label(block) -> str:
     """Label EN : première ligne de la docstring, sinon name.title()."""
@@ -165,22 +168,24 @@ def get_catalog(
 
             is_transition_val = is_transition_block(block.name)
 
-        categories[cat]["blocks"].append({
-            "type": block.name,
-            "label": _en_label(block),
-            "description": _fr_summary(block),
-            "params": {k: v.model_dump() for k, v in block.params.items()},
-            "inputs": block.inputs,
-            "outputs": block.outputs,
-            "advanced": block_adv,
-            "group": block_grp,
-            "stage": stage_val,
-            "stage_name": stage_name_val,
-            "macro_stage": macro_val,
-            "macro_stage_name": macro_name_val,
-            "engine": engine_val,
-            "is_transition": is_transition_val,
-        })
+        categories[cat]["blocks"].append(
+            {
+                "type": block.name,
+                "label": _en_label(block),
+                "description": _fr_summary(block),
+                "params": {k: v.model_dump() for k, v in block.params.items()},
+                "inputs": block.inputs,
+                "outputs": block.outputs,
+                "advanced": block_adv,
+                "group": block_grp,
+                "stage": stage_val,
+                "stage_name": stage_name_val,
+                "macro_stage": macro_val,
+                "macro_stage_name": macro_name_val,
+                "engine": engine_val,
+                "is_transition": is_transition_val,
+            }
+        )
     payload = {
         "categories": sorted(list(categories.values()), key=lambda c: c["id"]),
         "stages": catalog.stages(),
@@ -230,6 +235,7 @@ def get_samples(category: str | None = None) -> list[dict]:
 
 # ── Exos & Baselines ────────────────────────────────────────────────
 
+
 @exos_router.get("")
 def list_exos(pattern: str | None = None) -> list[dict]:
     """Liste les pipelines de référence et baselines."""
@@ -255,6 +261,7 @@ def get_exo_by_id(id_or_code: str) -> dict:
 
 # ── Files ───────────────────────────────────────────────────────────
 
+
 @files_router.get("/columns")
 def get_file_columns(url: str) -> dict:
     """Column names of a stored CSV (header line)."""
@@ -270,9 +277,10 @@ def get_file_columns(url: str) -> dict:
     if not secret or not project:
         raise HTTPException(400, detail="Stockage non configuré")
     try:
+        # Tête seule (Range) : la route colonnes ne doit jamais aspirer un gros CSV.
         r = requests.get(
             f"https://{project}.supabase.co/storage/v1/object/{bucket}/{path}",
-            headers={"apikey": secret, "Authorization": f"Bearer {secret}"},
+            headers={"apikey": secret, "Authorization": f"Bearer {secret}", "Range": "bytes=0-8191"},
             timeout=10,
         )
         r.raise_for_status()
@@ -281,6 +289,281 @@ def get_file_columns(url: str) -> dict:
     first_line = r.text.splitlines()[0] if r.text.strip() else ""
     columns = next(csv.reader(io.StringIO(first_line)), [])
     return {"columns": [c.strip() for c in columns if c.strip()]}
+
+
+FILE_QUOTA_DEFAULT = str(500 * 1024 * 1024)
+FILE_TTL_DEFAULT = "30"
+_FILE_HEAD_BYTES = 8192
+
+
+def _file_quota_bytes() -> int:
+    return int(os.environ.get("FILE_QUOTA_BYTES", FILE_QUOTA_DEFAULT))
+
+
+def _file_ttl_days() -> int:
+    return int(os.environ.get("FILE_TTL_DAYS", FILE_TTL_DEFAULT))
+
+
+def _storage_headers() -> tuple[str, dict] | tuple[None, None]:
+    """(project base, headers) service-role — même pattern que get_file_columns."""
+    secret = os.environ.get("SUPABASE_SECRET_KEY", "")
+    project = os.environ.get("SUPABASE_URL", "").replace("https://", "").split(".")[0]
+    if not secret or not project:
+        return None, None
+    base = f"https://{project}.supabase.co/storage/v1"
+    return base, {"apikey": secret, "Authorization": f"Bearer {secret}"}
+
+
+def _accepts(block_type: str | None, filename: str) -> bool:
+    """Le fichier matche-t-il le `accept` déclaré par le bloc ? Permissif si inconnu."""
+    if not block_type:
+        return True
+    block = catalog.get(block_type)
+    if not block:
+        return True
+    ext = filename.rpartition(".")[2].lower() if "." in filename else ""
+    for p in getattr(block, "params", {}).values():
+        accept = getattr(p, "format", None)
+        if getattr(p, "type", None) == "file" and accept:
+            wanted = {a.strip().lstrip(".").lower() for a in re.split(r"[|,]", accept) if a.strip()}
+            return ext in wanted
+    return True
+
+
+def _head_rows(content: bytes, limit: int = 5) -> list[list[str]]:
+    import csv as _csv
+    import io as _io
+
+    return [row for _, row in zip(range(limit), _csv.reader(_io.StringIO(content.decode("utf-8", errors="replace"))))]
+
+
+def cleanup_expired_files(session: Session) -> int:
+    """Lignes expirées + objets storage. Piggyback au confirm, pas de cron séparé."""
+    from datetime import datetime, timezone
+
+    from mlblock.server.file_assets import BUCKET, delete_storage_object
+    from mlblock.server.models import FileAsset
+
+    rows = session.exec(select(FileAsset).where(FileAsset.expires_at < datetime.now(timezone.utc))).all()
+    for row in rows:
+        delete_storage_object(BUCKET, row.storage_path)
+        session.delete(row)
+    if rows:
+        session.commit()
+    return len(rows)
+
+
+@files_router.post("/request-upload", status_code=201)
+def request_file_upload(
+    body: dict,
+    session: Session = Depends(get_session),
+    user: str = Depends(get_current_user),
+) -> dict:
+    from datetime import datetime, timedelta, timezone
+
+    from mlblock.server.file_assets import (
+        BUCKET,
+        build_storage_path,
+        quota_used,
+        sign_upload_url,
+    )
+    from mlblock.server.models import FileAsset
+
+    owner_id = UUID(str(user))
+    if not isinstance(body, dict):
+        raise HTTPException(400, detail="Requête invalide")
+    name = str(body.get("name", "")).strip() or "fichier"
+    try:
+        size = int(body.get("size_bytes") or 0)
+    except (TypeError, ValueError):
+        raise HTTPException(400, detail="Taille de fichier invalide")
+    if size <= 0:
+        raise HTTPException(400, detail="Taille de fichier invalide")
+    if quota_used(session, owner_id) + size > _file_quota_bytes():
+        raise HTTPException(413, detail="Espace plein : supprime d'anciens fichiers pour libérer du quota")
+    block_type = body.get("block_type")
+    if block_type and not _accepts(str(block_type), name):
+        raise HTTPException(415, detail="Ce bloc n'accepte pas ce type de fichier")
+    asset = FileAsset(
+        owner_id=owner_id,
+        name=name,
+        size_bytes=size,
+        mime=str(body.get("mime", "")),
+        expires_at=datetime.now(timezone.utc) + timedelta(days=_file_ttl_days()),
+    )
+    session.add(asset)
+    session.commit()
+    session.refresh(asset)
+    asset.storage_path = build_storage_path(owner_id, asset.id, name)
+    session.add(asset)
+    session.commit()
+    try:
+        signed = sign_upload_url(BUCKET, asset.storage_path)
+    except Exception:
+        session.delete(asset)
+        session.commit()
+        raise HTTPException(502, detail="Stockage indisponible, réessaie dans un moment")
+    return {"id": str(asset.id), "signed_url": signed, "expires_at": asset.expires_at.isoformat()}
+
+
+@files_router.post("/{asset_id}/confirm")
+def confirm_file_upload(
+    asset_id: UUID,
+    session: Session = Depends(get_session),
+    user: str = Depends(get_current_user),
+) -> dict:
+    from mlblock.server.file_assets import (
+        BUCKET,
+        _content_compatible,
+        _ext_kind,
+        delete_storage_object,
+        public_url,
+        quota_used,
+        sniff_kind,
+    )
+    from mlblock.server.models import FileAsset
+
+    owner_id = UUID(str(user))
+    cleanup_expired_files(session)
+    asset = session.get(FileAsset, asset_id)
+    if not asset or asset.owner_id != owner_id:
+        raise HTTPException(404, detail="Fichier introuvable")
+    base, headers = _storage_headers()
+    if not base or not headers:
+        raise HTTPException(400, detail="Stockage non configuré")
+    try:
+        # Stream + premier chunk seul : même si le stockage ignore Range,
+        # le backend ne charge jamais plus de 8 Ko en RAM.
+        r = requests.get(
+            f"{base}/object/{BUCKET}/{asset.storage_path}",
+            headers={**headers, "Range": f"bytes=0-{_FILE_HEAD_BYTES - 1}"},
+            timeout=10,
+            stream=True,
+        )
+        r.raise_for_status()
+        head = next(r.iter_content(chunk_size=_FILE_HEAD_BYTES), b"")
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(404, detail="Fichier introuvable dans le stockage")
+    total = r.headers.get("Content-Range", "")
+    size = int(total.rpartition("/")[2]) if "/" in total else len(head)
+    if size != asset.size_bytes:
+        asset.status = "expired"
+        session.add(asset)
+        session.commit()
+        delete_storage_object(BUCKET, asset.storage_path)
+        raise HTTPException(413, detail="Taille réelle différente de déclarée — réessaie l'envoi")
+    if quota_used(session, owner_id) > _file_quota_bytes():
+        # 2e gate anti-race : un quota rempli entre request et confirm est refusé ici.
+        asset.status = "expired"
+        session.add(asset)
+        session.commit()
+        delete_storage_object(BUCKET, asset.storage_path)
+        raise HTTPException(413, detail="Espace plein : supprime d'anciens fichiers pour libérer du quota")
+    content_kind = sniff_kind(head, "")
+    ext = asset.name.rpartition(".")[2] if "." in asset.name else ""
+    if not _content_compatible(content_kind, _ext_kind(ext)):
+        asset.status = "expired"
+        session.add(asset)
+        session.commit()
+        delete_storage_object(BUCKET, asset.storage_path)
+        raise HTTPException(415, detail="Contenu illisible pour ce format — vérifie le fichier")
+    kind = content_kind if content_kind != "other" else _ext_kind(ext)
+    asset.kind = kind
+    asset.public_url = public_url(BUCKET, asset.storage_path)
+    asset.status = "ready"
+    session.add(asset)
+    session.commit()
+    preview: dict = {}
+    if kind in ("csv", "text"):
+        preview = {"rows": _head_rows(head)}
+    elif kind == "image":
+        preview = {"url": asset.public_url}
+    return {"id": str(asset.id), "public_url": asset.public_url, "kind": kind, "preview": preview}
+
+
+@files_router.delete("/{asset_id}", status_code=204)
+def delete_file(
+    asset_id: UUID,
+    session: Session = Depends(get_session),
+    user: str = Depends(get_current_user),
+) -> None:
+    from mlblock.server.file_assets import BUCKET, delete_storage_object
+    from mlblock.server.models import FileAsset
+
+    owner_id = UUID(str(user))
+    asset = session.get(FileAsset, asset_id)
+    if not asset or asset.owner_id != owner_id:
+        raise HTTPException(404, detail="Fichier introuvable")
+    delete_storage_object(BUCKET, asset.storage_path)
+    session.delete(asset)
+    session.commit()
+
+
+@files_router.get("")
+def list_files(
+    session: Session = Depends(get_session),
+    user: str = Depends(get_current_user),
+) -> list:
+    from datetime import datetime, timezone
+
+    from mlblock.server.models import FileAsset
+
+    owner_id = UUID(str(user))
+    rows = session.exec(
+        select(FileAsset)
+        .where(
+            FileAsset.owner_id == owner_id,
+            FileAsset.status == "ready",
+            FileAsset.expires_at > datetime.now(timezone.utc),
+        )
+        .order_by(FileAsset.created_at.desc())  # type: ignore[union-attr]
+    ).all()
+    return [
+        {
+            "id": str(a.id),
+            "name": a.name,
+            "size_bytes": a.size_bytes,
+            "kind": a.kind,
+            "public_url": a.public_url,
+            "expires_at": a.expires_at.isoformat(),
+        }
+        for a in rows
+    ]
+
+
+@files_router.get("/{asset_id}/preview")
+def preview_file(
+    asset_id: UUID,
+    session: Session = Depends(get_session),
+    user: str = Depends(get_current_user),
+) -> dict:
+    from mlblock.server.models import FileAsset
+
+    owner_id = UUID(str(user))
+    asset = session.get(FileAsset, asset_id)
+    if not asset or asset.owner_id != owner_id or asset.status != "ready":
+        raise HTTPException(404, detail="Fichier introuvable")
+    if asset.kind in ("csv", "text"):
+        base, headers = _storage_headers()
+        if not base or not headers:
+            raise HTTPException(400, detail="Stockage non configuré")
+        from mlblock.server.file_assets import BUCKET
+
+        try:
+            r = requests.get(
+                f"{base}/object/{BUCKET}/{asset.storage_path}",
+                headers={**headers, "Range": f"bytes=0-{_FILE_HEAD_BYTES - 1}"},
+                timeout=10,
+            )
+            r.raise_for_status()
+        except Exception:
+            raise HTTPException(404, detail="Fichier introuvable dans le stockage")
+        return {"kind": asset.kind, "rows": _head_rows(r.content)}
+    if asset.kind == "image":
+        return {"kind": "image", "url": asset.public_url}
+    return {"kind": asset.kind}
 
 
 def _is_mock_vast() -> bool:
@@ -298,6 +581,7 @@ def _run_local(code: str, job_id: UUID) -> None:
 
 
 # ── Pipelines ───────────────────────────────────────────────────────
+
 
 def _row_to_summary(row: PipelineTable) -> dict:
     return {
@@ -598,9 +882,7 @@ def list_pipeline_jobs(
     pipeline = session.get(PipelineTable, pipeline_id)
     if not pipeline or str(pipeline.user_id) != user_id:
         raise HTTPException(status_code=404, detail="Pipeline not found")
-    jobs = session.exec(
-        select(Job).where(Job.pipeline_id == pipeline_id).order_by(Job.created_at.desc())
-    ).all()
+    jobs = session.exec(select(Job).where(Job.pipeline_id == pipeline_id).order_by(Job.created_at.desc())).all()
     return jobs
 
 
@@ -632,9 +914,7 @@ def get_job_outputs(
     pipeline = session.get(PipelineTable, job.pipeline_id)
     if not pipeline or str(pipeline.user_id) != user_id:
         raise HTTPException(status_code=404, detail="Job not found")
-    rows = session.exec(
-        select(JobOutput).where(JobOutput.job_id == job_id).order_by(JobOutput.created_at)
-    ).all()
+    rows = session.exec(select(JobOutput).where(JobOutput.job_id == job_id).order_by(JobOutput.created_at)).all()
     return [
         {"block_name": r.block_name, "block_id": r.block_id, "output": r.output, "created_at": r.created_at.isoformat()}
         for r in rows
@@ -736,6 +1016,7 @@ def push_job_error(
 
 
 # ── Backward Compatible / Auxiliary Routes & Validation ──────────────
+
 
 @validation_router.post("")
 def validate_graph(body: ValidationRequest) -> ValidationResponse:
@@ -877,7 +1158,11 @@ def build_pipeline_model(
             len(layers)
             if layers
             else len(  # noqa: E501
-                [n for n in order if BlockRegistry.get(nodes_by_id[n].type) and BlockRegistry.get(nodes_by_id[n].type).can_build()]  # type: ignore  # noqa: E501
+                [
+                    n
+                    for n in order
+                    if BlockRegistry.get(nodes_by_id[n].type) and BlockRegistry.get(nodes_by_id[n].type).can_build()
+                ]  # type: ignore  # noqa: E501
             )
         ),
     }

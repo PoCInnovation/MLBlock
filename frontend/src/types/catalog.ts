@@ -5,7 +5,7 @@ type NumSeg = { t: 'num'; k: string; def: string; w?: number; min?: number; max?
 type SelSeg = { t: 'sel'; k: string; def: string; opts: string[]; desc?: string }
 type SugSeg = { t: 'sug'; k: string; def: string; opts: string[]; desc?: string }
 type ListSeg = { t: 'list'; k: string; def: string; format?: string; len?: number; opts?: string[]; desc?: string }
-type FileSeg = { t: 'file'; k: string; def: string; desc?: string }
+type FileSeg = { t: 'file'; k: string; def: string; desc?: string; accept?: string }
 export type Segment = TextSeg | BoolSeg | NumSeg | SelSeg | SugSeg | ListSeg | FileSeg
 
 export type Port = { name: string; dtype: string }
