@@ -50,6 +50,7 @@ type AppState = {
   lastJobId: string | null
   lastJobInstanceId: string | null
   jobStatus: JobStatus | null
+  /** @deprecated Use jobOutputs */
   results: JobOutput[]
   jobOutputs: JobOutput[]
   savedFingerprint: string | null

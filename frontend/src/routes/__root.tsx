@@ -5,7 +5,7 @@ import { ThemeProvider } from 'next-themes'
 import { Toaster } from '../components/ui/sonner'
 import useAppStore from '../store/useAppStore'
 import { getSession, onAuthStateChange } from '../services/auth'
-import { toServerPayload } from '../utils/blockHelpers'
+import { toServerPayload } from '../store/pipelineDocument'
 import { writeStash } from '../utils/pending-stash'
 import '../index.css'
 

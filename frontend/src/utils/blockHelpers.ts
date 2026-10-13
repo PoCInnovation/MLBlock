@@ -2,11 +2,6 @@ import type { Node, Edge } from '@xyflow/react'
 import type { PipelineNode, PipelineEdge } from '../types/catalog'
 import type { Category } from '../types/catalog'
 
-export const colorFor = (cat: string, categories: Category[]): string => {
-  const c = categories.find(c => c.id === cat)
-  return c ? c.color : '#888'
-}
-
 export type ServerPayload = { nodes: PipelineNode[]; edges: PipelineEdge[] }
 
 /** Store (canvas) → payload serveur /api/pipelines (mode avancé uniquement). */
