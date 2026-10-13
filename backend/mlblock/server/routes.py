@@ -816,7 +816,7 @@ def execute_pipeline(
         # reste un bootstrap < 4 Ko (limite Vast 16 Ko). Image légère + uv par
         # défaut, base CUDA seulement si un bloc demande pytorch.
         from mlblock.core.stages import needs_cuda
-        from mlblock.execution import build_bootstrap, disk_for, image_for
+        from mlblock.execution import build_bootstrap, disk_for, gpu_for, image_for, label_for, template_for
 
         cuda = needs_cuda(nodes)
         onstart = build_bootstrap(
@@ -827,12 +827,15 @@ def execute_pipeline(
             cuda=cuda,
         )
         vast = VastAI(api_key=os.environ.get("VAST_API_KEY", "mock-vast-key"))
+        template_hash_id = template_for(cuda)
         instance = vast.launch_instance(
-            gpu_name="RTX 3090",
+            gpu_name=gpu_for(cuda),
             num_gpus=1,
-            image=image_for(cuda),
+            image=None if template_hash_id else image_for(cuda),
             disk=disk_for(cuda),
             onstart=onstart,
+            template_hash_id=template_hash_id,
+            label=label_for(job.id),
         )
         job.vast_instance_id = instance.get("id", "")
         # Clé Vast restreinte de l'instance : authentifie les callbacks GPU de

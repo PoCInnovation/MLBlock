@@ -18,24 +18,28 @@ class VastAI:
     def _headers(self) -> dict[str, str]:
         return {"Authorization": f"Bearer {self.api_key}"}
 
-    def search_offers(self, gpu_name: str, num_gpus: int = 1, limit: int = 5) -> list[dict[str, Any]]:
+    def search_offers(self, gpu_name: str | None, num_gpus: int = 1, limit: int = 5) -> list[dict[str, Any]]:
         """POST /api/v0/bundles — filtres en objets opérateurs (eq/in/gt...).
 
         Le nom GPU s'envoie avec l'espace ("RTX 3090") : le format underscore
         documenté ("RTX_3090") retourne 0 offre sur l'API réelle.
+        `gpu_name=None` omet le filtre : l'offre vérifiée la moins chère gagne
+        (tri `dph_total` croissant conservé).
         """
+        filters: dict[str, Any] = {
+            "type": "on-demand",
+            "verified": {"eq": True},
+            "rentable": {"eq": True},
+            "rented": {"eq": False},
+            "num_gpus": {"eq": num_gpus},
+            "order": [["dph_total", "asc"]],
+            "limit": limit,
+        }
+        if gpu_name is not None:
+            filters["gpu_name"] = {"eq": gpu_name}
         r = requests.post(
             f"{self.base_url}/bundles",
-            json={
-                "type": "on-demand",
-                "gpu_name": {"eq": gpu_name},
-                "verified": {"eq": True},
-                "rentable": {"eq": True},
-                "rented": {"eq": False},
-                "num_gpus": {"eq": num_gpus},
-                "order": [["dph_total", "asc"]],
-                "limit": limit,
-            },
+            json=filters,
             headers=self._headers(),
             timeout=10,
         )
@@ -43,7 +47,14 @@ class VastAI:
         return r.json().get("offers", [])
 
     def launch_instance(
-        self, gpu_name: str, num_gpus: int, image: str, disk: int, onstart: str | None = None
+        self,
+        gpu_name: str | None,
+        num_gpus: int,
+        image: str | None,
+        disk: int,
+        onstart: str | None = None,
+        template_hash_id: str | None = None,
+        label: str | None = None,
     ) -> dict[str, Any]:
         if not self.api_key or self.api_key.startswith("mock"):
             return {"id": "mock-instance-id"}
@@ -55,10 +66,15 @@ class VastAI:
             # Rent the first (cheapest) available offer
             offer_id = offers[0]["id"]
             payload: dict[str, Any] = {
-                "image": image,
                 "disk": disk,
                 "target_state": "running",
             }
+            if image is not None:
+                payload["image"] = image
+            if template_hash_id is not None:
+                payload["template_hash_id"] = template_hash_id
+            if label is not None:
+                payload["label"] = label
             if onstart:
                 # Script exécuté au boot de l'instance — évite le SSH pour lancer le code
                 payload["onstart"] = self._encode_onstart(onstart)

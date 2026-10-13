@@ -24,6 +24,7 @@ IMAGE_SLIM = "ghcr.io/astral-sh/uv:python3.12-trixie-slim"
 IMAGE_CUDA = "vastai/pytorch:2.6.0-cuda-12.6.3-py312"
 DISK_SLIM = 20
 DISK_CUDA = 50
+TEMPLATE_CUDA_HASH = os.environ.get("VAST_TEMPLATE_CUDA", "b12fc2b5f6c711d715a5e4714b246818")
 REQUIREMENTS_SLIM = "scikit-learn gymnasium pandas requests xgboost mlflow"
 REQUIREMENTS_CUDA = "scikit-learn gymnasium torchvision pandas requests xgboost mlflow"
 
@@ -34,6 +35,20 @@ def image_for(cuda: bool) -> str:
 
 def disk_for(cuda: bool) -> int:
     return DISK_CUDA if cuda else DISK_SLIM
+
+
+def gpu_for(cuda: bool) -> str | None:
+    """Modèle GPU demandé : 3090 si CUDA, None = offre vérifiée la moins chère."""
+    return "RTX 3090" if cuda else None
+
+
+def template_for(cuda: bool) -> str | None:
+    """Hash du template d'équipe (image + env pinnés) : chemin CUDA uniquement."""
+    return TEMPLATE_CUDA_HASH if cuda else None
+
+
+def label_for(job_id: UUID | str) -> str:
+    return f"mlblock-{job_id}"
 
 
 def requirements_for(cuda: bool) -> str:
@@ -121,8 +136,15 @@ class VastBackend:
             timeout=os.environ.get("BACKEND_TIMEOUT", "90"),
             cuda=cuda,
         )
+        template_hash_id = template_for(cuda)
         instance = self._vast.launch_instance(  # noqa: E501
-            gpu_name="RTX 3090", num_gpus=1, image=image_for(cuda), disk=disk_for(cuda), onstart=onstart
+            gpu_name=gpu_for(cuda),
+            num_gpus=1,
+            image=None if template_hash_id else image_for(cuda),
+            disk=disk_for(cuda),
+            onstart=onstart,
+            template_hash_id=template_hash_id,
+            label=label_for(job_id),
         )
         return instance
 
