@@ -35,12 +35,23 @@ function BlockCard({
       tabIndex={onClick ? 0 : undefined}
       onClick={onClick}
       onKeyDown={onClick ? e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick() } } : undefined}
-      className={`group/card relative flex flex-col w-full text-left rounded-2xl bg-card text-card-foreground border border-border shadow-sm transition-all min-h-22 ${
+      className={`group/card relative flex flex-col w-full text-left rounded-2xl overflow-hidden bg-card text-card-foreground border border-border shadow-sm transition-all min-h-22 ${
         draggable ? '' : 'cursor-pointer hover:-translate-y-0.5 hover:shadow-lg hover:border-accent active:translate-y-0'
       }`}
     >
-      {/* Tout le bandeau du haut sert de poignée : on déplace le bloc par son titre. */}
-      <div className={`flex items-start gap-3 p-4 pb-3 ${draggable ? 'block-drag-handle cursor-grab' : ''}`}>
+      {/* Poignée de déplacement (drag handle) au-dessus du texte sur toute la largeur */}
+      {draggable && (
+        <div
+          className="block-drag-handle cursor-grab active:cursor-grabbing w-full h-2.5 shrink-0 transition-opacity hover:opacity-90 flex items-center justify-center"
+          style={{ backgroundColor: info.categoryColor }}
+          title={`Déplacer ${info.title}`}
+          aria-label={`Déplacer ${info.title}`}
+        >
+          <div className="w-8 h-1 rounded-full bg-white/40" />
+        </div>
+      )}
+
+      <div className={`flex items-start gap-3 p-4 ${draggable ? 'pt-3 block-drag-handle cursor-grab' : ''} pb-3`}>
         <span
           className="w-3.5 h-3.5 rounded-sm shrink-0 mt-1"
           style={{ background: info.categoryColor }}
@@ -51,25 +62,10 @@ function BlockCard({
             {info.title}
           </h4>
         </div>
-        {draggable && (
-          <svg
-            className="shrink-0 mt-0.5 opacity-60"
-            width={12}
-            height={16}
-            viewBox="0 0 12 16"
-            aria-label={`Déplacer ${info.title}`}
-          >
-            <g className="fill-text-muted">
-              <circle cx={3} cy={2} r={1.3} /><circle cx={9} cy={2} r={1.3} />
-              <circle cx={3} cy={8} r={1.3} /><circle cx={9} cy={8} r={1.3} />
-              <circle cx={3} cy={14} r={1.3} /><circle cx={9} cy={14} r={1.3} />
-            </g>
-          </svg>
-        )}
         <Badge
           variant="outline"
-          className="text-[10px] font-extrabold shrink-0 rounded-full"
-          style={{ borderColor: info.categoryColor, color: info.categoryColor }}
+          className="text-[10px] font-extrabold shrink-0 rounded-full border-[color:var(--cat-color)] text-[color:var(--cat-color)]"
+          style={{ '--cat-color': info.categoryColor } as React.CSSProperties}
         >
           {info.categoryName}
         </Badge>
