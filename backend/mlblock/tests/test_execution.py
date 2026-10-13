@@ -92,3 +92,42 @@ def test_launch_instance_sends_template_and_label(monkeypatch):
     assert seen["json"]["label"] == "mlblock-j"
     assert "image" not in seen["json"]
     assert out["id"] == "42"
+
+
+class _OkInstances:
+    def __init__(self, instances, next_token):
+        self._instances = instances
+        self._next = next_token
+
+    def raise_for_status(self):
+        return None
+
+    def json(self):
+        return {"instances": self._instances, "next_token": self._next}
+
+
+def test_list_instances_sends_v1_select_and_filter(monkeypatch):
+    seen = {}
+    monkeypatch.setattr(
+        "mlblock.core.vast.requests.get",
+        lambda url, **kw: seen.update(url=url, params=kw["params"])
+        or _OkInstances([{"id": 1, "label": "mlblock-a", "actual_status": "running"}], None),
+    )
+    out = VastAI(api_key="real-key").list_instances("running")
+    assert "/api/v1/instances" in seen["url"]
+    assert "id" in seen["params"]["select_cols"]
+    assert out == [{"id": 1, "label": "mlblock-a", "actual_status": "running"}]
+
+
+def test_list_instances_follows_next_token(monkeypatch):
+    pages = [_OkInstances([{"id": 1}], "tok"), _OkInstances([{"id": 2}], None)]
+    monkeypatch.setattr("mlblock.core.vast.requests.get", lambda url, **kw: pages.pop(0))
+    assert [i["id"] for i in VastAI(api_key="real-key").list_instances()] == [1, 2]
+
+
+def test_list_instances_mock_key_no_http(monkeypatch):
+    def _boom(*a, **kw):
+        raise AssertionError("no HTTP on mock key")
+
+    monkeypatch.setattr("mlblock.core.vast.requests.get", _boom)
+    assert VastAI(api_key="mock-vast-key").list_instances() == []
