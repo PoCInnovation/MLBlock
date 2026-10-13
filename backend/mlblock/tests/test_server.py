@@ -695,3 +695,29 @@ def test_execute_gpu_uses_slim_image_and_bootstrap(client: TestClient, monkeypat
     assert seen["image"] == "ghcr.io/astral-sh/uv:python3.12-trixie-slim"
     assert "/api/jobs/$JOB_ID/code" in seen["onstart"]
     assert "MLBLOCK_EOF" not in seen["onstart"]
+
+
+def test_generated_code_gzip_envelope_and_no_truncation():
+    from mlblock.core.generator import generate_code
+    from mlblock.server.schemas import PipelineNode
+
+    code = generate_code(
+        [PipelineNode(id="n1", type="train_model", params={"epochs": "5"})],
+        [],
+    )
+    assert "gzip.compress" in code
+    assert "[:20000]" not in code
+
+
+def test_artifact_route_auth_and_storage(client: TestClient, monkeypatch):
+    from mlblock.server.gpu_auth import verify_gpu_key
+
+    app.dependency_overrides.pop(verify_gpu_key, None)
+    created = client.post("/api/pipelines", json={"name": "art", "nodes": [], "edges": []}).json()
+    job = client.post(f"/api/pipelines/{created['id']}/execute").json()
+    monkeypatch.setattr(
+        "mlblock.server.routes.requests.put",
+        lambda *a, **kw: type("R", (), {"raise_for_status": lambda s: None})(),
+    )
+    bad = client.post(f"/api/jobs/{job['id']}/artifact", headers={"Authorization": "Bearer x"})
+    assert bad.status_code == 403

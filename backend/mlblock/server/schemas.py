@@ -143,6 +143,10 @@ class JobErrorPush(BaseModel):
     error: str
 
 
+class JobArtifactResponse(BaseModel):
+    url: str
+
+
 class ValidationRequest(BaseModel):
     nodes: list[PipelineNode]
     edges: list[PipelineEdge]

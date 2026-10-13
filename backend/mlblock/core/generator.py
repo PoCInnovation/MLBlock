@@ -2,9 +2,6 @@ from mlblock.server.schemas import PipelineNode, PipelineEdge
 
 import re
 
-
-TRUNCATE_AT = 20000  # single owner for truncation (was duplicated 3×)
-
 # Matches a __future__ import line (leading whitespace tolerated).
 _FUTURE_IMPORT_RE = re.compile(r"^\s*from\s+__future__\s+import\s+annotations\s*$")
 
@@ -97,11 +94,37 @@ def generate_code(nodes: list[PipelineNode], edges: list[PipelineEdge]) -> str:
     lines.append("            headers={'Authorization': f'Bearer {GPU_API_KEY}'}, timeout=BACKEND_TIMEOUT)")
     lines.append("    except Exception: pass")
     lines.append("")
+    lines.append("def _wrap_output(output, block):")
+    lines.append('    """Enveloppe gzip (texte/courbes/métriques) ou upload artifact (images).')
+    lines.append('    Jamais de coupe silencieuse : marqueur explicite en cas d\'abus ou d\'échec."""')
+    lines.append("    import base64")
+    lines.append("    import gzip")
+    lines.append("    try:")
+    lines.append("        parsed = json.loads(output) if isinstance(output, str) else output")
+    lines.append("    except Exception:")
+    lines.append("        parsed = None")
+    lines.append('    if isinstance(parsed, dict) and parsed.get("type") == "image" and parsed.get("data"):')
+    lines.append("        try:")
+    lines.append('            raw = base64.b64decode(parsed["data"])')
+    lines.append('            mime = parsed.get("mime", "image/png")')
+    lines.append('            r = requests.post(f"{BACKEND_URL}/api/jobs/{JOB_ID}/artifact",')
+    lines.append('                files={"file": ("output", raw, mime)},')
+    lines.append('                data={"mime": mime, "block": block},')
+    lines.append('                headers={"Authorization": f"Bearer {GPU_API_KEY}"}, timeout=BACKEND_TIMEOUT)')
+    lines.append("            r.raise_for_status()")
+    lines.append('            return json.dumps({"type": "image", "mime": mime, "url": r.json().get("url", "")})')
+    lines.append("        except Exception:")
+    lines.append('            return json.dumps({"type": "text", "text": "[image : upload artifact impossible]"})')
+    lines.append("    raw = output if isinstance(output, str) else json.dumps(parsed)")
+    lines.append('    env = json.dumps({"type": "gzip", "data":')
+    lines.append("        base64.b64encode(gzip.compress(raw.encode())).decode()})")
+    lines.append("    if len(env) > 1000000000:")
+    lines.append('        return json.dumps({"type": "text", "text": "[sortie > 1 Go, ignorée]"})')
+    lines.append("    return env")
+    lines.append("")
     lines.append("def notify_output(block, output, block_id=None):")
     lines.append("    try:")
-    lines.append("        if len(str(output)) > 20000:")
-    lines.append("            output = str(output)[:20000] + '...[truncated]'")
-    lines.append("        payload = {'block': block, 'output': str(output)}")
+    lines.append("        payload = {'block': block, 'output': _wrap_output(output, block)}")
     lines.append("        if block_id is not None:")
     lines.append("            payload['block_id'] = block_id")
     lines.append("        else:")
@@ -390,7 +413,7 @@ def generate_with_ir(nodes: list[PipelineNode], edges: list[PipelineEdge]) -> di
             per_node.append({"id": nid, "type": n.type, "outs": list(output_map.values())[-len(block.outputs):]})
     return {
         "code": code,
-        "ir": {"order": order, "outputMap": output_map, "perNode": per_node, "truncateAt": TRUNCATE_AT},
+        "ir": {"order": order, "outputMap": output_map, "perNode": per_node},
     }
 
 

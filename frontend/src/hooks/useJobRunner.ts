@@ -66,9 +66,6 @@ export function useJobRunner() {
         .channel('job:' + jobId)
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'job_outputs', filter: 'job_id=eq.' + jobId }, (payload) => {
           const row = payload.new as JobOutput
-          if (row.output && row.output.length > 20000) {
-            row.output = row.output.slice(0, 20000) + '...[truncated]'
-          }
           const cur = useAppStore.getState().jobOutputs
           if (cur.some(o => o.created_at === row.created_at && o.block_id === row.block_id && o.block_name === row.block_name)) return
           useAppStore.getState().setJobOutputs([...cur, row])

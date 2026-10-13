@@ -131,3 +131,12 @@ PipelineEdge: { source: str, source_port: str, target: str, target_port: str }
 | **Auth** | Bearer clé d'instance du job (`CONTAINER_API_KEY`) ou `GPU_API_KEY` global (cf. `verify_gpu_key`) |
 | **Sortie** | `text/plain` : `main.py` stocké à l'`execute` |
 | **Effet** | Récupéré au boot GPU par le bootstrap `onstart` (jamais embarqué, limite Vast 16 Ko) ; 404 si job/pipeline/code absent |
+
+### `POST /api/jobs/{job_id}/artifact` — Upload binaire vers Storage
+
+| | Type |
+|---|---|
+| **Auth** | Bearer clé d'instance du job (`CONTAINER_API_KEY`) ou `GPU_API_KEY` global (cf. `verify_gpu_key`) |
+| **Body** | multipart : `file` (bytes), `mime`, `block` |
+| **Sortie** | `JobArtifactResponse: { url }` + ligne `job_outputs` `{type: image, mime, url}` |
+| **Effet** | Stocke dans le bucket `job-artifacts/{job_id}/{uuid}` (création manuelle) ; remplace le b64 en DB ; 502 si Storage non configuré, jamais de repli b64 |

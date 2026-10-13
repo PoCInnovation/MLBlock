@@ -5,11 +5,11 @@ import json
 import os
 import re
 from datetime import datetime, timezone
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import requests
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile
 from fastapi.responses import JSONResponse, PlainTextResponse, Response
 from sqlmodel import Session, select
 
@@ -30,6 +30,7 @@ from mlblock.server.schemas import (
     JobStatusUpdate,
     JobOutputPush,
     JobErrorPush,
+    JobArtifactResponse,
     ValidationRequest,
     ValidationResponse,
 )
@@ -1012,18 +1013,65 @@ def push_job_output(
     job = session.get(Job, job_id)
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
-    # Truncate si trop volumineux (multi-output large) — évite explosion DB
-    out = body.output
-    if len(out) > 20000:
-        out = out[:20000] + "...[truncated]"
     output = JobOutput(
         job_id=job_id,
         block_name=body.block,
         block_id=body.block_id or body.block,
-        output=out,
+        output=body.output,
     )
     session.add(output)
     session.commit()
+
+
+ARTIFACT_BUCKET = "job-artifacts"
+ARTIFACT_MIME_EXT = {"image/png": "png", "image/jpeg": "jpg", "video/mp4": "mp4"}
+
+
+@jobs_router.post("/{job_id}/artifact")
+def push_job_artifact(
+    job_id: UUID,
+    file: UploadFile = File(...),
+    mime: str = Form("application/octet-stream"),
+    block: str = Form("artifact"),
+    _: str = Depends(verify_gpu_key),
+    session: Session = Depends(get_session),
+) -> JobArtifactResponse:
+    """Upload binaire (plot PNG, vidéo) vers Storage — remplace le b64 en DB."""
+    from mlblock.server.file_assets import public_url
+
+    job = session.get(Job, job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    raw = file.file.read()
+    if not raw:
+        raise HTTPException(status_code=400, detail="Fichier vide")
+    base = os.environ.get("SUPABASE_URL", "").rstrip("/")
+    secret = os.environ.get("SUPABASE_SECRET_KEY", "")
+    project = base.replace("https://", "").split(".")[0]
+    if not secret or not project or not base.startswith("https://"):
+        raise HTTPException(status_code=502, detail="Stockage non configuré")
+    ext = ARTIFACT_MIME_EXT.get(mime, "bin")
+    path = f"{job_id}/{uuid4().hex}.{ext}"
+    try:
+        r = requests.put(
+            f"https://{project}.supabase.co/storage/v1/object/{ARTIFACT_BUCKET}/{path}",
+            data=raw,
+            headers={"apikey": secret, "Authorization": f"Bearer {secret}", "Content-Type": mime},
+            timeout=30,
+        )
+        r.raise_for_status()
+    except Exception:
+        raise HTTPException(status_code=502, detail="Upload artifact impossible")
+    url = public_url(ARTIFACT_BUCKET, path)
+    output = JobOutput(
+        job_id=job_id,
+        block_name=block,
+        block_id=block,
+        output=json.dumps({"type": "image", "mime": mime, "url": url}),
+    )
+    session.add(output)
+    session.commit()
+    return JobArtifactResponse(url=url)
 
 
 @jobs_router.post("/{job_id}/error")

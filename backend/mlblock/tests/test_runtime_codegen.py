@@ -161,5 +161,10 @@ def test_generated_iris_pipeline_runs_end_to_end(monkeypatch):
 
     eval_out = [p["json"]["output"] for p in posts if p["url"].endswith("/output") and p["json"]["block"] == "evaluate"]
     inner = json.loads(eval_out[-1])
+    if inner.get("type") == "gzip":
+        import base64
+        import gzip
+
+        inner = json.loads(gzip.decompress(base64.b64decode(inner["data"])).decode())
     acc = inner["values"]["accuracy"] if inner["type"] == "metrics" else inner["value"]
     assert acc > 0.9, f"accuracy iris/logreg attendue > 0.9, eu {acc}"

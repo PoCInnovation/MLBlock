@@ -7,25 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
-
-type TypedOutput =
-  | { type: 'image'; mime: string; data: string }
-  | { type: 'curve'; points: number[] }
-  | { type: 'metric'; value: number }
-  | { type: 'metrics'; values: Record<string, number | string | boolean> }
-  | { type: 'text'; text: string }
-
-function parseOutput(raw: string): TypedOutput {
-  try {
-    const parsed = JSON.parse(raw)
-    if (parsed && typeof parsed === 'object' && 'type' in parsed) {
-      return parsed as TypedOutput
-    }
-  } catch {
-    /* pas du JSON -> texte */
-  }
-  return { type: 'text', text: raw }
-}
+import { decodeOutput, type TypedOutput } from '../../utils/outputCodec'
 
 function Curve({ points }: { points: number[] }) {
   if (points.length < 2) {
@@ -45,10 +27,25 @@ function Curve({ points }: { points: number[] }) {
 }
 
 function OutputRenderer({ raw }: { raw: string }) {
-  const out = parseOutput(raw)
+  const [out, setOut] = useState<TypedOutput | null>(null)
+  useEffect(() => {
+    let live = true
+    decodeOutput(raw).then(o => {
+      if (live) setOut(o)
+    })
+    return () => {
+      live = false
+    }
+  }, [raw])
+  if (!out) {
+    return <div className="text-text-muted text-xs">Décodage…</div>
+  }
   switch (out.type) {
-    case 'image':
-      return <img src={`data:${out.mime ?? 'image/png'};base64,${out.data}`} alt="output" className="max-w-full max-h-56 rounded-md block" />
+    case 'image': {
+      const src = out.url ?? (out.data ? `data:${out.mime ?? 'image/png'};base64,${out.data}` : '')
+      if (!src) return <div className="text-text-muted text-xs">[image vide]</div>
+      return <img src={src} alt="output" className="max-w-full max-h-56 rounded-md block" />
+    }
     case 'curve':
       return <Curve points={out.points} />
     case 'metric':
@@ -65,6 +62,7 @@ function OutputRenderer({ raw }: { raw: string }) {
         </div>
       )
     default:
+      if (out.type === 'gzip') return <div className="text-text-muted text-xs">[sortie illisible]</div>
       return <div className="font-mono text-xs whitespace-pre-wrap">{out.text}</div>
   }
 }
