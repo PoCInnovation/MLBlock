@@ -1,8 +1,17 @@
-# MLBlock — Todo list
+# UI
+différentiation inputs et outputs dans l'ui. Rond troué et Rond compet 
+Le ronds se remplit selon si on a rempli la condition ou non
+Une forme par inputs et une forme par outputs
+Migration des composants vers https://astryx.atmeta.com/themes?theme=butter
+Limiter le nombre de liens 
 
 > Source unique — fusion de `NOTES2.md` + `Notes.md` (todo.md n'existait pas). Mise à jour : 2026-08-24. `[x]` = fait, `[ ]` = reste à faire.
+> Notes ex-agent (ex-`Notes.md`) : espace prof pour suivre les étudiants, créer des comptes, exporter les credentials.
 
-## UI & expérience
+# Les tutos
+View comme sur excalidraw
+Gamification
+Statistiques
 
 - [x] **Vue grille kanban switchable** (bouton « Vue libre / Vue colonnes ») : colonnes libres (créer/renommer/dupliquer/supprimer/déplacer via dropdown), drag+snap col/row, règle gauche→droite (liens vers colonnes strictement supérieures), colonnes générées automatiquement pour les pipelines existants, cartes auto-size au contenu (packing par hauteurs mesurées), colonne 0 non supprimable — *aussi listé dans NOTES2 : colonnes/rows, drag+snap, règle gauche→droite, colonnes générées auto, cartes auto-size, colonne 0 fixe, liens routés par couloirs*
 - [x] **Routage des liens par couloirs** : lien adjacent → couloir au-dessus des deux cartes ; lien sautant → au-dessus de la colonne source puis en dessous des traversées ; câble rendu au-dessus des blocs/colonnes (z-index 999), espacement des liens parallèles (lane), flèche de direction
@@ -73,6 +82,7 @@
 ## Idées & backlog
 
 - [ ] Template de modèles pour que les gens partent d'une base à modifier — *issu de NOTES2*
+- [ ] Future / Certifications POC — *issu de Notes.md (ex-agent)*
 
 ## Divers
 
