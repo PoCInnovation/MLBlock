@@ -32,4 +32,4 @@ EXPOSE 80
 HEALTHCHECK --interval=15s --timeout=5s --start-period=5s --retries=3 \
     CMD wget -q --spider http://127.0.0.1:80/ || exit 1
 
-CMD ["./node_modules/.bin/serve", "-s", "dist/client", "-l", "tcp://0.0.0.0:80"]
+CMD ["./node_modules/.bin/serve", "-s", "dist", "-l", "tcp://0.0.0.0:80"]
