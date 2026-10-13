@@ -1,4 +1,4 @@
-import { createRootRoute, Outlet } from '@tanstack/react-router'
+import { createRootRoute, Outlet, HeadContent } from '@tanstack/react-router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { ThemeProvider } from 'next-themes'
@@ -21,18 +21,8 @@ export const Route = createRootRoute({
   component: function RootComponent() {
     const [queryClient] = useState(() => new QueryClient())
     const setUser = useAppStore((s) => s.setUser)
-    const [authReady, setAuthReady] = useState(false)
 
     useEffect(() => {
-      getSession()
-        .then(({ session }) => {
-          setUser(session?.user ?? null)
-          setAuthReady(true)
-        })
-        .catch(() => {
-          setUser(null)
-          setAuthReady(true)
-        })
       const {
         data: { subscription },
       } = onAuthStateChange((session) => {
@@ -53,17 +43,10 @@ export const Route = createRootRoute({
       return () => subscription.unsubscribe()
     }, [setUser])
 
-    if (!authReady) {
-      return (
-        <div className="h-screen flex items-center justify-center bg-bg text-text-muted font-heading text-lg">
-          Chargement…
-        </div>
-      )
-    }
-
     return (
       <QueryClientProvider client={queryClient}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+          <HeadContent />
           <Outlet />
           <Toaster />
         </ThemeProvider>
