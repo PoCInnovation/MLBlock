@@ -42,16 +42,16 @@ function BlockCard({
       {/* Poignée de déplacement (drag handle) au-dessus du texte sur toute la largeur */}
       {draggable && (
         <div
-          className="block-drag-handle cursor-grab active:cursor-grabbing w-full h-2.5 shrink-0 transition-opacity hover:opacity-90 flex items-center justify-center"
+          className="block-drag-handle cursor-grab active:cursor-grabbing w-full h-6 shrink-0 transition-opacity hover:opacity-95 flex items-center justify-center border-b border-black/10 dark:border-white/10"
           style={{ backgroundColor: info.categoryColor }}
           title={`Déplacer ${info.title}`}
           aria-label={`Déplacer ${info.title}`}
         >
-          <div className="w-8 h-1 rounded-full bg-white/40" />
+          <div className="w-10 h-1 rounded-full bg-white/50 shadow-xs" />
         </div>
       )}
 
-      <div className={`flex items-start gap-3 p-4 ${draggable ? 'pt-3 block-drag-handle cursor-grab' : ''} pb-3`}>
+      <div className={`flex items-start gap-3 px-4 ${draggable ? 'pt-3' : 'pt-4'} pb-3`}>
         <span
           className="w-3.5 h-3.5 rounded-sm shrink-0 mt-1"
           style={{ background: info.categoryColor }}
