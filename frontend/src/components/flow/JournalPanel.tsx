@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import useAppStore from '../../store/useAppStore'
 import { listPipelineJobs, getJobOutputs, getPipeline } from '../../api/client'
@@ -75,8 +75,16 @@ export default function JournalPanel() {
   const pipelineId = useAppStore(s => s.pipelineId)
   const consoleLines = useAppStore(s => s.consoleLines)
   const lastJobId = useAppStore(s => s.lastJobId)
+  const jobStatus = useAppStore(s => s.jobStatus)
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null)
   const [filter, setFilter] = useState<Filter>('mixte')
+
+  // Auto-select lastJobId when running if selectedJobId is null
+  useEffect(() => {
+    if (selectedJobId === null && lastJobId) {
+      setSelectedJobId(lastJobId)
+    }
+  }, [lastJobId, selectedJobId])
 
   const jobsQuery = useQuery({
     queryKey: ['pipeline-jobs', pipelineId],
@@ -131,146 +139,144 @@ export default function JournalPanel() {
   if (jobsQuery.isLoading) {
     return (
       <div className="flex flex-col gap-3 p-4 text-text-muted text-xs">
-        Chargement du journal…
+        Chargement des exécutions...
       </div>
     )
   }
 
-  if (jobs.length === 0) {
-    return (
-      <div className="flex flex-col gap-3 min-h-0">
-        <div className="text-secondary text-center py-4 px-1.5 text-xs text-text-muted">
-          Aucune exécution
+  return (
+    <div className="flex h-full w-full bg-surface overflow-hidden">
+      {/* Sidebar: list of jobs */}
+      <div className="w-72 border-r border-border flex flex-col shrink-0 bg-surface-raised/50">
+        <div className="p-3 border-b border-border flex items-center justify-between">
+          <span className="text-xs font-semibold text-text-main">Exécutions ({jobs.length})</span>
+          {jobStatus && (
+            <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 animate-pulse border-accent text-accent-light">
+              {jobStatus}
+            </Badge>
+          )}
         </div>
-      </div>
-    )
-  }
-
-  // Detail view: execution's fused timeline
-  if (selectedJobId) {
-    const sel = jobs.find(j => j.id === selectedJobId)
-
-    const fused = (() => {
-      const items: Array<{ id: string; at: number; kind: 'log' | 'output'; text: string; block?: string }> = []
-      for (const o of [...outputs].sort(
-        (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
-      )) {
-        items.push({
-          id: o.block_id ?? o.block_name,
-          at: new Date(o.created_at).getTime(),
-          kind: 'output',
-          text: o.output,
-          block: o.block_name,
-        })
-      }
-      if (sel) {
-        const typeLabel = `Exécution ${execType(sel)}`
-        items.push({ id: 'exec-type', at: new Date(sel.created_at).getTime() - 1, kind: 'log', text: typeLabel })
-      }
-      if (sel?.output) items.push({ id: 'job-log', at: new Date(sel.created_at).getTime(), kind: 'log', text: sel.output })
-      if (sel?.error)
-        items.push({
-          id: 'job-error',
-          at: new Date(sel.completed_at ?? sel.created_at).getTime(),
-          kind: 'log',
-          text: sel.error,
-        })
-      if (selectedJobId === lastJobId) {
-        for (const [idx, line] of consoleLines.entries()) {
-          // eslint-disable-next-line react-hooks/purity -- timestamp for live log ordering, stable per render
-          items.push({ id: `console-${idx}`, at: Date.now() + idx, kind: 'log', text: line.t })
-        }
-      }
-      items.sort((a, b) => a.at - b.at)
-      if (filter === 'logs') return items.filter(i => i.kind === 'log')
-      if (filter === 'outputs') return items.filter(i => i.kind === 'output')
-      return items
-    })()
-
-    return (
-      <div className="flex flex-col gap-3 min-h-0 flex-1 h-full overflow-hidden p-3">
-        <button
-          onClick={() => setSelectedJobId(null)}
-          className="bg-transparent border-none text-text-muted cursor-pointer text-xs font-bold text-left p-0 font-body hover:text-text-light"
-        >
-          ← Retour au journal
-        </button>
-        <h5 className="text-sm font-extrabold text-text-light m-0">
-          {sel ? `${fmtTime(sel.created_at)} · ${sel.status} · ${execType(sel)}` : 'Exécution'}
-        </h5>
-        {outputsQuery.isLoading ? (
-          <div className="text-secondary text-xs text-text-muted">
-            Chargement…
-          </div>
-        ) : null}
-        <ToggleGroup type="single" value={filter} onValueChange={v => v && setFilter(v as Filter)} className="justify-start">
-          <ToggleGroupItem value="logs" aria-label="Logs" className="text-xs px-2.5 py-1">Logs</ToggleGroupItem>
-          <ToggleGroupItem value="outputs" aria-label="Outputs" className="text-xs px-2.5 py-1">Outputs</ToggleGroupItem>
-          <ToggleGroupItem value="mixte" aria-label="Mixte" className="text-xs px-2.5 py-1">Mixte</ToggleGroupItem>
-        </ToggleGroup>
-        <Button variant="default" size="sm" onClick={handleRestore} disabled={!selectedJobId} className="text-xs">
-          Restaurer cette version
-        </Button>
-        <Separator />
-        <div className="flex flex-col gap-2 flex-1 min-h-0 overflow-y-auto pr-0.5">
-          {fused.length === 0 ? (
-            <div className="text-secondary text-center py-2.5 px-1.5 text-xs text-text-muted">
-              Aucune donnée
-            </div>
+        <div className="flex-1 overflow-y-auto divide-y divide-border/50">
+          {jobs.length === 0 ? (
+            <div className="p-4 text-text-muted text-xs text-center">Aucune exécution enregistrée.</div>
           ) : (
-            fused.map(item => (
-              <Card key={item.id} className="p-2.5 bg-surface border-border">
-                <div className="flex flex-col gap-1">
-                  <div className="flex items-center justify-between text-[10px] text-text-muted font-semibold">
-                    <span>{fmtTime(new Date(item.at).toISOString())}</span>
-                    {item.block && <span className="font-extrabold text-accent">{item.block}</span>}
+            jobs.map(j => {
+              const isSelected = j.id === selectedJobId
+              const isDone = j.status === 'done'
+              const isError = j.status === 'error'
+              return (
+                <button
+                  key={j.id}
+                  onClick={() => setSelectedJobId(j.id)}
+                  className={`w-full text-left p-3 transition-colors flex flex-col gap-1 cursor-pointer ${
+                    isSelected ? 'bg-accent/15 border-l-2 border-accent' : 'hover:bg-surface-raised'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-[11px] text-text-muted">{fmtTime(j.created_at)}</span>
+                    <Badge
+                      variant={isDone ? 'default' : isError ? 'destructive' : 'secondary'}
+                      className={`text-[10px] px-1 py-0 ${isDone ? 'bg-emerald-600/20 text-emerald-400 border-emerald-500/30' : isError ? 'bg-rose-600/20 text-rose-400 border-rose-500/30' : ''}`}
+                    >
+                      {j.status}
+                    </Badge>
                   </div>
-                  {item.kind === 'output' ? (
-                    <OutputRenderer raw={item.text} />
-                  ) : (
-                    <div className="font-mono text-xs whitespace-pre-wrap text-text-light">{item.text}</div>
-                  )}
-                </div>
-              </Card>
-            ))
+                  <div className="flex items-center justify-between text-[11px] text-text-muted">
+                    <span>{execType(j)}</span>
+                    <span className="font-mono text-[10px]">#{j.id.slice(0, 6)}</span>
+                  </div>
+                </button>
+              )
+            })
           )}
         </div>
       </div>
-    )
-  }
 
-  // List view: all Jobs
-  return (
-    <div className="flex flex-col gap-3 min-h-0 flex-1 h-full overflow-hidden p-3">
-      <h5 className="text-sm font-extrabold text-text-light m-0">Journal</h5>
-      <span className="text-xs text-text-muted font-semibold">
-        Exécutions
-      </span>
-      <div className="flex flex-col gap-1 flex-1 min-h-0 overflow-y-auto pr-0.5">
-        {jobs.map(j => (
-          <Card key={j.id} className="p-2.5 bg-surface border-border cursor-pointer hover:border-accent transition-colors" onClick={() => setSelectedJobId(j.id)}>
-            <div className="flex flex-col gap-1">
-              <div className="flex gap-2 justify-between items-center">
-                <div className="flex gap-1.5 items-center">
-                  <span className="font-bold text-xs text-text-light">
-                    {fmtTime(j.created_at)}
-                  </span>
-                  <Badge variant={execType(j) === 'Locale' ? 'outline' : 'secondary'} className="text-[10px] px-1 py-0">
-                    {execType(j)}
-                  </Badge>
-                </div>
-                <span className="text-[10px] text-text-muted font-semibold">
-                  {j.status}
+      {/* Main content: selected job details / outputs / logs */}
+      <div className="flex-1 flex flex-col min-w-0 bg-surface">
+        {!selectedJobId ? (
+          <div className="flex-1 flex items-center justify-center text-text-muted text-xs">
+            Sélectionnez une exécution pour voir ses détails.
+          </div>
+        ) : (
+          <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+            {/* Header toolbar */}
+            <div className="h-12 border-b border-border px-4 flex items-center justify-between shrink-0 bg-surface-raised/30">
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-medium text-text-main">
+                  Job <span className="font-mono text-accent-light">#{selectedJobId.slice(0, 8)}</span>
                 </span>
+                <ToggleGroup type="single" value={filter} onValueChange={(v) => v && setFilter(v as Filter)} className="bg-surface-raised border border-border rounded-lg p-0.5">
+                  <ToggleGroupItem value="mixte" className="text-[11px] px-2.5 py-1 h-7">Mixte</ToggleGroupItem>
+                  <ToggleGroupItem value="logs" className="text-[11px] px-2.5 py-1 h-7">Logs</ToggleGroupItem>
+                  <ToggleGroupItem value="outputs" className="text-[11px] px-2.5 py-1 h-7">Sorties</ToggleGroupItem>
+                </ToggleGroup>
               </div>
-              {j.status === 'error' && j.error ? (
-                <div className="text-xs text-error whitespace-pre-wrap break-words">
-                  {j.error.slice(0, 220)}
-                </div>
-              ) : null}
+
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRestore}
+                  className="h-7 text-xs text-text-main border-border hover:bg-surface-raised"
+                  title="Restaurer le pipeline à cet état"
+                >
+                  Restaurer cet état
+                </Button>
+              </div>
             </div>
-          </Card>
-        ))}
+
+            {/* Content view */}
+            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
+              {(filter === 'mixte' || filter === 'logs') && (
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-[11px] font-semibold text-text-muted uppercase tracking-wider">Console & Logs</span>
+                  <Card className="p-3 bg-surface-raised border-border font-mono text-xs flex flex-col gap-1">
+                    {consoleLines.length === 0 ? (
+                      <span className="text-text-muted italic">Aucun log récent.</span>
+                    ) : (
+                      consoleLines.map((l, idx) => (
+                        <div
+                          key={idx}
+                          className={`${
+                            l.k === 'ok' ? 'text-emerald-400' : l.k === 'info' ? 'text-accent-light' : l.k === 'sys' ? 'text-amber-400' : 'text-text-main'
+                          }`}
+                        >
+                          {l.t}
+                        </div>
+                      ))
+                    )}
+                  </Card>
+                </div>
+              )}
+
+              {(filter === 'mixte' || filter === 'outputs') && (
+                <div className="flex flex-col gap-2">
+                  <span className="text-[11px] font-semibold text-text-muted uppercase tracking-wider">Sorties des blocs ({outputs.length})</span>
+                  {outputsQuery.isLoading ? (
+                    <div className="text-text-muted text-xs">Chargement des sorties...</div>
+                  ) : outputs.length === 0 ? (
+                    <div className="text-text-muted text-xs italic">Aucune sortie enregistrée pour cette exécution.</div>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-3">
+                      {outputs.map(out => (
+                        <Card key={out.id} className="p-3 bg-surface-raised border-border flex flex-col gap-2">
+                          <div className="flex items-center justify-between text-xs border-b border-border pb-2">
+                            <span className="font-semibold text-text-main">{out.block_name}</span>
+                            <span className="font-mono text-[10px] text-text-muted">{fmtTime(out.created_at)}</span>
+                          </div>
+                          <div className="py-1">
+                            <OutputRenderer raw={out.output} />
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

@@ -132,6 +132,7 @@ export interface Job {
 }
 
 export interface JobOutput {
+  id?: string
   block_name: string
   block_id?: string | null
   output: string
