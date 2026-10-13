@@ -4,7 +4,7 @@ from sqlmodel import Session
 
 from mlblock.server.database import get_session
 
-GPU_API_KEY = os.environ.get("GPU_API_KEY", "mock-gpu-key-for-testing")
+GPU_API_KEY = os.environ.get("GPU_API_KEY", "mock-gpu-key")
 
 
 def verify_gpu_key(

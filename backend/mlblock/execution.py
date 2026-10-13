@@ -26,6 +26,8 @@ class ExecutionBackend(Protocol):
 
 
 class LocalBackend:
+    _processes: dict[UUID, subprocess.Popen] = {}
+
     def launch(self, code: str, job_id: UUID) -> dict:
         fd, path = tempfile.mkstemp(suffix=".py", prefix="mlblock_run_")
         with os.fdopen(fd, "w") as f:
@@ -37,12 +39,23 @@ class LocalBackend:
             "GPU_API_KEY": os.environ.get("GPU_API_KEY", "mock-gpu-key"),
             "BACKEND_TIMEOUT": os.environ.get("BACKEND_TIMEOUT", "90"),
         })
-        subprocess.Popen([sys.executable, path], env=env, start_new_session=True)
+        proc = subprocess.Popen([sys.executable, path], env=env, start_new_session=True)
+        self._processes[job_id] = proc
         return {"id": "local-instance-id", "api_key": ""}
+
+    def cancel(self, job_id: UUID) -> None:
+        proc = self._processes.pop(job_id, None)
+        if proc:
+            try:
+                proc.terminate()
+                proc.wait(timeout=1)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+            except Exception:
+                pass
 
     def destroy(self, instance_id: str) -> None:
         return None
-
 
 class VastBackend:
     def __init__(self, api_key: str | None = None) -> None:

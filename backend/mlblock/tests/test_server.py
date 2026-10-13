@@ -12,6 +12,30 @@ from mlblock.server.main import app
 _SUPABASE_CONFIGURED = bool(os.environ.get("SUPABASE_URL") and os.environ.get("SUPABASE_SECRET_KEY"))
 
 
+def test_gpu_key_auth_default_matches_local_backend(client: TestClient):
+    # Verify default GPU_API_KEY ("mock-gpu-key") is accepted on callback routes
+    resp = client.post(
+        f"/api/jobs/{uuid.uuid4()}/status",
+        headers={"Authorization": "Bearer mock-gpu-key"},
+        json={"block": "test", "status": "running"},
+    )
+    # Should not be 403 (it can be 404 since job doesn't exist, but NOT 403 Invalid GPU key)
+    assert resp.status_code != 403
+
+
+def test_cancel_job_endpoint(client: TestClient):
+    created = client.post(
+        "/api/pipelines", json={"name": "cancel-test", "nodes": [], "edges": []}
+    ).json()
+    exec_resp = client.post(f"/api/pipelines/{created['id']}/execute")
+    assert exec_resp.status_code == 200
+    job_id = exec_resp.json()["id"]
+
+    cancel_resp = client.post(f"/api/jobs/{job_id}/cancel")
+    assert cancel_resp.status_code == 200
+    assert cancel_resp.json()["status"] == "cancelled"
+    assert cancel_resp.json()["completed_at"] is not None
+
 # ── Catalogue des blocs (API /api/catalog, ex-/api/blocks) ──────────
 
 

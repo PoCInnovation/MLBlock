@@ -901,6 +901,33 @@ def get_job(
     return job
 
 
+@jobs_router.post("/{job_id}/cancel")
+def cancel_job(
+    job_id: UUID,
+    user_id: str = Depends(get_current_user),
+    session: Session = Depends(get_session),
+) -> Job:
+    job = session.get(Job, job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    pipeline = session.get(PipelineTable, job.pipeline_id)
+    if not pipeline or str(pipeline.user_id) != user_id:
+        raise HTTPException(status_code=404, detail="Job not found")
+    if job.status in ("queued", "dispatched", "running"):
+        if _is_mock_vast():
+            from mlblock.execution import LocalBackend
+            LocalBackend().cancel(job_id)
+        else:
+            from mlblock.execution import VastBackend
+            VastBackend().destroy(job.vast_instance_id)
+        job.status = "cancelled"
+        job.completed_at = datetime.now(timezone.utc)
+        session.add(job)
+        session.commit()
+        session.refresh(job)
+    return job
+
+
 @jobs_router.get("/{job_id}/outputs")
 def get_job_outputs(
     job_id: UUID,
