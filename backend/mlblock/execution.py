@@ -19,16 +19,62 @@ import requests
 
 SUPABASE_STORAGE_URL = re.compile(r"^https://[^/]+/storage/v1/object/(?:public|authenticated)/([^/]+)/(.+)$")
 
+# ── GPU image policy (single owner; see stages.needs_cuda) ──────────
+IMAGE_SLIM = "ghcr.io/astral-sh/uv:python3.12-trixie-slim"
+IMAGE_CUDA = "vastai/pytorch:2.6.0-cuda-12.6.3-py312"
+DISK_SLIM = 20
+DISK_CUDA = 50
+REQUIREMENTS_SLIM = "scikit-learn gymnasium pandas requests xgboost mlflow"
+REQUIREMENTS_CUDA = "scikit-learn gymnasium torchvision pandas requests xgboost mlflow"
+
+
+def image_for(cuda: bool) -> str:
+    return IMAGE_CUDA if cuda else IMAGE_SLIM
+
+
+def disk_for(cuda: bool) -> int:
+    return DISK_CUDA if cuda else DISK_SLIM
+
+
+def requirements_for(cuda: bool) -> str:
+    return REQUIREMENTS_CUDA if cuda else REQUIREMENTS_SLIM
+
+
+def build_bootstrap(*, backend_url: str, job_id: str, gpu_key: str, timeout: str, cuda: bool) -> str:
+    """Tiny onstart script (< 4 KB) : reports progress, installs deps via uv, fetches code, runs it.
+
+    Fails loud : code fetch failure posts job error and exits non-zero.
+    """
+    reqs = requirements_for(cuda)
+    lines = [
+        f"export BACKEND_URL='{backend_url}' GPU_API_KEY='{gpu_key}' JOB_ID='{job_id}' BACKEND_TIMEOUT='{timeout}'",
+        'KEY="${CONTAINER_API_KEY:-$GPU_API_KEY}"',
+        'post() { curl -sS -m 20 -X POST -H "Authorization: Bearer $KEY"'
+        " -H 'Content-Type: application/json'"
+        ' -d "$2" "$BACKEND_URL/api/jobs/$JOB_ID/$1" || true; }',
+        'post status \'{"block":"bootstrap","status":"running"}\'',
+        "command -v uv >/dev/null 2>&1 || curl -LsSf https://astral.sh/uv/install.sh | sh",
+        'export PATH="$HOME/.local/bin:$PATH"',
+        f"uv pip install --system -q {reqs} || pip install -q --disable-pip-version-check {reqs}",
+        'post output \'{"block":"bootstrap","output":"Environnement installé"}\'',
+        'curl -sSf --retry 8 --retry-all-errors --retry-delay 10 -H "Authorization: Bearer $KEY"'
+        ' "$BACKEND_URL/api/jobs/$JOB_ID/code" -o main.py'
+        ' || { post error \'{"block":"bootstrap","error":"Code non récupéré"}\'; exit 1; }',
+        'post output \'{"block":"bootstrap","output":"Code récupéré"}\'',
+        "python3 main.py",
+    ]
+    return "\n".join(lines)
+
 
 class ExecutionBackend(Protocol):
-    def launch(self, code: str, job_id: UUID) -> dict: ...
+    def launch(self, code: str, job_id: UUID, *, cuda: bool = False) -> dict: ...
     def destroy(self, instance_id: str) -> None: ...
 
 
 class LocalBackend:
     _processes: dict[UUID, subprocess.Popen] = {}
 
-    def launch(self, code: str, job_id: UUID) -> dict:
+    def launch(self, code: str, job_id: UUID, *, cuda: bool = False) -> dict:
         fd, path = tempfile.mkstemp(suffix=".py", prefix="mlblock_run_")
         with os.fdopen(fd, "w") as f:
             f.write(code)
@@ -63,23 +109,18 @@ class VastBackend:
 
         self._vast = VastAI(api_key=api_key or os.environ.get("VAST_API_KEY", "mock-vast-key"))
 
-    def launch(self, code: str, job_id: UUID) -> dict:
-        env = {
-            "BACKEND_URL": os.environ.get("BACKEND_URL", "http://localhost:8000"),
-            "GPU_API_KEY": os.environ.get("GPU_API_KEY", ""),
-            "JOB_ID": str(job_id),
-            "BACKEND_TIMEOUT": os.environ.get("BACKEND_TIMEOUT", "90"),
-        }
-        env_str = " ".join(f"{k}='{v}'" for k, v in env.items())
-        # pip peut échouer (image sans pip, network) — on ne bloque pas le run : || true puis ;
-        # python3 explicite (pytorch image a python → python3 symlink, mais python peut manquer)
-        deps = (
-            "pip install -q --disable-pip-version-check "
-            "scikit-learn gymnasium torchvision pandas requests xgboost mlflow || true"
+    def launch(self, code: str, job_id: UUID, *, cuda: bool = False) -> dict:
+        # Le code est récupéré au boot via GET /api/jobs/{id}/code : l'onstart
+        # reste un bootstrap < 4 Ko (limite Vast 16 Ko), jamais le main.py entier.
+        onstart = build_bootstrap(
+            backend_url=os.environ.get("BACKEND_URL", "http://localhost:8000"),
+            job_id=str(job_id),
+            gpu_key=os.environ.get("GPU_API_KEY", ""),
+            timeout=os.environ.get("BACKEND_TIMEOUT", "90"),
+            cuda=cuda,
         )
-        onstart = deps + "; " + env_str + " python3 - << 'MLBLOCK_EOF'\n" + code + "\nMLBLOCK_EOF"
         instance = self._vast.launch_instance(  # noqa: E501
-            gpu_name="RTX 3090", num_gpus=1, image="pytorch/pytorch:latest", disk=50, onstart=onstart
+            gpu_name="RTX 3090", num_gpus=1, image=image_for(cuda), disk=disk_for(cuda), onstart=onstart
         )
         return instance
 
