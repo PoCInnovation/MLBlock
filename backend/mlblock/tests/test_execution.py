@@ -1,8 +1,19 @@
 from __future__ import annotations
 
+import os as _os
+from datetime import datetime as _dt
+from datetime import timedelta as _td
+from datetime import timezone as _tz
+from uuid import UUID as _UUID
+
+from sqlmodel import Session as _Session
+from sqlmodel import create_engine as _create_engine
+from sqlmodel.pool import StaticPool as _StaticPool
+
 from mlblock import execution as ex
 from mlblock.core.vast import VastAI
 from mlblock.execution import TEMPLATE_CUDA_HASH, gpu_for, label_for, template_for
+from mlblock.server.models import Job as _Job
 
 
 class _OkOffers:
@@ -131,3 +142,119 @@ def test_list_instances_mock_key_no_http(monkeypatch):
 
     monkeypatch.setattr("mlblock.core.vast.requests.get", _boom)
     assert VastAI(api_key="mock-vast-key").list_instances() == []
+
+
+# ── Task 3: reaper ──────────────────────────────────────────────
+class _FakeBackend:
+    instances = []
+    destroyed = []
+
+    def list_instances(self):
+        return list(type(self).instances)
+
+    def destroy(self, instance_id):
+        type(self).destroyed.append(instance_id)
+
+
+def _reap_engine():
+    url = _os.environ.get("DATABASE_URL")
+    if not url:
+        import pytest as _pytest
+
+        _pytest.skip("DATABASE_URL not set")
+    return _create_engine(url, poolclass=_StaticPool)
+
+
+def _reap_setup(client, monkeypatch, instances, status="dispatched", age_s=0, instance_id="4242"):
+    """Crée un job via l'API, le maquille en job GPU réel, installe les fakes."""
+    _FakeBackend.instances = list(instances)
+    _FakeBackend.destroyed = []
+    monkeypatch.setattr("mlblock.reap.VastBackend", _FakeBackend)
+    cleaned = []
+    monkeypatch.setattr("mlblock.reap.cleanup_pipeline_files", lambda pid: cleaned.append(pid))
+    created = client.post("/api/pipelines", json={"name": "reap", "nodes": [], "edges": []}).json()
+    job = client.post(f"/api/pipelines/{created['id']}/execute").json()
+    jid = job["id"]
+    engine = _reap_engine()
+    with _Session(engine) as s:
+        row = s.get(_Job, _UUID(jid))
+        row.status = status
+        row.vast_instance_id = instance_id
+        row.created_at = _dt.now(_tz.utc) - _td(seconds=age_s)
+        s.add(row)
+        s.commit()
+    return jid, _FakeBackend, cleaned
+
+
+def _reap_job(jid):
+    with _Session(_reap_engine()) as s:
+        row = s.get(_Job, _UUID(jid))
+        s.expunge(row)
+        return row
+
+
+def test_reap_destroys_running_instance_of_terminal_job(client, monkeypatch):
+    from mlblock.reap import main
+
+    jid, fake, _ = _reap_setup(client, monkeypatch, [], status="done")
+    fake.instances = [{"id": 4242, "label": f"mlblock-{jid}", "actual_status": "running"}]
+    n = main()
+    assert n == 1
+    assert fake.destroyed == [4242]
+
+
+def test_reap_marks_timed_out_job_error_and_destroys(client, monkeypatch):
+    from mlblock.reap import main
+
+    jid, fake, cleaned = _reap_setup(client, monkeypatch, [], status="dispatched", age_s=3600)
+    fake.instances = [{"id": 4242, "label": f"mlblock-{jid}", "actual_status": "running"}]
+    n = main()
+    row = _reap_job(jid)
+    assert n == 1
+    assert row.status == "error"
+    assert "GPU TIMEOUT" in row.error
+    assert row.completed_at is not None
+    assert len(cleaned) == 1
+
+
+def test_reap_marks_exited_instance_error_poll_trap(client, monkeypatch):
+    from mlblock.reap import main
+
+    jid, fake, _ = _reap_setup(client, monkeypatch, [], status="running", age_s=700)
+    fake.instances = [{"id": 4242, "label": f"mlblock-{jid}", "actual_status": "exited"}]
+    n = main()
+    row = _reap_job(jid)
+    assert n == 1
+    assert row.status == "error"
+    assert "exited" in row.error
+
+
+def test_reap_destroys_labelled_instance_without_job(client, monkeypatch):
+    from mlblock.reap import main
+
+    _FakeBackend.instances = [{"id": 777, "label": "mlblock-00000000-0000-0000-0000-000000000000",
+                               "actual_status": "running"}]
+    _FakeBackend.destroyed = []
+    monkeypatch.setattr("mlblock.reap.VastBackend", _FakeBackend)
+    monkeypatch.setattr("mlblock.reap.cleanup_pipeline_files", lambda pid: None)
+    n = main()
+    assert n == 1
+    assert _FakeBackend.destroyed == [777]
+
+
+def test_reap_spares_freshly_dispatched_job_in_grace(client, monkeypatch):
+    from mlblock.reap import main
+
+    jid, fake, _ = _reap_setup(client, monkeypatch, [], status="dispatched", age_s=60)
+    fake.instances = [{"id": 4242, "label": f"mlblock-{jid}", "actual_status": "running"}]
+    n = main()
+    row = _reap_job(jid)
+    assert n == 0
+    assert fake.destroyed == []
+    assert row.status == "dispatched"
+
+
+def test_vast_backend_list_instances_passthrough():
+    from mlblock.execution import VastBackend
+
+    assert VastBackend(api_key="mock-x").list_instances() == []
