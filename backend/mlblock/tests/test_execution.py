@@ -18,6 +18,7 @@ def test_build_bootstrap_slim_contains_code_endpoint_and_uv():
     assert 'post status \'{"block":"bootstrap","status":"running"}\'' in s
     assert s.count("post output") == 2
     assert "exit 1" in s
+    assert "command -v curl" in s and "apt-get install" in s
     assert len(s) < 4048
 
 

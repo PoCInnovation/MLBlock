@@ -49,6 +49,8 @@ def build_bootstrap(*, backend_url: str, job_id: str, gpu_key: str, timeout: str
     lines = [
         f"export BACKEND_URL='{backend_url}' GPU_API_KEY='{gpu_key}' JOB_ID='{job_id}' BACKEND_TIMEOUT='{timeout}'",
         'KEY="${CONTAINER_API_KEY:-$GPU_API_KEY}"',
+        # python:slim embarque uv mais pas curl — filet apt (Vast tourne root, Debian).
+        "command -v curl >/dev/null 2>&1 || { apt-get update -qq && apt-get install -y -qq curl; }",
         'post() { curl -sS -m 20 -X POST -H "Authorization: Bearer $KEY"'
         " -H 'Content-Type: application/json'"
         ' -d "$2" "$BACKEND_URL/api/jobs/$JOB_ID/$1" || true; }',

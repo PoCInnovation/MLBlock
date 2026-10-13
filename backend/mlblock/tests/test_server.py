@@ -721,3 +721,53 @@ def test_artifact_route_auth_and_storage(client: TestClient, monkeypatch):
     )
     bad = client.post(f"/api/jobs/{job['id']}/artifact", headers={"Authorization": "Bearer x"})
     assert bad.status_code == 403
+
+
+def test_artifact_route_success_stores_output_row(client: TestClient, monkeypatch):
+    import json as _json
+
+    from mlblock.server.gpu_auth import GPU_API_KEY as GLOBAL_KEY
+    from mlblock.server.gpu_auth import verify_gpu_key
+
+    monkeypatch.setenv("BACKEND_TIMEOUT", "2")
+    monkeypatch.setenv("SUPABASE_URL", "https://xyzcompany.supabase.co")
+    monkeypatch.setenv("SUPABASE_SECRET_KEY", "secret-test")
+    monkeypatch.setattr(
+        "mlblock.server.routes.requests.put",
+        lambda *a, **kw: type("R", (), {"raise_for_status": lambda s: None})(),
+    )
+    app.dependency_overrides.pop(verify_gpu_key, None)
+    created = client.post("/api/pipelines", json={"name": "art-ok", "nodes": [], "edges": []}).json()
+    job = client.post(f"/api/pipelines/{created['id']}/execute").json()
+    resp = client.post(
+        f"/api/jobs/{job['id']}/artifact",
+        files={"file": ("output.png", b"\x89PNG\r\n", "image/png")},
+        data={"mime": "image/png", "block": "plot_block"},
+        headers={"Authorization": f"Bearer {GLOBAL_KEY}"},
+    )
+    assert resp.status_code == 200
+    url = resp.json()["url"]
+    assert url.startswith("https://xyzcompany.supabase.co/storage/v1/object/public/job-artifacts/")
+    rows = client.get(f"/api/jobs/{job['id']}/outputs").json()
+    assert _json.loads(rows[-1]["output"]) == {"type": "image", "mime": "image/png", "url": url}
+
+
+def test_large_output_roundtrips_byte_identical(client: TestClient, monkeypatch):
+    """Sans troncature : une enveloppe ~100 Ko stocke et relit à l'identique."""
+    from mlblock.server.gpu_auth import GPU_API_KEY as GLOBAL_KEY
+    from mlblock.server.gpu_auth import verify_gpu_key
+
+    monkeypatch.setenv("BACKEND_TIMEOUT", "2")
+    app.dependency_overrides.pop(verify_gpu_key, None)
+    created = client.post("/api/pipelines", json={"name": "big-out", "nodes": [], "edges": []}).json()
+    job = client.post(f"/api/pipelines/{created['id']}/execute").json()
+    big = " Courbe0123456789" * 6250  # ~100 Ko
+    assert len(big) > 100000
+    push = client.post(
+        f"/api/jobs/{job['id']}/output",
+        json={"block": "evaluate", "output": big},
+        headers={"Authorization": f"Bearer {GLOBAL_KEY}"},
+    )
+    assert push.status_code == 200
+    rows = client.get(f"/api/jobs/{job['id']}/outputs").json()
+    assert rows[-1]["output"] == big
