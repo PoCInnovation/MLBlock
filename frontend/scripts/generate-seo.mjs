@@ -47,17 +47,17 @@ export function injectCourseHead(templateHtml, { title, description, slug, base 
     <meta name="twitter:description" content="${escapedDesc}" />
     <link rel="canonical" href="${url}" />
     <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "Course",
-      "name": "${title.replace(/"/g, '\\"')}",
-      "description": "${(description || '').replace(/"/g, '\\"')}",
-      "provider": {
-        "@type": "Organization",
-        "name": "MLBlock",
-        "url": "${base}"
-      }
-    }
+${JSON.stringify({
+  '@context': 'https://schema.org',
+  '@type': 'Course',
+  name: title,
+  description: description || '',
+  provider: {
+    '@type': 'Organization',
+    name: 'MLBlock',
+    url: base,
+  },
+}, null, 2)}
     </script>
   `
 
