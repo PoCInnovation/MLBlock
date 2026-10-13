@@ -483,19 +483,12 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
   const renderEdges = useMemo(
     () => flowEdges.map(e => {
       const base = edgeStyleFor(e, flowNodes, graph)
-      const engineOf = (id: string | null | undefined) => {
-        const n = flowNodes.find(n => n.id === id)
-        const t = (n?.data as { type?: string } | undefined)?.type
-        return (t && catalog?.blocks[t]?.engine) || 'generic'
-      }
-      const from = engineOf(e.source)
-      const to = engineOf(e.target)
-      const gradient = from !== to && from !== 'generic' && to !== 'generic' ? { from, to } : undefined
-      const { style } = resolveEdgeStyle(base, gradient)
-      return { ...e, type: 'flow' as const, style, data: { ...((e.data as object) ?? {}), gradient } }
+      const { style } = resolveEdgeStyle(base, undefined)
+      return { ...e, type: 'flow' as const, style }
     }),
-    [flowEdges, flowNodes, graph, catalog]
+    [flowEdges, flowNodes, graph]
   )
+
 
   const handleNodeClick = useCallback((e: React.MouseEvent) => {
     // Tap sur un port (Handle) → géré par onConnectStart/End ('compat'), pas l'inspecteur.

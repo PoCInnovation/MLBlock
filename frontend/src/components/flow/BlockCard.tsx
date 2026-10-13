@@ -1,16 +1,9 @@
 import { memo, useMemo } from 'react'
 import { Badge } from '@/components/ui/badge'
 import useAppStore from '../../store/useAppStore'
-import { blockCardInfo, ENGINE_COLORS } from '../../utils/superblocks'
+import { blockCardInfo } from '../../utils/superblocks'
 
-const ENGINE_LABEL: Record<string, string> = {
-  pytorch: 'PyTorch',
-  sklearn: 'Scikit-Learn',
-  gym: 'Gymnasium',
-  mlflow: 'MLflow',
-  viz: 'Viz',
-  generic: 'Générique',
-}
+
 
 /**
  * Carte de bloc — unique element de rendu partagé par la liste du bas de la
@@ -50,7 +43,7 @@ function BlockCard({
       <div className={`flex items-start gap-3 p-4 pb-3 ${draggable ? 'block-drag-handle cursor-grab' : ''}`}>
         <span
           className="w-3.5 h-3.5 rounded-sm shrink-0 mt-1"
-          style={{ background: info.color }}
+          style={{ background: info.categoryColor }}
           aria-hidden="true"
         />
         <div className="flex-1 min-w-0">
@@ -76,10 +69,11 @@ function BlockCard({
         <Badge
           variant="outline"
           className="text-[10px] font-extrabold shrink-0 rounded-full"
-          style={{ color: ENGINE_COLORS[info.engine] ?? ENGINE_COLORS.generic }}
+          style={{ borderColor: info.categoryColor, color: info.categoryColor }}
         >
-          {ENGINE_LABEL[info.engine] ?? ENGINE_LABEL.generic}
+          {info.categoryName}
         </Badge>
+
         {onDelete && (
           <button
             type="button"

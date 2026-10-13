@@ -179,3 +179,35 @@ describe('groupSuperblocks', () => {
     expect(groupSuperblocks(sbs)[0].items.map(i => i.id)).toEqual(['a'])
   })
 })
+describe('blockCardInfo category colors', () => {
+  it('resolves category name and color for standard block', async () => {
+    const { blockCardInfo } = await import('./superblocks')
+    const mockCatalog: any = {
+      blocks: {
+        conv2d: { cat: 'layers', segs: [{ t: 'text', v: 'Convolution' }], inputs: [], outputs: [] }
+      },
+      categories: [{ id: 'layers', name: 'Couches', color: '#6366F1' }],
+      superblocks: []
+    }
+    const info = blockCardInfo(mockCatalog, 'conv2d')
+    expect(info.categoryName).toBe('Couches')
+    expect(info.categoryColor).toBe('#6366F1')
+  })
+
+  it('resolves category for superblock via first child or macro stage', async () => {
+    const { blockCardInfo } = await import('./superblocks')
+    const mockCatalog: any = {
+      blocks: {
+        load_csv: { cat: 'donnees', segs: [{ t: 'text', v: 'Load CSV' }], inputs: [], outputs: [] }
+      },
+      categories: [{ id: 'donnees', name: 'Données', color: '#22C55E' }],
+      superblocks: [
+        { id: 'tabular_sb', title: 'Pipeline Tabulaire', children: ['load_csv'], macro_stage: 1 }
+      ]
+    }
+    const info = blockCardInfo(mockCatalog, 'tabular_sb')
+    expect(info.categoryName).toBe('Données')
+    expect(info.categoryColor).toBe('#22C55E')
+  })
+})
+

@@ -61,6 +61,8 @@ export type BlockCardInfo = {
   outputs: { name: string; dtype: string }[]
   engine: string
   color: string
+  categoryName: string
+  categoryColor: string
   advanced: boolean
 }
 
@@ -69,15 +71,20 @@ export function blockCardInfo(catalog: InternalCatalog, type: string): BlockCard
   const def = catalog.blocks[type]
   const sb = catalog.superblocks.find(s => s.id === type)
   const label = def?.segs.find(s => s.t === 'text')?.v
+  const catId = def?.cat ?? (sb ? sb.children.map(c => catalog.blocks[c]?.cat).find(Boolean) : undefined) ?? 'generic'
+  const category = catalog.categories.find(c => c.id === catId)
   return {
     title: sb?.title ?? label ?? type,
     inputs: def?.inputs ?? [],
     outputs: def?.outputs ?? [],
     engine: sb?.engine ?? def?.engine ?? 'generic',
-    color: catalog.categories.find(c => c.id === def?.cat)?.color ?? '#888',
+    color: category?.color ?? catalog.categories.find(c => c.id === def?.cat)?.color ?? '#888',
+    categoryName: category?.name ?? catId,
+    categoryColor: category?.color ?? '#888',
     advanced: def?.advanced ?? false,
   }
 }
+
 
 /** Enfants d'un SuperBlock réellement présents au catalogue (anti-fantômes). */
 export function availableChildren(sb: SuperBlockEntry, catalog: InternalCatalog): string[] {
