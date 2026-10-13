@@ -121,3 +121,13 @@ PipelineEdge: { source: str, source_port: str, target: str, target_port: str }
 | **Body** | `ValidationRequest: { nodes: list[PipelineNode], edges: list[PipelineEdge] }` |
 | **Sortie** | `ValidationResponse: { valid: bool, errors: list[str] }` |
 | **Effet** | Validation Pydantic (types, ports, dtypes) + `Graph.validate()` (cycles, nœuds) |
+
+---
+
+### `GET /api/jobs/{job_id}/code` — Code généré d'un job
+
+| | Type |
+|---|---|
+| **Auth** | Bearer clé d'instance du job (`CONTAINER_API_KEY`) ou `GPU_API_KEY` global (cf. `verify_gpu_key`) |
+| **Sortie** | `text/plain` : `main.py` stocké à l'`execute` |
+| **Effet** | Récupéré au boot GPU par le bootstrap `onstart` (jamais embarqué, limite Vast 16 Ko) ; 404 si job/pipeline/code absent |

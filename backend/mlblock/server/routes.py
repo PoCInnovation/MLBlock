@@ -10,7 +10,7 @@ from uuid import UUID
 import requests
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from fastapi.responses import JSONResponse, Response
+from fastapi.responses import JSONResponse, PlainTextResponse, Response
 from sqlmodel import Session, select
 
 from mlblock.catalog import catalog
@@ -811,29 +811,26 @@ def execute_pipeline(
         session.add(job)
         session.commit()
     else:
-        # Le GPU doit joindre le backend pour les callbacks : BACKEND_URL
-        # public (Render ou tunnel), GPU_API_KEY partagée, JOB_ID du job.
-        env = {
-            "BACKEND_URL": os.environ.get("BACKEND_URL", "http://localhost:8000"),
-            "GPU_API_KEY": os.environ.get("GPU_API_KEY", ""),
-            "JOB_ID": str(job.id),
-            "BACKEND_TIMEOUT": os.environ.get("BACKEND_TIMEOUT", "90"),
-        }
-        env_str = " ".join(f"{k}='{v}'" for k, v in env.items())
-        deps = (
-            "pip install -q --disable-pip-version-check "
-            "scikit-learn gymnasium torchvision pandas requests xgboost mlflow || true"
+        # Le GPU récupère le code au boot (GET /api/jobs/{id}/code) : l'onstart
+        # reste un bootstrap < 4 Ko (limite Vast 16 Ko). Image légère + uv par
+        # défaut, base CUDA seulement si un bloc demande pytorch.
+        from mlblock.core.stages import needs_cuda
+        from mlblock.execution import build_bootstrap, disk_for, image_for
+
+        cuda = needs_cuda(nodes)
+        onstart = build_bootstrap(
+            backend_url=os.environ.get("BACKEND_URL", "http://localhost:8000"),
+            job_id=str(job.id),
+            gpu_key=os.environ.get("GPU_API_KEY", ""),
+            timeout=os.environ.get("BACKEND_TIMEOUT", "90"),
+            cuda=cuda,
         )
-        # Script exécuté au boot de l'instance (onstart) — pas de SSH requis.
-        # Concaténation (le code généré contient des accolades). `;` pas `&&`
-        # pour que python tourne même si pip échoue; python3 explicite.
-        onstart = deps + "; " + env_str + " python3 - << 'MLBLOCK_EOF'\n" + code + "\nMLBLOCK_EOF"
         vast = VastAI(api_key=os.environ.get("VAST_API_KEY", "mock-vast-key"))
         instance = vast.launch_instance(
             gpu_name="RTX 3090",
             num_gpus=1,
-            image="pytorch/pytorch:latest",
-            disk=50,
+            image=image_for(cuda),
+            disk=disk_for(cuda),
             onstart=onstart,
         )
         job.vast_instance_id = instance.get("id", "")
@@ -960,6 +957,23 @@ def get_job_instance(
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
     return {"instance_id": job.vast_instance_id}
+
+
+@jobs_router.get("/{job_id}/code")
+def get_job_code(
+    job_id: UUID,
+    _: str = Depends(verify_gpu_key),
+    session: Session = Depends(get_session),
+) -> PlainTextResponse:
+    """Code généré d'un job — récupéré au boot GPU (bootstrap onstart), jamais
+    embarqué dans l'onstart (limite Vast 16 Ko). Auth identique aux callbacks."""
+    job = session.get(Job, job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    pipeline = session.get(PipelineTable, job.pipeline_id)
+    if not pipeline or not pipeline.code:
+        raise HTTPException(status_code=404, detail="Job code not found")
+    return PlainTextResponse(pipeline.code)
 
 
 @jobs_router.post("/{job_id}/status")
