@@ -611,17 +611,14 @@ def test_generated_code_instance_auth_and_self_destroy():
 def test_execute_gpu_rent_failure_returns_full_job(client: TestClient, monkeypatch):
     """Régression expire_on_commit : le rent GPU échoué retourne un job
     sérialisé COMPLET (id + status error), pas un objet vide {}."""
-    class FakeVast:
-        def __init__(self, api_key): pass
-        def launch_instance(self, *a, **kw):
-            return {"id": "dummy-instance-id", "api_key": ""}
-        def start_instance(self, *a, **kw): pass
-        def destroy_instance(self, *a, **kw): pass
+    def fake_launch(self, **kw):
+        return {"id": "dummy-instance-id", "api_key": "", "error": "No Vast.ai offers found for GPU: None"}
 
     monkeypatch.setenv("MLBLOCK_RUN_MODE", "gpu")
     monkeypatch.setenv("VAST_API_KEY", "real-key-for-test")
     monkeypatch.setenv("MLBLOCK_GPU_TIMEOUT", "1")
-    monkeypatch.setattr("mlblock.server.routes.VastAI", FakeVast)
+    monkeypatch.setattr("mlblock.core.vast.VastAI.launch_instance", fake_launch)
+    monkeypatch.setattr("mlblock.execution.schedule_orphan_cleanup", lambda *a: None)
 
     created = client.post(
         "/api/pipelines", json={"name": "gpu-fail", "nodes": [], "edges": []}
@@ -632,6 +629,8 @@ def test_execute_gpu_rent_failure_returns_full_job(client: TestClient, monkeypat
     assert job.get("id"), f"job.id manquant dans la réponse : {job}"
     assert job["status"] == "error"
     assert "Location GPU" in job["error"]
+    assert "moins chère" in job["error"]
+    assert "No Vast.ai offers" in job["error"]
 
 
 def test_load_text_block_registered():
@@ -670,31 +669,27 @@ def test_job_code_endpoint_gpu_auth(client: TestClient, monkeypatch):
 def test_execute_gpu_uses_slim_image_and_bootstrap(client: TestClient, monkeypatch):
     seen = {}
 
-    class FakeVast:
-        def __init__(self, api_key):
-            pass
-
-        def launch_instance(self, **kw):
-            seen.update(kw)
-            return {"id": "mock-instance-id", "api_key": ""}
-
-        def start_instance(self, *a, **kw):
-            pass
-
-        def destroy_instance(self, *a, **kw):
-            pass
+    def fake_launch(self, **kw):
+        seen.update(kw)
+        return {"id": "mock-instance-id", "api_key": ""}
 
     monkeypatch.setenv("MLBLOCK_RUN_MODE", "gpu")
     monkeypatch.setenv("VAST_API_KEY", "real-key-for-test")
     monkeypatch.setenv("MLBLOCK_GPU_TIMEOUT", "1")
     monkeypatch.setenv("BACKEND_TIMEOUT", "2")
-    monkeypatch.setattr("mlblock.server.routes.VastAI", FakeVast)
+    monkeypatch.setattr("mlblock.core.vast.VastAI.launch_instance", fake_launch)
+    monkeypatch.setattr("mlblock.core.vast.VastAI.start_instance", lambda self, *a: None)
+    monkeypatch.setattr("mlblock.execution.schedule_orphan_cleanup", lambda *a: None)
     created = client.post("/api/pipelines", json={"name": "img-slim", "nodes": [], "edges": []}).json()
     resp = client.post(f"/api/pipelines/{created['id']}/execute")
     assert resp.status_code == 200
+    assert seen["gpu_name"] is None
+    assert seen["template_hash_id"] is None
     assert seen["image"] == "ghcr.io/astral-sh/uv:python3.12-trixie-slim"
-    assert "/api/jobs/$JOB_ID/code" in seen["onstart"]
-    assert "MLBLOCK_EOF" not in seen["onstart"]
+    assert seen["label"].startswith("mlblock-")
+    onstart = seen["onstart"]
+    assert "/api/jobs/$JOB_ID/code" in onstart
+    assert "MLBLOCK_EOF" not in onstart
 
 
 def test_generated_code_gzip_envelope_and_no_truncation():

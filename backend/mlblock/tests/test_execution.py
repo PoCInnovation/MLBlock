@@ -258,3 +258,55 @@ def test_vast_backend_list_instances_passthrough():
     from mlblock.execution import VastBackend
 
     assert VastBackend(api_key="mock-x").list_instances() == []
+
+
+def test_reap_ignores_foreign_instances_without_mlblock_label(client, monkeypatch):
+    from mlblock.reap import main
+
+    _FakeBackend.instances = [
+        {"id": 99, "label": "my-server", "actual_status": "running"},
+        {"id": 100, "label": None, "actual_status": "running"},
+    ]
+    _FakeBackend.destroyed = []
+    monkeypatch.setattr("mlblock.reap.VastBackend", _FakeBackend)
+    monkeypatch.setattr("mlblock.reap.cleanup_pipeline_files", lambda pid: None)
+    assert main() == 0
+    assert _FakeBackend.destroyed == []
+
+
+def test_list_instances_raises_on_total_failure(monkeypatch):
+    import pytest as _pytest
+
+    def _boom(url, **kw):
+        raise ConnectionError("vast down")
+
+    monkeypatch.setattr("mlblock.core.vast.requests.get", _boom)
+    with _pytest.raises(ConnectionError):
+        VastAI(api_key="real-key").list_instances()
+
+
+def test_reap_aborts_when_inventory_fails(client, monkeypatch):
+    from mlblock.reap import main
+
+    jid, fake, _ = _reap_setup(client, monkeypatch, [], status="dispatched", age_s=3600)
+
+    class _Down(_FakeBackend):
+        def list_instances(self):
+            raise ConnectionError("vast down")
+
+    monkeypatch.setattr("mlblock.reap.VastBackend", _Down)
+    assert main() == 0
+    assert _reap_job(jid).status == "dispatched"
+
+
+def test_launch_instance_returns_error_detail(monkeypatch):
+    monkeypatch.setattr("mlblock.core.vast.VastAI.search_offers", lambda s, g, n=1, limit=5: [])
+    out = VastAI(api_key="real-key").launch_instance("RTX 3090", 1, "img", 20)
+    assert out["id"] == "dummy-instance-id"
+    assert "RTX 3090" in out["error"]
+
+
+def test_vast_backend_start_passthrough_mock():
+    from mlblock.execution import VastBackend
+
+    assert VastBackend(api_key="mock-x").start("123") is None

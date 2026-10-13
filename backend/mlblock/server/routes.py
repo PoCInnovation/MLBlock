@@ -816,35 +816,22 @@ def execute_pipeline(
         # reste un bootstrap < 4 Ko (limite Vast 16 Ko). Image légère + uv par
         # défaut, base CUDA seulement si un bloc demande pytorch.
         from mlblock.core.stages import needs_cuda
-        from mlblock.execution import build_bootstrap, disk_for, gpu_for, image_for, label_for, template_for
+        from mlblock.execution import VastBackend
 
         cuda = needs_cuda(nodes)
-        onstart = build_bootstrap(
-            backend_url=os.environ.get("BACKEND_URL", "http://localhost:8000"),
-            job_id=str(job.id),
-            gpu_key=os.environ.get("GPU_API_KEY", ""),
-            timeout=os.environ.get("BACKEND_TIMEOUT", "90"),
-            cuda=cuda,
-        )
-        vast = VastAI(api_key=os.environ.get("VAST_API_KEY", "mock-vast-key"))
-        template_hash_id = template_for(cuda)
-        instance = vast.launch_instance(
-            gpu_name=gpu_for(cuda),
-            num_gpus=1,
-            image=None if template_hash_id else image_for(cuda),
-            disk=disk_for(cuda),
-            onstart=onstart,
-            template_hash_id=template_hash_id,
-            label=label_for(job.id),
-        )
+        backend = VastBackend(api_key=os.environ.get("VAST_API_KEY", "mock-vast-key"))
+        instance = backend.launch(code, job.id, cuda=cuda)
         job.vast_instance_id = instance.get("id", "")
         # Clé Vast restreinte de l'instance : authentifie les callbacks GPU de
         # ce job (le container la reçoit aussi via CONTAINER_API_KEY).
         job.instance_api_key = instance.get("api_key", "")
         if instance.get("id") == "dummy-instance-id":
-            # Le rent a échoué (clé, crédit, offre introuvable) : erreur immédiate
+            # Le rent a échoué : erreur immédiate avec la cause (offre, crédit,
+            # template révoqué) au lieu d'un message générique.
+            where = "le template / l'offre RTX 3090" if cuda else "l'offre GPU la moins chère"
+            cause = instance.get("error") or "vérifie la clé, le crédit et l'offre"
             job.status = "error"
-            job.error = "Location GPU Vast.ai impossible — vérifie la clé, le crédit et l'offre RTX 3090"
+            job.error = f"Location GPU Vast.ai impossible ({where}) — {cause}"
             job.completed_at = datetime.now(timezone.utc)
             session.add(job)
             session.commit()
@@ -853,7 +840,7 @@ def execute_pipeline(
         job.status = "dispatched"
         session.add(job)
         session.commit()
-        vast.start_instance(job.vast_instance_id)
+        backend.start(job.vast_instance_id)
 
     # DEV ONLY: auto-destroy instance after 60s if job hasn't completed
     # Prevents orphan GPUs during development when callbacks may not fire.

@@ -92,7 +92,7 @@ class VastAI:
             return {"id": str(instance_id), "api_key": data.get("instance_api_key", "")}
         except Exception as e:
             print(f"Error launching Vast.ai instance: {e}")
-            return {"id": "dummy-instance-id"}
+            return {"id": "dummy-instance-id", "error": str(e)}
 
     @staticmethod
     def _encode_onstart(script: str) -> str:
@@ -108,11 +108,14 @@ class VastAI:
         b64 = base64.b64encode(gzip.compress(script.encode())).decode()
         # base64 alphabet ne contient pas de single-quote → wrapping sûr
         return f"echo '{b64}' | base64 -d | gunzip | bash"
+
     def list_instances(self, status: str | None = None) -> list[dict[str, Any]]:
         """GET /api/v1/instances — inventaire paginé (25 max), suit `next_token`.
 
         Colonnes minimales `id/label/actual_status`, filtre optionnel sur
-        `actual_status`. Jamais d'exception vers l'appelant (reaper).
+        `actual_status`. Lève sur échec total (zéro page) pour que le reaper
+        distingue panne Vast et inventaire vide ; page partielle après ≥1 page
+        retournée telle quelle (amendement au plan Task 2).
         """
         if not self.api_key or self.api_key.startswith("mock"):
             return []
@@ -132,8 +135,10 @@ class VastAI:
                     return out
                 params = dict(params, after_token=token)
         except Exception as e:
-            print(f"Error listing Vast.ai instances: {e}")
-            return out
+            if out:
+                print(f"Error listing Vast.ai instances (partial): {e}")
+                return out
+            raise
 
     def start_instance(self, instance_id: str) -> None:
         if not self.api_key or self.api_key.startswith("mock") or instance_id in (  # noqa: E501

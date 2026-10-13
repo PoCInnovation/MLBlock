@@ -159,6 +159,12 @@ class VastBackend:
     def list_instances(self) -> list:
         return self._vast.list_instances()
 
+    def start(self, instance_id: str) -> None:
+        try:
+            self._vast.start_instance(instance_id)
+        except Exception:
+            pass
+
 
 def get_backend() -> ExecutionBackend:
     mode = os.environ.get("MLBLOCK_RUN_MODE", "local").lower()

@@ -61,7 +61,10 @@ def main(grace_s: int = 600, timeout_s: int = 1800) -> int:
         for inst in instances:
             iid = inst.get("id")
             status = inst.get("actual_status")
-            job = jobs.get(str(_uuid_from_label(inst.get("label"))))
+            jid = _uuid_from_label(inst.get("label"))
+            if jid is None:
+                continue  # pas à nous (instance hors mlblock) — jamais de destroy
+            job = jobs.get(str(jid))
             if job is None:
                 if status in LIVE_STATES:
                     _destroy(iid, "orpheline sans job")
@@ -91,7 +94,11 @@ def main(grace_s: int = 600, timeout_s: int = 1800) -> int:
                 cleanup_pipeline_files(job.pipeline_id)
                 continue
         # Jobs actifs vieux sans instance Vast : erreur sans destroy (rien à détruire).
-        seen_ids = {str(_uuid_from_label(i.get("label"))) for i in instances}
+        seen_ids = set()
+        for i in instances:
+            jid = _uuid_from_label(i.get("label"))
+            if jid is not None:
+                seen_ids.add(str(jid))
         for key, job in jobs.items():
             if (
                 job.status in ACTIVE_STATES
