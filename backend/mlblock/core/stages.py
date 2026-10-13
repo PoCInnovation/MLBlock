@@ -431,6 +431,28 @@ def engine_of_block(block_name: str, category: str | None = None) -> str:
     return "generic"
 
 
+def needs_cuda(nodes: list[Any]) -> bool:
+    """True if any node (or nested child) resolves to the pytorch engine.
+
+    Accepts dicts ({"type": ..., "children": [...]}) or models with
+    `.type` / `.children` attrs. Unknown types resolve "generic" → False.
+    Single owner for the CUDA-image decision (see execution.image_for).
+    """
+
+    def _types(ns: list[Any]) -> Any:
+        for n in ns or []:
+            if isinstance(n, dict):
+                t = n.get("type", "")
+                children = n.get("children", [])
+            else:
+                t = getattr(n, "type", "")
+                children = getattr(n, "children", []) or []
+            yield t
+            yield from _types(children)
+
+    return any(engine_of_block(t) == "pytorch" for t in _types(nodes) if t)
+
+
 def is_transition_block(block_name: str) -> bool:
     """True if the block is a conversion bridge allowed at container boundaries."""
     from mlblock.core.adapters import resolve_alias
