@@ -4,7 +4,7 @@
 
 `mlblock` is a visual no-code DAG builder for ML, DL, and RL prototyping ("Scratch for ML"). The system compiles user-assembled computational graphs into reproducible, standalone Python scripts. It consists of:
 - **Backend**: FastAPI, SQLModel, PyTorch, and a dynamic block discovery system.
-- **Frontend**: React 19, Vite, TanStack Router / TanStack Start, ReactFlow, and Zustand.
+- **Frontend**: React 19, Vite, TanStack Router / TanStack Start, ReactFlow (`@xyflow/react`), Tailwind CSS v4, and Zustand.
 - **Execution Engine**: Dual-mode runner supporting local subprocesses (`Popen`) or remote GPU orchestration (Vast.ai REST) with streaming output callbacks via Supabase Realtime CDC.
 
 Strict domain vocabulary is enforced across all documentation, commits, and code:
@@ -19,26 +19,26 @@ Strict domain vocabulary is enforced across all documentation, commits, and code
 ## Architecture & Data Flow
 
 ```
-   [ ReactFlow Canvas ]
-            │
-   useAppStore.ts (flowNodes, flowEdges)
-            │
-   pipelineDocument.toServerPayload()
-            │ (HTTP POST /api/validate & /api/pipelines)
-            ▼
-   FastAPI Server (server/routes.py)
-            │
-   Kahn's Topological Sort & Validation (validation.py)
-            │
-   Code Generator (core/generator.py) ──> Standalone Python Script
-            │
-   Execution Runner (Local Popen / Vast.ai GPU)
-            │
-   Callbacks (POST /api/jobs/{id}/output & /status)
-            │
-   Supabase Postgres (job_outputs table)
-            │
-   Frontend Realtime CDC Subscription (useBlockRunner.ts)
+   [ ReactFlow Canvas / @xyflow/react ]
+                   │
+         useAppStore.ts (flowNodes, flowEdges)
+                   │
+         pipelineDocument.toServerPayload()
+                   │ (HTTP POST /api/validate & /api/pipelines)
+                   ▼
+         FastAPI Server (server/routes.py)
+                   │
+         Kahn's Topological Sort & Validation (validation.py)
+                   │
+         Code Generator (core/generator.py) ──> Standalone Python Script
+                   │
+         Execution Runner (Local Popen / Vast.ai GPU)
+                   │
+         Callbacks (POST /api/jobs/{id}/output & /status)
+                   │
+         Supabase Postgres (job_outputs table)
+                   │
+         Frontend Realtime CDC Subscription (useBlockRunner.ts)
 ```
 
 ### Key Modules
@@ -57,22 +57,24 @@ mlblock/
 ├── backend/
 │   ├── mlblock/
 │   │   ├── blocks/            # Pure Python block functions in {category}-{HEXCOLOR}/
-│   │   ├── core/              # Code generator, type system facade, edge types
+│   │   ├── core/              # Code generator, IR compiler, type system facade, edge types
 │   │   ├── server/            # FastAPI app, routes, SQLModel models, schemas
 │   │   ├── tests/             # Pytest unit and integration test suites
 │   │   ├── catalog.py         # Catalog singleton and snapshot manager
+│   │   ├── execution.py       # Local subprocess and Vast.ai execution runners
 │   │   └── validation.py      # Kahn's sort, graph validation, port compatibility
 │   └── pyproject.toml         # Python packaging, uv config, Ruff settings
 ├── frontend/
 │   ├── src/
-│   │   ├── components/flow/   # ReactFlow canvas, BlockNode, SuperBlockNode, FlowLink
+│   │   ├── components/flow/   # ReactFlow canvas (FlowCanvas.tsx), BlockNode, FlowLink
+│   │   ├── components/ui/     # Shadcn / Radix primitives
 │   │   ├── routes/            # TanStack Router file-based routes
 │   │   ├── store/             # Zustand store (useAppStore.ts) & pipelineDocument.ts
 │   │   ├── utils/             # Symmetrical typeCheck.ts, shapeTracker.ts, API client
 │   │   ├── main.tsx           # React application shell entry point
 │   │   └── router.tsx         # TanStack Router route tree definition
 │   └── package.json           # Frontend dependencies, scripts, pnpm configuration
-├── docs/                      # ADRs (docs/adr/), domain specs, triage guides
+├── docs/                      # ADRs (docs/adr/), REST contracts (docs/routes.md), triage guides
 └── CONTEXT.md                 # Project domain glossary and design invariants
 ```
 
@@ -81,19 +83,20 @@ mlblock/
 ## Development Commands
 
 ### Backend (`backend/`)
-- **Install dependencies**: `uv sync --dev`
+- **Install dependencies / sync lockfile**: `uv sync`
 - **Start dev server**: `uv run uvicorn mlblock.server.main:app --reload --port 8000`
 - **Lint code**: `uv run ruff check .`
 - **Format code**: `uv run ruff format .`
-- **Run all tests**: `uv run pytest mlblock/tests -q`
+- **Run all tests**: `uv run pytest`
 - **Run specific test file**: `uv run pytest mlblock/tests/test_validation.py -v`
 
 ### Frontend (`frontend/`)
 - **Install dependencies**: `pnpm install --frozen-lockfile`
 - **Start dev server**: `pnpm dev`
 - **Typecheck**: `pnpm exec tsc --noEmit`
-- **Lint code**: `pnpm exec eslint . --max-warnings 0`
-- **Run unit tests**: `pnpm test`
+- **Lint code**: `pnpm lint` (or `pnpm exec eslint . --max-warnings 0`)
+- **Run unit tests**: `pnpm test` (Vitest)
+- **Dead code analysis**: `pnpm knip`
 - **Production build**: `pnpm run build`
 
 ### Full-Stack Docker
@@ -129,25 +132,27 @@ mlblock/
 - **Single Source of Truth**: NEVER bypass `useAppStore.ts`. All canvas node and edge mutations must go through the store's action dispatches.
 - **Payload Serialization**: ALWAYS convert ReactFlow graphs to backend payloads using `pipelineDocument.toServerPayload(nodes, edges)`. Direct JSON serialization drops container and child node hierarchies.
 - **Dirty Tracking**: Use `pipelineDocument.fingerprintOf(nodes, edges)` to detect structural changes while ignoring transient viewport, dragging, or selection events.
-- **Styling**: Tailwind CSS v4, Astryx, and StyleX. Canvas operates with an enforced dark theme (`data-theme="dark"`). Strict Shadcn linting rules forbid raw color literals (`shadcn/no-raw-colors`).
+- **Styling**: Tailwind CSS v4 and `@xyflow/react`. Strict Shadcn linting rules forbid raw color literals (`shadcn/no-raw-colors`). Canvas operates with an dark theme (`data-theme="dark"`).
 
 ---
 
 ## Important Files
 
 | File | Purpose |
-|------|---------|
+|---|---|
 | `backend/mlblock/server/main.py` | FastAPI application setup, CORS middleware, and API router mounting. |
 | `backend/mlblock/server/routes.py` | Synchronous REST endpoints for catalog, pipelines, validation, jobs, and files. |
-| `backend/mlblock/catalog.py` | Deep module managing block indexing, snapshot cache, and catalog search. |
+| `backend/mlblock/catalog.py` | Block indexing, snapshot caching, and catalog search. |
 | `backend/mlblock/blocks/registry.py` | Filesystem scanner parsing block docstrings and AST metadata. |
 | `backend/mlblock/validation.py` | Authoritative pipeline validator, cycle detector, and Kahn DAG topological sorter. |
 | `backend/mlblock/core/generator.py` | Standalone Python script compiler for pipeline DAG execution. |
+| `backend/mlblock/execution.py` | Execution runner dispatching local subprocesses or Vast.ai GPU jobs. |
 | `backend/main.py` | **Generated artifact** created during local run tests — **NEVER edit or commit**. |
 | `frontend/src/main.tsx` | Frontend React application entry point. |
 | `frontend/src/store/useAppStore.ts` | Global Zustand state store for canvas state, execution, and active pipeline. |
 | `frontend/src/store/pipelineDocument.ts` | Pure data converters, undo/redo stack (50 levels), and dirty fingerprinting. |
 | `frontend/src/utils/typeCheck.ts` | Client-side port type compatibility check and adapter suggestion logic. |
+| `docs/routes.md` | Comprehensive backend REST endpoint documentation. |
 | `CONTEXT.md` | Domain glossary, architectural constraints, and stage transition rules. |
 
 ---
@@ -155,27 +160,30 @@ mlblock/
 ## Runtime & Tooling Preferences
 
 - **Backend Runtime & Tooling**:
-  - Python >= 3.10 (3.11 recommended).
+  - Python `>=3.10` (Target: `py310`).
   - **`uv` is mandatory** in `backend/` (`uv sync`, `uv run`). Never invoke `pip` directly or manage manual virtual environments.
   - **Ruff**: Configured in `pyproject.toml` with `line-length = 120`. Line length rule (`E501`) is specifically ignored in `backend/mlblock/blocks/` due to DSL docstrings.
 - **Frontend Runtime & Tooling**:
-  - Node.js >= 22.
+  - Node.js `>=20` (Node 22 recommended), React `19.2.8`.
   - **`pnpm@9.15.4` is mandatory** in `frontend/`. Never use `npm`, `yarn`, or `bun`.
-  - **ESLint v9 Flat Config**: Uses `@shadcn/lint` rules.
+  - **ESLint v9 Flat Config**: Uses `@shadcn/lint` and `typescript-eslint` rules.
+  - **Tailwind CSS v4**: Bundled via `@tailwindcss/vite`.
 - **Database & Supabase Connection**:
-  - `DATABASE_URL` must connect to the Supabase pooler on port `:6543` in transaction mode.
+  - `DATABASE_URL` connects to the Supabase pooler on port `:6543` in transaction mode.
   - Passwords with special characters MUST be percent-encoded (`?` -> `%3F`, `@` -> `%40`, `*` -> `%2A`).
+  - Environment variables configured via `backend/.env` and `frontend/.env`.
 - **Execution Run Modes**:
   - Switch via `MLBLOCK_RUN_MODE=local` (local subprocess) or `MLBLOCK_RUN_MODE=gpu` (Vast.ai cloud instances).
   - Setting `VAST_API_KEY=mock-*` forces safe local execution for development.
 
+- **Dead Code & Hygiene**: Orphan components, shims, and unused exports are strictly forbidden. Before opening a PR or completing tasks, run `pnpm dlx knip --no-exit-code` to audit and clean dead files.
 ---
 
 ## Testing & QA
 
 ### Backend Test Suite
 - **Location**: `backend/mlblock/tests/`
-- **Execution**: `uv run pytest mlblock/tests -q`
+- **Execution**: `uv run pytest` or `uv run pytest mlblock/tests -q`
 - **In-Memory Unit Tests**: `test_validation.py`, `test_types.py`, and `test_pipeline.py` run purely in memory without network or database dependencies.
 - **Integration Tests**: `test_server.py` tests FastAPI endpoints with an in-memory SQLModel session pool (`StaticPool`).
 - **Supabase Skipping**: Tests requiring live Supabase credentials skip cleanly (`pytest.skip`) when `DATABASE_URL` or admin keys are absent. Never assume a SQLite fallback exists.

@@ -284,6 +284,10 @@ export async function getJob(id: string): Promise<Job> {
   const { data } = await http.get<unknown>(`/api/jobs/${id}`)
   return parseOrThrow(jobSchema, `GET /api/jobs/${id}`, data)
 }
+export async function cancelJob(id: string): Promise<Job> {
+  const { data } = await http.post<unknown>(`/api/jobs/${id}/cancel`)
+  return parseOrThrow(jobSchema, `POST /api/jobs/${id}/cancel`, data)
+}
 
 export async function getJobOutputs(id: string): Promise<JobOutput[]> {
   const { data } = await http.get<unknown>(`/api/jobs/${id}/outputs`)
