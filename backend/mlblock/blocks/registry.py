@@ -110,6 +110,7 @@ ADVANCED_BLOCKS = {
     # Fine-grained loading helpers.
     "random_split",
     "tensor_dataset",
+    "load_image",
 }
 
 
