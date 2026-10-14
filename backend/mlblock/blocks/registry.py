@@ -132,6 +132,7 @@ ADVANCED_BLOCKS = {
     "isolation_forest",
     # 1D / style-transfer normalizations (batchnorm2d covers the default).
     "batchnorm1d",
+    "layernorm",
 }
 
 
