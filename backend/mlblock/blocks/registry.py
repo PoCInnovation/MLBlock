@@ -111,6 +111,9 @@ ADVANCED_BLOCKS = {
     "random_split",
     "tensor_dataset",
     "load_image",
+    "load_text",
+    # Long-training robustness (train_model covers the common case).
+    "train_epoch",
 }
 
 
