@@ -93,6 +93,13 @@ ADVANCED_ACTIVATIONS = {
     "sigmoid",
 }
 
+# Blocks hidden from the beginner palette (visible with the "advanced"
+# toggle). Rule: a block stays visible iff used by the 12 canonical
+# exercises or explicitly justified; anything else lives here.
+# Per-file opt-out also works via `__advanced__ = True` or "(avancé)".
+ADVANCED_BLOCKS = {
+}
+
 
 def _color_from_folder(name: str) -> str | None:
     """Extract hex color from folder name like 'layers-6366F1'."""
@@ -273,9 +280,12 @@ def _inspect_function(name: str, fn: Callable, category: Any) -> Any:
         )
     outputs = _parse_return_annotation(sig.return_annotation)
     cat_name = getattr(category, "name", "")
+    from mlblock.core.adapters import resolve_alias as _resolve_alias
+
     is_advanced = (
         bool(getattr(fn, "__advanced__", False))
         or (cat_name == "activation" and name in ADVANCED_ACTIVATIONS)
+        or _resolve_alias(name) in ADVANCED_BLOCKS
         or "(avancé)" in (fn.__doc__ or "").lower()
     )
     group = getattr(fn, "__group__", "advanced" if is_advanced else "core")
