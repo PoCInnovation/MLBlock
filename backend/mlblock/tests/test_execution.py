@@ -331,6 +331,8 @@ def test_build_bootstrap_cuda_conditions_torch_install_and_probes():
     assert "python3 -c 'import torch'" in s
     assert "torch torchvision" in s
     assert "Torch $TV" in s
+    assert "timeout 600 uv pip install" in s
     assert len(s) < 4048
     slim = ex.build_bootstrap(backend_url="https://api.example", job_id="J1", gpu_key="K1", timeout="90", cuda=False)
     assert "import torch" not in slim
+    assert "timeout 240 sh -c 'apt-get" in slim

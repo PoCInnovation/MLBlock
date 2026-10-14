@@ -67,14 +67,17 @@ def build_bootstrap(*, backend_url: str, job_id: str, gpu_key: str, timeout: str
         f"export BACKEND_URL='{backend_url}' GPU_API_KEY='{gpu_key}' JOB_ID='{job_id}' BACKEND_TIMEOUT='{timeout}'",
         'KEY="${CONTAINER_API_KEY:-$GPU_API_KEY}"',
         # python:slim embarque uv mais pas curl — filet apt (Vast tourne root, Debian).
-        "command -v curl >/dev/null 2>&1 || { apt-get update -qq && apt-get install -y -qq curl; }",
+        # `timeout` partout : une egress morte ne doit jamais bloquer le run
+        # jusqu'au timer GPU — échec rapide, callbacks d'erreur, retry sur un
+        # autre hôte.
+        "command -v curl >/dev/null 2>&1 || timeout 240 sh -c 'apt-get update -qq && apt-get install -y -qq curl'",
         'post() { curl -sS -m 20 -X POST -H "Authorization: Bearer $KEY"'
         " -H 'Content-Type: application/json'"
         ' -d "$2" "$BACKEND_URL/api/jobs/$JOB_ID/$1" || true; }',
         'post status \'{"block":"bootstrap","status":"running"}\'',
         "command -v uv >/dev/null 2>&1 || curl -LsSf https://astral.sh/uv/install.sh | sh",
         'export PATH="$HOME/.local/bin:$PATH"',
-        f"uv pip install --system -q {reqs} || pip install -q --disable-pip-version-check {reqs}",
+        f"timeout 600 uv pip install --system -q {reqs} || timeout 600 pip install -q --disable-pip-version-check {reqs}",
     ]
     if cuda:
         # Le template CUDA embarque déjà torch : n'installer le bundle torch
@@ -82,8 +85,8 @@ def build_bootstrap(*, backend_url: str, job_id: str, gpu_key: str, timeout: str
         # clash ABI et segfault à l'import, aucun callback possible).
         lines.append(
             f"python3 -c 'import torch' 2>/dev/null || "
-            f"{{ uv pip install --system -q {REQUIREMENTS_TORCH} "
-            f"|| pip install -q --disable-pip-version-check {REQUIREMENTS_TORCH}; }}"
+            f"{{ timeout 600 uv pip install --system -q {REQUIREMENTS_TORCH} "
+            f"|| timeout 600 pip install -q --disable-pip-version-check {REQUIREMENTS_TORCH}; }}"
         )
         lines.append(
             'TV=$(python3 -c "import torch; print(torch.__version__, torch.cuda.is_available())" 2>&1 | head -c 120)'
