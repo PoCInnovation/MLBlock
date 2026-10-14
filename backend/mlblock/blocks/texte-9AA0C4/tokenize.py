@@ -5,6 +5,8 @@ def tokenize(text: "str", sep: "str" = " ") -> "list[str]":
     Args:
         text: Texte à découper.
         sep: Séparateur (choix: | |,|).
+    
+    Exemple: tokenize("Bonjour le monde")
     """
     import re
 
