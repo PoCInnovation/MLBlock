@@ -336,3 +336,29 @@ def test_build_bootstrap_cuda_conditions_torch_install_and_probes():
     slim = ex.build_bootstrap(backend_url="https://api.example", job_id="J1", gpu_key="K1", timeout="90", cuda=False)
     assert "import torch" not in slim
     assert "timeout 240 sh -c 'apt-get" in slim
+
+
+def test_launch_instance_retries_next_offer_on_ghost(monkeypatch):
+    """Une offre fantôme (no_such_ask) ne doit pas tuer le rent : on essaie
+    l'offre suivante au lieu de dummy-instance-id."""
+    import json as _json
+    import urllib.error as _urlerror
+
+    calls = []
+
+    def fake_put(url, **kw):
+        calls.append(url)
+        if url.endswith("/asks/11"):
+            body = _json.dumps({"success": False, "error": "invalid_args",
+                                "msg": "error 404/3603: no_such_ask not available."}).encode()
+            raise _urlerror.HTTPError(url, 400, "Bad Request", {}, __import__("io").BytesIO(body))
+        return _OkContract(22)
+
+    monkeypatch.setattr(
+        "mlblock.core.vast.VastAI.search_offers",
+        lambda s, g, n=1, limit=5: [{"id": 11}, {"id": 22}],
+    )
+    monkeypatch.setattr("mlblock.core.vast.requests.put", fake_put)
+    out = VastAI(api_key="real-key").launch_instance("RTX 3090", 1, None, 20, template_hash_id="h")
+    assert out["id"] == "22"
+    assert len(calls) == 2

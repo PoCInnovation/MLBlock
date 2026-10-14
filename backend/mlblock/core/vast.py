@@ -6,6 +6,28 @@ import requests
 from typing import Any
 
 
+def _is_gone_offer(exc: Exception) -> bool:
+    """Offre prise entre search et PUT : HTTP 400/404/410 avec `no_such_ask`
+    dans le corps (requests comme urllib)."""
+    status = getattr(getattr(exc, "response", None), "status_code", None) or getattr(exc, "code", None)
+    if status not in (400, 404, 410):
+        return False
+    body = ""
+    resp = getattr(exc, "response", None)
+    if resp is not None:
+        try:
+            body = resp.text or ""
+        except Exception:
+            body = ""
+    if not body and hasattr(exc, "read"):
+        try:
+            raw = exc.read()
+            body = raw.decode("utf-8", "replace") if isinstance(raw, bytes) else str(raw)
+        except Exception:
+            body = ""
+    return "no_such_ask" in body
+
+
 class VastAI:
     """Client REST Vast.ai — API v0 (docs.vast.ai/api-reference, OpenAPI 1.0.0).
 
@@ -65,16 +87,6 @@ class VastAI:
             offers = self.search_offers(gpu_name, num_gpus)
             if not offers:
                 raise ValueError(f"No Vast.ai offers found for GPU: {gpu_name}")
-            # Rent the first (cheapest) available offer
-            offer_id = offers[0]["id"]
-            print(
-                "Vast offer: id=%s gpu=%s dph=%s reliability=%s" % (
-                    offer_id,
-                    offers[0].get("gpu_name"),
-                    offers[0].get("dph_total"),
-                    offers[0].get("reliability2", offers[0].get("reliability")),
-                )
-            )
             payload: dict[str, Any] = {
                 "disk": disk,
                 "target_state": "running",
@@ -88,16 +100,37 @@ class VastAI:
             if onstart:
                 # Script exécuté au boot de l'instance — évite le SSH pour lancer le code
                 payload["onstart"] = self._encode_onstart(onstart)
-            # OpenAPI officiel : PUT /asks/{id} (vérifié en réel sur l'API)
-            res = requests.put(f"{self.base_url}/asks/{offer_id}", json=payload, headers=self._headers(), timeout=15)
-            res.raise_for_status()
-            # Key quirk : le create retourne `new_contract` comme ID d'instance (pas `id`).
-            # `instance_api_key` : clé restreinte de l'instance (start/stop/destroy de
-            # CETTE instance) — injectée par Vast dans le container comme
-            # CONTAINER_API_KEY ; elle authentifie les callbacks GPU de ce job.
-            data = res.json()
-            instance_id = data.get("id") or data.get("new_contract")
-            return {"id": str(instance_id), "api_key": data.get("instance_api_key", "")}
+            # Les offres fantômes (no_such_ask : prise entre search et PUT) se
+            # sautent vers l'offre suivante au lieu de tuer le rent.
+            for offer in offers:
+                offer_id = offer["id"]
+                print(
+                    "Vast offer: id=%s gpu=%s dph=%s reliability=%s" % (
+                        offer_id,
+                        offer.get("gpu_name"),
+                        offer.get("dph_total"),
+                        offer.get("reliability2", offer.get("reliability")),
+                    )
+                )
+                try:
+                    # OpenAPI officiel : PUT /asks/{id} (vérifié en réel sur l'API)
+                    res = requests.put(
+                        f"{self.base_url}/asks/{offer_id}", json=payload, headers=self._headers(), timeout=15
+                    )
+                    res.raise_for_status()
+                except Exception as e:
+                    if _is_gone_offer(e):
+                        print(f"Vast offer {offer_id} partie, suivante")
+                        continue
+                    raise
+                # Key quirk : le create retourne `new_contract` comme ID d'instance (pas `id`).
+                # `instance_api_key` : clé restreinte de l'instance (start/stop/destroy de
+                # CETTE instance) — injectée par Vast dans le container comme
+                # CONTAINER_API_KEY ; elle authentifie les callbacks GPU de ce job.
+                data = res.json()
+                instance_id = data.get("id") or data.get("new_contract")
+                return {"id": str(instance_id), "api_key": data.get("instance_api_key", "")}
+            raise ValueError(f"Toutes les offres Vast.ai sont parties ({len(offers)} essayées)")
         except Exception as e:
             print(f"Error launching Vast.ai instance: {e}")
             return {"id": "dummy-instance-id", "error": str(e)}
