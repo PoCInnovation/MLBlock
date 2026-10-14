@@ -33,6 +33,8 @@ def lstm_layer(input_size: "int", hidden_size: "int", in_1: "torch.nn.Module" = 
         batch_first: Batch en premier.
         dropout: Probabilité de dropout. (entre: 0-1)
         bidirectional: Bidirectionnel.
+    
+    Exemple: lstm_layer(16, 32)
     """
     layer = _LSTMOut(nn.LSTM(input_size=input_size, hidden_size=hidden_size, num_layers=num_layers, bias=bias, batch_first=batch_first, dropout=dropout, bidirectional=bidirectional), bidirectional=bidirectional)
     return nn.Sequential(in_1, layer) if in_1 is not None else layer

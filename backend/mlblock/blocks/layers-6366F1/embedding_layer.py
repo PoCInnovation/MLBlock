@@ -24,6 +24,8 @@ def embedding_layer(num_embeddings: "int", embedding_dim: "int", in_1: "torch.nn
         num_embeddings: Taille du vocabulaire. (entre: 1-100000)
         embedding_dim: Dimension. (entre: 1-1024) (suggestions: 16|32|64|128|256)
         padding_idx: Index de padding.
+    
+    Exemple: embedding_layer(1000, 64)
     """
     layer = _EmbeddingModule(num_embeddings=num_embeddings, embedding_dim=embedding_dim, padding_idx=padding_idx)
     return nn.Sequential(in_1, layer) if in_1 is not None else layer

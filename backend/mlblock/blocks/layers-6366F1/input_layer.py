@@ -28,5 +28,7 @@ def input_layer(in_1: "torch.Tensor" = None, in_features: "int" = 4, out_feature
         in_features: Dimension d'entrée. (entre: 1-4096) (suggestions: 4|16|32|64|128)
         out_features: Dimension de sortie. (entre: 1-4096) (suggestions: 16|32|64|128)
         bias: Biais appris.
+    
+    Exemple: input_layer(in_features=4, out_features=16)
     """
     return _FirstLinear(in_features=in_features, out_features=out_features, bias=bias)

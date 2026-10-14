@@ -9,6 +9,8 @@ def maxpool2d_layer(kernel_size: "int" = 2, in_1: "torch.nn.Module" = None, stri
         in_1: Couche précédente (optionnelle).
         kernel_size: Taille du filtre. (entre: 2-8)
         stride: Pas. (entre: 1-8)
+    
+    Exemple: maxpool2d_layer(2)
     """
     from torch import nn
 
