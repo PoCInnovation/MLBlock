@@ -28,6 +28,9 @@ cd ml-block
 # (TBD)
 ```
 
+> ⚠️ TEMPORAIRE — compte de test du smoke GPU live, à supprimer.
+> Email : `smoke-gpu@mlblock.test` — mot de passe : `d9f8650204fbbef3`
+
 ## Get involved
 
 You're invited to join this project ! Check out the [contributing guide](./CONTRIBUTING.md).

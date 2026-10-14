@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-MLBlock is a no-code, block-based ML/RL/DL builder ("Scratch, but for AI"). Users assemble pipelines as DAGs of blocks — PyTorch layers, sklearn models, data loaders, RL envs — in a ReactFlow canvas. Pipelines validate, run locally, generate standalone Python, and dispatch to Vast.ai GPUs. Backend: FastAPI + Pydantic v2 + SQLModel on Supabase PostgreSQL. Frontend: React 19 + Vite + TypeScript. Deployed on Render (Python web + static SPA).
+MLBlock is a no-code, block-based ML/RL/DL builder ("Scratch, but for AI"). Users assemble pipelines as DAGs of blocks — PyTorch layers, sklearn models, data loaders, RL envs — in a ReactFlow canvas. Pipelines validate, run locally, generate standalone Python, and dispatch to Vast.ai GPUs. Backend: FastAPI + Pydantic v2 + SQLModel on Supabase PostgreSQL. Frontend: React 19 + Vite + TypeScript. Deployed on Coolify (Docker Compose on Oracle ARM64 VPS: FastAPI backend + Nginx/serve frontend, auto-redeploy on push to `main`).
 
 **Stages**: `S0 Ingest`, `S1 Prepare`, `S2 Represent` (S2A DL / S2B ML), `S3 Train` (S3A DL / S3B ML), `S4 Eval`, `SX World` (RL isolé).
 
@@ -64,7 +64,10 @@ frontend/
     └── utils/         # layout.ts (dagre), tapGuard.ts, typeCheck.ts, portResolution.ts,
                        # exportImport.ts, columns.ts, blockHelpers.ts, pending-stash.ts, fingerprint, flowConversion
 docs/                  # mlblock_v1.md (canonical spec), routes.md, supabase-auth.md, keep-alive.md, journal-2026-08-03.md, marketing.md
-render.yaml            # backend web + frontend static (SPA rewrite)
+docker-compose.coolify.yml # Coolify stack (backend FastAPI :8000 + frontend :80, healthchecks)
+backend/Dockerfile      # python:3.11-slim + uv sync --frozen (prod image)
+frontend/Dockerfile     # node:22 + pnpm build, servi par `serve -s dist`
+render.yaml             # STALE (pré-Coolify) — ne plus éditer, à supprimer
 backend/main.py        # GENERATED code example — not a source file; ignore
 ```
 
@@ -160,12 +163,12 @@ Backend env: `DATABASE_URL`, `SUPABASE_URL`/`PUBLISHABLE_KEY`/`SECRET_KEY`/`JWKS
 
 ## Runtime/Tooling Preferences
 
-- **Backend**: `uv` only (`uv.lock` committed, `pyproject.toml` canonical). Python `>=3.10` declared, **3.11** pinned in Render (`pythonVersion: 3.11`) and CI (`setup-uv python 3.11`). No `[project.scripts]`, no `.python-version`. `requirements.txt` is stale — never edit as source of truth. `ruff` target `py310`, `E+F` only, `E501` ignored for `mlblock/blocks/**` (line-length 120).
+- **Backend**: `uv` only (`uv.lock` committed, `pyproject.toml` canonical). Python `>=3.10` declared, **3.11** pinned in prod (`backend/Dockerfile: python:3.11-slim-bookworm`) and CI (`setup-uv python 3.11`). No `[project.scripts]`, no `.python-version`. `requirements.txt` is stale — never edit as source of truth. `ruff` target `py310`, `E+F` only, `E501` ignored for `mlblock/blocks/**` (line-length 120).
 - **Frontend**: `pnpm@9.15.4` only (`pnpm-lock.yaml`; no `npm`/`bun`/`yarn`). Node **>=20** (22 recommended). React 19 + `@xyflow/react` 12. Build = `tsc --noEmit && vite build`. Test = `vitest run` node env — no jsdom, no `@testing-library`. Key deps: `zustand`, `@tanstack/react-query`, `@dagrejs/dagre`, `axios`, `zod`, Tailwind v4 (`@theme` in `index.css` mirrored in `theme.ts`), Base UI.
-- **No Vite proxy**: frontend hits `VITE_API_BASE_URL` directly (`http://localhost:8000` in `frontend/.env` for dev; Render bakes deployed URL at build).
+- **No Vite proxy**: frontend hits `VITE_API_BASE_URL` directly (`http://localhost:8000` in `frontend/.env` for dev; Coolify bakes prod URL at build via `VITE_API_BASE_URL` build arg).
 - **tsconfig**: `strict: true`, `moduleResolution: bundler`, `noEmit`, no path aliases, `skipLibCheck`.
 - **DB**: real PostgreSQL required — **no SQLite fallback** in server (tests `pytest.skip` without it). Use Supabase pooler `:6543` transaction mode, IPv4, percent-encode pooler password (`?`→`%3F`, `@`→`%40`, `*`→`%2A`). Free-tier project can pause (DB timeouts while auth looks healthy).
-- **Render**: backend `uv sync` → `.venv/bin/uvicorn mlblock.server.main:app --host 0.0.0.0 --port $PORT`; frontend `pnpm install --frozen-lockfile && VITE_API_BASE_URL=… pnpm run build` → `dist` with SPA rewrite `/* → /index.html`.
+- **Coolify** (`docker-compose.coolify.yml`, VPS Oracle ARM64) : backend `backend/Dockerfile` (uv sync --frozen → uvicorn `:8000`, `/healthz`) ; frontend `frontend/Dockerfile` (pnpm build avec `VITE_API_BASE_URL` en build-arg → `serve -s dist :80`). Auto-redeploy sur push `main` via webhook (`.github/workflows/deploy-coolify.yml`, après CI verte). Détail : `docs/coolify/coolify-deployment.md`. Prod `MLBLOCK_RUN_MODE=gpu`, `BACKEND_URL` = URL backend publique (callbacks Vast).
 
 ## Testing & QA
 
