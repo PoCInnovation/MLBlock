@@ -9,6 +9,8 @@ def evaluate(model: "Model", test_data: "pd.DataFrame", target_column: "str", me
         target_column: Colonne cible.
         method: Métrique. (choix: mse|accuracy|f1|precision|recall)
         plot: Générer un graphique.
+    
+    Exemple: evaluate(modele, test, "target")
     """
     import numpy as np
     X = test_data.drop(columns=[target_column])
