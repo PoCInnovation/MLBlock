@@ -149,6 +149,8 @@ ADVANCED_BLOCKS = {
     "torch_dataset",
     # ndarray t-SNE coordinates (visualisation/tsne covers the plotted one).
     "tsne_coords",
+    # Mega-blocks superseded by SuperBlock templates (kept for compatibility).
+    "data_pipeline",
 }
 
 
