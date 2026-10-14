@@ -102,6 +102,7 @@ ADVANCED_BLOCKS = {
     "sigmoid",
     "tanh",
     "elu",
+    "gelu",
 }
 
 
