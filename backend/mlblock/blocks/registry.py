@@ -123,6 +123,7 @@ ADVANCED_BLOCKS = {
     "conv1d_layer",
     "conv3d_layer",
     "conv_transpose2d_layer",
+    "upsample",
 }
 
 
