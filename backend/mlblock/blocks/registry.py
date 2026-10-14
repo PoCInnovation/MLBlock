@@ -122,6 +122,7 @@ ADVANCED_BLOCKS = {
     # Specialized layers (conv2d_layer covers the common case).
     "conv1d_layer",
     "conv3d_layer",
+    "conv_transpose2d_layer",
 }
 
 
