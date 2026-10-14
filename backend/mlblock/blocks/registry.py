@@ -103,6 +103,7 @@ ADVANCED_BLOCKS = {
     "tanh",
     "elu",
     "gelu",
+    "leaky_relu",
 }
 
 
