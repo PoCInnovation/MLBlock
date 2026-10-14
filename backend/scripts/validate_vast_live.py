@@ -163,7 +163,7 @@ def main():
             code, inst = vast_get(f"/instances/{iid}/")
             st = (inst.get("instances") or {}).get("actual_status") if code == 200 else None
             print(f"[destroy {i + 1:02d}] http={code} actual_status={st}")
-            if code == 404 or st in ("exited", None) and code != 200:
+            if code == 404 or st in ("exited", None):
                 break
         else:
             print("DOUTE : instance encore visible après 2 min (facturation ?). Destroy de secours.")
