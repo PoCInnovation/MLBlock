@@ -137,6 +137,9 @@ ADVANCED_BLOCKS = {
     # Fixed-output pooling (maxpool2d_layer covers the default).
     "avgpool2d",
     "adaptive_avgpool2d",
+    "adaptive_maxpool2d",
+    # Tensor-op recurrent cells (composable *_layer blocks cover them).
+    "lstm",
 }
 
 
