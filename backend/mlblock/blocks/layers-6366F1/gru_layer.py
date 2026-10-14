@@ -18,3 +18,21 @@ class _GRUOut(nn.Module):
             return torch.cat([h_n[-2], h_n[-1]], dim=-1)
         # Dernière couche : (num_layers, batch, hidden) → (batch, hidden)
         return h_n[-1]
+
+
+def gru_layer(input_size: "int", hidden_size: "int", in_1: "torch.nn.Module" = None, num_layers: "int" = 1, bias: "bool" = True, batch_first: "bool" = True, dropout: "float" = 0.0, bidirectional: "bool" = False) -> "torch.nn.Module":  # noqa: F821
+    """GRU Layer.
+    Cellule récurrente GRU composable (nn.Module).
+
+    Args:
+        in_1: Couche précédente (optionnelle).
+        input_size: Taille d'entrée. (entre: 1-512, pas: 1) (suggestions: 16|32|64|128)
+        hidden_size: Taille cachée. (entre: 1-512, pas: 1) (suggestions: 32|64|128|256)
+        num_layers: Nombre de couches.
+        bias: Biais.
+        batch_first: Batch en premier.
+        dropout: Probabilité de dropout. (entre: 0-1)
+        bidirectional: Bidirectionnel.
+    """
+    layer = _GRUOut(nn.GRU(input_size=input_size, hidden_size=hidden_size, num_layers=num_layers, bias=bias, batch_first=batch_first, dropout=dropout, bidirectional=bidirectional), bidirectional=bidirectional)
+    return nn.Sequential(in_1, layer) if in_1 is not None else layer
