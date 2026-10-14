@@ -147,6 +147,8 @@ ADVANCED_BLOCKS = {
     "multihead_attention",
     # Legacy dataset loader (load_torch_dataset covers the common case).
     "torch_dataset",
+    # ndarray t-SNE coordinates (visualisation/tsne covers the plotted one).
+    "tsne_coords",
 }
 
 
