@@ -5,6 +5,8 @@ def random_crop(in_1: "torch.utils.data.Dataset", size: "int") -> "torch.utils.d
     Args:
         in_1: Dataset image.
         size: Output size.
+    
+    Exemple: random_crop(dataset, 28)
     """
     from torchvision import transforms
     aug = transforms.RandomCrop(size)

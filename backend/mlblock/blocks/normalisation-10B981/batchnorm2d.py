@@ -9,6 +9,8 @@ def batchnorm2d(num_features: "int", in_1: "torch.nn.Module" = None) -> "torch.n
     Args:
         num_features: Nombre de canaux. (entre: 1-4096) (suggestions: 16|32|64|128)
         in_1: Couche précédente (optionnelle).
+    
+    Exemple: batchnorm2d(16)
     """
     layer = nn.BatchNorm2d(num_features=num_features)
     return nn.Sequential(in_1, layer) if in_1 is not None else layer

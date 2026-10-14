@@ -6,6 +6,8 @@ def normalize(in_1: "torch.utils.data.Dataset", mean: "list", std: "list") -> "t
         in_1: Dataset image.
         mean: Moyennes par canal. (longueur: 3)
         std: Écarts-types par canal. (longueur: 3)
+    
+    Exemple: normalize(dataset, [0.5], [0.5])
     """
     from torchvision import transforms
     norm = transforms.Normalize(mean=mean, std=std)
