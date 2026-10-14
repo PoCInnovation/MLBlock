@@ -142,6 +142,7 @@ ADVANCED_BLOCKS = {
     "lstm",
     "gru",
     "rnn",
+    "multihead_attention",
 }
 
 
