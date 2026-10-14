@@ -9,6 +9,8 @@ def confusion_matrix(model: "Model", test_data: "pd.DataFrame", target_column: "
         model: Modèle entraîné.
         test_data: Données de test.
         target_column: Colonne cible.
+    
+    Exemple: confusion_matrix(modele, test, "target")
     """
     from sklearn.metrics import confusion_matrix as cm
 
