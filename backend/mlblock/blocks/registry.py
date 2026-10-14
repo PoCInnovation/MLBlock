@@ -109,6 +109,7 @@ ADVANCED_BLOCKS = {
     "silu",
     # Fine-grained loading helpers.
     "random_split",
+    "tensor_dataset",
 }
 
 
