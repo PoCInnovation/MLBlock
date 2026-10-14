@@ -180,7 +180,7 @@ def test_threaded_container_threads_outputs_into_first_inputs():
     compile(code, "<generated>", "exec")
 
 
-def test_tabular_superblock_end_to_end(tmp_path):
+def test_tabular_superblock_end_to_end(tmp_path, monkeypatch):
     """Generated tabular pipeline actually runs in-process."""
     import pandas as pd
     from mlblock.core.generator import generate_code
@@ -197,9 +197,21 @@ def test_tabular_superblock_end_to_end(tmp_path):
         ],
     )
     code = generate_code([node], [])
+    # Stub requests (pattern test_runtime_codegen) : un vrai callback vers
+    # localhost peut pendre BACKEND_TIMEOUT=90s (WSL mirrored jette les SYN).
+    import sys
+    import types
+
+    class _Resp:
+        def json(self):
+            return {}
+
+    fake = types.ModuleType("requests")
+    fake.post = lambda url, **kw: _Resp()  # type: ignore[attr-defined]
+    fake.get = lambda url, **kw: _Resp()  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "requests", fake)
     namespace: dict = {"__name__": "__main__"}
-    # main() runs fully: any wiring/name/param error would raise here
-    # (notify_* callbacks fail silently without a server, then it re-raises).
+    # main() runs fully: any wiring/name/param error would raise here.
     exec(compile(code, "<generated>", "exec"), namespace)  # noqa: S102 -- tested generated code
     # Same chain, direct calls, to assert on values.
     import importlib.util
