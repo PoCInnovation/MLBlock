@@ -117,6 +117,7 @@ ADVANCED_BLOCKS = {
     "early_stopping",
     "model_checkpoint",
     "cosine_lr",
+    "step_lr",
 }
 
 
