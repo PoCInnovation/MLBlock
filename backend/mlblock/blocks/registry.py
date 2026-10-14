@@ -141,6 +141,7 @@ ADVANCED_BLOCKS = {
     # Tensor-op recurrent cells (composable *_layer blocks cover them).
     "lstm",
     "gru",
+    "rnn",
 }
 
 
