@@ -106,6 +106,9 @@ ADVANCED_BLOCKS = {
     "leaky_relu",
     "prelu",
     "selu",
+    "silu",
+    # Fine-grained loading helpers.
+    "random_split",
 }
 
 
