@@ -324,3 +324,13 @@ def test_launch_instance_logs_chosen_offer(monkeypatch, capsys):
     VastAI(api_key="real-key").launch_instance(None, 1, "img", 20)
     out = capsys.readouterr().out
     assert "id=7" in out and "GTX 1070" in out and "0.05" in out
+
+
+def test_build_bootstrap_cuda_conditions_torch_install_and_probes():
+    s = ex.build_bootstrap(backend_url="https://api.example", job_id="J1", gpu_key="K1", timeout="90", cuda=True)
+    assert "python3 -c 'import torch'" in s
+    assert "torch torchvision" in s
+    assert "Torch $TV" in s
+    assert len(s) < 4048
+    slim = ex.build_bootstrap(backend_url="https://api.example", job_id="J1", gpu_key="K1", timeout="90", cuda=False)
+    assert "import torch" not in slim

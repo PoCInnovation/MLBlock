@@ -25,8 +25,10 @@ IMAGE_CUDA = "vastai/pytorch:2.6.0-cuda-12.6.3-py312"
 DISK_SLIM = 20
 DISK_CUDA = 50
 TEMPLATE_CUDA_HASH = os.environ.get("VAST_TEMPLATE_CUDA", "b12fc2b5f6c711d715a5e4714b246818")
-REQUIREMENTS_SLIM = "scikit-learn gymnasium pandas requests xgboost mlflow"
-REQUIREMENTS_CUDA = "scikit-learn gymnasium torchvision pandas requests xgboost mlflow"
+REQUIREMENTS_BASE = "scikit-learn gymnasium pandas requests xgboost mlflow"
+REQUIREMENTS_TORCH = "torch torchvision"
+REQUIREMENTS_SLIM = REQUIREMENTS_BASE
+REQUIREMENTS_CUDA = f"{REQUIREMENTS_BASE} torchvision"
 
 
 def image_for(cuda: bool) -> str:
@@ -60,7 +62,7 @@ def build_bootstrap(*, backend_url: str, job_id: str, gpu_key: str, timeout: str
 
     Fails loud : code fetch failure posts job error and exits non-zero.
     """
-    reqs = requirements_for(cuda)
+    reqs = REQUIREMENTS_BASE
     lines = [
         f"export BACKEND_URL='{backend_url}' GPU_API_KEY='{gpu_key}' JOB_ID='{job_id}' BACKEND_TIMEOUT='{timeout}'",
         'KEY="${CONTAINER_API_KEY:-$GPU_API_KEY}"',
@@ -73,13 +75,30 @@ def build_bootstrap(*, backend_url: str, job_id: str, gpu_key: str, timeout: str
         "command -v uv >/dev/null 2>&1 || curl -LsSf https://astral.sh/uv/install.sh | sh",
         'export PATH="$HOME/.local/bin:$PATH"',
         f"uv pip install --system -q {reqs} || pip install -q --disable-pip-version-check {reqs}",
-        'post output \'{"block":"bootstrap","output":"Environnement installé"}\'',
-        'curl -sSf --retry 8 --retry-all-errors --retry-delay 10 -H "Authorization: Bearer $KEY"'
-        ' "$BACKEND_URL/api/jobs/$JOB_ID/code" -o main.py'
-        ' || { post error \'{"block":"bootstrap","error":"Code non récupéré"}\'; exit 1; }',
-        'post output \'{"block":"bootstrap","output":"Code récupéré"}\'',
-        "python3 main.py",
     ]
+    if cuda:
+        # Le template CUDA embarque déjà torch : n'installer le bundle torch
+        # que s'il manque (un torch pip par-dessus le torch du template =
+        # clash ABI et segfault à l'import, aucun callback possible).
+        lines.append(
+            f"python3 -c 'import torch' 2>/dev/null || "
+            f"{{ uv pip install --system -q {REQUIREMENTS_TORCH} "
+            f"|| pip install -q --disable-pip-version-check {REQUIREMENTS_TORCH}; }}"
+        )
+        lines.append(
+            'TV=$(python3 -c "import torch; print(torch.__version__, torch.cuda.is_available())" 2>&1 | head -c 120)'
+        )
+        lines.append('post output "{\\"block\\":\\"bootstrap\\",\\"output\\":\\"Torch $TV\\"}"')
+    lines.extend(
+        [
+            'post output \'{"block":"bootstrap","output":"Environnement installé"}\'',
+            'curl -sSf --retry 8 --retry-all-errors --retry-delay 10 -H "Authorization: Bearer $KEY"'
+            ' "$BACKEND_URL/api/jobs/$JOB_ID/code" -o main.py'
+            ' || { post error \'{"block":"bootstrap","error":"Code non récupéré"}\'; exit 1; }',
+            'post output \'{"block":"bootstrap","output":"Code récupéré"}\'',
+            "python3 main.py",
+        ]
+    )
     return "\n".join(lines)
 
 
