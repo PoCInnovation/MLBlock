@@ -116,6 +116,7 @@ ADVANCED_BLOCKS = {
     "train_epoch",
     "early_stopping",
     "model_checkpoint",
+    "cosine_lr",
 }
 
 
