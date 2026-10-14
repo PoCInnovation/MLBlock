@@ -126,10 +126,17 @@ def main():
         for i in range(POLL_STATUS):
             time.sleep(30)
             _, job_state = api(f"/api/jobs/{jid}")
+            if i % 4 == 3:
+                code, inst = vast_get(f"/instances/{iid}/")
+                st = (inst.get("instances") or {}).get("actual_status") if code == 200 else None
+                print(f"  vast: http={code} actual_status={st}")
             _, outs = api(f"/api/jobs/{jid}/outputs")
-            for o in outs[seen_outs:]:
-                print(f"  out [{o.get('block_name')}] {o.get('output', '')[:120]}")
-            seen_outs = len(outs)
+            if isinstance(outs, list):
+                for o in outs[seen_outs:]:
+                    print(f"  out [{o.get('block_name')}] {o.get('output', '')[:120]}")
+                seen_outs = len(outs)
+            else:
+                print(f"  outputs inattendus: {str(outs)[:120]}")
             print(f"[{i + 1:02d}] status={job_state.get('status')} outs={len(outs)}")
             if job_state.get("status") in ("done", "error", "cancelled"):
                 break

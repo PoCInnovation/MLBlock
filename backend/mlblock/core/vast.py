@@ -67,6 +67,14 @@ class VastAI:
                 raise ValueError(f"No Vast.ai offers found for GPU: {gpu_name}")
             # Rent the first (cheapest) available offer
             offer_id = offers[0]["id"]
+            print(
+                "Vast offer: id=%s gpu=%s dph=%s reliability=%s" % (
+                    offer_id,
+                    offers[0].get("gpu_name"),
+                    offers[0].get("dph_total"),
+                    offers[0].get("reliability2", offers[0].get("reliability")),
+                )
+            )
             payload: dict[str, Any] = {
                 "disk": disk,
                 "target_state": "running",

@@ -310,3 +310,17 @@ def test_vast_backend_start_passthrough_mock():
     from mlblock.execution import VastBackend
 
     assert VastBackend(api_key="mock-x").start("123") is None
+
+
+def test_launch_instance_logs_chosen_offer(monkeypatch, capsys):
+    monkeypatch.setattr(
+        "mlblock.core.vast.VastAI.search_offers",
+        lambda s, g, n=1, limit=5: [{"id": 7, "gpu_name": "GTX 1070", "dph_total": 0.05}],
+    )
+    monkeypatch.setattr(
+        "mlblock.core.vast.requests.put",
+        lambda url, **kw: _OkContract(42),
+    )
+    VastAI(api_key="real-key").launch_instance(None, 1, "img", 20)
+    out = capsys.readouterr().out
+    assert "id=7" in out and "GTX 1070" in out and "0.05" in out

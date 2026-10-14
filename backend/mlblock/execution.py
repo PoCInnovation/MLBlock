@@ -137,6 +137,8 @@ class VastBackend:
             cuda=cuda,
         )
         template_hash_id = template_for(cuda)
+        offer_note = {"gpu": gpu_for(cuda) or "cheapest", "image": None if template_hash_id else image_for(cuda)}
+        print(f"VastBackend.launch job={job_id} cuda={cuda} {offer_note}")
         instance = self._vast.launch_instance(  # noqa: E501
             gpu_name=gpu_for(cuda),
             num_gpus=1,
