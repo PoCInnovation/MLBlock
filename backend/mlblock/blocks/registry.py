@@ -126,6 +126,8 @@ ADVANCED_BLOCKS = {
     "upsample",
     # Tensor-op duplicates of composable *_layer blocks (Module wins).
     "embedding",
+    # Virtual source block (raises if executed; input_layer covers it).
+    "input",
 }
 
 
