@@ -8,6 +8,8 @@ def xgboost_classifier(train_data: "pd.DataFrame", target_column: "str", n_estim
         n_estimators: Nombre d'arbres. (entre: 10-1000) (suggestions: 50|100|200|500)
         max_depth: Profondeur max. (entre: 1-20) (suggestions: 3|6|10)
         learning_rate: Taux d'apprentissage. (entre: 0.01-1, pas: 0.01) (suggestions: 0.01|0.05|0.1|0.3)
+    
+    Exemple: xgboost_classifier(df, "target")
     """
     from xgboost import XGBClassifier
     X = train_data.drop(columns=[target_column])

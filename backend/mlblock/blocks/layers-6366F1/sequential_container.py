@@ -5,6 +5,8 @@ def sequential_container(in_1: "torch.Tensor" = None) -> "torch.nn.Module":  # n
     """Conteneur Séquentiel
     Empile des couches de réseau de neurones en une architecture séquentielle unifiée.
     in_1: Tenseur d'entrée optionnel pour inférence de forme
+    
+    Exemple: ajoutez des couches enfants puis reliez la sortie
     """
     import torch.nn as nn
 
