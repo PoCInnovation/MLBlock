@@ -1,7 +1,6 @@
 def load_torch_dataset(name: "str", batch_size: "int" = 32, split: "str" = "train") -> "torch.utils.data.Dataset":  # noqa: F821 -- annotation descriptive en chaîne (métadonnées DSL, noms virtuels)
     """Load Torchvision Dataset.
     Charge MNIST, FashionMNIST ou CIFAR10 en Dataset (téléchargement auto).
-    Déprécié : préférez torch_dataset + data_loader.
 
     Args:
         name: Dataset (choix: mnist|fashion_mnist|cifar10).
