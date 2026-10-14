@@ -14,6 +14,8 @@ def train_model(in_1: "torch.nn.Module", in_2: "torch.utils.data.DataLoader", in
         in_4: Loss function.
         epochs: Number of epochs. (suggestions: 5|10|20|50)
         device: Device to train on.
+    
+    Exemple: train_model(modele, loader, optim, perte, 5)
     """
     in_1.to(device)
     history = []
