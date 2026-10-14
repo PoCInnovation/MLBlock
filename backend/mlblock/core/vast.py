@@ -56,6 +56,11 @@ class VastAI:
             "rentable": {"eq": True},
             "rented": {"eq": False},
             "num_gpus": {"eq": num_gpus},
+            # Le moins cher brut a souvent une egress anémique (MNIST 6,5 min
+            # observé à 86 Mbps) : plancher 1 Gbps + fiabilité, le surcoût
+            # ($0.29 vs $0.12/h) est négligeable sur un run de 10 min.
+            "inet_down": {"gt": 1000},
+            "reliability2": {"gt": 0.95},
             "order": [["dph_total", "asc"]],
             "limit": limit,
         }

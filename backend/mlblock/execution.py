@@ -77,7 +77,10 @@ def build_bootstrap(*, backend_url: str, job_id: str, gpu_key: str, timeout: str
         'post status \'{"block":"bootstrap","status":"running"}\'',
         "command -v uv >/dev/null 2>&1 || curl -LsSf https://astral.sh/uv/install.sh | sh",
         'export PATH="$HOME/.local/bin:$PATH"',
-        f"timeout 600 uv pip install --system -q {reqs} || timeout 600 pip install -q --disable-pip-version-check {reqs}",
+        # Deps déjà présentes (image bakée / cache) : skip, sinon 3 min perdues.
+        f"python3 -c 'import sklearn, gymnasium, pandas, requests, xgboost, mlflow' 2>/dev/null || "
+        f"{{ timeout 600 uv pip install --system -q {reqs} "
+        f"|| timeout 600 pip install -q --disable-pip-version-check {reqs}; }}",
     ]
     if cuda:
         # Le template CUDA embarque déjà torch : n'installer le bundle torch
