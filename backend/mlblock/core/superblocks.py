@@ -30,12 +30,12 @@ SUPERBLOCK_DEFS: dict[str, dict[str, Any]] = {
     },
     "torch_data_pipeline": {
         "title": "Chargement d'Images & Lots (PyTorch)",
-        "description": "Charge un dataset d'images puis l'enveloppe en DataLoader.",
+        "description": "Prépare les DataLoaders train/test via le gabarit data_pipeline.",
         "macro_stage": 1,
         "engine": "pytorch",
         "stage": 0,
         "stage_name": "Ingest",
-        "children": [_child("load_torch_dataset"), _child("data_loader")],
+        "children": [_child("data_pipeline")],
     },
     "gym_env_pipeline": {
         "title": "Monde Virtuel & Simulation (Gymnasium)",
@@ -68,12 +68,12 @@ SUPERBLOCK_DEFS: dict[str, dict[str, Any]] = {
     },
     "sklearn_model_trainer": {
         "title": "Modèle Statistique & Arbres (Scikit-Learn)",
-        "description": "Entraîne un estimateur statistique sur données tabulaires.",
+        "description": "Chaîne scaler, PCA et estimateur via le gabarit ml_pipeline.",
         "macro_stage": 2,
         "engine": "sklearn",
         "stage": 3,
         "stage_name": "Train",
-        "children": [_child("logistic_regression")],
+        "children": [_child("ml_pipeline")],
     },
     "xgboost_trainer": {
         "title": "Modèle de Boosting Rapide (XGBoost)",
