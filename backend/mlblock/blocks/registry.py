@@ -140,6 +140,7 @@ ADVANCED_BLOCKS = {
     "adaptive_maxpool2d",
     # Tensor-op recurrent cells (composable *_layer blocks cover them).
     "lstm",
+    "gru",
 }
 
 
