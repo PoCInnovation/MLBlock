@@ -1,0 +1,557 @@
+{
+ "adam": {
+  "category": "entrainement",
+  "engine": "pytorch",
+  "macro_stage": 2
+ },
+ "adaptive_avgpool2d": {
+  "category": "regroupement",
+  "engine": "pytorch",
+  "macro_stage": 2
+ },
+ "adaptive_maxpool2d": {
+  "category": "regroupement",
+  "engine": "pytorch",
+  "macro_stage": 2
+ },
+ "agent_rollout_viewer": {
+  "category": "superblocks",
+  "engine": "gym",
+  "macro_stage": 3
+ },
+ "avgpool2d": {
+  "category": "regroupement",
+  "engine": "pytorch",
+  "macro_stage": 2
+ },
+ "batchnorm1d": {
+  "category": "normalisation",
+  "engine": "pytorch",
+  "macro_stage": 2
+ },
+ "batchnorm2d": {
+  "category": "normalisation",
+  "engine": "pytorch",
+  "macro_stage": 2
+ },
+ "build_vocab": {
+  "category": "texte",
+  "engine": "generic",
+  "macro_stage": 1
+ },
+ "clustering_visualizer": {
+  "category": "superblocks",
+  "engine": "sklearn",
+  "macro_stage": 3
+ },
+ "confusion_matrix": {
+  "category": "entrainement",
+  "engine": "sklearn",
+  "macro_stage": 3
+ },
+ "confusion_matrix_eval": {
+  "category": "superblocks",
+  "engine": "sklearn",
+  "macro_stage": 3
+ },
+ "conv1d_layer": {
+  "category": "layers",
+  "engine": "pytorch",
+  "macro_stage": 2
+ },
+ "conv2d_layer": {
+  "category": "layers",
+  "engine": "pytorch",
+  "macro_stage": 2
+ },
+ "conv3d_layer": {
+  "category": "layers",
+  "engine": "pytorch",
+  "macro_stage": 2
+ },
+ "conv_transpose2d_layer": {
+  "category": "layers",
+  "engine": "pytorch",
+  "macro_stage": 2
+ },
+ "cosine_lr": {
+  "category": "entrainement",
+  "engine": "pytorch",
+  "macro_stage": 2
+ },
+ "create_env": {
+  "category": "renforcement",
+  "engine": "gym",
+  "macro_stage": 1
+ },
+ "cross_entropy_loss": {
+  "category": "entrainement",
+  "engine": "pytorch",
+  "macro_stage": 2
+ },
+ "data_loader": {
+  "category": "chargement",
+  "engine": "pytorch",
+  "macro_stage": 1
+ },
+ "data_pipeline": {
+  "category": "donnees",
+  "engine": "generic",
+  "macro_stage": 1
+ },
+ "decision_tree": {
+  "category": "modeles",
+  "engine": "sklearn",
+  "macro_stage": 2
+ },
+ "deep_evaluator": {
+  "category": "superblocks",
+  "engine": "pytorch",
+  "macro_stage": 3
+ },
+ "deep_trainer": {
+  "category": "entrainement",
+  "engine": "pytorch",
+  "macro_stage": 2
+ },
+ "df_to_loader": {
+  "category": "chargement",
+  "engine": "generic",
+  "macro_stage": 1
+ },
+ "df_to_tensor": {
+  "category": "transformations",
+  "engine": "transition",
+  "macro_stage": 99
+ },
+ "dropout_layer": {
+  "category": "layers",
+  "engine": "pytorch",
+  "macro_stage": 2
+ },
+ "early_stopping": {
+  "category": "entrainement",
+  "engine": "pytorch",
+  "macro_stage": 2
+ },
+ "elu": {
+  "category": "activation",
+  "engine": "pytorch",
+  "macro_stage": 2
+ },
+ "embedding": {
+  "category": "layers",
+  "engine": "pytorch",
+  "macro_stage": 2
+ },
+ "embedding_layer": {
+  "category": "layers",
+  "engine": "pytorch",
+  "macro_stage": 2
+ },
+ "encode_text": {
+  "category": "texte",
+  "engine": "generic",
+  "macro_stage": 1
+ },
+ "env_to_tensor": {
+  "category": "renforcement",
+  "engine": "transition",
+  "macro_stage": 99
+ },
+ "evaluate": {
+  "category": "entrainement",
+  "engine": "sklearn",
+  "macro_stage": 3
+ },
+ "evaluate_agent": {
+  "category": "renforcement",
+  "engine": "gym",
+  "macro_stage": 1
+ },
+ "flatten_layer": {
+  "category": "layers",
+  "engine": "pytorch",
+  "macro_stage": 2
+ },
+ "gelu": {
+  "category": "activation",
+  "engine": "pytorch",
+  "macro_stage": 2
+ },
+ "gru": {
+  "category": "sequences",
+  "engine": "pytorch",
+  "macro_stage": 2
+ },
+ "gym_env_pipeline": {
+  "category": "superblocks",
+  "engine": "gym",
+  "macro_stage": 1
+ },
+ "identity": {
+  "category": "activation",
+  "engine": "pytorch",
+  "macro_stage": 2
+ },
+ "indices_to_loader": {
+  "category": "chargement",
+  "engine": "generic",
+  "macro_stage": 1
+ },
+ "input": {
+  "category": "layers",
+  "engine": "pytorch",
+  "macro_stage": 2
+ },
+ "input_layer": {
+  "category": "layers",
+  "engine": "pytorch",
+  "macro_stage": 2
+ },
+ "instancenorm2d": {
+  "category": "normalisation",
+  "engine": "pytorch",
+  "macro_stage": 2
+ },
+ "isolation_forest": {
+  "category": "modeles",
+  "engine": "sklearn",
+  "macro_stage": 2
+ },
+ "kmeans": {
+  "category": "modeles",
+  "engine": "sklearn",
+  "macro_stage": 2
+ },
+ "knn": {
+  "category": "modeles",
+  "engine": "sklearn",
+  "macro_stage": 2
+ },
+ "layernorm": {
+  "category": "normalisation",
+  "engine": "pytorch",
+  "macro_stage": 2
+ },
+ "leaky_relu": {
+  "category": "activation",
+  "engine": "pytorch",
+  "macro_stage": 2
+ },
+ "linear_layer": {
+  "category": "layers",
+  "engine": "pytorch",
+  "macro_stage": 2
+ },
+ "linear_regression": {
+  "category": "modeles",
+  "engine": "sklearn",
+  "macro_stage": 2
+ },
+ "load_csv": {
+  "category": "donnees",
+  "engine": "sklearn",
+  "macro_stage": 1
+ },
+ "load_image": {
+  "category": "donnees",
+  "engine": "generic",
+  "macro_stage": 1
+ },
+ "load_sklearn_dataset": {
+  "category": "donnees",
+  "engine": "sklearn",
+  "macro_stage": 1
+ },
+ "load_text": {
+  "category": "donnees",
+  "engine": "generic",
+  "macro_stage": 1
+ },
+ "load_torch_dataset": {
+  "category": "donnees",
+  "engine": "pytorch",
+  "macro_stage": 1
+ },
+ "logistic_regression": {
+  "category": "modeles",
+  "engine": "sklearn",
+  "macro_stage": 2
+ },
+ "lstm": {
+  "category": "sequences",
+  "engine": "pytorch",
+  "macro_stage": 2
+ },
+ "lstm_layer": {
+  "category": "layers",
+  "engine": "pytorch",
+  "macro_stage": 2
+ },
+ "maxpool2d_layer": {
+  "category": "layers",
+  "engine": "pytorch",
+  "macro_stage": 2
+ },
+ "ml_pipeline": {
+  "category": "modeles",
+  "engine": "sklearn",
+  "macro_stage": 2
+ },
+ "mlflow_model_exporter": {
+  "category": "entrainement",
+  "engine": "mlflow",
+  "macro_stage": 3
+ },
+ "mlflow_tracker": {
+  "category": "entrainement",
+  "engine": "mlflow",
+  "macro_stage": 2
+ },
+ "model_checkpoint": {
+  "category": "entrainement",
+  "engine": "pytorch",
+  "macro_stage": 2
+ },
+ "module_to_policy": {
+  "category": "renforcement",
+  "engine": "transition",
+  "macro_stage": 99
+ },
+ "mse_loss": {
+  "category": "entrainement",
+  "engine": "pytorch",
+  "macro_stage": 2
+ },
+ "multihead_attention": {
+  "category": "sequences",
+  "engine": "pytorch",
+  "macro_stage": 2
+ },
+ "nlp_data_pipeline": {
+  "category": "superblocks",
+  "engine": "pytorch",
+  "macro_stage": 1
+ },
+ "normalize": {
+  "category": "transformations",
+  "engine": "pytorch",
+  "macro_stage": 1
+ },
+ "pca": {
+  "category": "modeles",
+  "engine": "sklearn",
+  "macro_stage": 2
+ },
+ "plot_predictions": {
+  "category": "visualisation",
+  "engine": "viz",
+  "macro_stage": 3
+ },
+ "polynomial_features": {
+  "category": "transformations",
+  "engine": "generic",
+  "macro_stage": 1
+ },
+ "prelu": {
+  "category": "activation",
+  "engine": "pytorch",
+  "macro_stage": 2
+ },
+ "q_learning": {
+  "category": "renforcement",
+  "engine": "gym",
+  "macro_stage": 1
+ },
+ "random_crop": {
+  "category": "transformations",
+  "engine": "pytorch",
+  "macro_stage": 1
+ },
+ "random_flip": {
+  "category": "transformations",
+  "engine": "pytorch",
+  "macro_stage": 1
+ },
+ "random_forest": {
+  "category": "modeles",
+  "engine": "sklearn",
+  "macro_stage": 2
+ },
+ "random_split": {
+  "category": "chargement",
+  "engine": "generic",
+  "macro_stage": 1
+ },
+ "reduce_lr_on_plateau": {
+  "category": "entrainement",
+  "engine": "pytorch",
+  "macro_stage": 2
+ },
+ "relu_layer": {
+  "category": "layers",
+  "engine": "pytorch",
+  "macro_stage": 2
+ },
+ "resize": {
+  "category": "transformations",
+  "engine": "pytorch",
+  "macro_stage": 1
+ },
+ "rl_agent_trainer": {
+  "category": "superblocks",
+  "engine": "gym",
+  "macro_stage": 2
+ },
+ "rnn": {
+  "category": "sequences",
+  "engine": "pytorch",
+  "macro_stage": 2
+ },
+ "rnn_layer": {
+  "category": "layers",
+  "engine": "pytorch",
+  "macro_stage": 2
+ },
+ "selu": {
+  "category": "activation",
+  "engine": "pytorch",
+  "macro_stage": 2
+ },
+ "sequence_dataset": {
+  "category": "donnees",
+  "engine": "generic",
+  "macro_stage": 1
+ },
+ "sequential_container": {
+  "category": "layers",
+  "engine": "pytorch",
+  "macro_stage": 2
+ },
+ "sequential_model": {
+  "category": "superblocks",
+  "engine": "pytorch",
+  "macro_stage": 2
+ },
+ "sgd": {
+  "category": "entrainement",
+  "engine": "pytorch",
+  "macro_stage": 2
+ },
+ "sigmoid": {
+  "category": "activation",
+  "engine": "pytorch",
+  "macro_stage": 2
+ },
+ "silhouette": {
+  "category": "entrainement",
+  "engine": "viz",
+  "macro_stage": 3
+ },
+ "silu": {
+  "category": "activation",
+  "engine": "pytorch",
+  "macro_stage": 2
+ },
+ "sklearn_model_trainer": {
+  "category": "superblocks",
+  "engine": "sklearn",
+  "macro_stage": 2
+ },
+ "softmax": {
+  "category": "activation",
+  "engine": "pytorch",
+  "macro_stage": 2
+ },
+ "standard_scaler": {
+  "category": "modeles",
+  "engine": "sklearn",
+  "macro_stage": 2
+ },
+ "step_lr": {
+  "category": "entrainement",
+  "engine": "pytorch",
+  "macro_stage": 2
+ },
+ "svm": {
+  "category": "modeles",
+  "engine": "sklearn",
+  "macro_stage": 2
+ },
+ "tabular_data_pipeline": {
+  "category": "superblocks",
+  "engine": "sklearn",
+  "macro_stage": 1
+ },
+ "tanh": {
+  "category": "activation",
+  "engine": "pytorch",
+  "macro_stage": 2
+ },
+ "tensor_dataset": {
+  "category": "chargement",
+  "engine": "generic",
+  "macro_stage": 1
+ },
+ "to_tensor": {
+  "category": "transformations",
+  "engine": "transition",
+  "macro_stage": 99
+ },
+ "tokenize": {
+  "category": "texte",
+  "engine": "generic",
+  "macro_stage": 1
+ },
+ "torch_data_pipeline": {
+  "category": "superblocks",
+  "engine": "pytorch",
+  "macro_stage": 1
+ },
+ "torch_dataset": {
+  "category": "donnees",
+  "engine": "generic",
+  "macro_stage": 1
+ },
+ "train_epoch": {
+  "category": "entrainement",
+  "engine": "pytorch",
+  "macro_stage": 2
+ },
+ "train_model": {
+  "category": "entrainement",
+  "engine": "pytorch",
+  "macro_stage": 2
+ },
+ "train_test_split": {
+  "category": "donnees",
+  "engine": "sklearn",
+  "macro_stage": 1
+ },
+ "tsne": {
+  "category": "visualisation",
+  "engine": "sklearn",
+  "macro_stage": 3
+ },
+ "upsample": {
+  "category": "layers",
+  "engine": "pytorch",
+  "macro_stage": 2
+ },
+ "xgboost_classifier": {
+  "category": "modeles",
+  "engine": "sklearn",
+  "macro_stage": 2
+ },
+ "xgboost_regressor": {
+  "category": "modeles",
+  "engine": "sklearn",
+  "macro_stage": 2
+ },
+ "xgboost_trainer": {
+  "category": "superblocks",
+  "engine": "sklearn",
+  "macro_stage": 2
+ }
+}
