@@ -114,6 +114,7 @@ ADVANCED_BLOCKS = {
     "load_text",
     # Long-training robustness (train_model covers the common case).
     "train_epoch",
+    "early_stopping",
 }
 
 
