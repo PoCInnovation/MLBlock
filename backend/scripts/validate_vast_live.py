@@ -33,7 +33,7 @@ KEEP = "--keep" in sys.argv
 CUDA = "--cuda" in sys.argv  # pipeline torch MNIST -> chemin template CUDA (RTX 3090)
 JWT = os.environ.get("SMOKE_JWT", "")
 VAST_API_KEY = os.environ.get("VAST_API_KEY", "")
-POLL_STATUS = 40  # 40 x 30 s = 20 min max (pull image + uv install)
+POLL_STATUS = 60  # 60 x 30 s = 30 min max (template : pull image + install + train)
 POLL_DESTROY = 12  # 12 x 10 s = 2 min pour constater la destruction
 
 
@@ -65,7 +65,21 @@ def vast_get(path, timeout=15):
         with urllib.request.urlopen(req, timeout=timeout) as r:
             return r.status, json.loads(r.read())
     except urllib.error.HTTPError as e:
-        return e.code, {}
+        try:
+            return e.code, json.loads(e.read())
+        except Exception:
+            return e.code, {}
+
+
+def vast_instance_detail(iid):
+    import urllib.parse as _up
+
+    code, d = vast_get("/v1/instances?" + _up.urlencode({
+        "select_cols": json.dumps(["id", "actual_status", "status_msg", "gpu_util", "cur_state"]),
+        "select_filters": json.dumps({"id": {"eq": int(iid)}}),
+    }))
+    insts = (d.get("instances") or []) if code == 200 else []
+    return code, (insts[0] if insts else None)
 
 
 def vast_delete_instance(instance_id):
@@ -138,7 +152,11 @@ def main():
             if i % 4 == 3:
                 code, inst = vast_get(f"/instances/{iid}/")
                 st = (inst.get("instances") or {}).get("actual_status") if code == 200 else None
-                print(f"  vast: http={code} actual_status={st}")
+                det = ""
+                code1, detail = vast_instance_detail(iid)
+                if detail:
+                    det = f" v1={detail.get('actual_status')}/{detail.get('cur_state')} gpu={detail.get('gpu_util')} msg={str(detail.get('status_msg'))[:80]}"
+                print(f"  vast: http={code} actual_status={st}{det}")
             _, outs = api(f"/api/jobs/{jid}/outputs")
             if isinstance(outs, list):
                 for o in outs[seen_outs:]:
