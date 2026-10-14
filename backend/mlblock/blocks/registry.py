@@ -92,7 +92,6 @@ ADVANCED_ACTIVATIONS = {
     "tanh",
     "identity",
     "sigmoid",
-    "softmax",
 }
 
 
