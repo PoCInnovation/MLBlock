@@ -118,6 +118,9 @@ ADVANCED_BLOCKS = {
     "model_checkpoint",
     "cosine_lr",
     "step_lr",
+    "reduce_lr_on_plateau",
+    # Specialized layers (conv2d_layer covers the common case).
+    "conv1d_layer",
 }
 
 
