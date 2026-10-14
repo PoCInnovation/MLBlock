@@ -151,6 +151,7 @@ ADVANCED_BLOCKS = {
     "tsne_coords",
     # Mega-blocks superseded by SuperBlock templates (kept for compatibility).
     "data_pipeline",
+    "ml_pipeline",
 }
 
 
