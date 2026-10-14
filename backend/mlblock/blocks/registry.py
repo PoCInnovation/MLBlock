@@ -115,6 +115,7 @@ ADVANCED_BLOCKS = {
     # Long-training robustness (train_model covers the common case).
     "train_epoch",
     "early_stopping",
+    "model_checkpoint",
 }
 
 
