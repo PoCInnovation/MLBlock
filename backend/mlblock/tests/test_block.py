@@ -101,3 +101,31 @@ def test_tsne_visualization():
     png_bytes = tsne_meta.execute({"in_1": df, "model": km, "perplexity": 2.0})
     assert isinstance(png_bytes, bytes)
     assert png_bytes.startswith(b"\x89PNG\r\n\x1a\n")
+
+
+def test_load_torch_dataset_arms_bounded_download_timeout(monkeypatch):
+    """Le download torchvision tourne sous socket timeout borné (sinon hang
+    infini sur hôte à l'egress cassé, observé en live), restauré après."""
+    import importlib.util
+    import socket
+    from pathlib import Path
+
+    import torchvision.datasets
+
+    path = Path("mlblock/blocks/donnees-22C55E/load_torch_dataset.py")
+    spec = importlib.util.spec_from_file_location("ltorch_timeout_mod", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+
+    seen = {}
+    prev = socket.getdefaulttimeout()
+
+    class FakeMNIST:
+        def __init__(self, *a, **kw):
+            seen["timeout"] = socket.getdefaulttimeout()
+
+    monkeypatch.setattr(torchvision.datasets, "MNIST", FakeMNIST)
+    out = mod.load_torch_dataset("mnist")
+    assert isinstance(out, FakeMNIST)
+    assert seen["timeout"] == mod.DOWNLOAD_TIMEOUT_S
+    assert socket.getdefaulttimeout() == prev
