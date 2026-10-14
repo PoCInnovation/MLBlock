@@ -101,6 +101,7 @@ ADVANCED_BLOCKS = {
     # Expert activation variants (relu_layer + softmax stay visible).
     "sigmoid",
     "tanh",
+    "elu",
 }
 
 
