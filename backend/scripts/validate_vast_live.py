@@ -18,7 +18,8 @@ Préconditions opérateur :
   3. Coût estimé : ~0,10-0,30 $ (3090, quelques minutes). Destroy garanti en finally.
 
 Usage :
-  SMOKE_JWT=<jwt> uv run python scripts/validate_vast_live.py [--base http://localhost:8000]
+  SMOKE_JWT=<jwt> uv run python scripts/validate_vast_live.py [--base http://localhost:8000] [--keep] [--cuda]
+  --cuda : pipeline MNIST torch -> template CUDA (RTX 3090), prouve le chemin template.
 """
 import json
 import os
@@ -29,6 +30,7 @@ import urllib.request
 
 BASE = sys.argv[sys.argv.index("--base") + 1] if "--base" in sys.argv else "http://localhost:8000"
 KEEP = "--keep" in sys.argv
+CUDA = "--cuda" in sys.argv  # pipeline torch MNIST -> chemin template CUDA (RTX 3090)
 JWT = os.environ.get("SMOKE_JWT", "")
 VAST_API_KEY = os.environ.get("VAST_API_KEY", "")
 POLL_STATUS = 40  # 40 x 30 s = 20 min max (pull image + uv install)
@@ -95,6 +97,7 @@ def main():
     print(f"Backend OK sur {BASE} : {health}")
 
     # Pipeline Iris minimal (sklearn, secondes sur slim) — cf. validate_exercises.py
+    # --cuda : exo MNIST torch (5.2) -> chemin template CUDA.
     def N(i, t, params=None):
         return {"id": f"n{i}", "type": t, "params": params or {}, "children": [],
                 "position": {"x": i * 240, "y": 100}}
@@ -102,11 +105,17 @@ def main():
     def E(s, t, sp="out_1", tp="in_1"):
         return {"source": f"n{s}", "source_port": sp, "target": f"n{t}", "target_port": tp}
 
-    nodes = [N(1, "load_sklearn_dataset", {"name": "iris"}), N(2, "train_test_split", {"ratio": "0.7"}),
-             N(3, "random_forest", {"target_column": "target"}), N(4, "evaluate", {"target_column": "target", "method": "accuracy"})]
-    edges = [E(1, 2, tp="dataset"), E(2, 3, sp="out_1", tp="train_data"),
-             E(2, 4, sp="out_2", tp="test_data"), E(3, 4, tp="model")]
-    status, pipe = api("/api/pipelines", "POST", {"name": "smoke-vast-live", "is_draft": False, "nodes": nodes, "edges": edges})
+    if CUDA:
+        name = "smoke-vast-live-cuda"
+        nodes = [N(1, "load_torch_dataset", {"name": "mnist", "batch_size": "512"}), N(2, "flatten_layer", {}), N(3, "linear_layer", {"in_features": "784", "out_features": "10"}), N(4, "adam", {}), N(5, "cross_entropy_loss", {}), N(6, "train_model", {"epochs": "1"}), N(7, "data_loader", {"batch_size": "512"})]
+        edges = [E(1, 7, tp="in_1"), E(7, 6, tp="in_2"), E(2, 3), E(3, 6, tp="in_1"), E(3, 4, tp="in_1"), E(4, 6, tp="in_3"), E(5, 6, tp="in_4")]
+    else:
+        name = "smoke-vast-live"
+        nodes = [N(1, "load_sklearn_dataset", {"name": "iris"}), N(2, "train_test_split", {"ratio": "0.7"}),
+                 N(3, "random_forest", {"target_column": "target"}), N(4, "evaluate", {"target_column": "target", "method": "accuracy"})]
+        edges = [E(1, 2, tp="dataset"), E(2, 3, sp="out_1", tp="train_data"),
+                 E(2, 4, sp="out_2", tp="test_data"), E(3, 4, tp="model")]
+    status, pipe = api("/api/pipelines", "POST", {"name": name, "is_draft": False, "nodes": nodes, "edges": edges})
     if status != 201:
         print(f"CREATE {status}: {pipe}")
         return 1

@@ -92,9 +92,9 @@ results["nlp"] = run_exercise("ex-nlp", nodes, edges)
 
 print(json.dumps(results))
 
-# 5.2 MNIST : load_torch_dataset → train_model(in_2) ; flatten_layer → linear_layer → train_model(in_1) + adam(in_1)
-nodes = [N(1, "load_torch_dataset", {"name": "mnist", "batch_size": "512"}), N(2, "flatten_layer", {}), N(3, "linear_layer", {"in_features": "784", "out_features": "10"}), N(4, "adam", {}), N(5, "cross_entropy_loss", {}), N(6, "train_model", {"epochs": "1"})]
-edges = [E(1, 6, tp="in_2"), E(2, 3), E(3, 6, tp="in_1"), E(3, 4, tp="in_1"), E(4, 6, tp="in_3"), E(5, 6, tp="in_4")]
+# 5.2 MNIST : load_torch_dataset → data_loader → train_model(in_2) ; flatten_layer → linear_layer → train_model(in_1) + adam(in_1)
+nodes = [N(1, "load_torch_dataset", {"name": "mnist", "batch_size": "512"}), N(2, "flatten_layer", {}), N(3, "linear_layer", {"in_features": "784", "out_features": "10"}), N(4, "adam", {}), N(5, "cross_entropy_loss", {}), N(6, "train_model", {"epochs": "1"}), N(7, "data_loader", {"batch_size": "512"})]
+edges = [E(1, 7, tp="in_1"), E(7, 6, tp="in_2"), E(2, 3), E(3, 6, tp="in_1"), E(3, 4, tp="in_1"), E(4, 6, tp="in_3"), E(5, 6, tp="in_4")]
 results["mnist"] = run_exercise("ex-mnist", nodes, edges)
 
 # 5.5 RL : create_env → q_learning → evaluate_agent

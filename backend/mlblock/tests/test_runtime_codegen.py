@@ -262,3 +262,50 @@ def test_notify_error_retries_on_transient_failure(monkeypatch):
     monkeypatch.setattr("time.sleep", lambda s: None)
     mod.notify_error("pipeline", ValueError("boom"))  # type: ignore
     assert calls["n"] >= 2, "error pipeline non re-tenté après échec transitoire"
+
+
+def test_generated_mnist_pipeline_runs_end_to_end_cpu(monkeypatch):
+    """Exo 5.2 (chemin template CUDA) : le code généré tourne vraiment en local
+    CPU — si le hang live vient du code, ce test le reproduit sans dépenser."""
+    import sys
+    import types
+
+    from mlblock.core.generator import generate_code
+    from mlblock.server.schemas import PipelineEdge, PipelineNode
+
+    nodes = [
+        {"id": "n1", "type": "load_torch_dataset", "params": {"name": "mnist", "batch_size": "512"}, "children": [], "position": {"x": 0, "y": 0}},
+        {"id": "n2", "type": "flatten_layer", "params": {}, "children": [], "position": {"x": 0, "y": 0}},
+        {"id": "n3", "type": "linear_layer", "params": {"in_features": "784", "out_features": "10"}, "children": [], "position": {"x": 0, "y": 0}},
+        {"id": "n4", "type": "adam", "params": {}, "children": [], "position": {"x": 0, "y": 0}},
+        {"id": "n5", "type": "cross_entropy_loss", "params": {}, "children": [], "position": {"x": 0, "y": 0}},
+        {"id": "n6", "type": "train_model", "params": {"epochs": "1"}, "children": [], "position": {"x": 0, "y": 0}},
+        {"id": "n7", "type": "data_loader", "params": {"batch_size": "512"}, "children": [], "position": {"x": 0, "y": 0}},
+    ]
+    edges = [
+        {"source": "n1", "source_port": "out_1", "target": "n7", "target_port": "in_1"},
+        {"source": "n7", "source_port": "out_1", "target": "n6", "target_port": "in_2"},
+        {"source": "n2", "source_port": "out_1", "target": "n3", "target_port": "in_1"},
+        {"source": "n3", "source_port": "out_1", "target": "n6", "target_port": "in_1"},
+        {"source": "n3", "source_port": "out_1", "target": "n4", "target_port": "in_1"},
+        {"source": "n4", "source_port": "out_1", "target": "n6", "target_port": "in_3"},
+        {"source": "n5", "source_port": "out_1", "target": "n6", "target_port": "in_4"},
+    ]
+    code = generate_code([PipelineNode(**n) for n in nodes], [PipelineEdge(**e) for e in edges])
+    compile(code, "<mnist>", "exec")
+    posts: list[dict] = []
+
+    class FakeResponse:
+        def json(self):
+            return {}
+
+    fake = types.ModuleType("requests")
+    fake.post = lambda url, **kw: posts.append({"url": url, **kw}) or FakeResponse()  # type: ignore
+    fake.get = lambda url, **kw: FakeResponse()  # type: ignore
+    fake.delete = lambda url, **kw: FakeResponse()  # type: ignore
+    monkeypatch.setitem(sys.modules, "requests", fake)
+    mod = types.ModuleType("gen_mnist")
+    exec(compile(code, "<mnist>", "exec"), mod.__dict__)
+    mod.main()  # type: ignore
+    done = {p["json"]["block"] for p in posts if p["url"].endswith("/status") and p["json"]["status"] == "done"}
+    assert "train_model" in done and "pipeline" in done
