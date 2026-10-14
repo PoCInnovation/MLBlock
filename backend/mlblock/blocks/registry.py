@@ -121,6 +121,7 @@ ADVANCED_BLOCKS = {
     "reduce_lr_on_plateau",
     # Specialized layers (conv2d_layer covers the common case).
     "conv1d_layer",
+    "conv3d_layer",
 }
 
 
