@@ -98,6 +98,8 @@ ADVANCED_ACTIVATIONS = {
 # exercises or explicitly justified; anything else lives here.
 # Per-file opt-out also works via `__advanced__ = True` or "(avancé)".
 ADVANCED_BLOCKS = {
+    # Expert activation variants (relu_layer + softmax stay visible).
+    "sigmoid",
 }
 
 
