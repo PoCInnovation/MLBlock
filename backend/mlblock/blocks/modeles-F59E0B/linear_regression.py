@@ -6,6 +6,8 @@ def linear_regression(train_data: "pd.DataFrame", target_column: "str", fit_inte
         train_data: Données d'entraînement.
         target_column: Colonne cible.
         fit_intercept: Ajuster l'ordonnée à l'origine.
+    
+    Exemple: linear_regression(df, "target")
     """
     from sklearn.linear_model import LinearRegression
     X = train_data.drop(columns=[target_column])
