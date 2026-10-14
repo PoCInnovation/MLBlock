@@ -30,7 +30,7 @@
 
 ---
 
-## 2. Matrice Complète des 91 Blocs du Catalogue
+## 2. Matrice Complète des 113 Blocs du Catalogue
 
 Légende des statuts cibles (§02 Réduction) :
 - `keep` : Conservé dans la palette canonique v1 (~45 blocs cœur).
@@ -39,23 +39,26 @@ Légende des statuts cibles (§02 Réduction) :
 - `deprecate` : Déprécié (conservé temporairement avec wrapper et avertissement).
 - `hide` : Conservé mais replié par défaut dans la sous-palette avancée.
 
-**Statistiques globales :** 42/91 blocs (46.2%) sont directement utilisés dans les 12 exercices.
-- `keep` : 80
+**Statistiques globales :** 42/113 blocs (37.2%) sont directement utilisés dans les 12 exercices.
+- `keep` : 103
 - `hide` : 9
 - `delete` : 0
 - `merge` : 0
-- `deprecate` : 2
+- `deprecate` : 1
 
 | Block | Catégorie | Utilisé dans les Exos | Statut Cible |
 |---|---|---|:---:|
 | `adam` | entrainement | A1, A4, A5, A6, A7, C2 | `keep` |
 | `adaptive_avgpool2d` | regroupement | — | `keep` |
 | `adaptive_maxpool2d` | regroupement | — | `keep` |
+| `agent_rollout_viewer` | superblocks | — | `keep` |
 | `avgpool2d` | regroupement | — | `keep` |
 | `batchnorm1d` | normalisation | — | `keep` |
 | `batchnorm2d` | normalisation | — | `keep` |
 | `build_vocab` | texte | A6 | `keep` |
-| `confusion_matrix` | entrainement | — | `keep` |
+| `clustering_visualizer` | superblocks | — | `keep` |
+| `confusion_matrix` | visualisation | — | `keep` |
+| `confusion_matrix_eval` | superblocks | — | `keep` |
 | `conv1d_layer` | layers | — | `keep` |
 | `conv2d_layer` | layers | A1, A5 | `keep` |
 | `conv3d_layer` | layers | — | `keep` |
@@ -64,10 +67,13 @@ Légende des statuts cibles (§02 Réduction) :
 | `create_env` | renforcement | C1, C2 | `keep` |
 | `cross_entropy_loss` | entrainement | A1, A2, A3, A4, A5, A6 | `keep` |
 | `data_loader` | chargement | A1, A2, A3, A5 | `keep` |
+| `data_pipeline` | donnees | — | `keep` |
 | `decision_tree` | modeles | — | `keep` |
+| `deep_evaluator` | superblocks | — | `keep` |
+| `deep_trainer` | entrainement | — | `keep` |
 | `df_to_loader` | chargement | A4 | `keep` |
 | `df_to_tensor` | transformations | A4 | `keep` |
-| `dropout` | layers | — | `deprecate` |
+| `dropout_layer` | layers | — | `keep` |
 | `early_stopping` | entrainement | — | `keep` |
 | `elu` | activation | — | `hide` |
 | `embedding` | layers | — | `deprecate` |
@@ -79,6 +85,8 @@ Légende des statuts cibles (§02 Réduction) :
 | `flatten_layer` | layers | A1, A5 | `keep` |
 | `gelu` | activation | — | `hide` |
 | `gru` | sequences | — | `keep` |
+| `gru_layer` | layers | — | `keep` |
+| `gym_env_pipeline` | superblocks | — | `keep` |
 | `identity` | activation | — | `hide` |
 | `indices_to_loader` | chargement | A6 | `keep` |
 | `input` | layers | — | `keep` |
@@ -100,10 +108,14 @@ Légende des statuts cibles (§02 Réduction) :
 | `lstm` | sequences | — | `keep` |
 | `lstm_layer` | layers | A6 | `keep` |
 | `maxpool2d_layer` | layers | A1, A5 | `keep` |
+| `ml_pipeline` | modeles | — | `keep` |
+| `mlflow_model_exporter` | entrainement | — | `keep` |
+| `mlflow_tracker` | entrainement | — | `keep` |
 | `model_checkpoint` | entrainement | — | `keep` |
 | `module_to_policy` | renforcement | C2 | `keep` |
 | `mse_loss` | entrainement | A7, C2 | `keep` |
 | `multihead_attention` | sequences | — | `keep` |
+| `nlp_data_pipeline` | superblocks | — | `keep` |
 | `normalize` | transformations | A2, A5 | `keep` |
 | `pca` | modeles | B2 | `keep` |
 | `plot_predictions` | visualisation | B2 | `keep` |
@@ -117,28 +129,38 @@ Légende des statuts cibles (§02 Réduction) :
 | `reduce_lr_on_plateau` | entrainement | — | `keep` |
 | `relu_layer` | layers | A1, A2, A4, A5, C2 | `keep` |
 | `resize` | transformations | — | `keep` |
+| `rl_agent_trainer` | superblocks | — | `keep` |
 | `rnn` | sequences | — | `keep` |
 | `rnn_layer` | layers | A7 | `keep` |
 | `selu` | activation | — | `hide` |
 | `sequence_dataset` | donnees | A7 | `keep` |
+| `sequential_container` | layers | — | `keep` |
+| `sequential_model` | superblocks | — | `keep` |
 | `sgd` | entrainement | A2, A3 | `keep` |
 | `sigmoid` | activation | — | `hide` |
-| `silhouette` | entrainement | B3 | `keep` |
+| `silhouette` | visualisation | B3 | `keep` |
 | `silu` | activation | — | `hide` |
+| `sklearn_model_trainer` | superblocks | — | `keep` |
 | `softmax` | activation | — | `hide` |
 | `standard_scaler` | modeles | B3 | `keep` |
 | `step_lr` | entrainement | — | `keep` |
 | `svm` | modeles | — | `keep` |
+| `tabular_data_pipeline` | superblocks | — | `keep` |
 | `tanh` | activation | — | `hide` |
 | `tensor_dataset` | chargement | — | `keep` |
 | `to_tensor` | transformations | — | `keep` |
 | `tokenize` | texte | A6 | `keep` |
+| `torch_data_pipeline` | superblocks | — | `keep` |
 | `torch_dataset` | donnees | — | `keep` |
 | `train_epoch` | entrainement | — | `keep` |
 | `train_model` | entrainement | A1, A2, A3, A4, A5, A6, A7, C2 | `keep` |
 | `train_test_split` | donnees | A4, B1 | `keep` |
 | `tsne` | visualisation | B3 | `keep` |
+| `tsne_coords` | modeles | — | `keep` |
 | `upsample` | layers | — | `keep` |
+| `xgboost_classifier` | modeles | — | `keep` |
+| `xgboost_regressor` | modeles | — | `keep` |
+| `xgboost_trainer` | superblocks | — | `keep` |
 
 ---
 
