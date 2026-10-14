@@ -104,6 +104,7 @@ ADVANCED_BLOCKS = {
     "elu",
     "gelu",
     "leaky_relu",
+    "prelu",
 }
 
 
