@@ -274,13 +274,13 @@ def test_generated_mnist_pipeline_runs_end_to_end_cpu(monkeypatch):
     from mlblock.server.schemas import PipelineEdge, PipelineNode
 
     nodes = [
-        {"id": "n1", "type": "load_torch_dataset", "params": {"name": "mnist", "batch_size": "512"}, "children": [], "position": {"x": 0, "y": 0}},
+        {"id": "n1", "type": "load_torch_dataset", "params": {"name": "mnist", "batch_size": "512"}, "children": [], "position": {"x": 0, "y": 0}},  # noqa: E501
         {"id": "n2", "type": "flatten_layer", "params": {}, "children": [], "position": {"x": 0, "y": 0}},
-        {"id": "n3", "type": "linear_layer", "params": {"in_features": "784", "out_features": "10"}, "children": [], "position": {"x": 0, "y": 0}},
+        {"id": "n3", "type": "linear_layer", "params": {"in_features": "784", "out_features": "10"}, "children": [], "position": {"x": 0, "y": 0}},  # noqa: E501
         {"id": "n4", "type": "adam", "params": {}, "children": [], "position": {"x": 0, "y": 0}},
         {"id": "n5", "type": "cross_entropy_loss", "params": {}, "children": [], "position": {"x": 0, "y": 0}},
         {"id": "n6", "type": "train_model", "params": {"epochs": "1"}, "children": [], "position": {"x": 0, "y": 0}},
-        {"id": "n7", "type": "data_loader", "params": {"batch_size": "512"}, "children": [], "position": {"x": 0, "y": 0}},
+        {"id": "n7", "type": "data_loader", "params": {"batch_size": "512"}, "children": [], "position": {"x": 0, "y": 0}},  # noqa: E501
     ]
     edges = [
         {"source": "n1", "source_port": "out_1", "target": "n7", "target_port": "in_1"},
@@ -309,3 +309,64 @@ def test_generated_mnist_pipeline_runs_end_to_end_cpu(monkeypatch):
     mod.main()  # type: ignore
     done = {p["json"]["block"] for p in posts if p["url"].endswith("/status") and p["json"]["status"] == "done"}
     assert "train_model" in done and "pipeline" in done
+
+
+def test_train_model_dict_outputs_unpacked_by_key(monkeypatch):
+    """train_model retourne un dict : le codegen doit indexer par clé, pas
+    déballer (déballer un dict donne les chaînes 'model'/'history')."""
+    import base64
+    import gzip
+    import json as _json
+    import sys
+    import types
+
+    from mlblock.core.generator import generate_code
+    from mlblock.server.schemas import PipelineEdge, PipelineNode
+
+    nodes = [
+        {"id": "n6", "type": "train_model", "params": {"epochs": "1"}, "children": [], "position": {"x": 0, "y": 0}},
+        {"id": "n1", "type": "load_torch_dataset", "params": {"name": "mnist", "batch_size": "512"}, "children": [], "position": {"x": 0, "y": 0}},  # noqa: E501
+        {"id": "n7", "type": "data_loader", "params": {"batch_size": "512"}, "children": [], "position": {"x": 0, "y": 0}},  # noqa: E501
+        {"id": "n2", "type": "flatten_layer", "params": {}, "children": [], "position": {"x": 0, "y": 0}},
+        {"id": "n3", "type": "linear_layer", "params": {"in_features": "784", "out_features": "10"}, "children": [], "position": {"x": 0, "y": 0}},  # noqa: E501
+        {"id": "n4", "type": "adam", "params": {}, "children": [], "position": {"x": 0, "y": 0}},
+        {"id": "n5", "type": "cross_entropy_loss", "params": {}, "children": [], "position": {"x": 0, "y": 0}},
+    ]
+    edges = [
+        {"source": "n1", "source_port": "out_1", "target": "n7", "target_port": "in_1"},
+        {"source": "n7", "source_port": "out_1", "target": "n6", "target_port": "in_2"},
+        {"source": "n2", "source_port": "out_1", "target": "n3", "target_port": "in_1"},
+        {"source": "n3", "source_port": "out_1", "target": "n6", "target_port": "in_1"},
+        {"source": "n3", "source_port": "out_1", "target": "n4", "target_port": "in_1"},
+        {"source": "n4", "source_port": "out_1", "target": "n6", "target_port": "in_3"},
+        {"source": "n5", "source_port": "out_1", "target": "n6", "target_port": "in_4"},
+    ]
+    code = generate_code([PipelineNode(**n) for n in nodes], [PipelineEdge(**e) for e in edges])
+    posts: list[dict] = []
+
+    class FakeResponse:
+        def json(self):
+            return {}
+
+    fake = types.ModuleType("requests")
+    fake.post = lambda url, **kw: posts.append({"url": url, **kw}) or FakeResponse()  # type: ignore
+    fake.get = lambda url, **kw: FakeResponse()  # type: ignore
+    fake.delete = lambda url, **kw: FakeResponse()  # type: ignore
+    monkeypatch.setitem(sys.modules, "requests", fake)
+    mod = types.ModuleType("gen_mnist_keys")
+    exec(compile(code, "<mnist>", "exec"), mod.__dict__)
+    mod.main()  # type: ignore
+    train_outs = [
+        p["json"]["output"] for p in posts
+        if p["url"].endswith("/output") and p["json"]["block"] == "train_model"
+    ]
+    assert train_outs, "aucune sortie train_model"
+    texts = []
+    for raw in train_outs:
+        inner = _json.loads(raw)
+        if inner.get("type") == "gzip":
+            inner = _json.loads(gzip.decompress(base64.b64decode(inner["data"])).decode())
+        texts.append(inner)
+    assert not any(t == {"type": "text", "text": "model"} or t == {"type": "text", "text": "history"} for t in texts)
+    curves = [t for t in texts if t.get("type") == "curve" and len(t.get("points", [])) == 1]
+    assert curves, f"history (1 loss) introuvable : {texts}"

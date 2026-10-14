@@ -376,11 +376,21 @@ def generate_code(nodes: list[PipelineNode], edges: list[PipelineEdge]) -> str:
             lines.append(f"        notify_output({node.type!r}, json.dumps(_serialize_output(out_{output_counter})), {bid})")  # noqa: E501
         else:
             targets = []
+            out_names = []
             for o in block.outputs:
                 output_counter += 1
-                output_map[(node_id, o['name'])] = output_counter
+                name = o["name"] if isinstance(o, dict) else o.name
+                out_names.append(name)
+                output_map[(node_id, name)] = output_counter
                 targets.append(f"out_{output_counter}")
-            lines.append(f"        {', '.join(targets)} = {b_type}({args})")
+            if all(re.fullmatch(r"out_\d+", n) for n in out_names):
+                lines.append(f"        {', '.join(targets)} = {b_type}({args})")
+            else:
+                # Retour dict (ex. train_model -> {"model","history"}) : indexer
+                # par clé — déballer un dict donnerait ses clés en chaînes.
+                lines.append(f"        _ret_{output_counter} = {b_type}({args})")
+                for var_name, key in zip(targets, out_names):
+                    lines.append(f"        {var_name} = _ret_{output_counter}[{key!r}]")
             for t in targets:
                 lines.append(f"        notify_output({node.type!r}, json.dumps(_serialize_output({t})), {bid})")
         lines.append(f"        notify_status({node.type!r}, 'done', {bid})")
