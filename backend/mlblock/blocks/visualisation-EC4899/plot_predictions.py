@@ -9,6 +9,8 @@ def plot_predictions(in_1: "object", in_2: "pd.DataFrame", target_column: "str")
         in_1: Trained model.
         in_2: Test data.
         target_column: Target column name.
+    
+    Exemple: plot_predictions(modele, df, "target")
     """
     import matplotlib
     matplotlib.use("Agg")

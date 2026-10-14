@@ -4,6 +4,8 @@ def module_to_policy(in_1: "torch.nn.Module") -> "Policy":  # noqa: F821 -- anno
 
     Args:
         in_1: Réseau entraîné (Q-network).
+    
+    Exemple: module_to_policy(modele)
     """
     import numpy as np
     import torch

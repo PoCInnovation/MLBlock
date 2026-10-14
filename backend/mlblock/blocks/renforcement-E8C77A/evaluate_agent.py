@@ -7,6 +7,8 @@ def evaluate_agent(env: "Env", policy: "Policy", episodes: "int" = 10) -> "float
         env: Environnement gymnasium.
         policy: Politique apprise (état → action).
         episodes: Nombre d'épisodes (entre: 1-50, pas: 1).
+    
+    Exemple: evaluate_agent(env, policy)
     """
     total = 0.0
     for _ in range(episodes):
