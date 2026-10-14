@@ -168,3 +168,97 @@ def test_generated_iris_pipeline_runs_end_to_end(monkeypatch):
         inner = json.loads(gzip.decompress(base64.b64decode(inner["data"])).decode())
     acc = inner["values"]["accuracy"] if inner["type"] == "metrics" else inner["value"]
     assert acc > 0.9, f"accuracy iris/logreg attendue > 0.9, eu {acc}"
+
+
+def _exec_b1_with_stub(monkeypatch, post):
+    import sys
+    import types
+
+    from mlblock.core.generator import generate_code
+    from mlblock.server.schemas import PipelineEdge, PipelineNode
+
+    for stem, nodes, edges in _exo_graphs():
+        if stem != "b1_iris_logistic_regression":
+            continue
+        break
+    else:
+        raise AssertionError("exo b1 introuvable")
+    code = generate_code([PipelineNode(**n) for n in nodes], [PipelineEdge(**e) for e in edges])
+    compile(code, "<b1_iris>", "exec")
+
+    class FakeResponse:
+        def json(self):
+            return {}
+
+    fake = types.ModuleType("requests")
+    fake.post = post  # type: ignore
+    fake.get = lambda url, **kw: FakeResponse()  # type: ignore
+    monkeypatch.setitem(sys.modules, "requests", fake)
+    mod = types.ModuleType("gen_b1_retry")
+    exec(compile(code, "<b1_iris>", "exec"), mod.__dict__)
+    return mod
+
+
+def test_pipeline_done_callback_retries_on_transient_failure(monkeypatch):
+    """Le callback terminal done survit à un échec transitoire (sinon job
+    coincé en running + instance auto-détruite = cas observé en live)."""
+    import sys
+    import types
+
+    posts: list[dict] = []
+    calls = {"n": 0}
+
+    class FakeResponse:
+        def json(self):
+            return {}
+
+    def flaky(url, **kw):
+        posts.append({"url": url, **kw})
+        if (
+            url.endswith("/status")
+            and kw.get("json", {}).get("block") == "pipeline"
+            and kw.get("json", {}).get("status") == "done"
+        ):
+            calls["n"] += 1
+            if calls["n"] == 1:
+                raise ConnectionError("blip")
+        return FakeResponse()
+
+    fake = types.ModuleType("requests")
+    fake.post = flaky  # type: ignore
+    fake.get = lambda url, **kw: FakeResponse()  # type: ignore
+    monkeypatch.setitem(sys.modules, "requests", fake)
+    monkeypatch.setattr("time.sleep", lambda s: None)
+
+    from mlblock.core.generator import generate_code
+    from mlblock.server.schemas import PipelineEdge, PipelineNode
+
+    for stem, nodes, edges in _exo_graphs():
+        if stem != "b1_iris_logistic_regression":
+            continue
+        break
+    code = generate_code([PipelineNode(**n) for n in nodes], [PipelineEdge(**e) for e in edges])
+    mod = types.ModuleType("gen_b1_retry")
+    exec(compile(code, "<b1_iris>", "exec"), mod.__dict__)
+    mod.main()  # type: ignore
+    assert calls["n"] >= 2, "done pipeline non re-tenté après échec transitoire"
+
+
+def test_notify_error_retries_on_transient_failure(monkeypatch):
+    posts: list[dict] = []
+    calls = {"n": 0}
+
+    def flaky(url, **kw):
+        posts.append({"url": url, **kw})
+        if url.endswith("/error"):
+            calls["n"] += 1
+            if calls["n"] == 1:
+                raise ConnectionError("blip")
+        from unittest.mock import MagicMock
+
+        return MagicMock()
+
+    mod = _exec_b1_with_stub(monkeypatch, flaky)
+    monkeypatch.setattr("time.sleep", lambda s: None)
+    mod.notify_error("pipeline", ValueError("boom"))  # type: ignore
+    assert calls["n"] >= 2, "error pipeline non re-tenté après échec transitoire"
