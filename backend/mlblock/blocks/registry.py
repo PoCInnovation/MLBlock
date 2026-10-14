@@ -84,7 +84,6 @@ BLOCK_SOURCES: dict[str, str] = BlockSourcesDict()
 ADVANCED_ACTIVATIONS = {
     "gelu",
     "selu",
-    "mish",
     "elu",
     "prelu",
     "leaky_relu",
