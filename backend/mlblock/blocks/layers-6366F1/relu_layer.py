@@ -8,6 +8,8 @@ def relu_layer(in_1: "torch.nn.Module" = None) -> "torch.nn.Module":
 
     Args:
         in_1: Couche précédente (optionnelle).
+    
+    Exemple: relu_layer()
     """
     layer = nn.ReLU()
     return nn.Sequential(in_1, layer) if in_1 is not None else layer
