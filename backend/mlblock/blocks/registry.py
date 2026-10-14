@@ -128,6 +128,8 @@ ADVANCED_BLOCKS = {
     "embedding",
     # Virtual source block (raises if executed; input_layer covers it).
     "input",
+    # Niche estimators and preprocessing.
+    "isolation_forest",
 }
 
 
