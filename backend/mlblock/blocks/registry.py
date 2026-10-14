@@ -131,6 +131,7 @@ ADVANCED_BLOCKS = {
     # Niche estimators and preprocessing.
     "isolation_forest",
     "resize",
+    "polynomial_features",
     # 1D / style-transfer normalizations (batchnorm2d covers the default).
     "batchnorm1d",
     "layernorm",
