@@ -124,6 +124,8 @@ ADVANCED_BLOCKS = {
     "conv3d_layer",
     "conv_transpose2d_layer",
     "upsample",
+    # Tensor-op duplicates of composable *_layer blocks (Module wins).
+    "embedding",
 }
 
 
