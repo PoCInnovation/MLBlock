@@ -977,6 +977,16 @@ def update_job_status(
     job = session.get(Job, job_id)
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
+    # Seul le PIPELINE clôt le job : les statuts par bloc (running/done/error
+    # de chaque bloc) pilotent l'inspecteur, jamais le lifecycle. Sans ce
+    # garde, le backend détruisait l'instance dès le 1er bloc terminé.
+    # Le bootstrap ne poste que running : il fait foi pour job.status.
+    if body.block not in ("pipeline", "bootstrap"):
+        if body.status == "running" and not job.started_at:
+            job.started_at = datetime.now(timezone.utc)
+            session.add(job)
+            session.commit()
+        return
     job.status = body.status
     if body.status == "running" and not job.started_at:
         job.started_at = datetime.now(timezone.utc)

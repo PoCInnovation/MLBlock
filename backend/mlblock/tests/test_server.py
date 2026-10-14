@@ -766,3 +766,71 @@ def test_large_output_roundtrips_byte_identical(client: TestClient, monkeypatch)
     assert push.status_code == 200
     rows = client.get(f"/api/jobs/{job['id']}/outputs").json()
     assert rows[-1]["output"] == big
+
+
+def test_per_block_done_does_not_destroy_instance(client: TestClient, monkeypatch):
+    """Un done de BLOC ne termine pas le job : seul le done du pipeline
+    détruit l'instance (sinon le backend tue le run après le 1er bloc)."""
+    from sqlmodel import Session
+
+    from mlblock.server.database import _get_engine
+    from mlblock.server.gpu_auth import GPU_API_KEY as GLOBAL_KEY
+    from mlblock.server.gpu_auth import verify_gpu_key
+    from mlblock.server.models import Job
+
+    app.dependency_overrides.pop(verify_gpu_key, None)
+    destroyed = []
+    monkeypatch.setattr(
+        "mlblock.core.vast.VastAI.destroy_instance", lambda self, iid: destroyed.append(iid)
+    )
+    created = client.post("/api/pipelines", json={"name": "blk-done", "nodes": [], "edges": []}).json()
+    job = client.post(f"/api/pipelines/{created['id']}/execute").json()
+    with Session(_get_engine()) as s:
+        j = s.get(Job, uuid.UUID(job["id"]))
+        j.vast_instance_id = "4242"
+        s.add(j)
+        s.commit()
+    r = client.post(
+        f"/api/jobs/{job['id']}/status",
+        json={"block": "train_model", "status": "done"},
+        headers={"Authorization": f"Bearer {GLOBAL_KEY}"},
+    )
+    assert r.status_code == 200
+    assert destroyed == []
+    with Session(_get_engine()) as s:
+        j = s.get(Job, uuid.UUID(job["id"]))
+        assert j.status != "done"
+        assert j.completed_at is None
+
+
+def test_pipeline_done_destroys_instance(client: TestClient, monkeypatch):
+    from sqlmodel import Session
+
+    from mlblock.server.database import _get_engine
+    from mlblock.server.gpu_auth import GPU_API_KEY as GLOBAL_KEY
+    from mlblock.server.gpu_auth import verify_gpu_key
+    from mlblock.server.models import Job
+
+    app.dependency_overrides.pop(verify_gpu_key, None)
+    destroyed = []
+    monkeypatch.setattr(
+        "mlblock.core.vast.VastAI.destroy_instance", lambda self, iid: destroyed.append(iid)
+    )
+    created = client.post("/api/pipelines", json={"name": "pipe-done", "nodes": [], "edges": []}).json()
+    job = client.post(f"/api/pipelines/{created['id']}/execute").json()
+    with Session(_get_engine()) as s:
+        j = s.get(Job, uuid.UUID(job["id"]))
+        j.vast_instance_id = "4243"
+        s.add(j)
+        s.commit()
+    r = client.post(
+        f"/api/jobs/{job['id']}/status",
+        json={"block": "pipeline", "status": "done"},
+        headers={"Authorization": f"Bearer {GLOBAL_KEY}"},
+    )
+    assert r.status_code == 200
+    assert destroyed == ["4243"]
+    with Session(_get_engine()) as s:
+        j = s.get(Job, uuid.UUID(job["id"]))
+        assert j.status == "done"
+        assert j.completed_at is not None
