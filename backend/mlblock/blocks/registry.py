@@ -143,6 +143,8 @@ ADVANCED_BLOCKS = {
     "gru",
     "rnn",
     "multihead_attention",
+    # Legacy dataset loader (load_torch_dataset covers the common case).
+    "torch_dataset",
 }
 
 
