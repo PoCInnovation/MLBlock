@@ -4,6 +4,8 @@ def df_to_tensor(in_1: "pd.DataFrame") -> "torch.Tensor":  # noqa: F821 -- annot
 
     Args:
         in_1: DataFrame numérique à convertir.
+    
+    Exemple: df_to_tensor(df)
     """
     import torch
     return torch.from_numpy(in_1.values.astype("float32"))

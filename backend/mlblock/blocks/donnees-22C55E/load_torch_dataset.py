@@ -6,6 +6,8 @@ def load_torch_dataset(name: "str", batch_size: "int" = 32, split: "str" = "trai
         name: Dataset (choix: mnist|fashion_mnist|cifar10).
         batch_size: Taille des lots (ignoré, conservé pour compatibilité).
         split: train ou test (choix: train|test).
+    
+    Exemple: load_torch_dataset("mnist")
     """
     from torchvision import datasets, transforms
 

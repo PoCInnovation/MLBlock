@@ -7,6 +7,8 @@ def indices_to_loader(in_1: "numpy.ndarray", labels: "numpy.ndarray" = None, bat
         labels: Labels (optionnel, zéros par défaut).
         batch_size: Taille des lots. (suggestions: 16|32|64|128)
         shuffle: Mélanger les lots.
+    
+    Exemple: indices_to_loader(x)
     """
     import numpy as np
     import torch
