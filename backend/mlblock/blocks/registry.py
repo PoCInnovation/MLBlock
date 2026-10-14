@@ -136,6 +136,7 @@ ADVANCED_BLOCKS = {
     "instancenorm2d",
     # Fixed-output pooling (maxpool2d_layer covers the default).
     "avgpool2d",
+    "adaptive_avgpool2d",
 }
 
 
