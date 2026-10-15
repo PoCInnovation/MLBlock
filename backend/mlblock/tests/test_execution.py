@@ -338,6 +338,33 @@ def test_build_bootstrap_cuda_conditions_torch_install_and_probes():
     assert "timeout 240 sh -c 'apt-get" in slim
 
 
+def test_bootstrap_reports_main_crash_as_valid_json_error(tmp_path):
+    """main.py qui plante avant son try (ex. segfault import torch) : le job
+    doit recevoir une erreur JSON valide avec la cause, pas 1800 s de silence."""
+    import json
+    import subprocess
+
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    log = tmp_path / "posts.log"
+    crash = "import sys; sys.stderr.write('boom \"quoted\"\\\\path\\n'); sys.exit(3)"
+    (bin_dir / "curl").write_text(
+        "#!/bin/sh\n"
+        f'case "$*" in *"-o main.py"*) printf "%s" "{crash}" > main.py ;; '
+        f'*) while [ $# -gt 0 ]; do [ "$1" = -d ] && printf "%s\\n" "$2" >> {log}; shift; done ;; esac\n'
+    )
+    for name in ("uv", "pip"):
+        (bin_dir / name).write_text("#!/bin/sh\nexit 0\n")
+    for f in bin_dir.iterdir():
+        f.chmod(0o755)
+    script = ex.build_bootstrap(backend_url="http://b", job_id="J", gpu_key="K", timeout="9", cuda=False)
+    env = {**_os.environ, "PATH": f"{bin_dir}:{_os.environ['PATH']}", "HOME": str(tmp_path)}
+    rc = subprocess.run(["sh", "-c", script], cwd=tmp_path, env=env, capture_output=True).returncode
+    assert rc == 3
+    posts = [json.loads(line) for line in log.read_text().splitlines()]
+    errors = [p["error"] for p in posts if "error" in p]
+    assert errors and "rc=3" in errors[-1] and "boom" in errors[-1]
+
 def test_launch_instance_retries_next_offer_on_ghost(monkeypatch):
     """Une offre fantôme (no_such_ask) ne doit pas tuer le rent : on essaie
     l'offre suivante au lieu de dummy-instance-id."""

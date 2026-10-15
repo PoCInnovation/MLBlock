@@ -74,6 +74,8 @@ def build_bootstrap(*, backend_url: str, job_id: str, gpu_key: str, timeout: str
         'post() { curl -sS -m 20 -X POST -H "Authorization: Bearer $KEY"'
         " -H 'Content-Type: application/json'"
         ' -d "$2" "$BACKEND_URL/api/jobs/$JOB_ID/$1" || true; }',
+        # Texte libre (stderr, version torch) -> JSON sûr : sans " \ ni sauts de ligne.
+        "clean() { tr -d '\"\\\\' | tr '\\n\\r\\t' '   ' | head -c 300; }",
         'post status \'{"block":"bootstrap","status":"running"}\'',
         "command -v uv >/dev/null 2>&1 || curl -LsSf https://astral.sh/uv/install.sh | sh",
         'export PATH="$HOME/.local/bin:$PATH"',
@@ -92,7 +94,7 @@ def build_bootstrap(*, backend_url: str, job_id: str, gpu_key: str, timeout: str
             f"|| timeout 600 pip install -q --disable-pip-version-check {REQUIREMENTS_TORCH}; }}"
         )
         lines.append(
-            'TV=$(python3 -c "import torch; print(torch.__version__, torch.cuda.is_available())" 2>&1 | head -c 120)'
+            'TV=$(python3 -c "import torch; print(torch.__version__, torch.cuda.is_available())" 2>&1 | clean)'
         )
         lines.append('post output "{\\"block\\":\\"bootstrap\\",\\"output\\":\\"Torch $TV\\"}"')
     lines.extend(
@@ -102,7 +104,12 @@ def build_bootstrap(*, backend_url: str, job_id: str, gpu_key: str, timeout: str
             ' "$BACKEND_URL/api/jobs/$JOB_ID/code" -o main.py'
             ' || { post error \'{"block":"bootstrap","error":"Code non récupéré"}\'; exit 1; }',
             'post output \'{"block":"bootstrap","output":"Code récupéré"}\'',
-            "python3 main.py",
+            # Crash avant le try de main() (segfault import, etc.) : sans ça,
+            # aucun callback et le job attend le timeout GPU complet.
+            "python3 main.py 2>err.log; RC=$?; cat err.log >&2",
+            '[ $RC -eq 0 ] || post error'
+            ' "{\\"block\\":\\"bootstrap\\",\\"error\\":\\"main.py rc=$RC: $(tail -c 300 err.log | clean)\\"}"',
+            "exit $RC",
         ]
     )
     return "\n".join(lines)
