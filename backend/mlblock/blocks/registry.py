@@ -23,11 +23,6 @@ ADVANCED_ACTIVATIONS = {
 }
 
 
-def _color_from_folder(name: str) -> str | None:
-    """Extract hex color from folder name like 'layers-6366F1'."""
-    m = re.match(r"^.*[-_]?([0-9A-Fa-f]{6})$", name)
-    return f"#{m.group(1).upper()}" if m else None
-
 
 def _name(obj: Any) -> str:
     if hasattr(obj, "__name__"):
@@ -201,16 +196,16 @@ def _inspect_function(name: str, fn: Callable, category: Any) -> Any:
             required=prequired, options=options, **pmeta,
         )
     outputs = _parse_return_annotation(sig.return_annotation)
-    cat_name = getattr(category, "name", "")
+    cat_name = category.name
     is_advanced = (
         bool(getattr(fn, "__advanced__", False))
         or (cat_name == "activation" and name in ADVANCED_ACTIVATIONS)
         or "(avancé)" in (fn.__doc__ or "").lower()
     )
     group = getattr(fn, "__group__", "advanced" if is_advanced else "core")
-    from mlblock.core.stages import engine_of_block, is_transition_block, macro_of_block
+    from mlblock.core.stages import MacroStage, engine_of_block
 
-    macro = macro_of_block(name, cat_name)
+    macro = MacroStage(category.macro)
     return Block(
         name=name,
         description=fn.__doc__ or "",
@@ -223,26 +218,37 @@ def _inspect_function(name: str, fn: Callable, category: Any) -> Any:
         macro_stage=int(macro),
         macro_stage_name=macro.stage_name,
         engine=engine_of_block(name, cat_name),
-        is_transition=is_transition_block(name),
+        is_transition=macro is MacroStage.TRANSITION,
     )
 
 
 def _discover():
-    from mlblock.server.schemas import Category
+    from mlblock.core.stages import MACRO_STAGE_METADATA, MacroStage, category_shade, macro_of_folder
     from mlblock.core.block import BlockRegistry as CoreBlockRegistry
+    from mlblock.server.schemas import Category
 
     blocks_dir = Path(__file__).parent
-    for category_dir in sorted(blocks_dir.iterdir()):
-        if not category_dir.is_dir() or category_dir.name.startswith("_"):
+    # <macro>/<categorie>/*.py ; conversions/*.py is one flat category.
+    category_dirs: list[tuple[Path, str, MacroStage, list[str]]] = []
+    for macro_dir in sorted(p for p in blocks_dir.iterdir() if p.is_dir() and p.name != "__pycache__"):
+        macro = macro_of_folder(macro_dir.name)
+        if macro is MacroStage.TRANSITION:
+            category_dirs.append((macro_dir, macro_dir.name, macro, []))
             continue
-        cat_color = _color_from_folder(category_dir.name)
-        cat_name = re.sub(r"[-_][0-9A-Fa-f]{6}$", "", category_dir.name)
-        category = Category(name=cat_name, color=cat_color or "#888888")
+        subdirs = sorted(d for d in macro_dir.iterdir() if d.is_dir() and d.name != "__pycache__")
+        names = [d.name for d in subdirs]
+        category_dirs.extend((sub, sub.name, macro, names) for sub in subdirs)
 
-        for py_file in sorted(category_dir.glob("*.py")):
+    for cat_dir, cat_name, macro, siblings in category_dirs:
+        color = MACRO_STAGE_METADATA[macro]["color"]
+        if siblings:
+            color = category_shade(color, siblings.index(cat_name), len(siblings))
+        category = Category(name=cat_name, color=color, macro=int(macro))
+
+        for py_file in sorted(cat_dir.glob("*.py")):
             if py_file.name.startswith("_"):
                 continue
-            module_name = f"mlblock.blocks.{category_dir.name}.{py_file.stem}"
+            module_name = f"mlblock.blocks.{cat_dir.relative_to(blocks_dir).as_posix().replace('/', '.')}.{py_file.stem}"
             try:
                 # spec_from_file_location : les dossiers français ont des tirets
                 # (invalides pour importlib.import_module)

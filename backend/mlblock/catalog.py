@@ -4,7 +4,7 @@ Interface is the test surface: load(dir) / all() / get(name) / get_source(name) 
 Adapters: filesystem (prod, via Catalog.load) and in-memory fake (tests, via Catalog.use_fake).
 
 This module owns what was scattered across registry.py + core/block.py BlockRegistry + BLOCK_SOURCES:
-- FS scan of blocks/{category}-{HEXCOLOR}/*.py
+- FS scan of blocks/{macro}/{categorie}/*.py (conversions/*.py flat)
 - color extraction, docstring FR suffix parsing, type normalization
 - source-text capture for codegen
 

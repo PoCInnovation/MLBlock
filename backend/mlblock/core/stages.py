@@ -47,76 +47,31 @@ MACRO_STAGE_METADATA: dict[MacroStage, dict[str, Any]] = {
     MacroStage.TRANSITION: {"id": 99, "name": "Transition", "label": "Transition", "color": "#F5A623"},
 }
 
-MACRO_OF_CATEGORY: dict[str, MacroStage] = {
-    # Étape 1 : Données / Environnement + Préparation
-    "donnees": MacroStage.DATA,
-    "chargement": MacroStage.DATA,
-    "transformations": MacroStage.DATA,
-    "texte": MacroStage.DATA,
-    "renforcement": MacroStage.DATA,
-    # Étape 2 : Modèle + Entraînement
-    "layers": MacroStage.MODEL_TRAIN,
-    "activation": MacroStage.MODEL_TRAIN,
-    "normalisation": MacroStage.MODEL_TRAIN,
-    "regroupement": MacroStage.MODEL_TRAIN,
-    "sequences": MacroStage.MODEL_TRAIN,
-    "modeles": MacroStage.MODEL_TRAIN,
-    "entrainement": MacroStage.MODEL_TRAIN,
-    # Étape 3 : Évaluation + Visualisation
-    "visualisation": MacroStage.RESULTS,
-}
-
-# Block overrides where the block macro-stage differs from its category.
-# The 4 transition bridges always map to TRANSITION; eval-flavoured blocks
-# hosted in the training category map to RESULTS.
-MACRO_OF_BLOCK_OVERRIDES: dict[str, MacroStage] = {
-    "df_to_tensor": MacroStage.TRANSITION,
-    "to_tensor": MacroStage.TRANSITION,
-    "env_to_tensor": MacroStage.TRANSITION,
-    "module_to_policy": MacroStage.TRANSITION,
-    "evaluate": MacroStage.RESULTS,
-    "confusion_matrix": MacroStage.RESULTS,
-    "silhouette": MacroStage.RESULTS,
-    "plot_predictions": MacroStage.RESULTS,
-    "mlflow_model_exporter": MacroStage.RESULTS,
-}
+def macro_of_folder(folder_name: str) -> MacroStage:
+    """Macro-stage encoded by a block folder name: `N-slug` or `conversions`."""
+    if folder_name == "conversions":
+        return MacroStage.TRANSITION
+    prefix = folder_name.split("-", 1)[0]
+    if prefix.isdigit():
+        return MacroStage(int(prefix))
+    raise ValueError(f"dossier de bloc inconnu : {folder_name!r}")
 
 
-def macro_of_category(category_name: str) -> MacroStage:
-    """Map category folder or category name to its MacroStage."""
-    cat = category_name.split("-")[0].strip().lower()
-    return MACRO_OF_CATEGORY.get(cat, MacroStage.DATA)
+def category_shade(hex_color: str, index: int, count: int) -> str:
+    """Shade `index` of `count` derived from `hex_color`, lightening toward white.
+
+    Index 0 keeps the input color; higher indices lighten up to 50%.
+    """
+    r, g, b = (int(hex_color.lstrip("#")[i:i + 2], 16) for i in (0, 2, 4))
+    t = 0.5 * index / max(count - 1, 1)
+    return "#" + "".join(f"{round(c + (255 - c) * t):02X}" for c in (r, g, b))
 
 
-def macro_of_block(block_name: str, category: str | None = None) -> MacroStage:
-    """Map a block name (and optional category) to its MacroStage."""
+def macro_of_block(block_name: str) -> MacroStage:
+    """MacroStage of a registered block (SuperBlocks carry their own)."""
+    from mlblock.blocks.registry import BLOCK_REGISTRY
 
-    canonical = block_name
-    if canonical in MACRO_OF_BLOCK_OVERRIDES:
-        return MACRO_OF_BLOCK_OVERRIDES[canonical]
-
-    try:
-        from mlblock.core.superblocks import SUPERBLOCK_DEFS
-
-        if canonical in SUPERBLOCK_DEFS:
-            return MacroStage(int(SUPERBLOCK_DEFS[canonical]["macro_stage"]))
-    except Exception:
-        pass
-
-    if category:
-        return macro_of_category(category)
-
-    try:
-        from mlblock.catalog import catalog
-
-        block = catalog.get(canonical)
-        if block is not None:
-            cat = getattr(block.category, "name", None) or str(block.category)
-            return macro_of_category(cat)
-    except Exception:
-        pass
-
-    return MacroStage.DATA
+    return MacroStage(BLOCK_REGISTRY[block_name].macro_stage)
 
 
 # ── Framework engine tags (strict per-framework sealing) ──────────────
@@ -129,26 +84,28 @@ def macro_of_block(block_name: str, category: str | None = None) -> MacroStage:
 ENGINE_OF_CATEGORY: dict[str, str] = {
     "donnees": "generic",
     "chargement": "generic",
-    "transformations": "generic",
+    "pretraitement": "generic",
     "texte": "generic",
-    "layers": "pytorch",
+    "environnement": "gym",
+    "couches": "pytorch",
     "activation": "pytorch",
     "normalisation": "pytorch",
     "regroupement": "pytorch",
-    "sequences": "pytorch",
     "modeles": "sklearn",
     "entrainement": "pytorch",
+    "agents": "gym",
+    "evaluation": "generic",
     "visualisation": "viz",
-    "renforcement": "gym",
+    "conversions": "transition",
 }
 
 ENGINE_OF_BLOCK_OVERRIDES: dict[str, str] = {
-    # Transition bridges (also MacroStage.TRANSITION)
+    # Transition bridges (MacroStage.TRANSITION via folder `conversions/`)
     "df_to_tensor": "transition",
     "to_tensor": "transition",
     "env_to_tensor": "transition",
     "module_to_policy": "transition",
-    # sklearn blocks hosted outside modeles-*
+    # sklearn blocks hosted outside modeles/
     "load_csv": "sklearn",
     "load_sklearn_dataset": "sklearn",
     "train_test_split": "sklearn",
@@ -163,32 +120,26 @@ ENGINE_OF_BLOCK_OVERRIDES: dict[str, str] = {
     "tsne": "sklearn",
     "evaluate": "sklearn",
     "confusion_matrix": "sklearn",
-    # pytorch data pipeline hosted in donnees-*
+    # pytorch data pipeline hosted in donnees/ and pretraitement/
     "load_torch_dataset": "pytorch",
     "data_loader": "pytorch",
     "normalize": "pytorch",
     "random_crop": "pytorch",
     "random_flip": "pytorch",
     "resize": "pytorch",
-    # gym / rl hosted in entrainement-*
+    # rl hosted in agents/ and evaluation/
     "q_learning": "gym",
     "evaluate_agent": "gym",
     # mlflow tracking
     "mlflow_tracker": "mlflow",
     "mlflow_model_logger": "mlflow",
     "mlflow_model_exporter": "mlflow",
-    # static visualisation hosted in entrainement-*
+    # static visualisation hosted in entrainement/ and evaluation/
     "plot_predictions": "viz",
     "loss_curve": "viz",
     "silhouette": "viz",
 }
 
-TRANSITION_BLOCKS: frozenset[str] = frozenset({
-    "df_to_tensor",
-    "to_tensor",
-    "env_to_tensor",
-    "module_to_policy",
-})
 
 # Framework engines that must not be mixed inside one SuperBlock.
 STRICT_ENGINES: frozenset[str] = frozenset({"sklearn", "pytorch", "gym"})
@@ -215,16 +166,14 @@ def engine_of_block(block_name: str, category: str | None = None) -> str:
         pass
 
     if category:
-        cat = category.split("-")[0].strip().lower()
-        return ENGINE_OF_CATEGORY.get(cat, "generic")
+        return ENGINE_OF_CATEGORY.get(category, "generic")
 
     try:
         from mlblock.catalog import catalog
 
         block = catalog.get(canonical)
         if block is not None:
-            cat = getattr(block.category, "name", None) or str(block.category)
-            return ENGINE_OF_CATEGORY.get(cat.split("-")[0].strip().lower(), "generic")
+            return ENGINE_OF_CATEGORY.get(block.category.name, "generic")
     except Exception:
         pass
 
@@ -255,4 +204,6 @@ def needs_cuda(nodes: list[Any]) -> bool:
 
 def is_transition_block(block_name: str) -> bool:
     """True if the block is a conversion bridge allowed at container boundaries."""
-    return block_name in TRANSITION_BLOCKS
+    from mlblock.blocks.registry import BLOCK_REGISTRY
+
+    return BLOCK_REGISTRY[block_name].is_transition

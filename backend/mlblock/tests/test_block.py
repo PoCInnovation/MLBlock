@@ -31,7 +31,7 @@ def test_block_registry_list():
 
 
 def test_block_registry_by_category():
-    neural_blocks = BlockRegistry.by_category("layers")
+    neural_blocks = BlockRegistry.by_category("couches")
     assert len(neural_blocks) > 0
     names = [b.name for b in neural_blocks]
     assert "conv2d_layer" in names
@@ -109,7 +109,7 @@ def test_load_torch_dataset_arms_bounded_download_timeout(monkeypatch):
 
     import torchvision.datasets
 
-    path = Path("mlblock/blocks/donnees-22C55E/load_torch_dataset.py")
+    path = Path("mlblock/blocks/1-donnees/donnees/load_torch_dataset.py")
     spec = importlib.util.spec_from_file_location("ltorch_timeout_mod", path)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)

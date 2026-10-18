@@ -25,6 +25,7 @@ class ParamInfo(BaseModel):
 class Category(BaseModel):
     name: str
     color: str
+    macro: int
 
 
 class Block(BaseModel):

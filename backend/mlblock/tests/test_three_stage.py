@@ -217,8 +217,8 @@ def test_tabular_superblock_end_to_end(tmp_path, monkeypatch):
         spec.loader.exec_module(mod)
         return mod
 
-    load_csv = _load("lc", "donnees-22C55E/load_csv.py").load_csv
-    scaler = _load("sc", "modeles-F59E0B/standard_scaler.py").standard_scaler
+    load_csv = _load("lc", "1-donnees/donnees/load_csv.py").load_csv
+    scaler = _load("sc", "1-donnees/pretraitement/standard_scaler.py").standard_scaler
     out = scaler(load_csv(str(csv_path)))
     assert list(out.columns) == ["a", "b"]
     assert abs(out["a"].mean()) < 1e-9
@@ -235,7 +235,7 @@ def test_exporter_block_saves_model(tmp_path, monkeypatch):
     block_file = (
         Path(__file__).resolve().parent.parent
         / "blocks"
-        / "entrainement-DE497D"
+        / "3-resultats/evaluation"
         / "mlflow_model_exporter.py"
     )
     spec = importlib.util.spec_from_file_location("exporter_mod", block_file)
@@ -247,7 +247,6 @@ def test_exporter_block_saves_model(tmp_path, monkeypatch):
 
 
 def test_no_ghost_convolution_mapping():
-    from mlblock.core.stages import ENGINE_OF_CATEGORY, MACRO_OF_CATEGORY
+    from mlblock.core.stages import ENGINE_OF_CATEGORY
 
-    assert "convolution" not in MACRO_OF_CATEGORY
     assert "convolution" not in ENGINE_OF_CATEGORY

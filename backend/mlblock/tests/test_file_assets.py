@@ -256,7 +256,7 @@ def test_loaders_raise_french_error_on_missing_file(monkeypatch):
 
     import pytest
 
-    base = Path("mlblock/blocks/donnees-22C55E")
+    base = Path("mlblock/blocks/1-donnees/donnees")
 
     def load(mod: str, fn: str):
         spec = importlib.util.spec_from_file_location(f"probe_{fn}", base / mod)
@@ -419,7 +419,7 @@ def test_load_image_corrupt_bytes_raise_french(monkeypatch):
     import pytest
 
     spec = importlib.util.spec_from_file_location(
-        "probe_load_image", Path("mlblock/blocks/donnees-22C55E/load_image.py")
+        "probe_load_image", Path("mlblock/blocks/1-donnees/donnees/load_image.py")
     )
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)

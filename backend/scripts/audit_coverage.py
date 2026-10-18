@@ -279,9 +279,9 @@ def build_coverage_markdown(
         "- **Exercice concerné :** `B3 Iris KMeans — Elbow`",
         "- **Symptôme actuel :**  ",
         "  - `Type mismatch: scaler.scaled (numpy.ndarray) -> clustering.in_1 (pd.DataFrame)`",
-        "- **Cause racine :** `standard_scaler` (`modeles-F59E0B`) renvoie un dictionnaire contenant "
+        "- **Cause racine :** `standard_scaler` (`1-donnees/pretraitement`) renvoie un dictionnaire contenant "
         "`scaled: numpy.ndarray`. Le bloc `kmeans` attend un `pd.DataFrame`. Par ailleurs, `standard_scaler` "
-        "fait doublon avec `normalize` (`transformations-EC4899`) qui opère sur les tenseurs.",
+        "fait doublon avec `normalize` (`1-donnees/pretraitement`) qui opère sur les tenseurs.",
         "- **Action corrective (§02 / §04) :** Unifier sous un unique bloc `normalize` supportant la stratégie "
         "selon la famille de données entrante (`DataFrame` vs `Tensor`), ou formaliser la conversion "
         "bidirectionnelle `ndarray <-> DataFrame`.",

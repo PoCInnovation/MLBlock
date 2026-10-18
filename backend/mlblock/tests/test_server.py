@@ -60,9 +60,9 @@ def test_catalog_groups_blocks_by_category(catalog_client: TestClient):
     resp = catalog_client.get("/api/catalog")
     assert resp.status_code == 200
     cats = {c["id"]: c for c in resp.json()["categories"]}
-    assert "layers" in cats
-    assert cats["layers"]["blocks"]
-    assert all("type" in b for b in cats["layers"]["blocks"])
+    assert "couches" in cats
+    assert cats["couches"]["blocks"]
+    assert all("type" in b for b in cats["couches"]["blocks"])
 
 
 def test_get_block_by_type(catalog_client: TestClient):
@@ -80,7 +80,7 @@ def test_list_categories(catalog_client: TestClient):
     assert resp.status_code == 200
     cats = resp.json()["categories"]
     ids = [c["id"] for c in cats]
-    assert "layers" in ids
+    assert "couches" in ids
 
 
 def test_catalog_filter_advanced(catalog_client: TestClient):
