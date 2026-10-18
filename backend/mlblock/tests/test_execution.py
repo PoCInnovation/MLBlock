@@ -378,6 +378,33 @@ def test_bootstrap_reports_main_crash_as_valid_json_error(tmp_path):
     errors = [p["error"] for p in posts if "error" in p]
     assert errors and "rc=3" in errors[-1] and "boom" in errors[-1]
 
+
+def test_bootstrap_install_failure_posts_error_and_stops(tmp_path):
+    """uv qui échoue : erreur postée au job et arrêt immédiat (avant : « Environnement
+    installé » annoncé à tort puis 10 min de pip jusqu'au timeout)."""
+    import json
+    import subprocess
+
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    log = tmp_path / "posts.log"
+    (bin_dir / "curl").write_text(
+        "#!/bin/sh\n"
+        f'while [ $# -gt 0 ]; do [ "$1" = -d ] && printf "%s\\n" "$2" >> {log}; shift; done\n'
+    )
+    (bin_dir / "python3").write_text("#!/bin/sh\nexit 1\n")  # imports absents -> installation tentée
+    (bin_dir / "uv").write_text("#!/bin/sh\nexit 1\n")
+    for f in bin_dir.iterdir():
+        f.chmod(0o755)
+    script = ex.build_bootstrap(backend_url="http://b", job_id="J", gpu_key="K", timeout="9", cuda=False)
+    env = {**_os.environ, "PATH": f"{bin_dir}:{_os.environ['PATH']}", "HOME": str(tmp_path)}
+    rc = subprocess.run(["sh", "-c", script], cwd=tmp_path, env=env, capture_output=True).returncode
+    assert rc == 1
+    posts = [json.loads(line) for line in log.read_text().splitlines()]
+    assert any("dépendances" in p.get("error", "") for p in posts)
+    assert not any("Environnement installé" in p.get("output", "") for p in posts)
+
+
 def test_launch_instance_retries_next_offer_on_ghost(monkeypatch):
     """Une offre fantôme (no_such_ask) ne doit pas tuer le rent : on essaie
     l'offre suivante au lieu de dummy-instance-id."""

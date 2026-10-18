@@ -79,19 +79,19 @@ def build_bootstrap(*, backend_url: str, job_id: str, gpu_key: str, timeout: str
         'post status \'{"block":"bootstrap","status":"running"}\'',
         "command -v uv >/dev/null 2>&1 || curl -LsSf https://astral.sh/uv/install.sh | sh",
         'export PATH="$HOME/.local/bin:$PATH"',
-        # Deps déjà présentes (image bakée / cache) : skip, sinon 3 min perdues.
+        # Deps déjà présentes (image bakée / cache) : skip. Sinon uv seul :
+        # l'image Vast est en Python géré par Debian (PEP 668) -> --break-system-packages
+        # (mesuré : 2 s), et pip échoue sur blinker. Échec = erreur au job, pas de silence.
         f"python3 -c 'import sklearn, gymnasium, pandas, requests, xgboost, mlflow' 2>/dev/null || "
-        f"{{ timeout 600 uv pip install --system -q {reqs} "
-        f"|| timeout 600 pip install -q --disable-pip-version-check {reqs}; }}",
+        f"timeout 600 uv pip install --system --break-system-packages -q {reqs} "
+        '|| { post error \'{"block":"bootstrap","error":"Installation des dépendances échouée"}\'; exit 1; }',
     ]
     if cuda:
-        # Le template CUDA embarque déjà torch : n'installer le bundle torch
-        # que s'il manque (un torch pip par-dessus le torch du template =
-        # clash ABI et segfault à l'import, aucun callback possible).
+        # Le template CUDA n'embarque pas torch (mesuré) : on l'installe s'il manque (11 s avec uv).
         lines.append(
             f"python3 -c 'import torch' 2>/dev/null || "
-            f"{{ timeout 600 uv pip install --system -q {REQUIREMENTS_TORCH} "
-            f"|| timeout 600 pip install -q --disable-pip-version-check {REQUIREMENTS_TORCH}; }}"
+            f"timeout 600 uv pip install --system --break-system-packages -q {REQUIREMENTS_TORCH} "
+            '|| { post error \'{"block":"bootstrap","error":"Installation de torch échouée"}\'; exit 1; }'
         )
         lines.append(
             'TV=$(python3 -c "import torch; print(torch.__version__, torch.cuda.is_available())" 2>&1 | clean)'
