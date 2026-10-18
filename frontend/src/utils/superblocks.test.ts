@@ -12,19 +12,19 @@ const catalog = {
       description: '', engine: 'generic',
     },
     standard_scaler: {
-      cat: 'transformations', segs: [],
+      cat: 'transformations', segs: [], is_transition: true,
       inputs: [{ name: 'in_1', dtype: 'pd.DataFrame' }],
       outputs: [{ name: 'out_1', dtype: 'pd.DataFrame' }],
       description: '', engine: 'sklearn', params: {},
     },
     to_tensor: {
-      cat: 'transformations', segs: [],
+      cat: 'transformations', segs: [], is_transition: true,
       inputs: [{ name: 'in_1', dtype: 'PIL.Image.Image | numpy.ndarray' }],
       outputs: [{ name: 'out_1', dtype: 'torch.Tensor' }],
       description: '', engine: 'pytorch', params: {},
     },
     df_to_tensor: {
-      cat: 'transformations', segs: [],
+      cat: 'transformations', segs: [], is_transition: true,
       inputs: [{ name: 'in_1', dtype: 'pd.DataFrame' }],
       outputs: [{ name: 'out_1', dtype: 'torch.Tensor' }],
       description: '', engine: 'pytorch', params: {},

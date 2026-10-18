@@ -110,7 +110,7 @@ export async function fetchCatalog(): Promise<InternalCatalog> {
 export function parseCatalog(data: unknown): InternalCatalog {
   const parsed = parseOrThrow(catalogSchema, 'GET /api/catalog', data)
 
-  const categories: Category[] = parsed.categories.map(c => ({ id: c.id, name: c.name, color: c.color }))
+  const categories: Category[] = parsed.categories.map(c => ({ id: c.id, name: c.name, color: c.color, macro: c.macro }))
   const blocks: BlockDefMap = {}
 
   for (const cat of parsed.categories) {
@@ -129,8 +129,6 @@ export function parseCatalog(data: unknown): InternalCatalog {
         description: b.description ? String(b.description) : '',
         advanced: b.advanced ?? false,
         group: b.group ?? 'core',
-        stage: b.stage,
-        stage_name: b.stage_name,
         engine: b.engine ?? 'generic',
         macro_stage: b.macro_stage,
         macro_stage_name: b.macro_stage_name,
@@ -142,7 +140,6 @@ export function parseCatalog(data: unknown): InternalCatalog {
   return {
     categories,
     blocks,
-    stages: parsed.stages,
     macro_stages: parsed.macro_stages,
     superblocks: (parsed.superblocks ?? [])
       .filter(s => s.macro_stage !== undefined)

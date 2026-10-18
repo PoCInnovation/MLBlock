@@ -25,8 +25,6 @@ const blockSchema = z.object({
   outputs: z.array(z.record(z.string(), z.string())),
   advanced: z.boolean().optional(),
   group: z.string().optional(),
-  stage: z.number().optional(),
-  stage_name: z.string().optional(),
   macro_stage: z.number().optional(),
   macro_stage_name: z.string().optional(),
   engine: z.string().optional(),
@@ -44,6 +42,7 @@ const categorySchema = z.object({
   id: z.string(),
   name: z.string(),
   color: z.string(),
+  macro: z.number(),
   blocks: z.array(blockSchema),
 })
 
@@ -58,7 +57,6 @@ const superblockSchema = z.object({
 
 export const catalogSchema = z.object({
   categories: z.array(categorySchema),
-  stages: z.array(stageSchema).optional(),
   macro_stages: z.array(stageSchema).optional(),
   superblocks: z.array(superblockSchema).optional(),
 })

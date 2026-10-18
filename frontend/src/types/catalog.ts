@@ -18,12 +18,10 @@ export type BlockDef = {
   description: string
   advanced?: boolean
   group?: string
-  stage?: number
-  stage_name?: string
-  engine: string
   macro_stage?: number
   macro_stage_name?: string
-  is_transition?: boolean
+  engine: string
+  is_transition: boolean
 }
 export type BlockDefMap = Record<string, BlockDef>
 
@@ -35,7 +33,7 @@ export type SuperBlockEntry = {
   children: string[]
 }
 
-export type Category = { id: string; name: string; color: string }
+export type Category = { id: string; name: string; color: string; macro: number }
 
 export interface StageInfo {
   id: number
@@ -48,7 +46,6 @@ export interface StageInfo {
 export interface InternalCatalog {
   categories: Category[]
   blocks: BlockDefMap
-  stages?: StageInfo[]
   macro_stages?: StageInfo[]
   superblocks: SuperBlockEntry[]
 }

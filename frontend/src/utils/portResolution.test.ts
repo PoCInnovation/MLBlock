@@ -3,18 +3,19 @@ import type { BlockDef, BlockDefMap, Port } from '../types/catalog'
 import { buildConversionGraph } from './typeCheck'
 import { isAmbiguous, resolveConnection } from './portResolution'
 
-const def = (cat: string, inputs: Port[], outputs: Port[]): BlockDef => ({
+const def = (cat: string, inputs: Port[], outputs: Port[], is_transition = false): BlockDef => ({
   cat,
   segs: [],
   inputs,
   outputs,
   description: '',
   engine: 'generic',
+  is_transition,
 })
 
 const blocks: BlockDefMap = {
-  to_tensor: def('transforms', [{ name: 'in', dtype: 'numpy.ndarray' }], [{ name: 'out', dtype: 'torch.Tensor' }]),
-  to_numpy: def('transforms', [{ name: 'in', dtype: 'pd.DataFrame' }], [{ name: 'out', dtype: 'numpy.ndarray' }]),
+  to_tensor: def('transforms', [{ name: 'in', dtype: 'numpy.ndarray' }], [{ name: 'out', dtype: 'torch.Tensor' }], true),
+  to_numpy: def('transforms', [{ name: 'in', dtype: 'pd.DataFrame' }], [{ name: 'out', dtype: 'numpy.ndarray' }], true),
   evaluate: def('evaluation', [{ name: 'in_1', dtype: 'Model' }, { name: 'in_2', dtype: 'pd.DataFrame' }], [{ name: 'out_1', dtype: 'float' }]),
   plot_predictions: def('visualization', [{ name: 'in_1', dtype: 'object' }, { name: 'in_2', dtype: 'pd.DataFrame' }], [{ name: 'out_1', dtype: 'bytes' }]),
   tensor_dataset: def('data', [{ name: 'in_1', dtype: 'torch.Tensor' }, { name: 'in_2', dtype: 'torch.Tensor' }], [{ name: 'out_1', dtype: 'torch.utils.data.TensorDataset' }]),

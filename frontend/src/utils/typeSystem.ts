@@ -7,15 +7,6 @@ import {
   converterFor,
   type Verdict,
 } from './typeCheck'
-import {
-  Stage,
-  STAGE_OF_BLOCK_OVERRIDES,
-  STAGE_OF_CATEGORY,
-  STAGE_OF_FAMILY,
-  stageOfBlock,
-  stageOfCategory,
-  stageOfFamily,
-} from './stages'
 
 const QUICK_MAP: Record<string, string> = {
   'df->tensor': 'df_to_tensor',
@@ -53,30 +44,6 @@ export class TypeSystem {
     return classifyEdge(srcDtype, tgtDtype, g)
   }
 
-  stageOf(blockOrFamily: string, category?: string): Stage {
-    const key = blockOrFamily.trim()
-    if (STAGE_OF_BLOCK_OVERRIDES[key] !== undefined) {
-      return STAGE_OF_BLOCK_OVERRIDES[key]
-    }
-
-    const catKey = key.split('-')[0].trim().toLowerCase()
-    if (STAGE_OF_CATEGORY[catKey] !== undefined) {
-      return stageOfCategory(key)
-    }
-
-    const famKey = key.toLowerCase()
-    if (STAGE_OF_FAMILY[famKey] !== undefined) {
-      return stageOfFamily(famKey)
-    }
-
-    return stageOfBlock(key, category)
-  }
-
-  // Alias for Python parity
-  stage_of(blockOrFamily: string, category?: string): Stage {
-    return this.stageOf(blockOrFamily, category)
-  }
-
   findConverter(srcDtype: string, tgtDtype: string, blocks?: BlockDefMap): string | null {
     const srcFams = new Set(splitUnion(srcDtype).map(d => this.familyOf(d)))
     const tgtFams = new Set(splitUnion(tgtDtype).map(d => this.familyOf(d)))
@@ -98,9 +65,9 @@ export class TypeSystem {
       return direct
     }
 
-    // Iterate over transforms blocks searching for input and output family match
+    // Iterate over conversion blocks (is_transition) searching for input and output family match
     for (const [name, def] of Object.entries(blocks)) {
-      if (def.cat !== 'transforms' && def.cat !== 'transformations') continue
+      if (!def.is_transition) continue
       const inFamilies = new Set(def.inputs.flatMap(p => splitUnion(p.dtype)).map(d => this.familyOf(d)))
       const outFamilies = new Set(def.outputs.flatMap(p => splitUnion(p.dtype)).map(d => this.familyOf(d)))
       if ([...srcFams].some(f => inFamilies.has(f)) && [...tgtFams].some(f => outFamilies.has(f))) {

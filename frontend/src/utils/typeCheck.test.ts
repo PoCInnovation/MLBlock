@@ -2,19 +2,20 @@ import { describe, it, expect } from 'vitest'
 import type { BlockDef, BlockDefMap, Port } from '../types/catalog'
 import { familyOf, buildConversionGraph, classifyEdge, converterFor, portDtype, typeSystem, TypeSystem } from './typeCheck'
 
-const def = (cat: string, inputs: Port[], outputs: Port[]): BlockDef => ({
+const def = (cat: string, inputs: Port[], outputs: Port[], is_transition = false): BlockDef => ({
   cat,
   segs: [],
   inputs,
   outputs,
   description: '',
   engine: 'generic',
+  is_transition,
 })
 
 const blocks: BlockDefMap = {
-  to_numpy: def('transforms', [{ name: 'in', dtype: 'pd.DataFrame' }], [{ name: 'out', dtype: 'numpy.ndarray' }]),
-  to_tensor: def('transforms', [{ name: 'in', dtype: 'numpy.ndarray' }], [{ name: 'out', dtype: 'torch.Tensor' }]),
-  passthrough: def('transforms', [{ name: 'in', dtype: 'Any' }], [{ name: 'out', dtype: 'numpy.ndarray' }]),
+  to_numpy: def('transforms', [{ name: 'in', dtype: 'pd.DataFrame' }], [{ name: 'out', dtype: 'numpy.ndarray' }], true),
+  to_tensor: def('transforms', [{ name: 'in', dtype: 'numpy.ndarray' }], [{ name: 'out', dtype: 'torch.Tensor' }], true),
+  passthrough: def('transforms', [{ name: 'in', dtype: 'Any' }], [{ name: 'out', dtype: 'numpy.ndarray' }], true),
   // non-transform blocks never contribute conversion edges
   csv_loader: def('data', [{ name: 'in', dtype: 'str' }], [{ name: 'out', dtype: 'pd.DataFrame' }]),
 }
@@ -164,20 +165,12 @@ describe('typeSystem facade (parity with backend mlblock/core/type_system.py)', 
     expect(typeSystem.classify('torch.Tensor', 'pd.DataFrame', graph)).toBe('incompatible')
   })
 
-  it('stageOf maps blocks, categories and families to stages', () => {
-    expect(typeSystem.stageOf('donnees')).toBe(0)
-    expect(typeSystem.stageOf('df')).toBe(0)
-    expect(typeSystem.stageOf('transformations')).toBe(1)
-    expect(typeSystem.stageOf('tensor')).toBe(1)
-    expect(typeSystem.stageOf('layers')).toBe(2)
-    expect(typeSystem.stageOf('module')).toBe(2)
-    expect(typeSystem.stageOf('entrainement')).toBe(3)
-    expect(typeSystem.stageOf('dataset')).toBe(3)
-    expect(typeSystem.stageOf('evaluate')).toBe(4)
-    expect(typeSystem.stageOf('confusion_matrix')).toBe(4)
-    expect(typeSystem.stageOf('visualisation')).toBe(4)
-    expect(typeSystem.stageOf('renforcement')).toBe(9)
-    expect(typeSystem.stageOf('env')).toBe(9)
+  it('converterFor proposes RL bridges from is_transition', () => {
+    const bridge = def('conversions', [{ name: 'in_1', dtype: 'Env' }], [{ name: 'out_1', dtype: 'torch.Tensor' }], true)
+    const normalize = def('pretraitement', [{ name: 'in_1', dtype: 'torch.utils.data.Dataset' }], [{ name: 'out_1', dtype: 'torch.Tensor' }])
+    const catalog: BlockDefMap = { env_to_tensor: bridge, normalize }
+    expect(converterFor('Env', 'torch.Tensor', catalog)).toBe('env_to_tensor')
+    expect(converterFor('torch.utils.data.Dataset', 'torch.Tensor', catalog)).toBeNull()
   })
 
   it('findConverter returns converter block name', () => {
@@ -225,7 +218,6 @@ describe('typeSystem facade (parity with backend mlblock/core/type_system.py)', 
   it('TypeSystem class is instance independent', () => {
     const ts = new TypeSystem()
     expect(ts.familyOf('int')).toBe('scalar')
-    expect(ts.stageOf('evaluate')).toBe(4)
   })
 })
 

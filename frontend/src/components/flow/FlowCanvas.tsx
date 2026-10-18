@@ -37,7 +37,6 @@ import { portDtype } from '../../utils/typeCheck'
 import { typeSystem } from '../../utils/typeSystem'
 import { resolveConnection, type ResolvedConnection } from '../../utils/portResolution'
 import { arrangeGraph } from '../../utils/layout'
-import { stageOfBlock, getStageConfig } from '../../utils/stages'
 import { matchEngine, groupSuperblocks, defaultChildren, resolveEdgeStyle, availableChildren } from '../../utils/superblocks'
 import BlockCard from './BlockCard'
 import BlockSegments from '../blocks/BlockSegments'
@@ -58,13 +57,6 @@ const ENGINE_FILTERS = [
   { value: 'gym', label: 'Gymnasium RL' },
   { value: 'mlflow-viz', label: 'MLflow & Viz' },
 ]
-
-// Titres des 3 macro-étapes (fallback si le catalogue ne les sert pas).
-const MACRO_FALLBACK: Record<number, string> = {
-  1: 'Données / Environnement & Préparation',
-  2: 'Modèle & Entraînement',
-  3: 'Évaluation & Visualisation',
-}
 
 const edgeColor: Record<string, string> = {
   compatible: theme.color.success,
@@ -190,8 +182,6 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
         fields: segsToFields(def),
         inputs: def.inputs,
         outputs: def.outputs,
-        stage: def.stage ?? stageOfBlock(convType, def.cat),
-        stage_name: def.stage_name,
       },
     }
 
@@ -232,7 +222,6 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
     if (!def) return null
     const cat = catalog.categories.find(c => c.id === def.cat)
     const label = def.segs.find(s => s.t === 'text')?.v ?? type
-    const stage = def.stage ?? stageOfBlock(type, def.cat)
     const sbEntry = catalog.superblocks.find(s => s.id === type)
     const isSuper = Boolean(sbEntry)
     const nodeId = `${type}_${Date.now()}`
@@ -253,8 +242,6 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
         children: sbEntry
           ? defaultChildren({ ...sbEntry, children: opts?.children ?? sbEntry.children }, catalog, nodeId)
           : (type === 'sequential_container' ? [] : undefined),
-        stage,
-        stage_name: def.stage_name,
       },
     }
   }, [catalog])
@@ -587,7 +574,7 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
                   groupSuperblocks(catalog.superblocks.filter(sb => matchEngine(sb.engine, engineFilter))).map(group => (
                     <div key={group.stage} className="flex flex-col gap-2">
                       <h3 className="text-sm font-heading font-bold text-foreground">
-                        {(catalog.macro_stages?.find(m => m.id === group.stage)?.label) ?? MACRO_FALLBACK[group.stage] ?? `Étape ${group.stage}`}
+                        {catalog.macro_stages?.find(m => m.id === group.stage)?.label ?? `Étape ${group.stage}`}
                       </h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {group.items.map(sb => (
@@ -672,8 +659,6 @@ function NodeInspector() {
   const type = (data?.type as string) ?? ''
   const def = type ? catalog?.blocks[type] : undefined
   const sbTitle = catalog?.superblocks.find(s => s.id === type)?.title
-  const stageNum = (data?.stage as number) ?? def?.stage ?? 2
-  const stageConfig = getStageConfig(stageNum)
   const fields = (data?.fields as Record<string, string>) ?? {}
   const sbEntry = catalog?.superblocks.find(s => s.id === type)
   const children = (data?.children as CatalogNode[] | undefined) ?? []
@@ -712,12 +697,6 @@ function NodeInspector() {
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Badge
-            variant="outline"
-            className="text-xs font-extrabold px-1.5 py-0.5 rounded border border-border"
-          >
-            {stageConfig.key}
-          </Badge>
           <h2 className="text-lg font-heading font-bold text-foreground">{String(data?.label ?? selected.id)}</h2>
         </div>
         <span className="text-xs text-muted-foreground font-mono">

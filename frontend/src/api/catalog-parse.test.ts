@@ -7,6 +7,7 @@ const payload = {
       id: 'transformations',
       name: 'Transformations',
       color: '#F5A623',
+      macro: 1,
       blocks: [
         {
           type: 'df_to_tensor',
@@ -17,8 +18,6 @@ const payload = {
           outputs: [{ name: 'out_1', dtype: 'torch.Tensor' }],
           advanced: false,
           group: 'core',
-          stage: 1,
-          stage_name: 'Prepare',
           macro_stage: 1,
           macro_stage_name: 'Data',
           engine: 'pytorch',
@@ -33,8 +32,6 @@ const payload = {
           outputs: [{ name: 'out_1', dtype: 'pd.DataFrame' }],
           advanced: false,
           group: 'core',
-          stage: 0,
-          stage_name: 'Ingest',
           macro_stage: 1,
           macro_stage_name: 'Data',
           // pas d'engine : le mapping doit fournir un fallback défini
@@ -43,7 +40,6 @@ const payload = {
       ],
     },
   ],
-  stages: [{ id: 0, name: 'Ingest', label: 'Données', color: '#22C55E' }],
   macro_stages: [{ id: 1, name: 'Data', label: 'Données', color: '#22C55E' }],
   superblocks: [
     {
@@ -63,7 +59,7 @@ describe('parseCatalog superblocks robustes', () => {
     inputs: [], outputs: [], advanced: false, group: 'core',
   }
   const base = {
-    categories: [{ id: 'c', name: 'C', color: '#fff', blocks: [baseBlock] }],
+    categories: [{ id: 'c', name: 'C', color: '#fff', macro: 1, blocks: [baseBlock] }],
   }
   it('fallback engine generic quand absent', () => {
     const cat = parseCatalog({
@@ -108,7 +104,7 @@ describe('parseCatalog', () => {
   it('mappe format vers FileSeg.accept', () => {
     const cat = parseCatalog({
       categories: [{
-        id: 'c', name: 'C', color: '#fff',
+        id: 'c', name: 'C', color: '#fff', macro: 1,
         blocks: [{
           type: 'load_csv', label: 'Load CSV', description: '', advanced: false, group: 'core',
           params: { path: { type: 'file', default: '', format: '.csv' } },

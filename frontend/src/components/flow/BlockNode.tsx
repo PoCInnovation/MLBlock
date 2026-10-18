@@ -20,8 +20,6 @@ type BlockNodeData = {
   fields: Record<string, string>
   inputs: Port[]
   outputs: Port[]
-  stage?: number
-  stage_name?: string
 }
 
 /** Distribute N handles vertically on a side. */
