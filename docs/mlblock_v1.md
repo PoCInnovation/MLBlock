@@ -687,7 +687,7 @@ def _discover():
 | **Déclencheur** | `import mlblock.blocks.registry` dans `mlblock/__init__.py` |
 | **Scan** | `rglob("*.py")` récursif — ignore `__init__.py` et `registry.py` |
 | **Filtre** | ignore les fonctions commençant par `_` (helpers privés) |
-| **Catégorie** | extraite du nom de dossier → `Category(name="neural", color="#6366F1")` |
+| **Catégorie** | dossier `mlblock/blocks/{N-macro}/{categorie}/` → `Category(name="couches", color=<nuance de la teinte macro>, macro=2)` ; `conversions/` → macro 99 |
 | **Inspection** | `inspect.signature(fn)` → tous les paramètres (noms, types, défauts), annotation de retour |
 | **Description bloc** | `fn.__doc__` (docstring de la fonction) |
 | **Description params** | extraite du docstring (convention Sphinx ou Google) |
@@ -749,19 +749,17 @@ Exemple : si `conv2d` expose `x: Tensor` et que le bloc précédent produit `out
 
 ### Dossiers de catégories
 
-Les blocs sont rangés dans des dossiers sous `mlblock/blocks/`. Chaque dossier suit la convention `NOM_COULEUR`.
+Les blocs sont rangés sous `mlblock/blocks/` selon une hiérarchie unique `macro → catégorie → block`. Le préfixe numérique du dossier macro (`1-`, `2-`, `3-`) donne l'id de la macro ; `conversions/` (blocs plats) regroupe les ponts entre familles de types (`is_transition`). La couleur d'une macro vient de `MACRO_STAGE_METADATA` (`core/stages.py`) ; chaque catégorie reçoit une nuance calculée de cette teinte (`category_shade`).
 
 ```
 mlblock/blocks/
-  neural_6366F1/       # 33 blocs : conv2d, relu, dropout...
-  data_22C55E/         # load_csv, train_test_split
-  models_F59E0B/       # linear_regression, logistic_regression, random_forest
-  evaluation_EF4444/   # evaluate
-  advanced_6B7280/     # auto_ml, code_block
-  rl_8B5CF6/          # train_rl, evaluate_rl
-  environment_14B8A6/  # gym_env, single_env, space_def...
-  visualization_EC4899/ # plot_predictions, record_video, render_rl
+  1-donnees/    donnees  chargement  pretraitement  texte  environnement
+  2-modele/     couches  activation  normalisation  regroupement  modeles  entrainement  agents
+  3-resultats/  evaluation  visualisation
+  conversions/  df_to_tensor  to_tensor  env_to_tensor  module_to_policy
 ```
+
+Validation : un lien ne peut pas aller vers une macro antérieure (sauf Modèle → Données, boucle de rétroaction) ; les blocs de `conversions/` sont exemptés. Les blocs de moteur `gym` sont isolés des autres moteurs, sauf via une conversion.
 
 ### Définition d'un bloc — exemple
 

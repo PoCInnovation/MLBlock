@@ -4,7 +4,7 @@
 
 MLBlock is a no-code, block-based ML/RL/DL builder ("Scratch, but for AI"). Users assemble pipelines as DAGs of blocks — PyTorch layers, sklearn models, data loaders, RL envs — in a ReactFlow canvas. Pipelines validate, run locally, generate standalone Python, and dispatch to Vast.ai GPUs. Backend: FastAPI + Pydantic v2 + SQLModel on Supabase PostgreSQL. Frontend: React 19 + Vite + TypeScript. Deployed on Coolify (Docker Compose on Oracle ARM64 VPS: FastAPI backend + Nginx/serve frontend, auto-redeploy on push to `main`).
 
-**Stages**: `S0 Ingest`, `S1 Prepare`, `S2 Represent` (S2A DL / S2B ML), `S3 Train` (S3A DL / S3B ML), `S4 Eval`, `SX World` (RL isolé).
+**Taxonomy** (one hierarchy, carried by the folders): 3 macros → categories → blocks. `1 Données` (donnees, chargement, pretraitement, texte, environnement), `2 Modèle + Entraînement` (couches, activation, normalisation, regroupement, modeles, entrainement, agents), `3 Résultats` (evaluation, visualisation), plus `conversions/` (macro 99 `Transition`: the bridge blocks `df_to_tensor`, `to_tensor`, `env_to_tensor`, `module_to_policy`). Macro colour = `MACRO_STAGE_METADATA` in `core/stages.py` (single source); each category gets a computed shade of its macro hue (`category_shade`). The engine (`pytorch`/`sklearn`/`gym`/…) is an independent filter, shown as a badge on SuperBlocks only. There is no `Stage` (S0–SX) anymore.
 
 Strict domain vocabulary (docs, commits, code):
 - **Block**: reusable executable Python unit (`in_` ports, docstring metadata). *Forbidden: Bloc, Component, Service.*
@@ -22,13 +22,13 @@ JSON config → ConfigLoader.validate() → Graph (DAG) → Pipeline
                                                          └→ generate_code()  → standalone Python script
 ```
 
-- **Core engine** (`backend/mlblock/core/`): `GraphNode`/`Edge`/`Graph` (Kahn topo sort, cycle → `ValueError`), `BlockMeta`/`BlockRegistry` (class-level dict, `_coerce_param_value`), `Pipeline` (`run` via `_value_for` single/multi-output, `generate_code` delegates to `CodeGenerator`), `CodeGenerator` (deduped `BLOCK_SOURCES`, emits `notify_status`/`output`/`error` + `_self_destroy` + `_serialize_output` + gzip envelope, image bytes via `POST artifact`), `VastAI` (REST only: `requests`, `POST /bundles`, `PUT /asks/{id}`, `PUT /instances/{id}`, `DELETE`; tiny bootstrap onstart fetching code via `GET /jobs/{id}/code`; no SSH), `types.py` (`family_of`, `build_conversion_graph` from `transformations` blocks only, `classify` → compatible/convertible/incompatible).
+- **Core engine** (`backend/mlblock/core/`): `GraphNode`/`Edge`/`Graph` (Kahn topo sort, cycle → `ValueError`), `BlockMeta`/`BlockRegistry` (class-level dict, `_coerce_param_value`), `Pipeline` (`run` via `_value_for` single/multi-output, `generate_code` delegates to `CodeGenerator`), `CodeGenerator` (deduped `BLOCK_SOURCES`, emits `notify_status`/`output`/`error` + `_self_destroy` + `_serialize_output` + gzip envelope, image bytes via `POST artifact`), `VastAI` (REST only: `requests`, `POST /bundles`, `PUT /asks/{id}`, `PUT /instances/{id}`, `DELETE`; tiny bootstrap onstart fetching code via `GET /jobs/{id}/code`; no SSH), `types.py` (`family_of`, `build_conversion_graph` from blocks with `is_transition` — i.e. the `conversions/` folder, `classify` → compatible/convertible/incompatible), `stages.py` (`MacroStage`, `macro_of_folder`, `category_shade`, engine tables).
 
 - **Server layer** (`backend/mlblock/server/`): FastAPI sync `def` handlers, `session: Session = Depends(get_session)`. 7 routers: `catalog`, `samples`, `pipelines`, `validation`, `jobs`, `files`, `health`. `ValueError` → `HTTPException(400)`. Dual auth: Supabase JWT (`auth.py`, JWKS TTL 1h, `MLBLOCK_DEV_AUTH` bypass) + per-job GPU bearer (`gpu_auth.py`, `instance_api_key` else `GPU_API_KEY`). Tables in `models.py`: `profiles`, `pipelines` (JSON `nodes`/`edges`), `jobs`, `job_outputs` (UUID PKs, FK CASCADE).
 
-- **Bridge** (`backend/mlblock/blocks/registry.py`): `_discover()` at import scans `blocks/{category}-{HEX}/` (e.g. `donnees-22C55E/`, `convolution-6366F1/` — 13 categories, ~111 blocks), `importlib.util.spec_from_file_location` per file, introspects signature + docstring → `BLOCK_REGISTRY` (Pydantic `Block`), `BLOCK_SOURCES` (verbatim source), legacy `BlockRegistry`.
+- **Bridge** (`backend/mlblock/blocks/registry.py`): `_discover()` at import scans `blocks/{N-macro}/{category}/` and `blocks/conversions/` (e.g. `2-modele/couches/`) — 15 categories, 95 blocks + 12 SuperBlocks = 107 registered; the macro comes from the folder, `is_transition` from `conversions/`. `importlib.util.spec_from_file_location` per file, introspects signature + docstring → `BLOCK_REGISTRY` (Pydantic `Block`), `BLOCK_SOURCES` (verbatim source), legacy `BlockRegistry`. SuperBlocks (`core/superblocks.py`, `SUPERBLOCK_DEFS`) are injected afterwards with their own `macro_stage` and per-macro categories `superblocks-1|2|3`.
 
-- **Frontend** (`frontend/src/`): `router.tsx` (`createBrowserRouter` + `RequireAuth`, 7 routes), `store/useAppStore.ts` (single Zustand store: `flowNodes`/`flowEdges`, `savedFingerprint` dirty check, undo/redo 50-deep, `loadPipeline`/`savePipeline`/`ensureDraft`), `api/client.ts` (axios + Supabase token interceptor, zod-validated), `utils/typeCheck.ts` + `portResolution.ts` (mirror `core/types.py` — `family_of`, `buildConversionGraph`, `classifyEdge`, `resolveConnection` scoring).
+- **Frontend** (`frontend/src/`): `router.tsx` (`createBrowserRouter` + `RequireAuth`, 7 routes), `store/useAppStore.ts` (single Zustand store: `flowNodes`/`flowEdges`, `savedFingerprint` dirty check, undo/redo 50-deep, `loadPipeline`/`savePipeline`/`ensureDraft`), `api/client.ts` (axios + Supabase token interceptor, zod-validated), `utils/typeCheck.ts` + `portResolution.ts` (mirror `core/types.py` — `family_of`, `buildConversionGraph` from `is_transition` blocks, `classifyEdge`, `resolveConnection` scoring).
 
 Execution: `save → POST /api/pipelines → POST /{id}/execute` creates `Job` → local subprocess (`MLBLOCK_RUN_MODE=local`, temp file + `BACKEND_URL`/`JOB_ID` env) or Vast dispatch (`gpu`, cheapest offer + `PUT /asks/{id}` with gzip onstart → `PUT /instances/{id}`) → callbacks `POST /api/jobs/{id}/status|output|error` → `jobs`/`job_outputs`. Alt local: `python -m mlblock --mode generate|build` → dummy `torch.randn` forward.
 
@@ -37,17 +37,17 @@ Execution: `save → POST /api/pipelines → POST /{id}/execute` creates `Job` �
 ```
 backend/
 ├── mlblock/
-│   ├── core/          # graph.py, pipeline.py, config.py, generator.py, block.py, types.py, vast.py
-│   ├── blocks/        # {category}-{HEX}/ — one file per block; registry.py discovers
-│   │                  # donnees-22C55E, transformations-F5A623, convolution-6366F1,
-│   │                  # normalisation-10B981, activation-EF4444, regroupement-F59E0B,
-│   │                  # sequences-8B5CF6, modeles-F59E0B, entrainement-DE497D,
-│   │                  # texte-9AA0C4, renforcement-E8C77A, chargement-7C3AED, visualisation-EC4899
+│   ├── core/          # graph.py, pipeline.py, config.py, generator.py, block.py, types.py, stages.py, superblocks.py, vast.py
+│   ├── blocks/        # {N-macro}/{category}/ — one file per block; registry.py discovers
+│   │                  # 1-donnees/    donnees chargement pretraitement texte environnement
+│   │                  # 2-modele/     couches activation normalisation regroupement modeles entrainement agents
+│   │                  # 3-resultats/  evaluation visualisation
+│   │                  # conversions/  df_to_tensor to_tensor env_to_tensor module_to_policy (flat)
 │   ├── server/        # main.py (factory), routes.py (7 routers), auth.py, gpu_auth.py,
 │   │                  # database.py, models.py, schemas.py, __main__.py
 │   ├── models/        # pipeline.py — PipelineDef/Node/Edge (Pydantic v2 validators)
 │   ├── configs/       # cnn_mnist.json — reference {graph:{nodes[],edges[]}}; demo-pipelines/ (6 examples)
-│   ├── tests/         # 16 pytest files + conftest.py (209 tests) — voir Testing & QA
+│   ├── tests/         # 17 pytest files + conftest.py (255 tests) — voir Testing & QA
 │   └── scripts/       # generate_samples.py (Supabase Storage CSV + manifest), validate_exercises.py (live API smoke)
 ├── pyproject.toml     # canonical deps — uv
 ├── uv.lock            # committed (695KB)
@@ -102,16 +102,23 @@ CI (`.github/workflows/ci.yml` on push/PR): backend `uv sync --dev` → `ruff ch
 - **Python >=3.10**, `from __future__ import annotations` in core. Pydantic v2 (`BaseModel`, `model_validator`, `Field`); `PipelineDef.model_validate(data, context={"registry": BLOCK_REGISTRY})`.
 - **Blocks are plain module-level functions** — no base class. File stem = registration key. Ports as string annotations: `in_1: "torch.Tensor" -> "torch.Tensor"` or `-> tuple["torch.Tensor", "torch.Tensor"]` (→ `out_1`/`out_2`) or `-> dict[str, type]` (named ports). `in_\d+` or data dtype → input; rest → params.
   ```python
-  # backend/mlblock/blocks/convolution-6366F1/conv2d.py
-  def conv2d(in_1: "torch.Tensor", out_channels: int, kernel_size: int = 3) -> "torch.Tensor":
-      """Convolution 2D
-      Applique une convolution 2D.
-      :param out_channels: nombre de filtres (entre: 1-512, pas: 1)
-      :param kernel_size: taille noyau (impair) (choix: 1|3|5|7)
+  # backend/mlblock/blocks/2-modele/couches/conv2d_layer.py
+  def conv2d_layer(in_channels: "int", out_channels: "int", in_1: "torch.nn.Module" = None, kernel_size: "int" = 3) -> "torch.nn.Module":
+      """Convolution 2D.
+      Couche de convolution 2D composable (nn.Module).
+
+      Args:
+          in_1: Couche précédente (optionnelle).
+          in_channels: Canaux d'entrée. (entre: 1-4096) (suggestions: 16|32|64|128|256)
+          out_channels: Canaux de sortie. (entre: 1-4096) (suggestions: 16|32|64|128|256)
+          kernel_size: Taille du filtre. (impair) (suggestions: 1|3|5|7)
       """
-      import torch.nn as nn
-      return nn.Conv2d(in_1.shape[1], out_channels, kernel_size)
+      from torch import nn
+
+      layer = nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel_size)
+      return nn.Sequential(in_1, layer) if in_1 is not None else layer
   ```
+- **Model-side blocks are `nn.Module`s**: a block with learnable weights returns a composable `nn.Module` (optional `in_1: "torch.nn.Module"`, returns `nn.Sequential(in_1, layer)` if chained). No `torch.Tensor` ports in `couches`/`activation`/`normalisation`/`regroupement` (exceptions: the virtual `input` block and `input_layer`, the Tensor→Module entry point). A converter between families MUST live in `conversions/` — that folder alone defines `is_transition` and feeds the conversion graph.
 - **Docstring contract**: line 1 French label, line 2 French summary; param metadata suffixes parsed by `_extract_param_desc`: `(entre: min-max, pas: x)`, `(impair)`, `(choix: a|b)`, `(suggestions: s1|s2)`, `(format: ...)`, `(longueur: N)`.
 - **Import discipline**: `import torch`/`nn` at top fine; `sklearn`/`gymnasium`/`pandas`/`torchvision` lazily inside function body.
 - **Error handling**: `ValueError` in core (`Graph.validate`, `ConfigLoader`, `PipelineDef`), `HTTPException(400, detail=str(e))` at FastAPI layer, `NotImplementedError` in `BlockMeta.execute()` if no builder. GPU auth → 403, JWT → 401. Param coercion `TypeError` with French message `Paramètre 'k' du bloc 'n' : 'v' non convertible`.
@@ -136,8 +143,8 @@ CI (`.github/workflows/ci.yml` on push/PR): backend `uv sync --dev` → `ruff ch
 | `backend/mlblock/core/generator.py` | `CodeGenerator` — standalone script with notify/_self_destroy, `_serialize_output` |
 | `backend/mlblock/core/config.py` | `ConfigLoader.load/validate` — JSON → Graph (JSON-only, rejects .yaml) |
 | `backend/mlblock/core/graph.py` | `Graph` Kahn sort, `GraphNode`/`Edge`, cycle detection |
-| `backend/mlblock/core/types.py` | `family_of`, `build_conversion_graph` (transformations only), `classify` |
-| `backend/mlblock/validation.py` | Kahn sort, cycle detection, stage transitions, port compatibility |
+| `backend/mlblock/core/types.py` | `family_of`, `build_conversion_graph` (blocks with `is_transition`, i.e. `conversions/`), `classify` |
+| `backend/mlblock/validation.py` | Kahn sort, cycle detection, macro ordering (a block cannot feed an earlier macro, except Modèle→Données feedback; `conversions/` exempt), RL isolation by engine `gym`, port compatibility |
 | `backend/mlblock/execution.py` | Local/Vast backends, uv images + bootstrap builder, orphan policy |
 | `backend/mlblock/core/vast.py` | `VastAI` REST client (bundles/asks/instances, gzip+base64 onstart) |
 | `backend/mlblock/core/block.py` | `BlockMeta`/`BlockRegistry`, `_coerce_param_value`, `_extract_param_desc` |
@@ -178,7 +185,7 @@ Backend env: `DATABASE_URL`, `SUPABASE_URL`/`PUBLISHABLE_KEY`/`SECRET_KEY`/`JWKS
   uv run pytest mlblock/tests/test_graph.py -q -k test_cycle
   uv run ruff check .
   ```
-  16 files + `conftest.py` (209 tests, verified 2026-10-14): graph, block, config, pipeline, types, server, auth, validation, stages, runtime-codegen, file-assets, three-stage, type-system, audit-coverage, exos, execution.
+  17 files + `conftest.py` (255 tests, verified 2026-10-18): graph, block, config, pipeline, types, server, auth, validation, stages, runtime-codegen, file-assets, three-stage, type-system, audit-coverage, exos, execution.
 
 - **Frontend — vitest 3** (`vitest run`, node env, no jsdom/coverage; `vite.config.ts` doubles as vitest config):
   ```bash
@@ -186,7 +193,7 @@ Backend env: `DATABASE_URL`, `SUPABASE_URL`/`PUBLISHABLE_KEY`/`SECRET_KEY`/`JWKS
   pnpm run build                      # type-check + bundle (must pass)
   pnpm lint                           # --max-warnings 0
   ```
-  17 files / 135 tests in `src/**/*.test.ts` (verified 2026-10-14): `useAppStore` (fingerprint, `isDirty`, undo/redo cap 50), `layout`, `tapGuard`, `portResolution`, `typeCheck`, `exportImport`, `outputCodec` (gzip roundtrip), stages, catalog-parse, files, auth.
+  15 files / 122 tests in `src/**/*.test.ts` (verified 2026-10-18): `useAppStore` (fingerprint, `isDirty`, undo/redo cap 50), `layout`, `tapGuard`, `portResolution`, `typeCheck`, `exportImport`, `outputCodec` (gzip roundtrip), stages, catalog-parse, files, auth.
 
 - **DB/auth strategy** (`conftest.py`): `load_dotenv()` before internal imports (required — `auth.py` reads env at import). Two fixtures: `catalog_client` (no DB, no auth, for `/api/catalog`) and `client` (real `DATABASE_URL` engine, `statement_timeout=10000`, `StaticPool`). Skips gracefully if `DATABASE_URL`/`SUPABASE_URL`/`SECRET_KEY` unset. Per-test purge via `DELETE FROM pipelines WHERE user_id=…`. Auth mocked via `app.dependency_overrides` (`get_current_user`→UUID, `verify_gpu_key`→`"gpu"`); `test_auth.py` uses its own `sqlite://` + live Supabase Admin API (`POST /auth/v1/admin/users`, `email_confirm:true`) to exercise JWT. `validate_exercises.py` runs live smoke against `http://localhost:8000` with `SMOKE_JWT`.
 
