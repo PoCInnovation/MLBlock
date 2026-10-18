@@ -47,20 +47,16 @@ def test_validate_port_not_found():
     assert any("Port" in e for e in r.errors)
 
 
-def test_validate_stage_mismatch():
-    # Connecting Stage 3 (train_epoch) to Stage 0 (load_csv) must trigger Stage mismatch
+def test_validate_macro_feedback_permitted():
+    # Model -> Data is the legal backward edge (training feedback loop)
     r = validate(
         [
             {"id": "trainer", "type": "train_epoch", "params": {}},
-            {"id": "data", "type": "load_csv", "params": {}},
+            {"id": "data", "type": "normalize", "params": {}},
         ],
         [{"source": "trainer", "source_port": "out_1", "target": "data", "target_port": "in_1"}],
     )
-    assert r.valid is False
-    assert any(
-        "Stage mismatch: cannot connect Stage 3 (trainer) to Stage 0 (data)." in e
-        for e in r.errors
-    )
+    assert not any(e.startswith("Ordre invalide") for e in r.errors)
 
 
 def test_validate_permitted_feedback_loop():
@@ -123,7 +119,7 @@ def test_validate_stage_world_isolation():
         [{"source": "data", "source_port": "out_1", "target": "env", "target_port": "in_1"}],
     )
     assert r1.valid is False
-    assert any("Stage.WORLD is isolated from tensor stages" in e for e in r1.errors)
+    assert any(e.startswith("Isolation RL") for e in r1.errors)
 
     # 2. World to non-world (e.g. SX -> S2)
     r2 = validate(
@@ -134,7 +130,7 @@ def test_validate_stage_world_isolation():
         [{"source": "env", "source_port": "out_1", "target": "fc", "target_port": "in_1"}],
     )
     assert r2.valid is False
-    assert any("Stage.WORLD is isolated from tensor stages" in e for e in r2.errors)
+    assert any(e.startswith("Isolation RL") for e in r2.errors)
 
     # 3. World to World is allowed (e.g. SX -> SX)
     r3 = validate(
@@ -144,7 +140,7 @@ def test_validate_stage_world_isolation():
         ],
         [{"source": "env", "source_port": "out_1", "target": "agent", "target_port": "in_1"}],
     )
-    assert not any("Stage mismatch" in e for e in r3.errors)
+    assert not any(e.startswith("Isolation RL") for e in r3.errors)
 
 
 def test_validate_sequential_container_valid():
@@ -227,3 +223,45 @@ def test_validate_ml_pipeline_valid():
     assert r.valid is True
     assert r.errors == []
     assert r.order == ["load", "pipe"]
+
+
+def _validate_edge(src_type: str, tgt_type: str):
+    """Validate a 2-node pipeline with one edge (first out port -> first in port)."""
+    from mlblock.catalog import catalog
+
+    registry = catalog.all()
+    s_ports = registry[src_type].outputs
+    t_ports = registry[tgt_type].inputs
+    return validate(
+        [
+            {"id": "s", "type": src_type, "params": {}},
+            {"id": "t", "type": tgt_type, "params": {}},
+        ],
+        [{"source": "s", "source_port": s_ports[0]["name"], "target": "t", "target_port": t_ports[0]["name"]}],
+    ).errors
+
+
+def test_macro_order_rejects_results_to_data():  # evaluate -> normalize
+    assert any(e.startswith("Ordre invalide") for e in _validate_edge("evaluate", "normalize"))
+
+
+def test_macro_order_allows_model_to_data_feedback():  # deep_trainer -> normalize
+    assert not any(e.startswith("Ordre invalide") for e in _validate_edge("deep_trainer", "normalize"))
+
+
+def test_conversion_exempt_from_order():  # evaluate -> df_to_tensor
+    assert not any(e.startswith("Ordre invalide") for e in _validate_edge("evaluate", "df_to_tensor"))
+
+
+def test_rl_isolation_rejects_env_to_layer():  # create_env -> linear_layer
+    assert any(e.startswith("Isolation RL") for e in _validate_edge("create_env", "linear_layer"))
+
+
+def test_rl_isolation_allows_bridges():
+    assert not any(e.startswith("Isolation RL") for e in _validate_edge("create_env", "env_to_tensor"))
+    assert not any(e.startswith("Isolation RL") for e in _validate_edge("module_to_policy", "evaluate_agent"))
+    assert not any(e.startswith("Isolation RL") for e in _validate_edge("q_learning", "evaluate_agent"))
+
+
+def test_rl_isolation_applies_to_gym_superblock():  # rl_agent_trainer -> linear_layer
+    assert any(e.startswith("Isolation RL") for e in _validate_edge("rl_agent_trainer", "linear_layer"))

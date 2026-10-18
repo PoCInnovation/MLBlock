@@ -17,7 +17,7 @@ from collections import deque
 from dataclasses import dataclass, field
 from typing import Any
 
-from mlblock.core.stages import Stage
+from mlblock.core.stages import MacroStage
 from mlblock.core.type_system import type_system
 
 
@@ -267,17 +267,11 @@ def validate(
                                 f"Port '{port_name}' not found on {side} '{nid}' ({node['type']}). Valid ports: {valid}"
                             )
 
-    # ── stage ordering ────────────────────────────────────────────
-    PERMITTED_FEEDBACK_LOOPS: set[tuple[Stage, Stage]] = {
-        (Stage.TRAIN, Stage.PREPARE),  # e.g. training feedback loop into data preparation
-    }
-    # Explicit SX bridges: the only legal crossings of the WORLD isolation wall.
-    # Directional pairs (bridge, neighbor): env_to_tensor only out of WORLD,
-    # module_to_policy only into WORLD.
-    WORLD_BRIDGES: set[tuple[str, str]] = {
-        ("create_env", "env_to_tensor"),
-        ("module_to_policy", "evaluate_agent"),
-    }
+    # ── macro ordering + RL isolation ─────────────────────────────
+    # Rank = registry macro_stage (1 Data, 2 Model+Train, 3 Results, 99 Transition).
+    # Only legal backward edge: Model -> Data (training feedback loop).
+    # Conversions (is_transition) are exempt from both rules.
+    PERMITTED_BACKWARD: set[tuple[int, int]] = {(2, 1)}
 
     for e in edge_dicts:
         if not all(k in e for k in ("source", "target")):
@@ -290,20 +284,25 @@ def validate(
         t_type = t_node["type"]
         if registry and (s_type not in registry or t_type not in registry):
             continue
-        s_stage = type_system.stage_of(s_type)
-        t_stage = type_system.stage_of(t_type)
-        if (s_stage == Stage.WORLD) != (t_stage == Stage.WORLD):
-            if (s_type, t_type) in WORLD_BRIDGES:
-                pass  # explicit bridge edge — legal crossing
-            else:
-                errors.append(
-                    f"Stage mismatch: Stage.WORLD is isolated from tensor stages "
-                    f"(cannot connect '{e['source']}' to '{e['target']}')."
-                )
-        elif int(t_stage) < int(s_stage) and (s_stage, t_stage) not in PERMITTED_FEEDBACK_LOOPS:
+        s_spec = registry[s_type] if registry else None
+        t_spec = registry[t_type] if registry else None
+        if _spec_is_transition(s_spec, s_type) or _spec_is_transition(t_spec, t_type):
+            continue
+
+        s_rank = int(s_spec.macro_stage)
+        t_rank = int(t_spec.macro_stage)
+        if t_rank < s_rank and (s_rank, t_rank) not in PERMITTED_BACKWARD:
             errors.append(
-                f"Stage mismatch: cannot connect Stage {int(s_stage)} ({e['source']}) "
-                f"to Stage {int(t_stage)} ({e['target']})."
+                f"Ordre invalide : '{e['source']}' ({MacroStage(s_rank).label}) "
+                f"ne peut pas alimenter '{e['target']}' ({MacroStage(t_rank).label})."
+            )
+
+        s_engine = _spec_engine(s_spec)
+        t_engine = _spec_engine(t_spec)
+        if (s_engine == "gym") != (t_engine == "gym"):
+            errors.append(
+                f"Isolation RL : '{e['source']}' ne peut pas être relié à "
+                f"'{e['target']}' sans block de conversion."
             )
 
     # ── dtype compatibility (family-aware, single table) ─────────
