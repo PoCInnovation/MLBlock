@@ -57,15 +57,15 @@ def test_pooling_blocks_run_without_attribute_error():
     import torch
 
     avgpool2d = _load_block("regroupement-F59E0B/avgpool2d.py", "avgpool2d")
-    out = avgpool2d(torch.randn(1, 4, 8, 8), kernel_size=2)
+    out = avgpool2d(kernel_size=2)(torch.randn(1, 4, 8, 8))
     assert tuple(out.shape) == (1, 4, 4, 4)
 
     adaptive_avg = _load_block("regroupement-F59E0B/adaptive_avgpool2d.py", "adaptive_avgpool2d")
-    out = adaptive_avg(torch.randn(1, 4, 8, 8), output_size=4)
+    out = adaptive_avg(output_size=4)(torch.randn(1, 4, 8, 8))
     assert tuple(out.shape) == (1, 4, 4, 4)
 
     adaptive_max = _load_block("regroupement-F59E0B/adaptive_maxpool2d.py", "adaptive_maxpool2d")
-    out = adaptive_max(torch.randn(1, 4, 8, 8), output_size=2)
+    out = adaptive_max(output_size=2)(torch.randn(1, 4, 8, 8))
     assert tuple(out.shape) == (1, 4, 2, 2)
 
 
@@ -73,27 +73,71 @@ def test_recurrent_blocks_run_without_attribute_error():
     import torch
 
     x = torch.randn(2, 5, 16)
-    lstm = _load_block("sequences-8B5CF6/lstm.py", "lstm")
-    out, _ = lstm(x, input_size=16, hidden_size=8)
-    assert tuple(out.shape) == (2, 5, 8)
-
     gru = _load_block("sequences-8B5CF6/gru.py", "gru")
-    out, _ = gru(x, input_size=16, hidden_size=8)
-    assert tuple(out.shape) == (2, 5, 8)
-
-    rnn = _load_block("sequences-8B5CF6/rnn.py", "rnn")
-    out, _ = rnn(x, input_size=16, hidden_size=8)
-    assert tuple(out.shape) == (2, 5, 8)
+    out = gru(input_size=16, hidden_size=8)(x)
+    assert tuple(out.shape) == (2, 8)
 
 
 def test_multihead_attention_self_attention_call():
     import torch
 
     mha = _load_block("sequences-8B5CF6/multihead_attention.py", "multihead_attention")
-    # Must not raise TypeError about missing key/value (self-attention).
-    out, weights = mha(torch.randn(2, 4, 8), embed_dim=8, num_heads=2)
+    out = mha(embed_dim=8, num_heads=2)(torch.randn(2, 4, 8))
     assert tuple(out.shape) == (2, 4, 8)
-    assert tuple(weights.shape) == (2, 4, 4)
+
+
+def test_parametric_blocks_are_trainable_modules():
+    import torch
+    from torch import nn
+
+    cases = [
+        ("sequences-8B5CF6/gru.py", "gru", {"input_size": 4, "hidden_size": 8}, torch.randn(2, 5, 4)),
+        ("sequences-8B5CF6/multihead_attention.py", "multihead_attention", {"embed_dim": 8, "num_heads": 2}, torch.randn(2, 5, 8)),
+        ("activation-EF4444/prelu.py", "prelu", {}, torch.randn(2, 3)),
+        ("normalisation-10B981/instancenorm2d.py", "instancenorm2d", {"num_features": 3}, torch.randn(2, 3, 4, 4)),
+    ]
+    for path, name, kwargs, x in cases:
+        m = _load_block(path, name)(**kwargs)
+        assert isinstance(m, nn.Module) and list(m.parameters()), name
+        assert isinstance(m(x), torch.Tensor), name
+
+
+def test_rnn_layer_exposes_full_params():
+    import torch
+
+    rnn = _load_block("layers-6366F1/rnn_layer.py", "rnn_layer")
+    m = rnn(input_size=4, hidden_size=8, num_layers=2, bidirectional=True)
+    assert m(torch.randn(2, 5, 4)).shape == (2, 16)
+
+
+def test_removed_ephemeral_blocks():
+    from mlblock.blocks.registry import BLOCK_REGISTRY
+
+    assert not {"embedding", "rnn", "lstm", "identity"} & BLOCK_REGISTRY.keys()
+
+
+def test_model_layer_blocks_have_no_tensor_ports():
+    from mlblock.blocks.registry import BLOCK_REGISTRY
+
+    model_categories = {"layers", "sequences", "activation", "normalisation", "regroupement"}
+    for b in BLOCK_REGISTRY.values():
+        if b.category.name in model_categories and b.name not in {"input", "input_layer", "sequential_container"}:
+            assert all(p["dtype"] == "torch.nn.Module" for p in b.inputs), b.name
+            assert [p["dtype"] for p in b.outputs] == ["torch.nn.Module"], b.name
+
+
+def test_layer_container_composes_into_sequential():
+    from mlblock.core.generator import generate_code
+    from mlblock.server.schemas import PipelineNode
+    from mlblock.validation import validate
+
+    node = PipelineNode(id="m", type="sequential_model", params={}, children=[
+        PipelineNode(id="c", type="conv2d_layer", params={"in_channels": 1, "out_channels": 4}),
+        PipelineNode(id="p", type="avgpool2d", params={}),
+        PipelineNode(id="f", type="flatten_layer", params={}),
+    ])
+    assert validate([node.model_dump()], []).valid
+    assert "nn.Sequential(" in generate_code([node], [])
 
 
 def test_local_backend_relays_backend_url_env(monkeypatch):

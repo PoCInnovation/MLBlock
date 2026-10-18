@@ -2,11 +2,12 @@ import torch
 from torch import nn
 
 
-def selu(in_1: "torch.Tensor") -> "torch.Tensor":
+def selu(in_1: "torch.nn.Module" = None) -> "torch.nn.Module":
     """SELU.
-    Active SELU : auto-normalisante.
-    
+    Active SELU composable : auto-normalisante.
+
     Args:
-        in_1: Input tensor.
+        in_1: Couche précédente (optionnelle).
     """
-    return nn.Selu()(in_1)
+    layer = nn.SELU()
+    return nn.Sequential(in_1, layer) if in_1 is not None else layer

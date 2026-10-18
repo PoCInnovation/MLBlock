@@ -2,11 +2,12 @@ import torch
 from torch import nn
 
 
-def silu(in_1: "torch.Tensor") -> "torch.Tensor":
+def silu(in_1: "torch.nn.Module" = None) -> "torch.nn.Module":
     """SiLU.
-    Active SiLU (swish) : x · sigmoid(x).
-    
+    Active SiLU (swish) composable : x · sigmoid(x).
+
     Args:
-        in_1: Input tensor.
+        in_1: Couche précédente (optionnelle).
     """
-    return nn.Silu()(in_1)
+    layer = nn.SiLU()
+    return nn.Sequential(in_1, layer) if in_1 is not None else layer

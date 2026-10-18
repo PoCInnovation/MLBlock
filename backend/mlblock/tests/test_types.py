@@ -373,10 +373,16 @@ def test_validate_rejects_incompatible_edges():
 def test_validate_accepts_convertible_edges():
     nodes = [
         PipelineNode(id="n1", type="load_csv"),
-        PipelineNode(id="n2", type="avgpool2d"),
+        PipelineNode(id="n2", type="df_to_tensor"),
+        PipelineNode(id="n3", type="input_layer"),
+        PipelineNode(id="n4", type="avgpool2d"),
     ]
-    edges = [PipelineEdge(source="n1", source_port="out_1", target="n2", target_port="in_1")]
-    _validate(nodes, edges)  # convertible — allowed, converter materializes in UI
+    edges = [
+        PipelineEdge(source="n1", source_port="out_1", target="n2", target_port="in_1"),
+        PipelineEdge(source="n2", source_port="out_1", target="n3", target_port="in_1"),
+        PipelineEdge(source="n3", source_port="out_1", target="n4", target_port="in_1"),
+    ]
+    _validate(nodes, edges)  # df → tensor → Module bridges — allowed
 
 
 def test_validate_rejects_df_to_composable_layer():
