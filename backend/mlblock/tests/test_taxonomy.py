@@ -25,12 +25,23 @@ def test_no_block_file_at_macro_root():
 
 
 def test_category_names_unique():
+    """Real block categories: one macro per category name. Superblocks are checked by payload id below."""
     by_name: dict[str, set[int]] = {}
     for b in BLOCK_REGISTRY.values():
-        if b.category.name == "superblocks":  # containers span macros; see SUPERBLOCK_DEFS
+        if b.category.name == "superblocks":
             continue
         by_name.setdefault(b.category.name, set()).add(b.category.macro)
     assert all(len(macros) == 1 for macros in by_name.values()), by_name
+
+
+def test_catalog_superblock_categories_have_distinct_ids():
+    from mlblock.server.routes import get_catalog
+
+    payload = get_catalog(request=None, all=True)
+    ids = [c["id"] for c in payload["categories"] if c["id"].startswith("superblocks")]
+    assert len(ids) == 3 and len(set(ids)) == 3, ids
+    assert {c["macro"] for c in payload["categories"] if c["id"].startswith("superblocks")} == {1, 2, 3}
+
 
 def test_macro_and_transition_from_folder():
     linear_layer = BLOCK_REGISTRY["linear_layer"]

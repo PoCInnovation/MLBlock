@@ -149,7 +149,11 @@ def register_superblocks() -> None:
         BLOCK_REGISTRY[sb_id] = Block(
             name=sb_id,
             description=f"{d['title']}.\n{d['description']}",
-            category=Category(name="superblocks", color="#6366F1", macro=int(d["macro_stage"])),
+            category=Category(
+                name="superblocks",
+                color=MacroStage(int(d["macro_stage"])).color,
+                macro=int(d["macro_stage"]),
+            ),
             params={},
             inputs=inputs,
             outputs=outputs,

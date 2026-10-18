@@ -132,15 +132,19 @@ def get_catalog(
         if group is not None and block_grp != group:
             continue
 
-        cat = block.category.name
-        if cat not in categories:
+        name = block.category.name
+        macro = block.category.macro
+        # Superblocks span macros 1-3: one category per macro (distinct id & colour).
+        cat_id = f"{name}-{macro}" if name == "superblocks" else name
+        key = (cat_id, macro)
+        if key not in categories:
             # id = slug brut (filtrage stable) ; name = première lettre en
             # majuscule pour l'affichage (palette)
-            categories[cat] = {
-                "id": cat,
-                "name": cat[:1].upper() + cat[1:],
+            categories[key] = {
+                "id": cat_id,
+                "name": name[:1].upper() + name[1:],
                 "color": block.category.color,
-                "macro": block.category.macro,
+                "macro": macro,
                 "blocks": [],
             }
         macro_val = block.macro_stage
@@ -148,7 +152,7 @@ def get_catalog(
         engine_val = block.engine
         is_transition_val = block.is_transition
 
-        categories[cat]["blocks"].append(
+        categories[key]["blocks"].append(
             {
                 "type": block.name,
                 "label": _en_label(block),

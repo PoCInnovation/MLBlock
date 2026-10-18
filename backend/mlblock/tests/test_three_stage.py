@@ -26,6 +26,16 @@ def test_macro_and_engine_tags():
     assert catalog.get("conv2d_layer").is_transition is False
 
 
+def test_superblock_color_is_macro_color():
+    from mlblock.blocks.registry import BLOCK_REGISTRY
+
+    assert BLOCK_REGISTRY["clustering_visualizer"].category.color == "#06B6D4"
+    assert BLOCK_REGISTRY["clustering_visualizer"].category.macro == 3
+    assert BLOCK_REGISTRY["tabular_data_pipeline"].category.color == "#22C55E"
+    assert BLOCK_REGISTRY["tabular_data_pipeline"].category.macro == 1
+
+
+
 def test_superblocks_expose_pedagogical_titles():
     from mlblock.catalog import catalog
 
