@@ -142,14 +142,6 @@ def get_catalog(
                 "color": block.category.color,
                 "blocks": [],
             }
-        stage_val = getattr(block, "stage", None)
-        stage_name_val = getattr(block, "stage_name", None)
-        if stage_val is None or stage_name_val is None:
-            from mlblock.core.stages import stage_of_block
-
-            st = stage_of_block(block.name, cat)
-            stage_val = int(st)
-            stage_name_val = st.stage_name
         macro_val = getattr(block, "macro_stage", None)
         macro_name_val = getattr(block, "macro_stage_name", None)
         if macro_val is None or macro_name_val is None:
@@ -179,8 +171,6 @@ def get_catalog(
                 "outputs": block.outputs,
                 "advanced": block_adv,
                 "group": block_grp,
-                "stage": stage_val,
-                "stage_name": stage_name_val,
                 "macro_stage": macro_val,
                 "macro_stage_name": macro_name_val,
                 "engine": engine_val,
@@ -189,7 +179,6 @@ def get_catalog(
         )
     payload = {
         "categories": sorted(list(categories.values()), key=lambda c: c["id"]),
-        "stages": catalog.stages(),
         "macro_stages": catalog.macro_stages(),
         "superblocks": catalog.superblocks(),
     }

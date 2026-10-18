@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from mlblock.core.stages import Stage
 from mlblock.core.types import (
     VERDICT_COMPATIBLE,
     VERDICT_CONVERTIBLE,
@@ -15,7 +14,7 @@ from mlblock.core.types import (
 
 
 class TypeSystem:
-    """Facade for type classification, stage resolution, and connection diagnostics.
+    """Facade for type classification and connection diagnostics.
 
     Central interface used by validation, generator, catalog, and routes.
     """
@@ -52,31 +51,6 @@ class TypeSystem:
                 self.build_conversion_graph()
             graph = self._conversion_graph or {}
         return classify(src_dtype, tgt_dtype, graph)
-
-    def stage_of(self, block_or_family: str, category: str | None = None) -> Stage:
-        """Map a block name, category, or type family to its Stage."""
-        from mlblock.core.stages import (
-            STAGE_OF_BLOCK_OVERRIDES,
-            STAGE_OF_CATEGORY,
-            STAGE_OF_FAMILY,
-            stage_of_block,
-            stage_of_category,
-            stage_of_family,
-        )
-
-        canonical = block_or_family
-        if canonical in STAGE_OF_BLOCK_OVERRIDES:
-            return STAGE_OF_BLOCK_OVERRIDES[canonical]
-
-        cat_key = block_or_family.split("-")[0].strip().lower()
-        if cat_key in STAGE_OF_CATEGORY:
-            return stage_of_category(block_or_family)
-
-        fam_key = block_or_family.strip().lower()
-        if fam_key in STAGE_OF_FAMILY:
-            return stage_of_family(fam_key)
-
-        return stage_of_block(block_or_family, category)
 
     def find_converter(
         self,

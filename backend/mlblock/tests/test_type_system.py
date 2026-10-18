@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from mlblock.catalog import catalog
-from mlblock.core.stages import Stage
 from mlblock.core.type_system import TypeSystem, type_system
 from mlblock.core.types import (
     VERDICT_COMPATIBLE,
@@ -45,32 +44,6 @@ def test_type_system_classify():
     )
 
 
-def test_type_system_stage_of():
-    assert type_system.stage_of("load_csv") == Stage.INGEST
-    assert type_system.stage_of("donnees") == Stage.INGEST
-    assert type_system.stage_of("df") == Stage.INGEST
-
-    assert type_system.stage_of("to_tensor") == Stage.PREPARE
-    assert type_system.stage_of("transformations") == Stage.PREPARE
-    assert type_system.stage_of("tensor") == Stage.PREPARE
-
-    assert type_system.stage_of("conv2d_layer") == Stage.REPRESENT
-    assert type_system.stage_of("layers") == Stage.REPRESENT
-    assert type_system.stage_of("module") == Stage.REPRESENT
-
-    assert type_system.stage_of("adam") == Stage.TRAIN
-    assert type_system.stage_of("entrainement") == Stage.TRAIN
-    assert type_system.stage_of("dataset") == Stage.TRAIN
-
-    assert type_system.stage_of("evaluate") == Stage.EVAL
-    assert type_system.stage_of("confusion_matrix") == Stage.EVAL
-    assert type_system.stage_of("visualisation") == Stage.EVAL
-
-    assert type_system.stage_of("create_env") == Stage.WORLD
-    assert type_system.stage_of("renforcement") == Stage.WORLD
-    assert type_system.stage_of("env") == Stage.WORLD
-
-
 def test_type_system_find_converter():
     assert type_system.find_converter("pd.DataFrame", "torch.Tensor") == "df_to_tensor"
     assert type_system.find_converter("numpy.ndarray", "torch.Tensor") == "to_tensor"
@@ -110,4 +83,3 @@ def test_type_system_can_connect_incompatible():
 def test_type_system_instance_independent():
     ts = TypeSystem()
     assert ts.family_of("int") == "scalar"
-    assert ts.stage_of("evaluate") == Stage.EVAL

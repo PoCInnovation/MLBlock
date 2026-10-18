@@ -79,13 +79,10 @@ def test_non_literal_param_has_no_options():
 def test_tsne_visualization():
     import pandas as pd
     from mlblock.blocks.registry import BLOCK_REGISTRY
-    from mlblock.core.type_system import type_system
-    from mlblock.core.stages import Stage
 
     block = BLOCK_REGISTRY.get("tsne")
     assert block is not None
     assert block.category.name == "visualisation"
-    assert type_system.stage_of("tsne") == Stage.EVAL
     # Test execution produces valid PNG bytes
     from mlblock.core.block import BlockRegistry
     km_meta = BlockRegistry.get("kmeans")

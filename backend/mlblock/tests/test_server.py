@@ -44,14 +44,16 @@ def test_catalog_returns_all_blocks(catalog_client: TestClient):
     assert resp.status_code == 200
     data = resp.json()
     assert "categories" in data
-    assert "stages" in data
-    assert len(data["stages"]) == 6
-    assert [s["name"] for s in data["stages"]] == ["Ingest", "Prepare", "Represent", "Train", "Eval", "World"]
+    assert "stages" not in data
     blocks = [b for cat in data["categories"] for b in cat["blocks"]]
     assert blocks
-    assert all({"type", "params", "inputs", "outputs", "stage", "stage_name"} <= set(b) for b in blocks)
-    assert all(isinstance(b["stage"], int) for b in blocks)
-    assert all(isinstance(b["stage_name"], str) for b in blocks)
+    assert all({"type", "params", "inputs", "outputs", "macro_stage", "macro_stage_name"} <= set(b) for b in blocks)
+    assert all(isinstance(b["macro_stage"], int) for b in blocks)
+
+
+def test_catalog_has_no_stage_fields(catalog_client: TestClient):
+    blocks = [b for cat in catalog_client.get("/api/catalog").json()["categories"] for b in cat["blocks"]]
+    assert all("stage" not in b and "stage_name" not in b for b in blocks)
 
 
 def test_catalog_groups_blocks_by_category(catalog_client: TestClient):

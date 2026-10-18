@@ -24,8 +24,6 @@ SUPERBLOCK_DEFS: dict[str, dict[str, Any]] = {
         "description": "Charge un CSV puis standardise les features.",
         "macro_stage": 1,
         "engine": "sklearn",
-        "stage": 0,
-        "stage_name": "Ingest",
         "children": [_child("load_csv"), _child("standard_scaler")],
     },
     "torch_data_pipeline": {
@@ -33,8 +31,6 @@ SUPERBLOCK_DEFS: dict[str, dict[str, Any]] = {
         "description": "Charge un dataset d'images puis l'enveloppe en DataLoader.",
         "macro_stage": 1,
         "engine": "pytorch",
-        "stage": 0,
-        "stage_name": "Ingest",
         "children": [_child("load_torch_dataset"), _child("data_loader")],
     },
     "gym_env_pipeline": {
@@ -42,8 +38,6 @@ SUPERBLOCK_DEFS: dict[str, dict[str, Any]] = {
         "description": "Instancie un environnement Gymnasium.",
         "macro_stage": 1,
         "engine": "gym",
-        "stage": 0,
-        "stage_name": "Ingest",
         "children": [_child("create_env")],
     },
     "nlp_data_pipeline": {
@@ -51,8 +45,6 @@ SUPERBLOCK_DEFS: dict[str, dict[str, Any]] = {
         "description": "Découpe un texte en tokens puis construit le vocabulaire.",
         "macro_stage": 1,
         "engine": "pytorch",
-        "stage": 0,
-        "stage_name": "Ingest",
         "children": [_child("tokenize"), _child("build_vocab")],
     },
     "sequential_model": {
@@ -60,8 +52,6 @@ SUPERBLOCK_DEFS: dict[str, dict[str, Any]] = {
         "description": "Conteneur vide à remplir de couches nn.Module.",
         "macro_stage": 2,
         "engine": "pytorch",
-        "stage": 2,
-        "stage_name": "Represent",
         "children": [],
         "inputs": [{"name": "in_1", "dtype": "torch.nn.Module"}],
         "outputs": [{"name": "out_1", "dtype": "torch.nn.Module"}],
@@ -71,8 +61,6 @@ SUPERBLOCK_DEFS: dict[str, dict[str, Any]] = {
         "description": "Entraîne un estimateur statistique sur données tabulaires.",
         "macro_stage": 2,
         "engine": "sklearn",
-        "stage": 3,
-        "stage_name": "Train",
         "children": [_child("logistic_regression")],
     },
     "xgboost_trainer": {
@@ -80,8 +68,6 @@ SUPERBLOCK_DEFS: dict[str, dict[str, Any]] = {
         "description": "Entraîne un boosting XGBoost sur données tabulaires.",
         "macro_stage": 2,
         "engine": "sklearn",
-        "stage": 3,
-        "stage_name": "Train",
         "children": [_child("xgboost_classifier")],
     },
     "rl_agent_trainer": {
@@ -89,8 +75,6 @@ SUPERBLOCK_DEFS: dict[str, dict[str, Any]] = {
         "description": "Entraîne une table Q sur un environnement discret.",
         "macro_stage": 2,
         "engine": "gym",
-        "stage": 3,
-        "stage_name": "Train",
         "children": [_child("q_learning")],
     },
     "deep_evaluator": {
@@ -98,8 +82,6 @@ SUPERBLOCK_DEFS: dict[str, dict[str, Any]] = {
         "description": "Trace prédictions vs valeurs réelles (PNG).",
         "macro_stage": 3,
         "engine": "pytorch",
-        "stage": 4,
-        "stage_name": "Eval",
         "children": [_child("plot_predictions")],
     },
     "confusion_matrix_eval": {
@@ -107,8 +89,6 @@ SUPERBLOCK_DEFS: dict[str, dict[str, Any]] = {
         "description": "Compare les prédictions aux valeurs réelles.",
         "macro_stage": 3,
         "engine": "sklearn",
-        "stage": 4,
-        "stage_name": "Eval",
         "children": [_child("confusion_matrix")],
     },
     "clustering_visualizer": {
@@ -116,8 +96,6 @@ SUPERBLOCK_DEFS: dict[str, dict[str, Any]] = {
         "description": "Regroupe les données en clusters K-means.",
         "macro_stage": 3,
         "engine": "sklearn",
-        "stage": 4,
-        "stage_name": "Eval",
         "children": [_child("kmeans")],
     },
     "agent_rollout_viewer": {
@@ -125,8 +103,6 @@ SUPERBLOCK_DEFS: dict[str, dict[str, Any]] = {
         "description": "Joue des épisodes et retourne la récompense moyenne.",
         "macro_stage": 3,
         "engine": "gym",
-        "stage": 4,
-        "stage_name": "Eval",
         "children": [_child("evaluate_agent")],
     },
 }
@@ -179,8 +155,6 @@ def register_superblocks() -> None:
             outputs=outputs,
             advanced=False,
             group="core",
-            stage=int(d["stage"]),
-            stage_name=d["stage_name"],
             macro_stage=int(d["macro_stage"]),
             macro_stage_name=MacroStage(int(d["macro_stage"])).stage_name,
             engine=d["engine"],

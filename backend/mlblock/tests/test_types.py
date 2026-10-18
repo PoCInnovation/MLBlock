@@ -402,13 +402,9 @@ def test_validate_rejects_df_to_composable_layer():
 
 def test_type_system_facade_backward_compat():
     from mlblock.core.type_system import type_system
-    from mlblock.core.stages import Stage
 
     assert type_system.family_of("pd.DataFrame") == "df"
     assert type_system.family_of("torch.Tensor") == "tensor"
-    assert type_system.stage_of("load_csv") == Stage.INGEST
-    assert type_system.stage_of("df") == Stage.INGEST
-    assert type_system.stage_of("linear_layer") == Stage.REPRESENT
 
     graph = type_system.build_conversion_graph(BLOCK_REGISTRY)
     verdict, msg = type_system.can_connect("pd.DataFrame", "torch.Tensor", graph)
