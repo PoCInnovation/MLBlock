@@ -6,81 +6,8 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-class BlockRegistryDict(dict):
-    """Dictionary that resolves legacy block aliases transparently."""
-
-    def __getitem__(self, key: str) -> Any:
-        try:
-            return super().__getitem__(key)
-        except KeyError:
-            from mlblock.core.adapters import resolve_alias
-
-            canonical = resolve_alias(key)
-            if canonical != key and canonical in self:
-                return super().__getitem__(canonical)
-            raise
-
-    def get(self, key: str, default: Any = None) -> Any:
-        val = super().get(key)
-        if val is not None:
-            return val
-        from mlblock.core.adapters import resolve_alias
-
-        canonical = resolve_alias(key)
-        if canonical != key:
-            return super().get(canonical, default)
-        return default
-
-    def __contains__(self, key: object) -> bool:
-        if super().__contains__(key):
-            return True
-        if isinstance(key, str):
-            from mlblock.core.adapters import resolve_alias
-
-            canonical = resolve_alias(key)
-            return super().__contains__(canonical)
-        return False
-
-
-class BlockSourcesDict(dict):
-    """Dictionary that resolves legacy block aliases transparently for source code."""
-
-    def __getitem__(self, key: str) -> str:
-        try:
-            return super().__getitem__(key)
-        except KeyError:
-            from mlblock.core.adapters import resolve_alias
-
-            canonical = resolve_alias(key)
-            if canonical != key and canonical in self:
-                return super().__getitem__(canonical)
-            raise
-
-    def get(self, key: str, default: Any = None) -> Any:
-        val = super().get(key)
-        if val is not None:
-            return val
-        from mlblock.core.adapters import resolve_alias
-
-        canonical = resolve_alias(key)
-        if canonical != key:
-            return super().get(canonical, default)
-        return default
-
-    def __contains__(self, key: object) -> bool:
-        if super().__contains__(key):
-            return True
-        if isinstance(key, str):
-            from mlblock.core.adapters import resolve_alias
-
-            canonical = resolve_alias(key)
-            return super().__contains__(canonical)
-        return False
-
-
-BLOCK_REGISTRY: dict[str, Any] = BlockRegistryDict()
-BLOCK_SOURCES: dict[str, str] = BlockSourcesDict()
-
+BLOCK_REGISTRY: dict[str, Any] = {}
+BLOCK_SOURCES: dict[str, str] = {}
 ADVANCED_ACTIVATIONS = {
     "gelu",
     "selu",

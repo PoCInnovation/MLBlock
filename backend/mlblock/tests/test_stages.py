@@ -123,17 +123,12 @@ def test_stage_of_block():
     assert stage_of_block("adam") == Stage.TRAIN
     assert stage_of_block("create_env") == Stage.WORLD
 
-    # Alias resolution
-    assert stage_of_block("conv2d") == Stage.REPRESENT
-    assert stage_of_block("linear") == Stage.REPRESENT
-
 
 def test_s2a_substate_notes_and_classification():
     assert "S2A-CNN" in STAGE_NOTES
     assert "S2A-Seq" in STAGE_NOTES
 
     assert get_s2a_substate("conv2d_layer") == "S2A-CNN"
-    assert get_s2a_substate("conv2d") == "S2A-CNN"
     assert get_s2a_substate("maxpool2d_layer") == "S2A-CNN"
     assert get_s2a_substate("avgpool2d") == "S2A-CNN"
 

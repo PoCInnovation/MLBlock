@@ -75,7 +75,7 @@ def test_config_loader_validate_node_without_id():
     with pytest.raises(ValueError, match="Node missing 'id'"):
         loader.validate(
             {
-                "nodes": [{"type": "conv2d"}],
+                "nodes": [{"type": "conv2d_layer"}],
                 "edges": [],
             }
         )
@@ -86,7 +86,7 @@ def test_config_loader_validate_edge_without_key():
     with pytest.raises(ValueError, match="Edge missing 'source'"):
         loader.validate(
             {
-                "nodes": [{"id": "a", "type": "conv2d"}],
+                "nodes": [{"id": "a", "type": "conv2d_layer"}],
                 "edges": [{"source_port": "out_1", "target": "a", "target_port": "in_1"}],
             }
         )

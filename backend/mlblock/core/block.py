@@ -130,10 +130,7 @@ class BlockRegistry:
 
     @classmethod
     def get(cls, name: str) -> BlockMeta | None:
-        from mlblock.core.adapters import resolve_alias
-
-        return cls._blocks.get(resolve_alias(name))
-
+        return cls._blocks.get(name)
     @classmethod
     def list(cls) -> list[str]:
         return list(cls._blocks.keys())

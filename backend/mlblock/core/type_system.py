@@ -55,7 +55,6 @@ class TypeSystem:
 
     def stage_of(self, block_or_family: str, category: str | None = None) -> Stage:
         """Map a block name, category, or type family to its Stage."""
-        from mlblock.core.adapters import resolve_alias
         from mlblock.core.stages import (
             STAGE_OF_BLOCK_OVERRIDES,
             STAGE_OF_CATEGORY,
@@ -65,7 +64,7 @@ class TypeSystem:
             stage_of_family,
         )
 
-        canonical = resolve_alias(block_or_family)
+        canonical = block_or_family
         if canonical in STAGE_OF_BLOCK_OVERRIDES:
             return STAGE_OF_BLOCK_OVERRIDES[canonical]
 

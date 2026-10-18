@@ -39,7 +39,7 @@ def test_block_registry_by_category():
 
 
 def test_block_meta_params_schema():
-    block = BlockRegistry.get("linear")
+    block = BlockRegistry.get("linear_layer")
     assert block is not None
     assert "in_features" in block.params
     assert block.params["in_features"]["required"] is True
@@ -48,7 +48,7 @@ def test_block_meta_params_schema():
 
 
 def test_block_meta_template():
-    block = BlockRegistry.get("conv2d")
+    block = BlockRegistry.get("conv2d_layer")
     assert block is not None
     # template is not populated by discovery — always empty
     assert block.template == ""
@@ -70,7 +70,7 @@ def test_literal_param_multiple_choices():
 
 
 def test_non_literal_param_has_no_options():
-    block = BLOCK_REGISTRY.get("linear")
+    block = BLOCK_REGISTRY.get("linear_layer")
     assert block is not None
     assert block.params["in_features"].options is None
     assert block.params["out_features"].options is None

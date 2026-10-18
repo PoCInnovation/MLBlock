@@ -158,9 +158,8 @@ def stage_of_family(family: str) -> Stage:
 
 def stage_of_block(block_name: str, category: str | None = None) -> Stage:
     """Map a block name (and optional category) to its Stage."""
-    from mlblock.core.adapters import resolve_alias
 
-    canonical = resolve_alias(block_name)
+    canonical = block_name
     if canonical in STAGE_OF_BLOCK_OVERRIDES:
         return STAGE_OF_BLOCK_OVERRIDES[canonical]
 
@@ -190,9 +189,8 @@ def stage_of_block(block_name: str, category: str | None = None) -> Stage:
 
 def get_s2a_substate(block_name: str) -> str | None:
     """Return 'S2A-CNN' or 'S2A-Seq' if block belongs to S2A sub-states, else None."""
-    from mlblock.core.adapters import resolve_alias
 
-    canonical = resolve_alias(block_name)
+    canonical = block_name
     if canonical in S2A_CNN_BLOCKS:
         return "S2A-CNN"
     if canonical in S2A_SEQ_BLOCKS:
@@ -288,9 +286,8 @@ def macro_of_category(category_name: str) -> MacroStage:
 
 def macro_of_block(block_name: str, category: str | None = None) -> MacroStage:
     """Map a block name (and optional category) to its MacroStage."""
-    from mlblock.core.adapters import resolve_alias
 
-    canonical = resolve_alias(block_name)
+    canonical = block_name
     if canonical in MACRO_OF_BLOCK_OVERRIDES:
         return MACRO_OF_BLOCK_OVERRIDES[canonical]
 
@@ -400,9 +397,8 @@ KNOWN_ENGINES: frozenset[str] = frozenset({
 
 def engine_of_block(block_name: str, category: str | None = None) -> str:
     """Map a block name (and optional category) to its framework engine."""
-    from mlblock.core.adapters import resolve_alias
 
-    canonical = resolve_alias(block_name)
+    canonical = block_name
     if canonical in ENGINE_OF_BLOCK_OVERRIDES:
         return ENGINE_OF_BLOCK_OVERRIDES[canonical]
 
@@ -455,6 +451,4 @@ def needs_cuda(nodes: list[Any]) -> bool:
 
 def is_transition_block(block_name: str) -> bool:
     """True if the block is a conversion bridge allowed at container boundaries."""
-    from mlblock.core.adapters import resolve_alias
-
-    return resolve_alias(block_name) in TRANSITION_BLOCKS
+    return block_name in TRANSITION_BLOCKS

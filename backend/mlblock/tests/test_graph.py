@@ -63,11 +63,11 @@ def test_graph_node_repr():
     node = GraphNode(
         {
             "id": "test",
-            "type": "relu",
+            "type": "relu_layer",
             "params": {},
         }
     )
-    assert str(node) == "GraphNode(test: relu)"
+    assert str(node) == "GraphNode(test: relu_layer)"
 
 
 def test_topological_sort():
@@ -86,7 +86,7 @@ def test_validate_valid():
 def test_validate_unknown_source():
     bad_graph = {
         "nodes": [
-            {"id": "a", "type": "relu", "params": {}},
+            {"id": "a", "type": "relu_layer", "params": {}},
         ],
         "edges": [
             {"source": "nonexistent", "source_port": "out_1",
@@ -101,7 +101,7 @@ def test_validate_unknown_source():
 def test_validate_unknown_target():
     bad_graph = {
         "nodes": [
-            {"id": "a", "type": "relu", "params": {}},
+            {"id": "a", "type": "relu_layer", "params": {}},
         ],
         "edges": [
             {"source": "a", "source_port": "out_1",
@@ -116,8 +116,8 @@ def test_validate_unknown_target():
 def test_cyclic_graph():
     cyclic = {
         "nodes": [
-            {"id": "a", "type": "relu", "params": {}},
-            {"id": "b", "type": "relu", "params": {}},
+            {"id": "a", "type": "relu_layer", "params": {}},
+            {"id": "b", "type": "relu_layer", "params": {}},
         ],
         "edges": [
             {"source": "a", "source_port": "out_1", "target": "b", "target_port": "in_1"},

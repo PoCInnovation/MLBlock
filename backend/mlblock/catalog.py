@@ -56,19 +56,12 @@ class Catalog:
     def get(self, name: str) -> Any | None:
         if not self._loaded:
             self.load()
-        from mlblock.core.adapters import resolve_alias
-
-        canonical = resolve_alias(name)
-        return self._blocks.get(canonical)
+        return self._blocks.get(name)
 
     def get_source(self, name: str) -> str:
         if not self._loaded:
             self.load()
-        from mlblock.core.adapters import resolve_alias
-
-        canonical = resolve_alias(name)
-        return self._sources.get(canonical, "")
-
+        return self._sources.get(name, "")
     def snapshot(self) -> dict[str, Any]:
         """Serializable snapshot for debugging / ETag."""
         if not self._loaded:

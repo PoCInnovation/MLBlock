@@ -245,8 +245,8 @@ def test_validate_cycle(client: TestClient):
         "/api/validate",
         json={
             "nodes": [
-                {"id": "n1", "type": "relu", "params": {}},
-                {"id": "n2", "type": "relu", "params": {}},
+                {"id": "n1", "type": "relu_layer", "params": {}},
+                {"id": "n2", "type": "relu_layer", "params": {}},
             ],
             "edges": [
                 {"source": "n1", "source_port": "out_1", "target": "n2", "target_port": "in_1"},
@@ -296,10 +296,10 @@ def test_generate_empty_pipeline_returns_400(client: TestClient):
 def test_build_model(client: TestClient):
     """Graph with only BUILD-capable blocks (no 'input' block)."""
     nodes = [
-        {"id": "conv1", "type": "conv2d", "params": {"in_channels": 1, "out_channels": 4, "kernel_size": 3}},
-        {"id": "relu1", "type": "relu", "params": {}},
-        {"id": "flat1", "type": "flatten", "params": {}},
-        {"id": "fc1", "type": "linear", "params": {"in_features": 2704, "out_features": 10}},
+        {"id": "conv1", "type": "conv2d_layer", "params": {"in_channels": 1, "out_channels": 4, "kernel_size": 3}},
+        {"id": "relu1", "type": "relu_layer", "params": {}},
+        {"id": "flat1", "type": "flatten_layer", "params": {}},
+        {"id": "fc1", "type": "linear_layer", "params": {"in_features": 2704, "out_features": 10}},
     ]
     edges = [
         {"source": "conv1", "source_port": "out_1", "target": "relu1", "target_port": "in_1"},

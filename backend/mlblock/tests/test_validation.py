@@ -20,22 +20,9 @@ def test_validate_valid_returns_order():
     assert r.order == ["conv1", "relu1"]
 
 
-def test_validate_resolves_legacy_aliases():
-    r = validate(
-        [
-            {"id": "c", "type": "conv2d", "params": {"in_channels": 1, "out_channels": 32}},
-            {"id": "r", "type": "relu", "params": {}},
-        ],
-        [{"source": "c", "source_port": "out_1", "target": "r", "target_port": "in_1"}],
-    )
-    assert r.valid is True
-    assert r.errors == []
-    assert r.order == ["c", "r"]
-
-
 def test_validate_cycle():
     r = validate(
-        [{"id": "a", "type": "relu", "params": {}}, {"id": "b", "type": "relu", "params": {}}],
+        [{"id": "a", "type": "relu_layer", "params": {}}, {"id": "b", "type": "relu_layer", "params": {}}],
         [
             {"source": "a", "source_port": "out_1", "target": "b", "target_port": "in_1"},
             {"source": "b", "source_port": "out_1", "target": "a", "target_port": "in_1"},
@@ -53,7 +40,7 @@ def test_validate_unknown_block():
 
 def test_validate_port_not_found():
     r = validate(
-        [{"id": "a", "type": "relu", "params": {}}, {"id": "b", "type": "relu", "params": {}}],
+        [{"id": "a", "type": "relu_layer", "params": {}}, {"id": "b", "type": "relu_layer", "params": {}}],
         [{"source": "a", "source_port": "bad_port", "target": "b", "target_port": "in_1"}],
     )
     assert r.valid is False

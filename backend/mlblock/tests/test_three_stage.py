@@ -100,16 +100,6 @@ def test_generator_without_tracker_has_no_mlflow():
     compile(code, "<generated>", "exec")
 
 
-def test_dropout_legacy_alias_resolves_to_composable_layer():
-    from mlblock.blocks.registry import BLOCK_REGISTRY
-    from mlblock.catalog import catalog
-    from mlblock.core.adapters import resolve_alias
-
-    assert resolve_alias("dropout") == "dropout_layer"
-    assert catalog.get("dropout_layer") is not None
-    # Legacy name keeps working (params meta preserved through the alias)
-    assert BLOCK_REGISTRY["dropout"].params["p"].min == 0.0
-    assert BLOCK_REGISTRY["dropout"].params["p"].max == 1.0
 
 
 def test_every_superblock_title_resolves_to_a_block():

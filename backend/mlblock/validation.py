@@ -87,7 +87,6 @@ def validate_container_children(
     conv_graph: Any,
     errors: list[str],
 ) -> None:
-    from mlblock.core.adapters import resolve_alias
     from mlblock.core.stages import KNOWN_ENGINES, STRICT_ENGINES
 
     children = node.get("children") or []
@@ -106,7 +105,7 @@ def validate_container_children(
     if container_engine is None:
         node_type = node.get("type") if isinstance(node, dict) else getattr(node, "type", None)
         if node_type and registry is not None:
-            container_engine = _spec_engine(registry.get(resolve_alias(node_type)))
+            container_engine = _spec_engine(registry.get(node_type))
             if container_engine not in STRICT_ENGINES:
                 container_engine = None
 
@@ -128,7 +127,7 @@ def validate_container_children(
             errors.append(f"Child step #{idx} in container '{node.get('id', '?')}' missing 'type'")
             continue
 
-        canonical_child_type = resolve_alias(child_type)
+        canonical_child_type = child_type
         if canonical_child_type not in (registry or {}):
             errors.append(
                 f"Unknown child block type '{child_type}' in container '{node.get('id', '?')}'"
@@ -216,7 +215,7 @@ def validate(
         except Exception:
             registry = {}
 
-    from mlblock.core.adapters import resolve_alias
+    # ── basic shape ──────────────────────────────────────────────
 
     # ── basic shape ──────────────────────────────────────────────
     for n in node_dicts:
@@ -224,7 +223,7 @@ def validate(
             errors.append("Node missing 'id'")
         if "type" not in n:
             errors.append(f"Node '{n.get('id','?')}' missing 'type'")
-        elif resolve_alias(n["type"]) not in (registry or {}):
+        elif n["type"] not in (registry or {}):
             errors.append(f"Unknown block type '{n['type']}' (node '{n.get('id','?')}')")
 
     node_map = {n["id"]: n for n in node_dicts if "id" in n}
@@ -254,7 +253,7 @@ def validate(
                 )
                 continue
             if registry is not None:
-                spec = registry.get(resolve_alias(node["type"]))  # type: ignore
+                spec = registry.get(node["type"])  # type: ignore
                 if spec is not None:
                     direction = "outputs" if side == "source" else "inputs"
                     ports = getattr(spec, direction, None)
@@ -287,8 +286,8 @@ def validate(
         t_node = node_map.get(e["target"])
         if not s_node or not t_node or "type" not in s_node or "type" not in t_node:
             continue
-        s_type = resolve_alias(s_node["type"])
-        t_type = resolve_alias(t_node["type"])
+        s_type = s_node["type"]
+        t_type = t_node["type"]
         if registry and (s_type not in registry or t_type not in registry):
             continue
         s_stage = type_system.stage_of(s_type)
@@ -320,8 +319,8 @@ def validate(
             t_node = node_map.get(e["target"])
             if not s_node or not t_node:
                 continue
-            s_spec = registry.get(resolve_alias(s_node["type"]))  # type: ignore
-            t_spec = registry.get(resolve_alias(t_node["type"]))  # type: ignore
+            s_spec = registry.get(s_node["type"])  # type: ignore
+            t_spec = registry.get(t_node["type"])  # type: ignore
             if not s_spec or not t_spec:
                 continue
             s_ports = getattr(s_spec, "outputs", None) or (  # noqa: E501

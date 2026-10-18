@@ -230,7 +230,7 @@ def test_param_meta_tolerates_plain_description():
 
 
 def test_param_meta_from_discovered_blocks():
-    p = BLOCK_REGISTRY["dropout"].params["p"]
+    p = BLOCK_REGISTRY["dropout_layer"].params["p"]
     assert p.min == 0.0 and p.max == 1.0 and p.step == 0.05
     assert BLOCK_REGISTRY["evaluate"].params["method"].choices == ["mse", "accuracy", "f1", "precision", "recall"]
     assert BLOCK_REGISTRY["conv2d_layer"].params["kernel_size"].odd is True
@@ -385,7 +385,7 @@ def test_validate_rejects_df_to_composable_layer():
     # transition bridge (df_to_tensor, to_tensor) is required.
     nodes = [
         PipelineNode(id="n1", type="load_csv"),
-        PipelineNode(id="n2", type="dropout"),
+        PipelineNode(id="n2", type="dropout_layer"),
     ]
     edges = [PipelineEdge(source="n1", source_port="out_1", target="n2", target_port="in_1")]
     with pytest.raises(ValueError, match="Type mismatch"):

@@ -205,13 +205,10 @@ def generate_code(nodes: list[PipelineNode], edges: list[PipelineEdge]) -> str:
     lines.append("            headers={'Authorization': f'Bearer {key}'}, timeout=10)")
     lines.append("    except Exception: pass")
     lines.append("")
-
-    from mlblock.core.adapters import resolve_alias
-
     def _all_types(n_list):
         t_list = []
         for n in n_list:
-            t_list.append(resolve_alias(n.type))
+            t_list.append(n.type)
             children = getattr(n, "children", None) or []
             if children:
                 t_list.extend(_all_types(children))
@@ -236,7 +233,7 @@ def generate_code(nodes: list[PipelineNode], edges: list[PipelineEdge]) -> str:
     mlflow_experiments = [
         (n.params or {}).get("experiment_name", "default_experiment")
         for n in nodes
-        if resolve_alias(n.type) == "mlflow_tracker"
+        if n.type == "mlflow_tracker"
     ]
     if mlflow_experiments:
         _exp = mlflow_experiments[0] or "default_experiment"
@@ -254,10 +251,8 @@ def generate_code(nodes: list[PipelineNode], edges: list[PipelineEdge]) -> str:
 
     for node_id in order:
         node = next(n for n in nodes if n.id == node_id)
-        b_type = resolve_alias(node.type)
+        b_type = node.type
         block = BLOCK_REGISTRY.get(b_type)
-        if not block:
-            continue
 
         cleaned_params = {k: v for k, v in node.params.items() if not k.startswith("_")}
         # Coerce les strings frontend vers les types Python déclarés (même
@@ -314,7 +309,7 @@ def generate_code(nodes: list[PipelineNode], edges: list[PipelineEdge]) -> str:
         if children or b_type in SUPERBLOCK_DEFS or b_type == "sequential_container":
             steps: list[tuple] = []  # (cb_type, args, first_input, n_outputs, is_module)
             for child in children:
-                cb_type = resolve_alias(child.type)
+                cb_type = child.type
                 cblock = BLOCK_REGISTRY.get(cb_type)
                 c_cleaned = {k: v for k, v in getattr(child, "params", {}).items() if not k.startswith("_")}
                 c_emitted = []
