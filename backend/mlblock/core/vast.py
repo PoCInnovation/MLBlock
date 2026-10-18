@@ -5,6 +5,9 @@ import json
 import requests
 from typing import Any
 
+# Version CUDA du torch embarqué dans le template CUDA (torch 2.14.1+cu130).
+TEMPLATE_CUDA_VERSION = 13.0
+
 
 def _is_gone_offer(exc: Exception) -> bool:
     """Offre prise entre search et PUT : HTTP 400/404/410 avec `no_such_ask`
@@ -66,6 +69,9 @@ class VastAI:
         }
         if gpu_name is not None:
             filters["gpu_name"] = {"eq": gpu_name}
+            # Chemin template CUDA : son torch est en cu130, il ne s'initialise
+            # que sur un hôte dont le driver supporte CUDA 13 (cuda_max_good).
+            filters["cuda_max_good"] = {"gte": TEMPLATE_CUDA_VERSION}
         r = requests.post(
             f"{self.base_url}/bundles",
             json=filters,

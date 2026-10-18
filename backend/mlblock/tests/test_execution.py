@@ -88,6 +88,19 @@ def test_search_offers_without_gpu_name_omits_filter(monkeypatch):
     assert "gpu_name" not in seen["json"]
     assert seen["json"]["num_gpus"] == {"eq": 1}
 
+def test_search_offers_template_path_requires_cuda_13_host(monkeypatch):
+    """Le torch cu130 du template ne démarre pas sur un hôte CUDA 12.x : le
+    filtre doit l'exclure (offres 12.2/12.8 observées au prix le plus bas)."""
+    seen = {}
+    monkeypatch.setattr(
+        "mlblock.core.vast.requests.post",
+        lambda url, **kw: seen.update(json=kw["json"]) or _OkOffers([]),
+    )
+    VastAI(api_key="real-key").search_offers("RTX 3090")
+    assert seen["json"]["cuda_max_good"] == {"gte": 13.0}
+    VastAI(api_key="real-key").search_offers(None)
+    assert "cuda_max_good" not in seen["json"]
+
 
 def test_launch_instance_sends_template_and_label(monkeypatch):
     seen = {}
