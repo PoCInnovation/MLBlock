@@ -92,7 +92,12 @@ def test_parametric_blocks_are_trainable_modules():
 
     cases = [
         ("sequences-8B5CF6/gru.py", "gru", {"input_size": 4, "hidden_size": 8}, torch.randn(2, 5, 4)),
-        ("sequences-8B5CF6/multihead_attention.py", "multihead_attention", {"embed_dim": 8, "num_heads": 2}, torch.randn(2, 5, 8)),
+        (
+            "sequences-8B5CF6/multihead_attention.py",
+            "multihead_attention",
+            {"embed_dim": 8, "num_heads": 2},
+            torch.randn(2, 5, 8),
+        ),
         ("activation-EF4444/prelu.py", "prelu", {}, torch.randn(2, 3)),
         ("normalisation-10B981/instancenorm2d.py", "instancenorm2d", {"num_features": 3}, torch.randn(2, 3, 4, 4)),
     ]
