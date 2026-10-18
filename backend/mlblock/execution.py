@@ -24,7 +24,9 @@ IMAGE_SLIM = "ghcr.io/astral-sh/uv:python3.12-trixie-slim"
 IMAGE_CUDA = "vastai/pytorch:2.6.0-cuda-12.6.3-py312"
 DISK_SLIM = 20
 DISK_CUDA = 50
-TEMPLATE_CUDA_HASH = os.environ.get("VAST_TEMPLATE_CUDA", "b12fc2b5f6c711d715a5e4714b246818")
+# Template « PyTorch (Vast) » : torch cu130 préinstallé dans /venv/main (mesuré,
+# MNIST de bout en bout en 6 min, dont 4 min d'install des deps de base).
+TEMPLATE_CUDA_HASH = os.environ.get("VAST_TEMPLATE_CUDA", "92ae8d896b361d4bb806f87a64a0af99")
 REQUIREMENTS_BASE = "scikit-learn gymnasium pandas requests xgboost mlflow"
 REQUIREMENTS_TORCH = "torch torchvision"
 REQUIREMENTS_SLIM = REQUIREMENTS_BASE
@@ -79,22 +81,23 @@ def build_bootstrap(*, backend_url: str, job_id: str, gpu_key: str, timeout: str
         'post status \'{"block":"bootstrap","status":"running"}\'',
         "command -v uv >/dev/null 2>&1 || curl -LsSf https://astral.sh/uv/install.sh | sh",
         'export PATH="$HOME/.local/bin:$PATH"',
-        # Deps déjà présentes (image bakée / cache) : skip. Sinon uv seul :
-        # l'image Vast est en Python géré par Debian (PEP 668) -> --break-system-packages
-        # (mesuré : 2 s), et pip échoue sur blinker. Échec = erreur au job, pas de silence.
-        f"python3 -c 'import sklearn, gymnasium, pandas, requests, xgboost, mlflow' 2>/dev/null || "
-        f"timeout 600 uv pip install --system --break-system-packages -q {reqs} "
+        # Images vastai/* : torch est dans /venv/main, pas dans le python3 système.
+        'PY=/venv/main/bin/python; [ -x "$PY" ] || PY=python3',
+        # Deps déjà présentes : skip. --break-system-packages pour le repli
+        # python3 système (PEP 668). Échec = erreur au job, pas de silence.
+        f"\"$PY\" -c 'import sklearn, gymnasium, pandas, requests, xgboost, mlflow' 2>/dev/null || "
+        f"timeout 600 uv pip install --python \"$PY\" --break-system-packages -q {reqs} "
         '|| { post error \'{"block":"bootstrap","error":"Installation des dépendances échouée"}\'; exit 1; }',
     ]
     if cuda:
-        # Le template CUDA n'embarque pas torch (mesuré) : on l'installe s'il manque (11 s avec uv).
+        # Filet si le template ne fournit pas torch (le template PyTorch le fournit).
         lines.append(
-            f"python3 -c 'import torch' 2>/dev/null || "
-            f"timeout 600 uv pip install --system --break-system-packages -q {REQUIREMENTS_TORCH} "
+            f"\"$PY\" -c 'import torch' 2>/dev/null || "
+            f"timeout 600 uv pip install --python \"$PY\" --break-system-packages -q {REQUIREMENTS_TORCH} "
             '|| { post error \'{"block":"bootstrap","error":"Installation de torch échouée"}\'; exit 1; }'
         )
         lines.append(
-            'TV=$(python3 -c "import torch; print(torch.__version__, torch.cuda.is_available())" 2>&1 | clean)'
+            'TV=$("$PY" -c "import torch; print(torch.__version__, torch.cuda.is_available())" 2>&1 | clean)'
         )
         lines.append('post output "{\\"block\\":\\"bootstrap\\",\\"output\\":\\"Torch $TV\\"}"')
     lines.extend(
@@ -106,7 +109,7 @@ def build_bootstrap(*, backend_url: str, job_id: str, gpu_key: str, timeout: str
             'post output \'{"block":"bootstrap","output":"Code récupéré"}\'',
             # Crash avant le try de main() (segfault import, etc.) : sans ça,
             # aucun callback et le job attend le timeout GPU complet.
-            "python3 main.py 2>err.log; RC=$?; cat err.log >&2",
+            '"$PY" main.py 2>err.log; RC=$?; cat err.log >&2',
             '[ $RC -eq 0 ] || post error'
             ' "{\\"block\\":\\"bootstrap\\",\\"error\\":\\"main.py rc=$RC: $(tail -c 300 err.log | clean)\\"}"',
             "exit $RC",

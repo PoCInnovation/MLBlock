@@ -48,7 +48,7 @@ def test_image_and_disk_selection():
 def test_build_bootstrap_slim_contains_code_endpoint_and_uv():
     s = ex.build_bootstrap(backend_url="https://api.example", job_id="J1", gpu_key="K1", timeout="90", cuda=False)
     assert "/api/jobs/$JOB_ID/code" in s
-    assert "uv pip install --system" in s
+    assert "uv pip install --python" in s
     assert "torchvision" not in s
     assert 'post status \'{"block":"bootstrap","status":"running"}\'' in s
     assert s.count("post output") == 2
@@ -341,7 +341,7 @@ def test_launch_instance_logs_chosen_offer(monkeypatch, capsys):
 
 def test_build_bootstrap_cuda_conditions_torch_install_and_probes():
     s = ex.build_bootstrap(backend_url="https://api.example", job_id="J1", gpu_key="K1", timeout="90", cuda=True)
-    assert "python3 -c 'import torch'" in s
+    assert "\"$PY\" -c 'import torch'" in s
     assert "torch torchvision" in s
     assert "Torch $TV" in s
     assert "timeout 600 uv pip install" in s
