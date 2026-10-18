@@ -80,6 +80,11 @@ def _spec_is_transition(spec: Any, block_name: str) -> bool:
     return is_transition_block(block_name)
 
 
+def _transition_names(registry: dict[str, Any] | None) -> list[str]:
+    """Names of converter blocks (is_transition), read from the registry."""
+    return [name for name, b in (registry or {}).items() if b.is_transition]
+
+
 def validate_container_children(
     node: dict[str, Any],
     registry: dict[str, Any],
@@ -173,8 +178,7 @@ def validate_container_children(
                 f"Framework mismatch in container '{node.get('id', '?')}': "
                 f"child '{child_type}' (engine '{child_engine}') incompatible "
                 f"with container engine '{container_engine}' — "
-                f"use a transition bridge (df_to_tensor, to_tensor, "
-                f"env_to_tensor, module_to_policy)"
+                f"use a transition bridge ({', '.join(sorted(_transition_names(registry)))})"
             )
 
         prev_child_type = child_type

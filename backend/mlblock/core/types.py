@@ -51,18 +51,16 @@ def family_of(dtype: str) -> str:
 
 
 def build_conversion_graph(registry: dict[str, Any]) -> dict[str, set[str]]:
-    """Derive the family conversion graph from the block catalog.
+    """Derive the family conversion graph from the converter blocks.
 
-    Only blocks in the `transforms` category contribute edges — that
-    category is the repository convention for converter blocks
-    (to_tensor, df_to_tensor). Training/metric/sklearn-fit blocks are
-    NOT converters despite heterogeneous port families. The catalog is
-    the only source of truth — no hardcoded tables.
+    Only blocks flagged `is_transition` (those living in `conversions/`)
+    contribute edges. Training/metric/sklearn-fit blocks are NOT converters
+    despite heterogeneous port families. The catalog is the only source of
+    truth — no hardcoded tables.
     """
     graph: dict[str, set[str]] = {}
     for block in registry.values():
-        cat = getattr(block.category, "name", None) or str(block.category)
-        if cat != "transformations":
+        if not block.is_transition:
             continue
         out_families = {f for p in block.outputs for f in map(family_of, _split_union(p["dtype"]))}
         in_families = {f for p in block.inputs for f in map(family_of, _split_union(p["dtype"]))}

@@ -98,14 +98,12 @@ def test_validate_type_mismatch_enhanced_suggestion():
             {"id": "tens", "type": "to_tensor", "params": {}},
         ],
         [{"source": "csv", "source_port": "out_1", "target": "tens", "target_port": "in_1"}],
-        registry={
-            "load_csv": catalog.get("load_csv"),
-            "to_tensor": catalog.get("to_tensor"),
-        },
+        registry=catalog.all(),
     )
     assert r.valid is False
     assert any("Type mismatch" in e for e in r.errors)
-    assert any("Astuce : insérez un Block df_to_tensor" in e for e in r.errors)
+    # DataFrame -> image has no converter (the old df->image quick_map was bogus)
+    assert not any("Astuce" in e for e in r.errors)
 
 
 def test_validate_stage_world_isolation():

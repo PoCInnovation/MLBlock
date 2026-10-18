@@ -62,19 +62,6 @@ class TypeSystem:
         src_fams = {self.family_of(f) for f in _split_union(src_dtype)}
         tgt_fams = {self.family_of(f) for f in _split_union(tgt_dtype)}
 
-        # Standard conversion mappings (available even without catalog loaded)
-        quick_map = {
-            ("df", "tensor"): "df_to_tensor",
-            ("df", "image"): "df_to_tensor",
-            ("df", "ndarray"): "df_to_tensor",
-            ("ndarray", "tensor"): "to_tensor",
-            ("image", "tensor"): "to_tensor",
-        }
-        for sf in src_fams:
-            for tf in tgt_fams:
-                if (sf, tf) in quick_map:
-                    return quick_map[(sf, tf)]
-
         if registry is None:
             try:
                 from mlblock.catalog import catalog
@@ -84,8 +71,7 @@ class TypeSystem:
                 registry = {}
 
         for name, block in registry.items():
-            cat = getattr(block.category, "name", None) or str(block.category)
-            if cat != "transformations":
+            if not block.is_transition:
                 continue
             inputs = getattr(block, "inputs", []) or []
             outputs = getattr(block, "outputs", []) or []

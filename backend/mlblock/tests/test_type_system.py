@@ -29,6 +29,8 @@ def test_type_system_conversion_graph():
     assert "tensor" in graph["df"]
     assert "ndarray" in graph
     assert "tensor" in graph["ndarray"]
+    assert graph["env"] == {"tensor"}
+    assert graph["module"] == {"policy"}
 
 
 def test_type_system_classify():

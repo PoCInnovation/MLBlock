@@ -108,7 +108,16 @@ def test_conversion_graph_only_transforms():
     graph = build_conversion_graph(BLOCK_REGISTRY)
     assert graph.get("df") == {"tensor"}
     assert graph.get("ndarray") == {"tensor"}
-    assert "module" not in graph  # training blocks are not converters
+    assert graph.get("env") == {"tensor"}  # RL bridge env_to_tensor
+    assert graph.get("module") == {"policy"}  # RL bridge module_to_policy
+    assert "df" not in graph or "image" not in graph["df"]  # df→image mapping is gone
+    assert "module" not in graph or "tensor" not in graph["module"]
+
+
+def test_conversion_graph_includes_rl_bridges():
+    g = build_conversion_graph(BLOCK_REGISTRY)
+    assert g["env"] == {"tensor"}
+    assert g["module"] == {"policy"}
 
 
 def test_classifier_verdicts():
@@ -410,3 +419,9 @@ def test_type_system_facade_backward_compat():
     verdict, msg = type_system.can_connect("pd.DataFrame", "torch.Tensor", graph)
     assert verdict == "convertible"
     assert "df_to_tensor" in msg
+
+
+def test_converter_for_has_no_bogus_df_to_image():
+    from mlblock.core.type_system import type_system
+
+    assert type_system.find_converter("pd.DataFrame", "PIL.Image.Image", BLOCK_REGISTRY) is None
