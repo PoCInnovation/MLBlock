@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import type { InternalCatalog, SuperBlockEntry } from '../types/catalog'
-import { defaultChildren, compatibleBlocks } from './superblocks'
+import { defaultChildren, compatibleBlocks, groupBlocks, blockCardInfo as bci } from './superblocks'
 
 const catalog = {
   categories: [],
@@ -208,6 +208,69 @@ describe('blockCardInfo category colors', () => {
     const info = blockCardInfo(mockCatalog, 'tabular_sb')
     expect(info.categoryName).toBe('Données')
     expect(info.categoryColor).toBe('#22C55E')
+  })
+})
+describe('groupBlocks', () => {
+  const fixtureCatalog = {
+    macro_stages: [
+      { id: 1, name: 'a', label: 'Étape 1', color: '#111111' },
+      { id: 2, name: 'b', label: 'Étape 2', color: '#222222' },
+      { id: 3, name: 'c', label: 'Étape 3', color: '#333333' },
+      { id: 99, name: 'conv', label: 'Conversions', color: '#999999' },
+    ],
+    categories: [
+      { id: 'donnees', name: 'Données', color: '#22C55E', macro: 1 },
+      { id: 'couches', name: 'Couches', color: '#6366F1', macro: 2 },
+      { id: 'activation', name: 'Activation', color: '#A855F7', macro: 2 },
+      { id: 'visualisation', name: 'Visualisation', color: '#06B6D4', macro: 3 },
+      { id: 'conversions', name: 'Conversions', color: '#64748B', macro: 99 },
+    ],
+    blocks: {
+      load_csv: { cat: 'donnees', segs: [{ t: 'text', v: 'Load CSV' }], inputs: [], outputs: [], engine: 'generic' },
+      conv2d: { cat: 'couches', segs: [{ t: 'text', v: 'Conv2D' }], inputs: [], outputs: [], engine: 'pytorch' },
+      relu: { cat: 'activation', segs: [{ t: 'text', v: 'ReLU' }], inputs: [], outputs: [], engine: 'pytorch' },
+      plot: { cat: 'visualisation', segs: [{ t: 'text', v: 'Plot' }], inputs: [], outputs: [], engine: 'gym' },
+      to_tensor: { cat: 'conversions', segs: [{ t: 'text', v: 'To tensor' }], inputs: [], outputs: [], engine: 'generic' },
+    },
+    superblocks: [
+      { id: 'clustering_visualizer', title: 'Clustering', macro_stage: 3, engine: 'sklearn', children: ['plot'] },
+    ],
+  } as unknown as InternalCatalog
+
+  it('nests categories under macros, transition last, empty groups dropped', () => {
+    const g = groupBlocks(fixtureCatalog, 'all')
+    expect(g.map(x => x.macro.id)).toEqual([1, 2, 3, 99])
+    const macro2 = g[1].categories.map(c => c.category.id)
+    expect(macro2).toEqual([...macro2].sort())
+    expect(groupBlocks(fixtureCatalog, 'gym').flatMap(x => x.categories).every(c => c.types.length > 0)).toBe(true)
+  })
+
+  it('excludes superblocks from the advanced palette', () => {
+    const types = groupBlocks(fixtureCatalog, 'all').flatMap(x => x.categories.flatMap(c => c.types))
+    expect(types).not.toContain('clustering_visualizer')
+  })
+})
+
+describe('blockCardInfo badge and macro colour', () => {
+  const fixtureCatalog = {
+    macro_stages: [{ id: 3, name: 'c', label: 'Étape 3', color: '#06B6D4' }],
+    categories: [{ id: 'donnees', name: 'Données', color: '#22C55E', macro: 1 }],
+    blocks: {
+      load_csv: { cat: 'donnees', segs: [{ t: 'text', v: 'Load CSV' }], inputs: [], outputs: [], engine: 'generic' },
+    },
+    superblocks: [
+      { id: 'clustering_visualizer', title: 'Clustering', macro_stage: 3, engine: 'sklearn', children: ['load_csv'] },
+    ],
+  } as unknown as InternalCatalog
+
+  it('superblock uses macro colour and engine badge', () => {
+    const info = bci(fixtureCatalog, 'clustering_visualizer')
+    expect(info.color).toBe('#06B6D4')
+    expect(info.badge).toBe('sklearn')
+  })
+
+  it('standard block badge is its category name', () => {
+    expect(bci(fixtureCatalog, 'load_csv').badge).toBe('Données')
   })
 })
 

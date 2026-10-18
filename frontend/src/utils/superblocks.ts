@@ -1,4 +1,4 @@
-import type { InternalCatalog, PipelineNode, SuperBlockEntry } from '../types/catalog'
+import type { Category, InternalCatalog, PipelineNode, StageInfo, SuperBlockEntry } from '../types/catalog'
 import { buildConversionGraph, classifyEdge } from './typeCheck'
 
 /** Enfants par défaut d'un SuperBlock, matérialisés pour un nœud posé. */
@@ -61,6 +61,8 @@ export type BlockCardInfo = {
   outputs: { name: string; dtype: string }[]
   engine: string
   color: string
+  /** Superblock : moteur ; bloc : nom de catégorie. Affiché dans le badge de la carte. */
+  badge: string
   categoryName: string
   categoryColor: string
   advanced: boolean
@@ -73,14 +75,18 @@ export function blockCardInfo(catalog: InternalCatalog, type: string): BlockCard
   const label = def?.segs.find(s => s.t === 'text')?.v
   const catId = def?.cat ?? (sb ? sb.children.map(c => catalog.blocks[c]?.cat).find(Boolean) : undefined) ?? 'generic'
   const category = catalog.categories.find(c => c.id === catId)
+  const macroColor = sb ? catalog.macro_stages?.find(m => m.id === sb.macro_stage)?.color : undefined
+  const color = macroColor ?? category?.color ?? '#888'
+  const categoryName = category?.name ?? catId
   return {
     title: sb?.title ?? label ?? type,
     inputs: def?.inputs ?? [],
     outputs: def?.outputs ?? [],
     engine: sb?.engine ?? def?.engine ?? 'generic',
-    color: category?.color ?? catalog.categories.find(c => c.id === def?.cat)?.color ?? '#888',
-    categoryName: category?.name ?? catId,
-    categoryColor: category?.color ?? '#888',
+    color,
+    badge: sb ? sb.engine : categoryName,
+    categoryName,
+    categoryColor: color,
     advanced: def?.advanced ?? false,
   }
 }
@@ -109,6 +115,27 @@ export function groupSuperblocks(sbs: SuperBlockEntry[]): { stage: number; items
   return [...byStage.entries()]
     .sort((a, b) => a[0] - b[0])
     .map(([stage, items]) => ({ stage, items }))
+}
+
+/** Palette avancée : macro (id croissant, Conversions en dernier) → catégories → types filtrés par moteur. Superblocks exclus (palette simple). */
+export function groupBlocks(
+  catalog: InternalCatalog,
+  engineFilter: string,
+): { macro: StageInfo; categories: { category: Category; types: string[] }[] }[] {
+  const sbIds = new Set(catalog.superblocks.map(s => s.id))
+  const types = Object.keys(catalog.blocks).filter(t => !sbIds.has(t) && matchEngine(catalog.blocks[t].engine, engineFilter))
+  const macros = [...(catalog.macro_stages ?? [])].sort((a, b) => (a.id === 99 ? 1 : b.id === 99 ? -1 : a.id - b.id))
+  return macros.map(macro => {
+    const categories = catalog.categories
+      .filter(c => c.macro === macro.id)
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map(category => ({
+        category,
+        types: types.filter(t => catalog.blocks[t].cat === category.id),
+      }))
+      .filter(g => g.types.length > 0)
+    return { macro, categories }
+  }).filter(g => g.categories.length > 0)
 }
 /** Blocs consommant `outDtype`, compatibles d'abord puis convertibles. */
 export function compatibleBlocks(

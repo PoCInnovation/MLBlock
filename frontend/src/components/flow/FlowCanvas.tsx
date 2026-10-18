@@ -37,7 +37,7 @@ import { portDtype } from '../../utils/typeCheck'
 import { typeSystem } from '../../utils/typeSystem'
 import { resolveConnection, type ResolvedConnection } from '../../utils/portResolution'
 import { arrangeGraph } from '../../utils/layout'
-import { matchEngine, groupSuperblocks, defaultChildren, resolveEdgeStyle, availableChildren } from '../../utils/superblocks'
+import { matchEngine, groupBlocks, groupSuperblocks, defaultChildren, resolveEdgeStyle, availableChildren } from '../../utils/superblocks'
 import BlockCard from './BlockCard'
 import BlockSegments from '../blocks/BlockSegments'
 import { resolveColumnsForPath, resolveFlowSourcePath } from '../../utils/columns'
@@ -588,13 +588,21 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
                     </div>
                   ))
                 ) : (
-                  <div className="flex flex-col gap-1.5">
-                    {Object.keys(catalog.blocks)
-                      .filter(t => matchEngine(catalog.blocks[t].engine, engineFilter))
-                      .map(type => (
-                        <BlockCard key={type} type={type} onClick={() => addNodeAtCenter(type)} />
+                  groupBlocks(catalog, engineFilter).map(({ macro, categories }) => (
+                    <div key={macro.id} className="flex flex-col gap-3">
+                      <h3 className="text-sm font-heading font-bold text-foreground">{macro.label}</h3>
+                      {categories.map(({ category, types }) => (
+                        <div key={category.id} className="flex flex-col gap-2 pl-3">
+                          <h4 className="text-xs font-bold" style={{ color: category.color }}>{category.name}</h4>
+                          <div className="flex flex-col gap-1.5">
+                            {types.map(type => (
+                              <BlockCard key={type} type={type} onClick={() => addNodeAtCenter(type)} />
+                            ))}
+                          </div>
+                        </div>
                       ))}
-                  </div>
+                    </div>
+                  ))
                 )}
               </div>
             )}

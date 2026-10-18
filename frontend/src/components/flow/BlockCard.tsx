@@ -67,7 +67,7 @@ function BlockCard({
           className="text-[10px] font-extrabold shrink-0 rounded-full border-[color:var(--cat-color)] text-[color:var(--cat-color)]"
           style={{ '--cat-color': info.categoryColor } as React.CSSProperties}
         >
-          {info.categoryName}
+          {info.badge}
         </Badge>
 
         {onDelete && (
