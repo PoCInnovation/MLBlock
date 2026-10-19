@@ -168,8 +168,18 @@ def get_catalog(
                 "is_transition": is_transition_val,
             }
         )
+    category_rank = {
+        "donnees": 10, "chargement": 20, "pretraitement": 30, "texte": 40, "environnement": 50, "superblocks-1": 60,
+        "couches": 110, "activation": 120, "normalisation": 130, "regroupement": 140, "modeles": 150,
+        "entrainement": 160, "agents": 170, "superblocks-2": 180,
+        "evaluation": 210, "visualisation": 220, "superblocks-3": 230,
+        "conversions": 310,
+    }
     payload = {
-        "categories": sorted(list(categories.values()), key=lambda c: c["id"]),
+        "categories": sorted(
+            list(categories.values()),
+            key=lambda c: (c.get("macro", 99), category_rank.get(c["id"], 999), c["id"]),
+        ),
         "macro_stages": catalog.macro_stages(),
         "superblocks": catalog.superblocks(),
     }

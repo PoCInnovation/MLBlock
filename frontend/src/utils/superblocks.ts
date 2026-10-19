@@ -117,7 +117,25 @@ export function groupSuperblocks(sbs: SuperBlockEntry[]): { stage: number; items
     .map(([stage, items]) => ({ stage, items }))
 }
 
-/** Palette avancée : macro (id croissant, Conversions en dernier) → catégories → types filtrés par moteur. Superblocks exclus (palette simple). */
+export const CATEGORY_ORDER: Record<string, number> = {
+  donnees: 10,
+  chargement: 20,
+  pretraitement: 30,
+  texte: 40,
+  environnement: 50,
+  couches: 110,
+  activation: 120,
+  normalisation: 130,
+  regroupement: 140,
+  modeles: 150,
+  entrainement: 160,
+  agents: 170,
+  evaluation: 210,
+  visualisation: 220,
+  conversions: 310,
+}
+
+/** Palette avancée : macro (id croissant, Conversions en dernier) → catégories (ordre logique) → types filtrés par moteur. Superblocks exclus (palette simple). */
 export function groupBlocks(
   catalog: InternalCatalog,
   engineFilter: string,
@@ -128,7 +146,7 @@ export function groupBlocks(
   return macros.map(macro => {
     const categories = catalog.categories
       .filter(c => c.macro === macro.id)
-      .sort((a, b) => a.name.localeCompare(b.name))
+      .sort((a, b) => ((CATEGORY_ORDER[a.id] ?? 999) - (CATEGORY_ORDER[b.id] ?? 999)) || a.name.localeCompare(b.name))
       .map(category => ({
         category,
         types: types.filter(t => catalog.blocks[t].cat === category.id),

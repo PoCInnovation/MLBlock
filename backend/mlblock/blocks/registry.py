@@ -235,7 +235,24 @@ def _discover():
         if macro is MacroStage.TRANSITION:
             category_dirs.append((macro_dir, macro_dir.name, macro, []))
             continue
-        subdirs = sorted(d for d in macro_dir.iterdir() if d.is_dir() and d.name != "__pycache__")
+        order = {
+            MacroStage.DATA: ["donnees", "chargement", "pretraitement", "texte", "environnement"],
+            MacroStage.MODEL_TRAIN: [
+                "couches",
+                "activation",
+                "normalisation",
+                "regroupement",
+                "modeles",
+                "entrainement",
+                "agents",
+            ],
+            MacroStage.RESULTS: ["evaluation", "visualisation"],
+            MacroStage.TRANSITION: ["conversions"],
+        }.get(macro, [])
+        subdirs = sorted(
+            [d for d in macro_dir.iterdir() if d.is_dir() and d.name != "__pycache__"],
+            key=lambda d: (order.index(d.name) if d.name in order else 999, d.name),
+        )
         names = [d.name for d in subdirs]
         category_dirs.extend((sub, sub.name, macro, names) for sub in subdirs)
 

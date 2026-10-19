@@ -241,7 +241,7 @@ describe('groupBlocks', () => {
     const g = groupBlocks(fixtureCatalog, 'all')
     expect(g.map(x => x.macro.id)).toEqual([1, 2, 3, 99])
     const macro2 = g[1].categories.map(c => c.category.id)
-    expect(macro2).toEqual([...macro2].sort())
+    expect(macro2).toEqual(['couches', 'activation'])
     expect(groupBlocks(fixtureCatalog, 'gym').flatMap(x => x.categories).every(c => c.types.length > 0)).toBe(true)
   })
 
