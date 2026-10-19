@@ -5,7 +5,6 @@ import { listPipelineJobs, getJobOutputs, getPipeline } from '../../api/client'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { decodeOutput, type TypedOutput } from '../../utils/outputCodec'
 
@@ -76,13 +75,7 @@ export default function JournalPanel() {
   const jobStatus = useAppStore(s => s.jobStatus)
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null)
   const [filter, setFilter] = useState<Filter>('mixte')
-
-  // Auto-select lastJobId when running if selectedJobId is null
-  useEffect(() => {
-    if (selectedJobId === null && lastJobId) {
-      setSelectedJobId(lastJobId)
-    }
-  }, [lastJobId, selectedJobId])
+  const activeJobId = selectedJobId ?? lastJobId
 
   const jobsQuery = useQuery({
     queryKey: ['pipeline-jobs', pipelineId],
@@ -94,11 +87,10 @@ export default function JournalPanel() {
   const jobs = jobsQuery.data ?? []
 
   const outputsQuery = useQuery({
-    queryKey: ['job-outputs', selectedJobId],
-    queryFn: () => getJobOutputs(selectedJobId!),
-    enabled: !!selectedJobId,
+    queryKey: ['job-outputs', activeJobId],
+    queryFn: () => getJobOutputs(activeJobId!),
+    enabled: !!activeJobId,
   })
-
   const outputs = outputsQuery.data ?? []
 
   const fmtTime = (iso: string) => {
@@ -114,7 +106,7 @@ export default function JournalPanel() {
   }
 
   const handleRestore = async () => {
-    if (!pipelineId || !selectedJobId) return
+    if (!pipelineId || !activeJobId) return
     const store = useAppStore.getState()
     store.commitUndoPoint()
     try {
@@ -145,9 +137,9 @@ export default function JournalPanel() {
   return (
     <div className="flex h-full w-full bg-surface overflow-hidden">
       {/* Sidebar: list of jobs */}
-      <div className="w-72 border-r border-border flex flex-col shrink-0 bg-surface-raised/50">
+      <div className="w-72 border-r border-border flex flex-col shrink-0 bg-surface2/50">
         <div className="p-3 border-b border-border flex items-center justify-between">
-          <span className="text-xs font-semibold text-text-main">Exécutions ({jobs.length})</span>
+          <span className="text-xs font-semibold text-text">Exécutions ({jobs.length})</span>
           {jobStatus && (
             <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 animate-pulse border-accent text-accent-light">
               {jobStatus}
@@ -159,7 +151,7 @@ export default function JournalPanel() {
             <div className="p-4 text-text-muted text-xs text-center">Aucune exécution enregistrée.</div>
           ) : (
             jobs.map(j => {
-              const isSelected = j.id === selectedJobId
+              const isSelected = j.id === activeJobId
               const isDone = j.status === 'done'
               const isError = j.status === 'error'
               return (
@@ -167,14 +159,14 @@ export default function JournalPanel() {
                   key={j.id}
                   onClick={() => setSelectedJobId(j.id)}
                   className={`w-full text-left p-3 transition-colors flex flex-col gap-1 cursor-pointer ${
-                    isSelected ? 'bg-accent/15 border-l-2 border-accent' : 'hover:bg-surface-raised'
+                    isSelected ? 'bg-accent/15 border-l-2 border-accent' : 'hover:bg-surface2'
                   }`}
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-mono text-[11px] text-text-muted">{fmtTime(j.created_at)}</span>
                     <Badge
                       variant={isDone ? 'default' : isError ? 'destructive' : 'secondary'}
-                      className={`text-[10px] px-1 py-0 ${isDone ? 'bg-emerald-600/20 text-emerald-400 border-emerald-500/30' : isError ? 'bg-rose-600/20 text-rose-400 border-rose-500/30' : ''}`}
+                      className={`text-[10px] px-1 py-0 ${isDone ? 'bg-success/20 text-success border-success/30' : isError ? 'bg-error/20 text-error border-error/30' : ''}`}
                     >
                       {j.status}
                     </Badge>
@@ -192,20 +184,19 @@ export default function JournalPanel() {
 
       {/* Main content: selected job details / outputs / logs */}
       <div className="flex-1 flex flex-col min-w-0 bg-surface">
-        {!selectedJobId ? (
+        {!activeJobId ? (
           <div className="flex-1 flex items-center justify-center text-text-muted text-xs">
             Sélectionnez une exécution pour voir ses détails.
           </div>
         ) : (
           <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
             {/* Header toolbar */}
-            <div className="h-12 border-b border-border px-4 flex items-center justify-between shrink-0 bg-surface-raised/30">
+            <div className="h-12 border-b border-border px-4 flex items-center justify-between shrink-0 bg-surface2/30">
               <div className="flex items-center gap-3">
-                <span className="text-xs font-medium text-text-main">
-                  Job <span className="font-mono text-accent-light">#{selectedJobId.slice(0, 8)}</span>
+                <span className="text-xs font-medium text-text">
+                  Job <span className="font-mono text-accent-light">#{activeJobId.slice(0, 8)}</span>
                 </span>
-                <ToggleGroup type="single" value={filter} onValueChange={(v) => v && setFilter(v as Filter)} className="bg-surface-raised border border-border rounded-lg p-0.5">
-                  <ToggleGroupItem value="mixte" className="text-[11px] px-2.5 py-1 h-7">Mixte</ToggleGroupItem>
+                <ToggleGroup type="single" value={filter} onValueChange={(v) => v && setFilter(v as Filter)} className="bg-surface2 border border-border rounded-lg p-0.5">
                   <ToggleGroupItem value="logs" className="text-[11px] px-2.5 py-1 h-7">Logs</ToggleGroupItem>
                   <ToggleGroupItem value="outputs" className="text-[11px] px-2.5 py-1 h-7">Sorties</ToggleGroupItem>
                 </ToggleGroup>
@@ -216,8 +207,7 @@ export default function JournalPanel() {
                   variant="outline"
                   size="sm"
                   onClick={handleRestore}
-                  className="h-7 text-xs text-text-main border-border hover:bg-surface-raised"
-                  title="Restaurer le pipeline à cet état"
+                  className="h-7 text-xs text-text border-border hover:bg-surface3"
                 >
                   Restaurer cet état
                 </Button>
@@ -229,7 +219,7 @@ export default function JournalPanel() {
               {(filter === 'mixte' || filter === 'logs') && (
                 <div className="flex flex-col gap-1.5">
                   <span className="text-[11px] font-semibold text-text-muted uppercase tracking-wider">Console & Logs</span>
-                  <Card className="p-3 bg-surface-raised border-border font-mono text-xs flex flex-col gap-1">
+                  <Card className="p-3 bg-surface2 border-border font-mono text-xs flex flex-col gap-1">
                     {consoleLines.length === 0 ? (
                       <span className="text-text-muted italic">Aucun log récent.</span>
                     ) : (
@@ -237,7 +227,7 @@ export default function JournalPanel() {
                         <div
                           key={idx}
                           className={`${
-                            l.k === 'ok' ? 'text-emerald-400' : l.k === 'info' ? 'text-accent-light' : l.k === 'sys' ? 'text-amber-400' : 'text-text-main'
+                            l.k === 'ok' ? 'text-success' : l.k === 'info' ? 'text-accent-light' : l.k === 'sys' ? 'text-warning' : 'text-text'
                           }`}
                         >
                           {l.t}
@@ -258,9 +248,9 @@ export default function JournalPanel() {
                   ) : (
                     <div className="grid grid-cols-1 gap-3">
                       {outputs.map(out => (
-                        <Card key={out.id} className="p-3 bg-surface-raised border-border flex flex-col gap-2">
+                        <Card key={out.id} className="p-3 bg-surface2 border-border flex flex-col gap-2">
                           <div className="flex items-center justify-between text-xs border-b border-border pb-2">
-                            <span className="font-semibold text-text-main">{out.block_name}</span>
+                            <span className="font-semibold text-text">{out.block_name}</span>
                             <span className="font-mono text-[10px] text-text-muted">{fmtTime(out.created_at)}</span>
                           </div>
                           <div className="py-1">

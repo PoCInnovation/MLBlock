@@ -1,6 +1,5 @@
 import type { Node, Edge } from '@xyflow/react'
 import type { PipelineNode, PipelineEdge } from '../types/catalog'
-import type { Category } from '../types/catalog'
 
 export type ServerPayload = { nodes: PipelineNode[]; edges: PipelineEdge[] }
 
