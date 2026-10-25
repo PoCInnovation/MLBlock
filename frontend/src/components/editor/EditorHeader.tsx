@@ -205,6 +205,7 @@ export default function EditorHeader() {
       <div className="flex items-center gap-2 header-actions">
         <Button
           title="Annuler (Ctrl+Z)"
+          aria-label="Annuler la dernière action (Ctrl+Z)"
           variant="ghost"
           size="icon"
           disabled={!canUndo}
@@ -214,6 +215,7 @@ export default function EditorHeader() {
         </Button>
         <Button
           title="Rétablir (Ctrl+Shift+Z)"
+          aria-label="Rétablir la dernière action (Ctrl+Shift+Z)"
           variant="ghost"
           size="icon"
           disabled={!canRedo}

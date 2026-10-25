@@ -69,15 +69,17 @@ export default function HomeNav() {
     <div ref={navWrapRef}>
       <nav className="landing-nav flex items-center justify-between px-12 py-5.5 max-w-310 mx-auto">
         <div className="flex items-center gap-2.5">
-          <div
+          <button
+            type="button"
             onClick={() => navigate({ to: '/' })}
-            className="flex items-center gap-2.5 cursor-pointer"
+            aria-label="MLBlock - Accueil"
+            className="flex items-center gap-2.5 cursor-pointer bg-transparent border-none p-0 m-0 focus-visible:outline-2 focus-visible:outline-ring rounded-lg text-left"
           >
             <div className="w-8.5 h-8.5 rounded-md bg-accent shadow-btn flex items-center justify-center">
               <div className="w-3.25 h-3.25 bg-white rounded-xs" />
             </div>
-            <span className="font-heading font-semibold text-2xl tracking-tight">MLBlock</span>
-          </div>
+            <span className="font-heading font-semibold text-2xl tracking-tight text-text">MLBlock</span>
+          </button>
         </div>
         <div className="landing-nav-links flex items-center gap-6">
           <button onClick={handleDecouvrir} className={navLinkClass(false)}>Découvrir</button>
