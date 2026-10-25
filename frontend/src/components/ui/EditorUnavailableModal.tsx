@@ -2,30 +2,37 @@ import { useNavigate } from '@tanstack/react-router'
 import useAppStore from '../../store/useAppStore'
 import { CloudOff, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from './dialog'
 
 export default function EditorUnavailableModal() {
   const navigate = useNavigate()
   const message = useAppStore(s => s.catalogErrorMessage)
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-      <div className="bg-surface2 border border-white/10 rounded-2xl p-10 text-center w-11/12" style={{ maxWidth: 400 }}>
-        <div className="text-4xl mb-4 text-warning flex justify-center"><CloudOff className="size-10" /></div>
-        <div className="font-heading font-bold text-xl mb-2.5 text-text">
-          Éditeur non disponible
+    <Dialog open={true}>
+      <DialogContent className="max-w-md bg-card border-border p-6 flex flex-col gap-4 text-center items-center" showCloseButton={false}>
+        <div className="text-4xl text-warning flex justify-center pt-2">
+          <CloudOff className="size-10" />
         </div>
-        <div className="text-sm text-text-muted mb-7 leading-relaxed">
-          {message ?? 'Impossible de joindre le serveur. Vérifie que le backend est lancé et réessaie.'}
-        </div>
-        <Button
-          onClick={() => navigate({ to: '/' })}
-          variant="outline"
-          size="lg"
-          className="bg-white/10 text-text border-white/15 hover:bg-white/20"
-        >
-          <ArrowLeft className="size-4 mr-2" /> Retour
-        </Button>
-      </div>
-    </div>
+        <DialogHeader className="gap-1 items-center">
+          <DialogTitle className="text-xl font-heading font-bold text-foreground">
+            Éditeur non disponible
+          </DialogTitle>
+          <DialogDescription className="text-sm text-muted-foreground text-center">
+            {message ?? 'Impossible de joindre le serveur. Vérifie que le backend est lancé et réessaie.'}
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter className="w-full justify-center mt-2">
+          <Button
+            onClick={() => navigate({ to: '/' })}
+            variant="outline"
+            size="lg"
+            className="w-full sm:w-auto font-bold"
+          >
+            <ArrowLeft className="size-4 mr-2" /> Retour à l'accueil
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }

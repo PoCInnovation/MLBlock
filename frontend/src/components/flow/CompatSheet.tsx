@@ -52,7 +52,7 @@ export default function CompatSheet({ nodeId, port, onPick }: Props) {
         </div>
         {group.compatible.length > 0 && (
           <div className="flex flex-col gap-2">
-            {group.compatible.slice(0, 12).map(type => (
+            {group.compatible.map(type => (
               <BlockCard key={type} type={type} onClick={() => onPick(type)} />
             ))}
           </div>
@@ -62,7 +62,7 @@ export default function CompatSheet({ nodeId, port, onPick }: Props) {
             <span className="text-xs font-semibold text-muted-foreground pt-1">
               Via adaptateur automatique
             </span>
-            {group.convertible.slice(0, 12).map(type => (
+            {group.convertible.map(type => (
               <BlockCard key={type} type={type} onClick={() => onPick(type)} />
             ))}
           </div>

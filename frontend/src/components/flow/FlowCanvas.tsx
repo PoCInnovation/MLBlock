@@ -15,7 +15,7 @@ import {
   type EdgeChange,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { AlignVerticalJustifyCenter, ChevronRight, ChevronDown } from 'lucide-react'
+import { AlignVerticalJustifyCenter, ChevronRight, ChevronDown, X } from 'lucide-react'
 import { useShallow } from 'zustand/react/shallow'
 import useAppStore from '../../store/useAppStore'
 import { theme } from '../../theme'
@@ -25,7 +25,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from '@/components/ui/drawer'
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerClose } from '@/components/ui/drawer'
 import { getBaseline } from '../../content/baselines'
 import BlockNode from './BlockNode'
 import SuperBlockConfigSheet from './SuperBlockConfigSheet'
@@ -610,6 +610,24 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
             <DrawerDescription>Panneau de configuration du canvas</DrawerDescription>
           </DrawerHeader>
           <div className="p-6 min-h-0 h-full overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 mb-2 border-b border-border">
+              <span className="text-base font-heading font-bold text-foreground">
+                {activeSheet === 'add'
+                  ? 'Catalogue des Super-Blocs'
+                  : activeSheet === 'config'
+                  ? 'Configurer le Super-Bloc'
+                  : activeSheet === 'compat'
+                  ? 'Blocs compatibles'
+                  : activeSheet === 'inspect'
+                  ? 'Inspecteur de Paramètres'
+                  : 'Journal d’Exécution'}
+              </span>
+              <DrawerClose asChild>
+                <Button variant="ghost" size="icon" className="size-8 rounded-full" aria-label="Fermer le panneau">
+                  <X className="size-4" />
+                </Button>
+              </DrawerClose>
+            </div>
             {activeSheet === 'add' && catalog && (
               <div className="flex flex-col gap-3">
                 <div className="flex items-center justify-between gap-3">
