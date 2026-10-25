@@ -14,6 +14,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu'
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover'
+import PipelineAdvisorCard from '../flow/PipelineAdvisorCard'
 import { useNavigate } from '@tanstack/react-router'
 import useAppStore from '../../store/useAppStore'
 import { signOut } from '../../services/auth'
@@ -294,18 +296,24 @@ export default function EditorHeader() {
           </Button>
         )}
         {analysisQuery.data && flowNodes.length > 0 && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setActiveSheet(activeSheet === 'journal' ? null : 'journal')}
-            className="gap-1.5 font-bold text-xs h-8 border-border hover:bg-surface3"
-            title="Score d'intelligence IA du pipeline (cliquer pour examiner les conseils)"
-            aria-label={`Score IA : ${analysisQuery.data.score} sur 100, niveau ${analysisQuery.data.level}`}
-          >
-            <Sparkles className="size-3.5 text-primary" />
-            <span className="font-mono text-xs">{analysisQuery.data.score}%</span>
-            <span className="hidden sm:inline text-[11px] opacity-80">{analysisQuery.data.level}</span>
-          </Button>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 font-bold text-xs h-8 border-border hover:bg-surface3 cursor-pointer"
+                title="Score d'intelligence IA du pipeline (cliquer pour ouvrir les conseils)"
+                aria-label={`Score IA : ${analysisQuery.data.score} sur 100, niveau ${analysisQuery.data.level}`}
+              >
+                <Sparkles className="size-3.5 text-primary" />
+                <span className="font-mono text-xs">{analysisQuery.data.score}%</span>
+                <span className="hidden sm:inline text-[11px] opacity-80">{analysisQuery.data.level}</span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" side="bottom" sideOffset={8} className="w-88 p-4 bg-card border-border shadow-2xl rounded-2xl">
+              <PipelineAdvisorCard analysis={analysisQuery.data} />
+            </PopoverContent>
+          </Popover>
         )}
         <ThemeToggle />
         <DropdownMenu>
