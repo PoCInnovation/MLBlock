@@ -26,7 +26,7 @@ const MAX_PROJECTS = 20
 const pageStyle =
   'min-h-screen bg-bg text-text font-body px-4 py-8 md:px-8 md:py-12'
 const headerStyle =
-  'max-w-5xl mx-auto mb-7 flex items-center justify-between'
+  'max-w-5xl mx-auto mb-7 flex flex-col sm:flex-row sm:items-center justify-between gap-4'
 const titleStyle =
   'font-heading text-3xl font-extrabold m-0'
 const subStyle =
@@ -111,7 +111,7 @@ export default function ProjectsPage() {
             {projects === null ? 'Chargement…' : `${projects.length} projet${projects.length > 1 ? 's' : ''} sur ${MAX_PROJECTS} maximum`}
           </div>
         </div>
-        <div className="flex gap-2.5">
+        <div className="flex flex-wrap items-center gap-2.5">
           <input
             ref={fileRef}
             type="file"

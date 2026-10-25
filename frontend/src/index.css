@@ -111,7 +111,7 @@
   }
   input, select, button { font-family: inherit; }
 
-  :focus-visible { outline: 2px solid #5E64E8; outline-offset: 2px; }
+  :focus-visible { outline: 2px solid var(--color-ring, #D97757); outline-offset: 2px; }
   html {
     @apply font-sans;
   }
@@ -269,11 +269,6 @@
 /* En-tête éditeur : hauteur fixe desktop (le wrap est réservé au mobile). */
 .editor-header { height: 60px; padding: 0 16px; }
 
-/* Palette : sidebar inline ≥768px, masquée en mobile (tiroir + backdrop
-   pilotés par .palette-open dans FlowCanvas). */
-.flow-palette { display: flex; flex-shrink: 0; }
-.palette-toggle, .palette-backdrop, .palette-drawer { display: none; }
-
 /* Hamburger de la landing : caché ≥768px. */
 .landing-nav-burger {
   display: none;
@@ -309,40 +304,6 @@
 }
 
 @media (max-width: 767px) {
-  /* Palette : masquée dans le flux, ouverte en tiroir fixe via le bouton.
-     z 40/50 : au-dessus des panes ReactFlow (≤5), sous les modals (100+). */
-  .flow-palette { display: none; }
-  .palette-toggle {
-    display: inline-flex;
-    position: absolute;
-    top: 12px;
-    left: 12px;
-    z-index: 10;
-  }
-  .palette-backdrop {
-    display: block;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,.55);
-    z-index: 40;
-  }
-  .palette-drawer {
-    display: flex;
-    position: fixed;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    width: min(300px, 85vw);
-    z-index: 50;
-    border-radius: 20px;
-    transform: translateX(0);
-    opacity: 1;
-    transition: transform 200ms ease, opacity 200ms ease;
-    will-change: transform, opacity;
-  }
-  .inspector-panel {
-    display: none;
-  }
   .editor-outer {
     padding: 8px;
   }
@@ -429,7 +390,7 @@
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12) !important;
   }
   @media (prefers-reduced-motion: reduce) {
-    .floating-panel, .floating-canvas, .flow-palette, .palette-drawer {
+    .floating-panel, .floating-canvas {
       transition: none !important;
       animation: none !important;
     }

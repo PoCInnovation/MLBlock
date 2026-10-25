@@ -19,7 +19,7 @@ function Curve({ points }: { points: number[] }) {
     .map((v, i) => `${((i / (points.length - 1)) * 100).toFixed(2)},${(50 - ((v - min) / span) * 45 - 2.5).toFixed(2)}`)
     .join(' ')
   return (
-    <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-28 bg-white/5 rounded-lg block">
+    <svg role="img" aria-label="Courbe d'évolution des métriques" viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-28 bg-white/5 rounded-lg block">
       <polyline points={pts} fill="none" className="stroke-accent-light" strokeWidth="1.5" />
     </svg>
   )
@@ -43,7 +43,7 @@ function OutputRenderer({ raw }: { raw: string }) {
     case 'image': {
       const src = out.url ?? (out.data ? `data:${out.mime ?? 'image/png'};base64,${out.data}` : '')
       if (!src) return <div className="text-text-muted text-xs">[image vide]</div>
-      return <img src={src} alt="output" className="max-w-full max-h-56 rounded-md block" />
+      return <img src={src} alt="Graphique généré par le modèle" className="max-w-full max-h-56 rounded-md block" />
     }
     case 'curve':
       return <Curve points={out.points} />
