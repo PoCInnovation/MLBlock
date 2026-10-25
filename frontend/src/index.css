@@ -413,6 +413,7 @@
 @layer utilities {
   @media (pointer: coarse) {
     .react-flow__handle { width: 24px !important; height: 24px !important; }
+    .block-delete-btn { opacity: 0.85 !important; }
   }
   /* ReactFlow Controls/MiniMap flottants arrondis */
   .react-flow__controls {

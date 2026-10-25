@@ -64,7 +64,7 @@ function BlockCard({
         </div>
         <Badge
           variant="outline"
-          className="text-[10px] font-extrabold shrink-0 rounded-full border-[color:var(--cat-color)] text-[color:var(--cat-color)]"
+          className="text-[10px] font-extrabold shrink-0 rounded-full border-[color:var(--cat-color)] bg-[color:var(--cat-color)]/10 text-foreground dark:text-[color:var(--cat-color)]"
           style={{ '--cat-color': info.categoryColor } as React.CSSProperties}
         >
           {info.badge}
@@ -75,7 +75,7 @@ function BlockCard({
             type="button"
             onClick={e => { e.stopPropagation(); onDelete() }}
             aria-label={`Supprimer ${info.title}`}
-            className="block-delete-btn shrink-0 border-none bg-transparent text-text-muted hover:text-destructive cursor-pointer p-0 text-xs font-extrabold opacity-0 transition-opacity focus-visible:opacity-100 group-hover/card:opacity-100"
+            className="block-delete-btn shrink-0 border-none bg-transparent text-text-muted hover:text-destructive cursor-pointer p-1 text-xs font-extrabold opacity-0 transition-opacity focus-visible:opacity-100 group-hover/card:opacity-100 rounded-md min-w-[32px] min-h-[32px] inline-flex items-center justify-center"
           >
             Supprimer
           </button>
