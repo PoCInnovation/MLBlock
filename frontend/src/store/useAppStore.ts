@@ -78,6 +78,7 @@ type AppState = {
   addFlowEdges: (edges: Edge[]) => void
   updateFlowParam: (nodeId: string, k: string, v: string) => void
   updateNodeChildren: (nodeId: string, children: PipelineNode[]) => void
+  updateChildParam: (nodeId: string, childType: string, k: string, v: unknown) => void
   removeFlowNode: (nodeId: string) => void
   appendConsoleLines: (lines: ConsoleLine[]) => void
   clearAll: () => void
@@ -159,6 +160,20 @@ const useAppStore = create<AppState>((set, get) => ({
         ? { ...n, data: { ...(n.data as Record<string, unknown>), children } }
         : n),
     }))
+  },
+  updateChildParam: (nodeId, childType, k, v) => {
+    const state = get()
+    const node = state.flowNodes.find(n => n.id === nodeId)
+    if (!node) return
+    const data = node.data as { children?: PipelineNode[] } | undefined
+    const children = data?.children ?? []
+    const child = children.find(c => c.type === childType)
+    if (!child) return
+    const updatedChildren = children.map(c => c.type === childType ? {
+      ...c,
+      params: { ...(c.params ?? {}), [k]: v },
+    } : c)
+    state.updateNodeChildren(nodeId, updatedChildren)
   },
   removeFlowNode: (nodeId) => {
     const s = get()

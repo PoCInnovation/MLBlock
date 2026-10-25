@@ -228,3 +228,38 @@ describe('updateNodeChildren', () => {
     expect(revertedData.children).toHaveLength(0)
   })
 })
+
+describe('updateChildParam', () => {
+  it("met à jour un paramètre spécifique d'un sous-bloc et crée un point d'annulation", () => {
+    const container = freeNode('c1', 10, 20, {
+      data: {
+        type: 'sequential_model',
+        fields: {},
+        children: [
+          { id: 'c1.conv2d_layer', type: 'conv2d_layer', params: { in_channels: 1, out_channels: 32 } },
+          { id: 'c1.relu_layer', type: 'relu_layer', params: {} },
+        ],
+      },
+    })
+    useAppStore.setState({ flowNodes: [container], undoStack: [], redoStack: [] })
+
+    expect(useAppStore.getState().canUndo()).toBe(false)
+
+    useAppStore.getState().updateChildParam('c1', 'conv2d_layer', 'out_channels', 64)
+
+    type ContainerWithChildren = { children: { type: string; params: Record<string, unknown> }[] }
+    const updatedNode = useAppStore.getState().flowNodes[0]
+    const updatedData = updatedNode.data as ContainerWithChildren
+    const updatedChildren = updatedData.children
+    expect(updatedChildren[0].params.out_channels).toBe(64)
+    expect(updatedChildren[0].params.in_channels).toBe(1)
+    expect(useAppStore.getState().canUndo()).toBe(true)
+
+    // L'annulation restaure la valeur initiale
+    useAppStore.getState().undo()
+    const revertedNode = useAppStore.getState().flowNodes[0]
+    const revertedData = revertedNode.data as ContainerWithChildren
+    const revertedChildren = revertedData.children
+    expect(revertedChildren[0].params.out_channels).toBe(32)
+  })
+})
