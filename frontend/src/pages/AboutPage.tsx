@@ -106,7 +106,7 @@ function PocSection() {
         <div className="max-w-7xl mx-auto px-12 py-16">
             <div className="flex flex-col gap-3">
                 <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-foreground">Le projet, porté par PoC Innovation</h2>
-                <Card className="bg-white p-6 rounded-2xl shadow-sm border border-border">
+                <Card className="bg-card p-6 rounded-2xl shadow-sm border border-border">
                     <div className="flex flex-col md:flex-row gap-6 items-start">
                         <PocLogoSlot />
                         <div className="flex flex-col gap-3 flex-1" ref={textRef}>

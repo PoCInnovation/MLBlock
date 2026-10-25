@@ -2,6 +2,9 @@
 import { useState, useMemo, useEffect } from 'react'
 import { createFileRoute, Link, Outlet, useRouterState } from '@tanstack/react-router'
 import { Input } from '@/components/ui/input'
+import { Card } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { ChevronRight } from 'lucide-react'
 import SiteLayout from '../components/landing/SiteLayout'
 import { courses, courseTreeItems } from '../content/cours'
 
@@ -80,11 +83,52 @@ function CoursCatalogPage() {
               </Link>
             </div>
             {filtered.length === 0 ? (
-              <p className="text-secondary text-center py-6">
-                Aucun cours trouvé
+              <p className="text-secondary text-center py-12">
+                Aucun cours ne correspond à ta recherche.
               </p>
             ) : (
-              <p className="text-secondary text-sm">Sélectionne un cours dans la liste à gauche.</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+                {filtered.map(c => (
+                  <Link
+                    key={c.id}
+                    to="/cours/$slug"
+                    params={{ slug: c.slug }}
+                    className="no-underline text-inherit group"
+                  >
+                    <Card className="p-5 bg-card border border-border rounded-2xl shadow-sm transition-all hover:-translate-y-1 hover:shadow-md hover:border-accent flex flex-col justify-between h-full">
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center justify-between">
+                          <Badge
+                            variant="outline"
+                            className={
+                              c.difficulty === 'facile'
+                                ? 'text-success border-success/30 bg-success/10'
+                                : c.difficulty === 'moyen'
+                                  ? 'text-warning border-warning/30 bg-warning/10'
+                                  : 'text-error border-error/30 bg-error/10'
+                            }
+                          >
+                            {c.difficulty}
+                          </Badge>
+                          <span className="text-[11px] font-mono text-muted-foreground font-semibold">
+                            {c.sections.length} section{c.sections.length > 1 ? 's' : ''}
+                          </span>
+                        </div>
+                        <h3 className="font-heading font-bold text-lg text-foreground group-hover:text-accent transition-colors">
+                          {c.title}
+                        </h3>
+                        <p className="text-sm text-secondary line-clamp-3 leading-relaxed">
+                          {c.description}
+                        </p>
+                      </div>
+                      <div className="pt-4 flex items-center gap-1.5 text-xs font-bold text-accent">
+                        <span>Commencer le cours</span>
+                        <ChevronRight className="size-3.5 group-hover:translate-x-1 transition-transform" />
+                      </div>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
             )}
           </div>
         </div>

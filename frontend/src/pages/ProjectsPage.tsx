@@ -11,6 +11,14 @@ import SkipLink from '../components/ui/SkipLink'
 import { Upload, Sparkles } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '../components/ui/dialog'
 import type { ExoTemplate } from '../types/catalog'
 
 const MAX_PROJECTS = 20
@@ -46,9 +54,10 @@ export default function ProjectsPage() {
   const error = actionError ?? listError ?? importError
   const [exporting, setExporting] = useState<PipelineSummary | null>(null)
   const [templateOpen, setTemplateOpen] = useState(false)
+  const [projectToDelete, setProjectToDelete] = useState<PipelineSummary | null>(null)
+  const [deleting, setDeleting] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
   const { importFile } = usePipelineImport()
-
   const onSelectTemplate = (template: ExoTemplate) => {
     useAppStore.getState().clearAll()
     useAppStore.getState().loadPipeline(template.nodes, template.edges, '', template.name)
@@ -68,14 +77,18 @@ export default function ProjectsPage() {
     }
   }
 
-  const removeProject = async (p: PipelineSummary) => {
-    if (!window.confirm(`Supprimer le projet « ${p.name} » ? Cette action est définitive.`)) return
+  const confirmDelete = async () => {
+    if (!projectToDelete) return
+    setDeleting(true)
     try {
-      await deletePipeline(p.id)
+      await deletePipeline(projectToDelete.id)
       setActionError(null)
+      setProjectToDelete(null)
       await queryClient.invalidateQueries({ queryKey: ['pipelines'] })
     } catch {
       setActionError('Impossible de supprimer ce projet.')
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -139,7 +152,7 @@ export default function ProjectsPage() {
             <div className="flex gap-2 mt-1">
               <Button size="sm" onClick={() => openProject(p)} className="font-bold">Ouvrir</Button>
               <Button size="sm" variant="outline" onClick={() => setExporting(p)} className="font-bold">Exporter</Button>
-              <Button size="sm" variant="destructive" onClick={() => removeProject(p)} className="font-bold">Supprimer</Button>
+              <Button size="sm" variant="destructive" onClick={() => setProjectToDelete(p)} className="font-bold">Supprimer</Button>
             </div>
           </Card>
         ))}
@@ -161,6 +174,35 @@ export default function ProjectsPage() {
         onSelect={onSelectTemplate}
         onClose={() => setTemplateOpen(false)}
       />
+
+      <Dialog open={Boolean(projectToDelete)} onOpenChange={(open) => { if (!open && !deleting) setProjectToDelete(null) }}>
+        <DialogContent className="max-w-md bg-card border-border p-6 flex flex-col gap-4">
+          <DialogHeader className="gap-1">
+            <DialogTitle className="text-lg font-heading font-bold text-foreground">
+              Supprimer ce projet ?
+            </DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground mt-1">
+              Le projet « {projectToDelete?.name} » sera définitivement supprimé. Cette action est irréversible.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex items-center justify-end gap-2 pt-2">
+            <Button
+              variant="outline"
+              onClick={() => setProjectToDelete(null)}
+              disabled={deleting}
+            >
+              Annuler
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDelete}
+              disabled={deleting}
+            >
+              {deleting ? 'Suppression…' : 'Supprimer'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

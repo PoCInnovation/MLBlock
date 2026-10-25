@@ -24,7 +24,7 @@ export default function HowItWorksPage() {
           <div className="flex flex-col gap-3">
             <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-foreground">Le principe d'assemblage</h2>
             <Card className="p-6 bg-card border border-border rounded-2xl shadow-sm">
-              <p className="text-secondary text-base">Les blocs s'emboîtent comme des pièces de puzzle, encoches en bas, trous en haut. Tu déposes un bloc sous un autre, il se clipse. Pas de fils à tirer, pas de connexions à faire à la main. L'ordre dans lequel tu empiles tes blocs, c'est l'ordre dans lequel ils s'exécutent.</p>
+              <p className="text-secondary text-base">Les blocs s'assemblent sous forme de graphe visuel interactif. Tu déposes des SuperBlocks prêts à l'emploi ou des blocs élémentaires sur le canvas et tu relies leurs ports. MLBlock contrôle en temps réel la compatibilité des flux de données et te propose automatiquement les blocs suivants adaptés.</p>
             </Card>
           </div>
         </div>
@@ -43,16 +43,16 @@ export default function HowItWorksPage() {
                     text: 'Chaque pipeline que tu construis avec tes blocs est traduit en graphe de nœuds, une structure envoyée à notre serveur dès que tu cliques sur "Démarrer".',
                   },
                   {
-                    title: 'Une machine créée juste pour toi',
-                    text: 'Notre serveur commande alors une machine temporaire chez Amazon (AWS), dédiée entièrement à l\'exécution de ton pipeline le temps de l\'entraînement.',
+                    title: 'Une machine cloud dédiée',
+                    text: 'Notre serveur génère le code Python complet et prépare une machine (GPU Vast.ai ou exécution locale) dédiée entièrement à ton pipeline.',
                   },
                   {
                     title: 'Un suivi en direct',
                     text: 'Pendant l\'entraînement, cette machine envoie régulièrement des nouvelles à notre serveur, qui te les transmet en direct dans l\'éditeur.',
                   },
                   {
-                    title: 'Une coupure, ce n\'est pas grave',
-                    text: 'Ces machines cloud sont temporaires et peuvent parfois être interrompues par Amazon. Dans ce cas, l\'exécution est transférée sur une nouvelle machine pour continuer le travail sans tout perdre.',
+                    title: 'Orchestration résiliente',
+                    text: 'L\'exécution cloud est monitorée en continu : les connexions, callbacks d\'états et ressources GPU sont nettoyés automatiquement dès la fin du job.',
                   },
                   {
                     title: 'Le résultat arrive chez toi',

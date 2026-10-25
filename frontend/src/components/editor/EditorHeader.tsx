@@ -33,7 +33,6 @@ export default function EditorHeader() {
   const setActiveSheet = useAppStore(s => s.setActiveSheet)
   const { onRun, onStop, onClear, isPending, isStopping } = useBlockRunner() as { onRun: () => void; onStop: () => void; onClear: () => void; isPending: boolean; isStopping: boolean; jobId: string | null }
   // Arrêter actif tant qu'un run est en cours (isPending inclut jobId non terminal + stopping)
-  const stopActive = isPending
   // Sélecteur dérivé : re-render uniquement quand l'état dirty change
   const dirty = useAppStore(s => s.isDirty())
   const canUndo = useAppStore(s => s.canUndo())
@@ -231,48 +230,32 @@ export default function EditorHeader() {
           {saving ? null : dirty ? <Save className="size-4 mr-1.5" /> : <Check className="size-4 mr-1.5" />}
           {dirty ? 'Sauvegarder' : 'Sauvegardé'}
         </Button>
-        {/* Dropdown 3: Lancement (Lancer & Arrêter) */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant={isPending ? 'default' : 'secondary'}
-              size="sm"
-              className="gap-1.5 font-semibold text-xs h-8"
-            >
-              <Play className={`size-4 text-primary ${isPending ? 'animate-pulse' : ''}`} />
-              <span>{isPending ? 'Exécution…' : 'Lancement'}</span>
-              <ChevronDown className="size-3.5 opacity-70" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-52 bg-card border-border">
-            <DropdownMenuItem
-              disabled={isPending}
-              onClick={() => {
-                setActiveSheet('journal')
-                onRun()
-              }}
-              className="cursor-pointer gap-2.5 py-2 font-semibold text-xs text-foreground"
-            >
-              <Play className="size-4 text-success shrink-0" />
-              <div className="flex flex-col">
-                <span>Lancer</span>
-                <span className="text-[10px] text-muted-foreground font-normal">Exécuter le pipeline actif</span>
-              </div>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              disabled={!stopActive}
-              onClick={onStop}
-              className="cursor-pointer gap-2.5 py-2 font-semibold text-xs text-destructive focus:text-destructive"
-            >
-              <Square className="size-4 text-destructive shrink-0" />
-              <div className="flex flex-col">
-                <span>{isStopping ? 'Arrêt…' : 'Arrêter'}</span>
-                <span className="text-[10px] text-muted-foreground font-normal">Interrompre l'exécution</span>
-              </div>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {isPending ? (
+          <Button
+            variant="destructive"
+            size="sm"
+            className="gap-1.5 font-bold text-xs h-8 shadow-sm"
+            disabled={isStopping}
+            onClick={onStop}
+            title="Interrompre l'exécution"
+          >
+            <Square className="size-3.5 fill-current" />
+            <span>{isStopping ? 'Arrêt…' : 'Arrêter'}</span>
+          </Button>
+        ) : (
+          <Button
+            size="sm"
+            className="gap-1.5 font-bold text-xs h-8 bg-success hover:bg-success/90 text-white shadow-sm"
+            onClick={() => {
+              setActiveSheet('journal')
+              onRun()
+            }}
+            title="Exécuter le pipeline actif"
+          >
+            <Play className="size-3.5 fill-current" />
+            <span>Lancer</span>
+          </Button>
+        )}
         <ThemeToggle />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
