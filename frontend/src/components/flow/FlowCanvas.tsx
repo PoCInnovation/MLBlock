@@ -15,7 +15,7 @@ import {
   type EdgeChange,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { AlignVerticalJustifyCenter, ChevronRight } from 'lucide-react'
+import { AlignVerticalJustifyCenter, ChevronRight, ChevronDown } from 'lucide-react'
 import { useShallow } from 'zustand/react/shallow'
 import useAppStore from '../../store/useAppStore'
 import { theme } from '../../theme'
@@ -659,9 +659,11 @@ function NodeInspector() {
   const catalog = useAppStore(s => s.catalog)
   const updateFlowParam = useAppStore(s => s.updateFlowParam)
   const updateNodeChildren = useAppStore(s => s.updateNodeChildren)
+  const updateChildParam = useAppStore(s => s.updateChildParam)
   const removeFlowNode = useAppStore(s => s.removeFlowNode)
   const setCompatSource = useAppStore(s => s.setCompatSource)
   const setActiveSheet = useAppStore(s => s.setActiveSheet)
+  const [expandedChildren, setExpandedChildren] = useState<Record<string, boolean>>({})
   const selected = flowNodes.find(n => n.selected)
   const data = selected?.data as Record<string, unknown> | undefined
   const type = (data?.type as string) ?? ''
@@ -718,41 +720,74 @@ function NodeInspector() {
       <Separator />
 
       {sbEntry && sbEntry.children.length > 0 && (
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-2">
           <h3 className="text-base font-heading font-bold text-foreground">Sous-blocs</h3>
           {sbEntry.children.map(childType => {
             const child = children.find(c => c.type === childType)
             const on = Boolean(child)
-            const missing = !catalog?.blocks[childType]
-            const label = catalog?.blocks[childType]?.segs.find(s => s.t === 'text')?.v ?? childType
+            const childDef = catalog?.blocks[childType]
+            const missing = !childDef
+            const label = childDef?.segs.find(s => s.t === 'text')?.v ?? childType
+            const hasParams = Boolean(childDef && childDef.segs.some(s => s.t !== 'text'))
+            const isExpanded = Boolean(expandedChildren[childType])
             return (
-              <label
+              <div
                 key={childType}
-                className={`flex items-center gap-3 p-2.5 rounded-xl border border-border bg-card cursor-pointer min-h-11 ${on ? '' : 'opacity-55'}`}
+                className="flex flex-col rounded-xl border border-border bg-card overflow-hidden transition-all"
               >
-                <Checkbox
-                  checked={on}
-                  disabled={missing}
-                  onCheckedChange={() => {
-                    if (!selected) return
-                    if (child) {
-                      updateNodeChildren(selected.id, children.filter(c => c.type !== childType))
-                    } else if (catalog) {
-                      const fresh = defaultChildren(
-                        { ...sbEntry, children: [childType] },
-                        catalog,
-                        selected.id,
-                      )
-                      updateNodeChildren(selected.id, [...children, ...fresh])
-                    }
-                  }}
-                  aria-label={label}
-                />
-                <span className="text-sm font-bold text-foreground flex-1">{label}</span>
-                <Badge variant="outline" className="text-[10px] shrink-0">
-                  {missing ? 'indisponible' : on ? 'inclus' : 'exclu'}
-                </Badge>
-              </label>
+                <div className={`flex items-center gap-3 p-2.5 min-h-11 ${on ? '' : 'opacity-55'}`}>
+                  <Checkbox
+                    checked={on}
+                    disabled={missing}
+                    onCheckedChange={() => {
+                      if (!selected) return
+                      if (child) {
+                        updateNodeChildren(selected.id, children.filter(c => c.type !== childType))
+                      } else if (catalog) {
+                        const fresh = defaultChildren(
+                          { ...sbEntry, children: [childType] },
+                          catalog,
+                          selected.id,
+                        )
+                        updateNodeChildren(selected.id, [...children, ...fresh])
+                      }
+                    }}
+                    aria-label={label}
+                  />
+                  <span className="text-sm font-bold text-foreground flex-1">{label}</span>
+                  <Badge variant="outline" className="text-[10px] shrink-0">
+                    {missing ? 'indisponible' : on ? 'inclus' : 'exclu'}
+                  </Badge>
+                  {on && hasParams && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="size-7 shrink-0 text-muted-foreground hover:text-foreground"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setExpandedChildren(prev => ({ ...prev, [childType]: !prev[childType] }))
+                      }}
+                      aria-label={`Paramètres de ${label}`}
+                      title={isExpanded ? 'Replier les paramètres' : 'Modifier les paramètres'}
+                    >
+                      {isExpanded ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
+                    </Button>
+                  )}
+                </div>
+                {on && hasParams && isExpanded && child && childDef && (
+                  <div className="border-t border-border/60 bg-muted/20 px-3 py-3 flex flex-col gap-3">
+                    <BlockSegments
+                      segs={childDef.segs}
+                      fields={(child.params as Record<string, string>) ?? {}}
+                      blockId={`${selected.id}.${childType}`}
+                      blockType={childType}
+                      onUpdate={(_id, k, v) => updateChildParam(selected.id, childType, k, v)}
+                      columnOptions={columnOptions}
+                    />
+                  </div>
+                )}
+              </div>
             )
           })}
         </div>
