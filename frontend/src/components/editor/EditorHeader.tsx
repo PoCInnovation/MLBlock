@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Save, Play, Upload, Download, Square, MoreVertical, FolderKanban, Trash2, LogOut, Check, Undo2, Redo2, Sparkles, Plus, Sliders, Terminal, ChevronDown, Boxes } from 'lucide-react'
+import { Save, Play, Upload, Download, Square, MoreVertical, FolderKanban, Trash2, LogOut, Check, Undo2, Redo2, Sparkles, Plus, Sliders, Terminal, ChevronDown, Boxes, GraduationCap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
@@ -31,6 +31,9 @@ export default function EditorHeader() {
   const showToast   = useAppStore(s => s.showToast)
   const activeSheet = useAppStore(s => s.activeSheet)
   const setActiveSheet = useAppStore(s => s.setActiveSheet)
+  const coursePanelOpen = useAppStore(s => s.coursePanelOpen)
+  const toggleCoursePanel = useAppStore(s => s.toggleCoursePanel)
+  const activeCourseSlug = useAppStore(s => s.activeCourseSlug)
   const { onRun, onStop, onClear, isPending, isStopping } = useBlockRunner() as { onRun: () => void; onStop: () => void; onClear: () => void; isPending: boolean; isStopping: boolean; jobId: string | null }
   // Arrêter actif tant qu'un run est en cours (isPending inclut jobId non terminal + stopping)
   // Sélecteur dérivé : re-render uniquement quand l'état dirty change
@@ -124,6 +127,21 @@ export default function EditorHeader() {
           )}
         </div>
       </div>
+        {/* Bouton Cours guidés */}
+        <Button
+          variant={coursePanelOpen ? 'default' : 'secondary'}
+          size="sm"
+          onClick={toggleCoursePanel}
+          className="gap-1.5 font-semibold text-xs h-8"
+          aria-label="Afficher ou masquer les cours guidés"
+          aria-pressed={coursePanelOpen}
+        >
+          <GraduationCap className="size-4 text-primary" />
+          <span>Cours</span>
+          {activeCourseSlug && (
+            <span className="w-2 h-2 rounded-full bg-accent-light inline-block" title="Un cours est actif" />
+          )}
+        </Button>
       <div className="flex items-center gap-2">
         {/* Dropdown 1: Blocs (Super-blocs & Baselines) */}
         <DropdownMenu>

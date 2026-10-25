@@ -28,6 +28,7 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerClose } from '@/components/ui/drawer'
 import { getBaseline } from '../../content/baselines'
 import BlockNode from './BlockNode'
+import CourseCompanionPanel from './CourseCompanionPanel'
 import SuperBlockConfigSheet from './SuperBlockConfigSheet'
 import CompatSheet from './CompatSheet'
 import FlowLink from './FlowLink'
@@ -110,6 +111,14 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
   const [showAdvanced, setShowAdvanced] = useState(false)
   const jobStatus = useAppStore(s => s.jobStatus)
 
+  const coursePanelOpen = useAppStore(s => s.coursePanelOpen)
+  const setCoursePanelOpen = useAppStore(s => s.setCoursePanelOpen)
+  const [isLg, setIsLg] = useState(() => (typeof window !== 'undefined' ? window.innerWidth >= 1024 : true))
+  useEffect(() => {
+    const onResize = () => setIsLg(window.innerWidth >= 1024)
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
   const { screenToFlowPosition, fitView, getZoom } = useReactFlow()
   const wrapperRef = useRef<HTMLDivElement>(null)
   const fitViewTimerRef = useRef<number | null>(null)
@@ -591,8 +600,13 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
 
       {/* Unified Shadcn Drawer for Add, Inspect, and Journal */}
       <Drawer
-        open={activeSheet !== null}
-        onOpenChange={open => !open && setActiveSheet(null)}
+        open={activeSheet !== null || (!isLg && coursePanelOpen)}
+        onOpenChange={open => {
+          if (!open) {
+            setActiveSheet(null)
+            setCoursePanelOpen(false)
+          }
+        }}
       >
         <DrawerContent className="max-h-[85vh]">
           <DrawerHeader className="sr-only">
@@ -612,7 +626,9 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
           <div className="p-6 min-h-0 h-full overflow-y-auto">
             <div className="flex items-center justify-between pb-3 mb-2 border-b border-border">
               <span className="text-base font-heading font-bold text-foreground">
-                {activeSheet === 'add'
+                {!isLg && coursePanelOpen && activeSheet === null
+                  ? 'Cours guidés'
+                  : activeSheet === 'add'
                   ? 'Catalogue des Super-Blocs'
                   : activeSheet === 'config'
                   ? 'Configurer le Super-Bloc'
@@ -715,6 +731,10 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
             {activeSheet === 'inspect' && <NodeInspector />}
 
             {activeSheet === 'journal' && <JournalPanel />}
+
+            {!isLg && coursePanelOpen && activeSheet === null && (
+              <CourseCompanionPanel onClose={() => setCoursePanelOpen(false)} />
+            )}
           </div>
         </DrawerContent>
       </Drawer>

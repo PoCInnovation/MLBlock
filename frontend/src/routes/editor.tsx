@@ -6,12 +6,13 @@ import { getSession } from '../services/auth'
 
 const editorSearchSchema = z.object({
   pipeline: z.string().uuid().optional(),
+  course: z.string().optional(),
 })
 
 export const Route = createFileRoute('/editor')({
   validateSearch: (search: Record<string, unknown>) => {
     const parsed = editorSearchSchema.safeParse(search)
-    return parsed.success ? parsed.data : { pipeline: undefined }
+    return parsed.success ? parsed.data : { pipeline: undefined, course: undefined }
   },
   beforeLoad: async () => {
     let user = useAppStore.getState().user

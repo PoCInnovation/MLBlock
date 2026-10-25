@@ -13,6 +13,7 @@ import UnsavedChangesDialog from '../components/ui/UnsavedChangesDialog'
 import Toast from '../components/ui/Toast'
 import { CheckCircle2 } from 'lucide-react'
 import FlowCanvas from '../components/flow/FlowCanvas'
+import CourseCompanionPanel from '../components/flow/CourseCompanionPanel'
 function stashIfDirty(): void {
   const s = useAppStore.getState()
   const u = s.user as { id?: string } | null
@@ -30,9 +31,16 @@ export default function EditorPage() {
   const pipelineId   = useAppStore(s => s.pipelineId)
   const restoredWork = useAppStore(s => s.restoredWork)
   const setRestoredWork = useAppStore(s => s.setRestoredWork)
+  const coursePanelOpen = useAppStore(s => s.coursePanelOpen)
 
   // Lectures serveur via TanStack Query (le store reste consommateur du catalogue)
   const urlPipelineId = (search.pipeline as string | undefined) ?? null
+  const courseParam = (search.course as string | undefined) ?? null
+  useEffect(() => {
+    if (courseParam) {
+      useAppStore.getState().setActiveCourseSlug(courseParam)
+    }
+  }, [courseParam])
   const catalogQuery = useQuery({
     queryKey: ['catalog'],
     queryFn: fetchCatalog,
@@ -180,8 +188,18 @@ export default function EditorPage() {
             <button onClick={() => setRestoredWork(false)} className="bg-none border-none text-success-muted cursor-pointer font-black text-sm" aria-label="Fermer">×</button>
           </div>
         )}
-        <div className="floating-panel floating-canvas flex-1 h-full min-h-0 self-stretch rounded-2xl overflow-hidden shadow-2xl flex flex-col bg-canvas">
-          <FlowCanvas />
+        <div className="flex-1 h-full min-h-0 self-stretch flex overflow-hidden gap-4">
+          <div className="floating-panel floating-canvas flex-1 h-full min-h-0 self-stretch rounded-2xl overflow-hidden shadow-2xl flex flex-col bg-canvas">
+            <FlowCanvas />
+          </div>
+          {coursePanelOpen && (
+            <aside
+              aria-label="Volet du cours"
+              className="hidden lg:flex w-96 shrink-0 h-full flex-col floating-panel bg-card border border-border rounded-2xl shadow-xl overflow-hidden z-10"
+            >
+              <CourseCompanionPanel />
+            </aside>
+          )}
         </div>
       </div>
       <Toast />
