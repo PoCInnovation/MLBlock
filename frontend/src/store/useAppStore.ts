@@ -58,6 +58,11 @@ type AppState = {
   toast: Toast | null
   activeSheet: 'add' | 'config' | 'compat' | 'inspect' | 'journal' | null
   setActiveSheet: (sheet: 'add' | 'config' | 'compat' | 'inspect' | 'journal' | null) => void
+  activeCourseSlug: string | null
+  coursePanelOpen: boolean
+  setActiveCourseSlug: (slug: string | null) => void
+  setCoursePanelOpen: (open: boolean) => void
+  toggleCoursePanel: () => void
   configTarget: string | null
   setConfigTarget: (id: string | null) => void
   compatSource: { nodeId: string; port: string } | null
@@ -131,6 +136,11 @@ const useAppStore = create<AppState>((set, get) => ({
   toast: null,
   activeSheet: null,
   setActiveSheet: (sheet) => set({ activeSheet: sheet }),
+  activeCourseSlug: null,
+  coursePanelOpen: false,
+  setActiveCourseSlug: (slug) => set({ activeCourseSlug: slug, coursePanelOpen: slug !== null }),
+  setCoursePanelOpen: (open) => set({ coursePanelOpen: open }),
+  toggleCoursePanel: () => set((s) => ({ coursePanelOpen: !s.coursePanelOpen })),
   configTarget: null,
   setConfigTarget: (id) => set({ configTarget: id }),
   compatSource: null,
