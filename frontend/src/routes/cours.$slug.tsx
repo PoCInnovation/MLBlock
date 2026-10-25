@@ -2,6 +2,7 @@
 import { createFileRoute, Link, notFound } from '@tanstack/react-router'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
+import { Play } from 'lucide-react'
 import SiteLayout from '../components/landing/SiteLayout'
 import { courses, courseTreeItems, getCourse } from '../content/cours'
 
@@ -106,10 +107,18 @@ function CoursDetailPage() {
             <div className="flex flex-col gap-2">
               <h1 className="font-heading text-3xl sm:text-4xl font-extrabold text-foreground">{course.title}</h1>
               <p className="text-secondary text-base">{course.description}</p>
-              <div className="flex items-center gap-2 mt-1">
+              <div className="flex items-center gap-3 mt-2 flex-wrap">
                 <Badge variant={course.difficulty === 'facile' ? 'secondary' : course.difficulty === 'moyen' ? 'default' : 'destructive'} className="uppercase">
                   {course.difficulty}
                 </Badge>
+                <Link
+                  to="/editor"
+                  search={{ course: course.slug }}
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-heading font-bold text-xs bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm transition-colors no-underline"
+                >
+                  <Play className="size-3.5 fill-current" />
+                  Pratiquer dans l&apos;éditeur
+                </Link>
               </div>
             </div>
             <div className="flex flex-col gap-6">
