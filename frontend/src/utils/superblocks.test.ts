@@ -35,8 +35,16 @@ const catalog = {
       outputs: [{ name: 'out_1', dtype: 'torch.Tensor' }],
       description: '', engine: 'pytorch', params: {},
     },
+    sequential_model: {
+      cat: 'couches', segs: [],
+      inputs: [{ name: 'in_1', dtype: 'torch.Tensor' }],
+      outputs: [{ name: 'out_1', dtype: 'torch.Tensor' }],
+      description: '', engine: 'pytorch', params: {},
+    },
   },
-  superblocks: [],
+  superblocks: [
+    { id: 'sequential_model', title: 'Modèle Séquentiel', macro_stage: 2, engine: 'pytorch', children: [] },
+  ],
 } as unknown as InternalCatalog
 
 const sb: SuperBlockEntry = {
@@ -63,21 +71,28 @@ describe('defaultChildren', () => {
 })
 
 describe('compatibleBlocks', () => {
-  it('classe compatible avant convertible', () => {
-    const { compatible, convertible } = compatibleBlocks(catalog, 'pd.DataFrame')
-    expect(compatible).toContain('standard_scaler')
-    expect(convertible).not.toContain('standard_scaler')
+  it('partitionne les résultats entre superblocks et blocks élémentaires', () => {
+    const res = compatibleBlocks(catalog, 'pd.DataFrame')
+    expect(res).toHaveProperty('superblocks')
+    expect(res).toHaveProperty('blocks')
+    expect(Array.isArray(res.superblocks.compatible)).toBe(true)
+    expect(Array.isArray(res.superblocks.convertible)).toBe(true)
+    expect(Array.isArray(res.blocks.compatible)).toBe(true)
+    expect(Array.isArray(res.blocks.convertible)).toBe(true)
   })
 
-  it('détecte les convertibles via les ponts du catalogue', () => {
-    const { compatible, convertible } = compatibleBlocks(catalog, 'pd.DataFrame')
-    expect(convertible).toContain('linear_layer')
-    expect(compatible).not.toContain('linear_layer')
+  it('isole les superblocks dans superblocks et les blocs simples dans blocks', () => {
+    const res = compatibleBlocks(catalog, 'pd.DataFrame')
+    expect(res.blocks.compatible).toContain('standard_scaler')
+    expect(res.superblocks.compatible).not.toContain('standard_scaler')
+    // sequential_model est convertible depuis pd.DataFrame via df_to_tensor
+    expect(res.superblocks.convertible).toContain('sequential_model')
+    expect(res.blocks.convertible).not.toContain('sequential_model')
   })
 
   it('exclut le bloc source demandé', () => {
-    const { compatible } = compatibleBlocks(catalog, 'pd.DataFrame', 'standard_scaler')
-    expect(compatible).not.toContain('standard_scaler')
+    const res = compatibleBlocks(catalog, 'pd.DataFrame', 'standard_scaler')
+    expect(res.blocks.compatible).not.toContain('standard_scaler')
   })
 })
 

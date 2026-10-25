@@ -155,15 +155,23 @@ export function groupBlocks(
     return { macro, categories }
   }).filter(g => g.categories.length > 0)
 }
-/** Blocs consommant `outDtype`, compatibles d'abord puis convertibles. */
+export type CompatibleBlocksResult = {
+  superblocks: { compatible: string[]; convertible: string[] }
+  blocks: { compatible: string[]; convertible: string[] }
+}
+
+/** Blocs consommant `outDtype`, partitionnés entre SuperBlocks et blocs élémentaires (compatibles d'abord puis convertibles). */
 export function compatibleBlocks(
   catalog: InternalCatalog,
   outDtype: string,
   exclude?: string,
-): { compatible: string[]; convertible: string[] } {
+): CompatibleBlocksResult {
   const graph = buildConversionGraph(catalog.blocks)
-  const compatible: string[] = []
-  const convertible: string[] = []
+  const sbIds = new Set(catalog.superblocks?.map(s => s.id) ?? [])
+  const res: CompatibleBlocksResult = {
+    superblocks: { compatible: [], convertible: [] },
+    blocks: { compatible: [], convertible: [] },
+  }
   for (const [type, def] of Object.entries(catalog.blocks)) {
     if (type === exclude || def.inputs.length === 0) continue
     let best: 'compatible' | 'convertible' | null = null
@@ -172,8 +180,9 @@ export function compatibleBlocks(
       if (verdict === 'compatible') { best = 'compatible'; break }
       if (verdict === 'convertible') best = 'convertible'
     }
-    if (best === 'compatible') compatible.push(type)
-    else if (best === 'convertible') convertible.push(type)
+    const target = sbIds.has(type) ? res.superblocks : res.blocks
+    if (best === 'compatible') target.compatible.push(type)
+    else if (best === 'convertible') target.convertible.push(type)
   }
-  return { compatible, convertible }
+  return res
 }
