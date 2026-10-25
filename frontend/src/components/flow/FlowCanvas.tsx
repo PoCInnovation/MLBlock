@@ -26,6 +26,7 @@ import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from '@/components/ui/drawer'
+import { getBaseline } from '../../content/baselines'
 import BlockNode from './BlockNode'
 import SuperBlockConfigSheet from './SuperBlockConfigSheet'
 import CompatSheet from './CompatSheet'
@@ -303,7 +304,6 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
     }
   }, [catalog, graph, addFlowEdges, showToast])
 
-
   const onDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault()
     e.dataTransfer.dropEffect = 'move'
@@ -337,10 +337,76 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
     setActiveSheet('compat')
   }, [setCompatSource, setActiveSheet])
 
+  const insertBaseline = useCallback((baselineSlug: string, anchor: { x: number; y: number }) => {
+    const baseline = getBaseline(baselineSlug)
+    if (!baseline || !catalog) return
+    useAppStore.getState().commitUndoPoint()
+    const store = useAppStore.getState()
+    const { flowNodes: existing } = store
+    const used = new Set(existing.map(n => n.id))
+    const idMap = new Map<string, string>()
+    const remap = (id: string): string => {
+      let next = id
+      while (used.has(next) || idMap.has(next)) next = `${id}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
+      return next
+    }
+    const newNodes: Node[] = []
+    const minX = Math.min(...baseline.pipelineNodes.map(n => n.position?.x ?? 0))
+    const minY = Math.min(...baseline.pipelineNodes.map(n => n.position?.y ?? 0))
+    for (const n of baseline.pipelineNodes) {
+      const def = catalog.blocks[n.type]
+      if (!def) continue
+      const cat = catalog.categories.find(c => c.id === def.cat)
+      const label = def.segs.find(s => s.t === 'text')?.v ?? n.type
+      const newId = remap(n.id)
+      idMap.set(n.id, newId)
+      used.add(newId)
+      newNodes.push({
+        id: newId,
+        type: 'block',
+        dragHandle: '.block-drag-handle',
+        position: {
+          x: anchor.x + ((n.position?.x ?? 0) - minX),
+          y: anchor.y + ((n.position?.y ?? 0) - minY),
+        },
+        data: {
+          type: n.type,
+          label,
+          category: def.cat,
+          categoryColor: cat?.color ?? theme.color.accent,
+          segs: def.segs,
+          fields: { ...segsToFields(def), ...Object.fromEntries(Object.entries(n.params ?? {}).map(([k, v]) => [k, String(v)])) },
+          inputs: def.inputs,
+          outputs: def.outputs,
+        },
+      })
+    }
+    const newEdges: Edge[] = baseline.pipelineEdges
+      .filter(e => idMap.has(e.source) && idMap.has(e.target))
+      .map((e, i) => ({
+        id: `e_${baseline.slug}_${Date.now()}_${i}`,
+        source: idMap.get(e.source)!,
+        sourceHandle: e.source_port,
+        target: idMap.get(e.target)!,
+        targetHandle: e.target_port,
+        type: 'flow',
+      }))
+    store.setFlowNodes([...existing, ...newNodes])
+    store.addFlowEdges(newEdges)
+    fitViewTimerRef.current = setTimeout(() => fitView({ padding: 0.2, duration: 300 }), 50)
+  }, [catalog, fitView])
+
   const onDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault()
       if (!catalog) return
+      // Baseline entière d'abord (mime dédié), sinon bloc unitaire.
+      const baselineSlug = e.dataTransfer.getData('application/mlblock-pipeline')
+      if (baselineSlug) {
+        const anchor = screenToFlowPosition({ x: e.clientX, y: e.clientY })
+        insertBaseline(baselineSlug, anchor)
+        return
+      }
       const type = e.dataTransfer.getData('application/mlblock-type')
       if (!type || !catalog.blocks[type]) return
       useAppStore.getState().commitUndoPoint()
@@ -351,7 +417,7 @@ const FlowCanvasInner = React.memo(function FlowCanvasInner() {
       addFlowNode(node)
       fitViewTimerRef.current = setTimeout(() => fitView({ padding: 0.2, duration: 300 }), 50)
     },
-    [catalog, screenToFlowPosition, buildNode, addFlowNode, fitView]
+    [catalog, screenToFlowPosition, buildNode, addFlowNode, fitView, insertBaseline]
   )
 
   const warnMissingChildren = useCallback((requested: string[]) => {

@@ -1,0 +1,31 @@
+{
+  "id": "clustering-kmeans",
+  "title": "Clustering — K-Means + t-SNE",
+  "pattern": "clustering",
+  "description": "Regroupe des données non labellisées avec K-Means, mesure la qualité avec la silhouette, puis visualise les clusters via PCA et t-SNE.",
+  "difficulty": "facile",
+  "etapes": {
+    "chargement": ["load_sklearn_dataset"],
+    "traitement": ["kmeans", "pca"],
+    "evaluation": ["silhouette"],
+    "visualisation": ["tsne", "plot_predictions"]
+  },
+  "name": "Clustering iris (k-means + tsne)",
+  "nodes": [
+    { "id": "n1", "type": "load_sklearn_dataset", "params": { "name": "iris" }, "children": [], "position": { "x": 60, "y": 80 } },
+    { "id": "n3", "type": "kmeans", "params": { "n_clusters": "3" }, "children": [], "position": { "x": 320, "y": 80 } },
+    { "id": "n4", "type": "silhouette", "params": {}, "children": [], "position": { "x": 560, "y": 80 } },
+    { "id": "n5", "type": "pca", "params": { "n_components": "2", "target_column": "target" }, "children": [], "position": { "x": 320, "y": 340 } },
+    { "id": "n6", "type": "tsne", "params": { "n_components": "2" }, "children": [], "position": { "x": 560, "y": 340 } },
+    { "id": "n7", "type": "plot_predictions", "params": { "target_column": "target" }, "children": [], "position": { "x": 800, "y": 340 } }
+  ],
+  "edges": [
+    { "source": "n1", "source_port": "out_1", "target": "n3", "target_port": "in_1" },
+    { "source": "n1", "source_port": "out_1", "target": "n5", "target_port": "in_1" },
+    { "source": "n1", "source_port": "out_1", "target": "n6", "target_port": "in_1" },
+    { "source": "n3", "source_port": "out_1", "target": "n4", "target_port": "model" },
+    { "source": "n1", "source_port": "out_1", "target": "n4", "target_port": "in_1" },
+    { "source": "n6", "source_port": "out_1", "target": "n7", "target_port": "in_1" },
+    { "source": "n1", "source_port": "out_1", "target": "n7", "target_port": "in_2" }
+  ]
+}

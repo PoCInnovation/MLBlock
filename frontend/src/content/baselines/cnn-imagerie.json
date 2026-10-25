@@ -1,0 +1,35 @@
+{
+  "id": "cnn-imagerie",
+  "title": "CNN — Classification d'images",
+  "pattern": "cnn",
+  "description": "Convolution + pooling pour la classification d'images (MNIST). Charge un dataset torchvision, construit un réseau CNN et l'entraîne.",
+  "difficulty": "intermediaire",
+  "etapes": {
+    "chargement": ["load_torch_dataset"],
+    "traitement": ["conv2d_layer", "relu_layer", "maxpool2d_layer", "flatten_layer", "linear_layer"],
+    "evaluation": ["cross_entropy_loss", "adam", "train_model"]
+  },
+  "name": "CNN MNIST",
+  "nodes": [
+    { "id": "n1", "type": "load_torch_dataset", "params": { "name": "mnist", "batch_size": "512" }, "children": [], "position": { "x": 60, "y": 80 } },
+    { "id": "n2", "type": "conv2d_layer", "params": { "in_channels": "1", "out_channels": "32", "kernel_size": "3" }, "children": [], "position": { "x": 320, "y": 80 } },
+    { "id": "n3", "type": "relu_layer", "params": {}, "children": [], "position": { "x": 540, "y": 80 } },
+    { "id": "n4", "type": "maxpool2d_layer", "params": { "kernel_size": "2" }, "children": [], "position": { "x": 720, "y": 80 } },
+    { "id": "n5", "type": "flatten_layer", "params": {}, "children": [], "position": { "x": 900, "y": 80 } },
+    { "id": "n6", "type": "linear_layer", "params": { "in_features": "1568", "out_features": "10" }, "children": [], "position": { "x": 1120, "y": 80 } },
+    { "id": "n7", "type": "cross_entropy_loss", "params": {}, "children": [], "position": { "x": 1340, "y": 300 } },
+    { "id": "n8", "type": "adam", "params": {}, "children": [], "position": { "x": 1340, "y": 500 } },
+    { "id": "n9", "type": "train_model", "params": { "epochs": "1" }, "children": [], "position": { "x": 1560, "y": 80 } }
+  ],
+  "edges": [
+    { "source": "n1", "source_port": "out_1", "target": "n9", "target_port": "in_2" },
+    { "source": "n2", "source_port": "out_1", "target": "n3", "target_port": "in_1" },
+    { "source": "n3", "source_port": "out_1", "target": "n4", "target_port": "in_1" },
+    { "source": "n4", "source_port": "out_1", "target": "n5", "target_port": "in_1" },
+    { "source": "n5", "source_port": "out_1", "target": "n6", "target_port": "in_1" },
+    { "source": "n6", "source_port": "out_1", "target": "n9", "target_port": "in_1" },
+    { "source": "n6", "source_port": "out_1", "target": "n8", "target_port": "in_1" },
+    { "source": "n8", "source_port": "out_1", "target": "n9", "target_port": "in_3" },
+    { "source": "n7", "source_port": "out_1", "target": "n9", "target_port": "in_4" }
+  ]
+}
