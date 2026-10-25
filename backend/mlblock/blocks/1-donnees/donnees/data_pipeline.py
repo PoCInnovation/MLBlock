@@ -12,6 +12,7 @@ def data_pipeline(
 ) -> tuple["torch.utils.data.DataLoader", "torch.utils.data.DataLoader"]:  # noqa: F821
     """Pipeline de Données (DataPipeline)
     Charge, transforme, découpe et prépare les DataLoaders d'entraînement et de test.
+    Gabarit du SuperBlock "Chargement d'Images & Lots (PyTorch)".
 
     Args:
         dataset: Nom du jeu de données. (choix: cifar10|mnist|fashion_mnist|custom)

@@ -6,6 +6,8 @@ def pca(in_1: "pd.DataFrame", n_components: "int" = 2, target_column: "str | Non
         in_1: Input data.
         n_components: Composantes. (entre: 1-100)
         target_column: Target column to exclude.
+    
+    Exemple: pca(df, 2)
     """
     from sklearn.decomposition import PCA
     if target_column and target_column in in_1.columns:

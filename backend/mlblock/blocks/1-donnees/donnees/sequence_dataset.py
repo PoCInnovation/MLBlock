@@ -8,6 +8,8 @@ def sequence_dataset(in_1: "pd.DataFrame | numpy.ndarray", seq_len: "int" = 10, 
         in_1: Série (DataFrame ou ndarray).
         seq_len: Longueur des fenêtres (entre: 2-50, pas: 1).
         target_column: Colonne cible (vide = la série entière).
+    
+    Exemple: sequence_dataset(df, 10)
     """
     import numpy as np
     import torch

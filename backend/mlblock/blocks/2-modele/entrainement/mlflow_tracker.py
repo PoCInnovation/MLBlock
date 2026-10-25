@@ -5,6 +5,8 @@ def mlflow_tracker(experiment_name: "str" = "default_experiment", run_name: "str
     Args:
         experiment_name: Nom de l'expérience.
         run_name: Nom du run (optionnel).
+    
+    Exemple: mlflow_tracker()
     """
     import mlflow
     mlflow.set_tracking_uri("file:./mlruns")

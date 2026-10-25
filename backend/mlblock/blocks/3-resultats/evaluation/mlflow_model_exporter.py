@@ -5,6 +5,8 @@ def mlflow_model_exporter(model: "Model", artifact_path: "str" = "model") -> "st
     Args:
         model: Modèle entraîné à exporter.
         artifact_path: Chemin de l'artefact. (format: ./mlruns-export)
+    
+    Exemple: mlflow_model_exporter(modele)
     """
     import mlflow
     try:

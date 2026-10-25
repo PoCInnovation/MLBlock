@@ -11,5 +11,7 @@ def sgd(in_1: "torch.nn.Module", lr: "float" = 0.01, momentum: "float" = 0.0, we
         momentum: Momentum. (entre: 0-1)
         weight_decay: Décroissance de poids. (entre: 0-1)
         nesterov: Nesterov momentum.
+    
+    Exemple: sgd(modele)
     """
     return torch.optim.SGD(in_1.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay, nesterov=nesterov)

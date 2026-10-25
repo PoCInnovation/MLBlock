@@ -4,6 +4,8 @@ def to_tensor(in_1: "PIL.Image.Image | numpy.ndarray") -> "torch.Tensor":  # noq
 
     Args:
         in_1: Input image (PIL.Image ou ndarray HWC).
+    
+    Exemple: to_tensor(image)
     """
     from torchvision import transforms
     return transforms.ToTensor()(in_1)

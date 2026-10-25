@@ -12,6 +12,7 @@ def ml_pipeline(
 ) -> tuple["Model", "numpy.ndarray"]:  # noqa: F821
     """Pipeline ML Tabulaire (MLPipeline)
     Pipeline Scikit-Learn complet enchaînant normalisation, PCA et modèle estimateur.
+    Gabarit du SuperBlock "Modèle Statistique & Arbres (Scikit-Learn)".
 
     Args:
         in_1: Données tabulaires d'entrée (pd.DataFrame).

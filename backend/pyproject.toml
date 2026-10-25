@@ -47,6 +47,7 @@ select = ["E", "F"]
 # Les F821 des annotations sont traitées ligne par ligne (# noqa) pour ne jamais
 # masquer une vraie faute de frappe dans le corps exécutable d'un bloc.
 "mlblock/blocks/**/*.py" = ["E501"]
+"scripts/**/*.py" = ["E501"]
 
 [tool.uv.sources]
 torch = [

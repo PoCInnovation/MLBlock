@@ -7,6 +7,8 @@ def df_to_loader(in_1: "pd.DataFrame", target_column: "str" = "target", batch_si
         target_column: Colonne cible (labels).
         batch_size: Taille des lots. (suggestions: 16|32|64|128)
         shuffle: Mélanger les lots.
+    
+    Exemple: df_to_loader(df)
     """
     import torch
     from torch.utils.data import DataLoader, TensorDataset

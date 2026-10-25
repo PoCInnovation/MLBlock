@@ -11,6 +11,8 @@ def svm(in_1: "pd.DataFrame", target_column: "str", task: Literal["classificatio
         task: Task type.
         kernel: Kernel type.
         C: Régularisation. (entre: 0.001-100)
+    
+    Exemple: svm(df, "target")
     """
     from sklearn.svm import SVC, SVR
     X = in_1.drop(columns=[target_column])

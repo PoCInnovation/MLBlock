@@ -10,6 +10,8 @@ def q_learning(env: "Env", episodes: "int" = 500, lr: "float" = 0.1, gamma: "flo
         episodes: Nombre d'épisodes (entre: 100-2000, pas: 100).
         lr: Taux d'apprentissage (entre: 0.01-0.5, pas: 0.01).
         gamma: Facteur d'actualisation (entre: 0.9-0.999, pas: 0.001).
+    
+    Exemple: q_learning(env, 500)
     """
     rng = np.random.default_rng(42)
     n_actions = env.action_space.n

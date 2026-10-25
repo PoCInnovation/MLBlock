@@ -22,13 +22,15 @@ SUPERBLOCK_DEFS: dict[str, dict[str, Any]] = {
     "tabular_data_pipeline": {
         "title": "Préparation Tabulaire (Scikit-Learn)",
         "description": "Charge un CSV puis standardise les features.",
+        "example": "Exemple: load_csv puis standard_scaler, sortie df",
         "macro_stage": 1,
         "engine": "sklearn",
         "children": [_child("load_csv"), _child("standard_scaler")],
     },
     "torch_data_pipeline": {
         "title": "Chargement d'Images & Lots (PyTorch)",
-        "description": "Charge un dataset d'images puis l'enveloppe en DataLoader.",
+        "description": "Prépare les DataLoaders train/test via le gabarit data_pipeline.",
+        "example": "Exemple: data_pipeline, sortie deux DataLoaders",
         "macro_stage": 1,
         "engine": "pytorch",
         "children": [_child("load_torch_dataset"), _child("data_loader")],
@@ -36,6 +38,7 @@ SUPERBLOCK_DEFS: dict[str, dict[str, Any]] = {
     "gym_env_pipeline": {
         "title": "Monde Virtuel & Simulation (Gymnasium)",
         "description": "Instancie un environnement Gymnasium.",
+        "example": "Exemple: create_env, sortie Env",
         "macro_stage": 1,
         "engine": "gym",
         "children": [_child("create_env")],
@@ -43,6 +46,7 @@ SUPERBLOCK_DEFS: dict[str, dict[str, Any]] = {
     "nlp_data_pipeline": {
         "title": "Préparation de Texte (PyTorch)",
         "description": "Découpe un texte en tokens puis construit le vocabulaire.",
+        "example": "Exemple: tokenize puis build_vocab",
         "macro_stage": 1,
         "engine": "pytorch",
         "children": [_child("tokenize"), _child("build_vocab")],
@@ -50,6 +54,7 @@ SUPERBLOCK_DEFS: dict[str, dict[str, Any]] = {
     "sequential_model": {
         "title": "Réseau de Neurones Séquentiel (PyTorch)",
         "description": "Conteneur vide à remplir de couches nn.Module.",
+        "example": "Exemple: empilez linear_layer puis relu_layer",
         "macro_stage": 2,
         "engine": "pytorch",
         "children": [],
@@ -58,7 +63,8 @@ SUPERBLOCK_DEFS: dict[str, dict[str, Any]] = {
     },
     "sklearn_model_trainer": {
         "title": "Modèle Statistique & Arbres (Scikit-Learn)",
-        "description": "Entraîne un estimateur statistique sur données tabulaires.",
+        "description": "Chaîne scaler, PCA et estimateur via le gabarit ml_pipeline.",
+        "example": "Exemple: ml_pipeline, sortie modele et projections",
         "macro_stage": 2,
         "engine": "sklearn",
         "children": [_child("logistic_regression")],
@@ -66,6 +72,7 @@ SUPERBLOCK_DEFS: dict[str, dict[str, Any]] = {
     "xgboost_trainer": {
         "title": "Modèle de Boosting Rapide (XGBoost)",
         "description": "Entraîne un boosting XGBoost sur données tabulaires.",
+        "example": "Exemple: xgboost_classifier, sortie modele",
         "macro_stage": 2,
         "engine": "sklearn",
         "children": [_child("xgboost_classifier")],
@@ -73,6 +80,7 @@ SUPERBLOCK_DEFS: dict[str, dict[str, Any]] = {
     "rl_agent_trainer": {
         "title": "Apprentissage par Renforcement (Gymnasium)",
         "description": "Entraîne une table Q sur un environnement discret.",
+        "example": "Exemple: q_learning, sortie politique",
         "macro_stage": 2,
         "engine": "gym",
         "children": [_child("q_learning")],
@@ -80,6 +88,7 @@ SUPERBLOCK_DEFS: dict[str, dict[str, Any]] = {
     "deep_evaluator": {
         "title": "Score & Courbes d'Apprentissage (Plotly / PyTorch)",
         "description": "Trace prédictions vs valeurs réelles (PNG).",
+        "example": "Exemple: plot_predictions, sortie image PNG",
         "macro_stage": 3,
         "engine": "pytorch",
         "children": [_child("plot_predictions")],
@@ -87,6 +96,7 @@ SUPERBLOCK_DEFS: dict[str, dict[str, Any]] = {
     "confusion_matrix_eval": {
         "title": "Matrice de Confusion & Précision (Seaborn / Scikit-Learn)",
         "description": "Compare les prédictions aux valeurs réelles.",
+        "example": "Exemple: confusion_matrix, sortie matrice",
         "macro_stage": 3,
         "engine": "sklearn",
         "children": [_child("confusion_matrix")],
@@ -94,6 +104,7 @@ SUPERBLOCK_DEFS: dict[str, dict[str, Any]] = {
     "clustering_visualizer": {
         "title": "Visualisation de Groupes & Carte 2D (Plotly / Scikit-Learn)",
         "description": "Regroupe les données en clusters K-means.",
+        "example": "Exemple: kmeans, sortie modele",
         "macro_stage": 3,
         "engine": "sklearn",
         "children": [_child("kmeans")],
@@ -101,6 +112,7 @@ SUPERBLOCK_DEFS: dict[str, dict[str, Any]] = {
     "agent_rollout_viewer": {
         "title": "Score & Démonstration de l'Agent (Gymnasium / Plotly)",
         "description": "Joue des épisodes et retourne la récompense moyenne.",
+        "example": "Exemple: evaluate_agent, sortie recompense",
         "macro_stage": 3,
         "engine": "gym",
         "children": [_child("evaluate_agent")],
@@ -148,7 +160,7 @@ def register_superblocks() -> None:
             outputs = []
         BLOCK_REGISTRY[sb_id] = Block(
             name=sb_id,
-            description=f"{d['title']}.\n{d['description']}",
+            description=f"{d['title']}.\n{d['description']}" + (f"\n\n{d['example']}" if d.get('example') else ""),
             category=Category(
                 name="superblocks",
                 color=MacroStage(int(d["macro_stage"])).color,

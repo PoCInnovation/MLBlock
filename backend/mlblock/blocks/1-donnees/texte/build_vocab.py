@@ -4,6 +4,8 @@ def build_vocab(in_1: "list[str]") -> "dict":
 
     Args:
         in_1: Liste de tokens.
+    
+    Exemple: build_vocab(["bonjour", "monde"])
     """
     unique = sorted(set(in_1))
     return {t: i + 1 for i, t in enumerate(unique)}

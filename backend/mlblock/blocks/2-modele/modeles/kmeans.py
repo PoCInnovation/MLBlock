@@ -5,6 +5,8 @@ def kmeans(in_1: "pd.DataFrame", n_clusters: "int" = 3) -> "Model":  # noqa: F82
     Args:
         in_1: Données d'entraînement.
         n_clusters: Nombre de clusters (entre: 2-10, pas: 1).
+    
+    Exemple: kmeans(df, 3)
     """
     from sklearn.cluster import KMeans
 

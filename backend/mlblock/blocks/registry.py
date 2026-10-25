@@ -11,7 +11,6 @@ BLOCK_SOURCES: dict[str, str] = {}
 ADVANCED_ACTIVATIONS = {
     "gelu",
     "selu",
-    "mish",
     "elu",
     "prelu",
     "leaky_relu",
@@ -19,7 +18,67 @@ ADVANCED_ACTIVATIONS = {
     "tanh",
     "identity",
     "sigmoid",
-    "softmax",
+}
+
+# Blocks hidden from the beginner palette (visible with the "advanced"
+# toggle). Rule: a block stays visible iff used by the 12 canonical
+# exercises or explicitly justified; anything else lives here.
+# Per-file opt-out also works via `__advanced__ = True` or "(avancé)".
+ADVANCED_BLOCKS = {
+    # Expert activation variants (relu_layer + softmax stay visible).
+    "sigmoid",
+    "tanh",
+    "elu",
+    "gelu",
+    "leaky_relu",
+    "prelu",
+    "selu",
+    "silu",
+    # Fine-grained loading helpers.
+    "random_split",
+    "tensor_dataset",
+    "load_image",
+    "load_text",
+    # Long-training robustness (train_model covers the common case).
+    "train_epoch",
+    "early_stopping",
+    "model_checkpoint",
+    "cosine_lr",
+    "step_lr",
+    "reduce_lr_on_plateau",
+    # Specialized layers (conv2d_layer covers the common case).
+    "conv1d_layer",
+    "conv3d_layer",
+    "conv_transpose2d_layer",
+    "upsample",
+    # Tensor-op duplicates of composable *_layer blocks (Module wins).
+    "embedding",
+    # Virtual source block (raises if executed; input_layer covers it).
+    "input",
+    # Niche estimators and preprocessing.
+    "isolation_forest",
+    "resize",
+    "polynomial_features",
+    # 1D / style-transfer normalizations (batchnorm2d covers the default).
+    "batchnorm1d",
+    "layernorm",
+    "instancenorm2d",
+    # Fixed-output pooling (maxpool2d_layer covers the default).
+    "avgpool2d",
+    "adaptive_avgpool2d",
+    "adaptive_maxpool2d",
+    # Tensor-op recurrent cells (composable *_layer blocks cover them).
+    "lstm",
+    "gru",
+    "rnn",
+    "multihead_attention",
+    # Legacy dataset loader (load_torch_dataset covers the common case).
+    "torch_dataset",
+    # ndarray t-SNE coordinates (visualisation/tsne covers the plotted one).
+    "tsne_coords",
+    # Mega-blocks superseded by SuperBlock templates (kept for compatibility).
+    "data_pipeline",
+    "ml_pipeline",
 }
 
 
@@ -200,6 +259,7 @@ def _inspect_function(name: str, fn: Callable, category: Any) -> Any:
     is_advanced = (
         bool(getattr(fn, "__advanced__", False))
         or (cat_name == "activation" and name in ADVANCED_ACTIVATIONS)
+        or name in ADVANCED_BLOCKS
         or "(avancé)" in (fn.__doc__ or "").lower()
     )
     group = getattr(fn, "__group__", "advanced" if is_advanced else "core")

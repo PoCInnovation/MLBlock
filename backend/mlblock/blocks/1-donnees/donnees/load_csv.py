@@ -7,6 +7,8 @@ def load_csv(path: "file") -> "pd.DataFrame":  # noqa: F821 -- annotation descri
 
     Args:
         path: URL du fichier CSV. (format: .csv)
+    
+    Exemple: load_csv("data/iris.csv")
     """
     import pandas as pd
 

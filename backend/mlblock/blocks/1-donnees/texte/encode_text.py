@@ -9,6 +9,8 @@ def encode_text(in_1: "list[str]", vocab: "dict", max_len: "int" = 32) -> "numpy
         in_1: Liste de tokens.
         vocab: Vocabulaire (dict token → index).
         max_len: Longueur maximale (entre: 4-64, pas: 1).
+    
+    Exemple: encode_text(tokens, vocab)
     """
     indices = [vocab.get(t, 0) for t in in_1[:max_len]]
     indices += [0] * (max_len - len(indices))

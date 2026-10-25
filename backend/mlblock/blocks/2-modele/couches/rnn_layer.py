@@ -33,6 +33,8 @@ def rnn_layer(input_size: "int", hidden_size: "int", in_1: "torch.nn.Module" = N
         bias: Biais.
         dropout: Probabilité de dropout. (entre: 0-1)
         bidirectional: Bidirectionnel.
+    
+    Exemple: rnn_layer(16, 32)
     """
     rnn = nn.RNN(input_size=input_size, hidden_size=hidden_size, num_layers=num_layers, nonlinearity=nonlinearity, bias=bias, dropout=dropout, bidirectional=bidirectional, batch_first=True)
     layer = _RNNOut(rnn, bidirectional=bidirectional)

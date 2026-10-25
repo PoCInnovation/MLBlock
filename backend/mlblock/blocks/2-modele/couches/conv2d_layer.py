@@ -12,6 +12,8 @@ def conv2d_layer(in_channels: "int", out_channels: "int", in_1: "torch.nn.Module
         kernel_size: Taille du filtre. (impair) (suggestions: 1|3|5|7)
         stride: Pas. (entre: 1-8)
         padding: Padding. (entre: 0-8)
+    
+    Exemple: conv2d_layer(3, 16)
     """
     from torch import nn
 

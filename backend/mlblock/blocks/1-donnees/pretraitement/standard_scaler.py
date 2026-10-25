@@ -5,6 +5,8 @@ def standard_scaler(in_1: "pd.DataFrame", target_column: "str | None" = None) ->
     Args:
         in_1: Input data.
         target_column: Target column to exclude.
+    
+    Exemple: standard_scaler(df)
     """
     import pandas as pd
     from sklearn.preprocessing import StandardScaler

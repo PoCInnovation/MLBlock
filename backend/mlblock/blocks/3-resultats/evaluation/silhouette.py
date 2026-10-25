@@ -5,6 +5,8 @@ def silhouette(model: "Model", in_1: "pd.DataFrame") -> "float":  # noqa: F821 -
     Args:
         model: Modèle de clustering (k-means).
         in_1: Données d'entraînement.
+    
+    Exemple: silhouette(modele, df)
     """
     from sklearn.metrics import silhouette_score
 

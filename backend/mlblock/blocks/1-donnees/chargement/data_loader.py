@@ -10,5 +10,7 @@ def data_loader(in_1: "torch.utils.data.Dataset", batch_size: "int" = 32, shuffl
         batch_size: Batch size. (suggestions: 16|32|64|128)
         shuffle: Whether to shuffle.
         num_workers: Number of workers.
+    
+    Exemple: data_loader(dataset, 32)
     """
     return torch.utils.data.DataLoader(in_1, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)

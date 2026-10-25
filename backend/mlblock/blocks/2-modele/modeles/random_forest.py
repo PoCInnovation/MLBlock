@@ -7,6 +7,8 @@ def random_forest(train_data: "pd.DataFrame", target_column: "str", n_estimators
         target_column: Colonne cible.
         n_estimators: Nombre d'arbres. (entre: 10-1000) (suggestions: 50|100|200|500)
         max_depth: Profondeur max. (entre: 1-100)
+    
+    Exemple: random_forest(df, "target")
     """
     from sklearn.ensemble import RandomForestClassifier
     X = train_data.drop(columns=[target_column])

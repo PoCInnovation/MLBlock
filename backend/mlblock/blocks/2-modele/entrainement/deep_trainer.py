@@ -25,6 +25,8 @@ def deep_trainer(
         learning_rate: Taux d'apprentissage. (entre: 0.00001-1.0) (suggestions: 0.001|0.01|0.1)
         loss_fn: Fonction de coût objectif. (choix: cross_entropy|mse)
         device: Matériel d'exécution du calcul. (choix: cpu|cuda|mps)
+    
+    Exemple: deep_trainer(donnees, modele)
     """
     import torch.nn as nn
     import torch.optim as optim

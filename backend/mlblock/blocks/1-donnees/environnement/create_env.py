@@ -4,6 +4,8 @@ def create_env(env_id: "str" = "CartPole-v1") -> "Env":  # noqa: F821 -- annotat
 
     Args:
         env_id: Identifiant de l'environnement (choix: CartPole-v1|MountainCar-v0|Acrobot-v1).
+    
+    Exemple: create_env("CartPole-v1")
     """
     import gymnasium as gym
 

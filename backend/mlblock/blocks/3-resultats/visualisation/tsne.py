@@ -19,6 +19,8 @@ def tsne(
         target_column: Colonne cible pour la coloration (optionnelle).
         n_components: Dimensions de sortie (2 par défaut). (entre: 2-3, pas: 1)
         perplexity: Perplexité pour le manifold. (entre: 5-50, pas: 5)
+    
+    Exemple: tsne(df)
     """
     import matplotlib
     matplotlib.use("Agg")

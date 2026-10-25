@@ -9,6 +9,8 @@ def load_sklearn_dataset(name: "str", target: "str" = "target") -> "pd.DataFrame
     Args:
         name: Dataset (choix: iris|digits|wine|breast_cancer).
         target: Nom de la colonne cible.
+    
+    Exemple: load_sklearn_dataset("iris")
     """
     from sklearn import datasets as sk_datasets
 

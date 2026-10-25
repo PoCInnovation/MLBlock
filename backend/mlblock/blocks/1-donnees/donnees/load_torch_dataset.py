@@ -4,7 +4,6 @@ DOWNLOAD_TIMEOUT_S = 60
 def load_torch_dataset(name: "str", batch_size: "int" = 32, split: "str" = "train") -> "torch.utils.data.Dataset":  # noqa: F821 -- annotation descriptive en chaîne (métadonnées DSL, noms virtuels)
     """Load Torchvision Dataset.
     Charge MNIST, FashionMNIST ou CIFAR10 en Dataset (téléchargement auto).
-    Déprécié : préférez torch_dataset + data_loader.
 
     Le téléchargement est borné par DOWNLOAD_TIMEOUT_S : sans borne, un hôte
     à l'egress cassé bloque le run jusqu'au timeout GPU (observé en live).
@@ -13,6 +12,8 @@ def load_torch_dataset(name: "str", batch_size: "int" = 32, split: "str" = "trai
         name: Dataset (choix: mnist|fashion_mnist|cifar10).
         batch_size: Taille des lots (ignoré, conservé pour compatibilité).
         split: train ou test (choix: train|test).
+    
+    Exemple: load_torch_dataset("mnist")
     """
     import socket
 
