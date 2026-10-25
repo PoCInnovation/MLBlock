@@ -1,4 +1,8 @@
 import { useRef, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { useShallow } from 'zustand/react/shallow'
+import { analyzePipeline } from '../../api/client'
+import { toServerPayload } from '../../store/pipelineDocument'
 import { Save, Play, Upload, Download, Square, MoreVertical, FolderKanban, Trash2, LogOut, Check, Undo2, Redo2, Sparkles, Plus, Sliders, Terminal, ChevronDown, Boxes, GraduationCap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -41,6 +45,18 @@ export default function EditorHeader() {
   const canUndo = useAppStore(s => s.canUndo())
   const canRedo = useAppStore(s => s.canRedo())
   const undo = useAppStore(s => s.undo)
+  const { flowNodes, flowEdges } = useAppStore(
+    useShallow(s => ({ flowNodes: s.flowNodes, flowEdges: s.flowEdges }))
+  )
+  const analysisQuery = useQuery({
+    queryKey: ['pipeline-analysis', flowNodes.length, flowEdges.length],
+    queryFn: () => {
+      const { nodes, edges } = toServerPayload(useAppStore.getState())
+      return analyzePipeline(nodes, edges)
+    },
+    enabled: flowNodes.length > 0,
+    staleTime: 1000,
+  })
   const redo = useAppStore(s => s.redo)
   const { importFile } = usePipelineImport()
 
@@ -274,6 +290,20 @@ export default function EditorHeader() {
           >
             <Play className="size-3.5 fill-current" />
             <span>Lancer</span>
+          </Button>
+        )}
+        {analysisQuery.data && flowNodes.length > 0 && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setActiveSheet(activeSheet === 'journal' ? null : 'journal')}
+            className="gap-1.5 font-bold text-xs h-8 border-border hover:bg-surface3"
+            title="Score d'intelligence IA du pipeline (cliquer pour examiner les conseils)"
+            aria-label={`Score IA : ${analysisQuery.data.score} sur 100, niveau ${analysisQuery.data.level}`}
+          >
+            <Sparkles className="size-3.5 text-primary" />
+            <span className="font-mono text-xs">{analysisQuery.data.score}%</span>
+            <span className="hidden sm:inline text-[11px] opacity-80">{analysisQuery.data.level}</span>
           </Button>
         )}
         <ThemeToggle />
