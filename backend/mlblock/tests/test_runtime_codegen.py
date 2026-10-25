@@ -419,3 +419,25 @@ def test_train_model_dict_outputs_unpacked_by_key(monkeypatch):
     assert not any(t == {"type": "text", "text": "model"} or t == {"type": "text", "text": "history"} for t in texts)
     curves = [t for t in texts if t.get("type") == "curve" and len(t.get("points", [])) == 1]
     assert curves, f"history (1 loss) introuvable : {texts}"
+
+
+def test_superblock_custom_child_params_emitted():
+    from mlblock.core.generator import generate_code
+    from mlblock.server.schemas import PipelineNode
+
+    node = PipelineNode(
+        id="c1",
+        type="sequential_model",
+        children=[
+            PipelineNode(
+                id="c1.conv2d_layer",
+                type="conv2d_layer",
+                params={"in_channels": 1, "out_channels": 64, "kernel_size": 5},
+            ),
+            PipelineNode(id="c1.relu_layer", type="relu_layer", params={}),
+        ],
+    )
+    code = generate_code([node], [])
+    assert "out_channels=64" in code
+    assert "kernel_size=5" in code
+    compile(code, "<custom_child>", "exec")
