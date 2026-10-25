@@ -1103,6 +1103,14 @@ def validate_graph(body: ValidationRequest) -> ValidationResponse:
     _vr = validate_pipeline([n.model_dump() for n in body.nodes], [e.model_dump() for e in body.edges])
     return ValidationResponse(valid=_vr.valid, errors=_vr.errors)
 
+@pipelines_router.post("/analyze")
+@validation_router.post("/analyze")
+def analyze_pipeline_advisor(body: ValidationRequest) -> dict:
+    from mlblock.core.advisor import analyze_pipeline
+
+    res = analyze_pipeline([n.model_dump() for n in body.nodes], [e.model_dump() for e in body.edges])
+    return res.to_dict()
+
 
 @pipelines_router.post("/{pipeline_id}/build")
 def build_pipeline_model(
