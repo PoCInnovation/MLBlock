@@ -432,7 +432,7 @@ def test_superblock_custom_child_params_emitted():
             PipelineNode(
                 id="c1.conv2d_layer",
                 type="conv2d_layer",
-                params={"in_channels": 1, "out_channels": 64, "kernel_size": 5},
+                params={"in_channels": "1", "out_channels": "64", "kernel_size": "5"},
             ),
             PipelineNode(id="c1.relu_layer", type="relu_layer", params={}),
         ],

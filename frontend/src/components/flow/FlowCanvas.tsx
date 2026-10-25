@@ -729,7 +729,21 @@ function NodeInspector() {
             const missing = !childDef
             const label = childDef?.segs.find(s => s.t === 'text')?.v ?? childType
             const hasParams = Boolean(childDef && childDef.segs.some(s => s.t !== 'text'))
-            const isExpanded = Boolean(expandedChildren[childType])
+            const childKey = `${selected?.id ?? ''}.${childType}`
+            const isExpanded = Boolean(expandedChildren[childKey])
+            const toggleChild = () => {
+              if (!selected) return
+              if (child) {
+                updateNodeChildren(selected.id, children.filter(c => c.type !== childType))
+              } else if (catalog) {
+                const fresh = defaultChildren(
+                  { ...sbEntry, children: [childType] },
+                  catalog,
+                  selected.id,
+                )
+                updateNodeChildren(selected.id, [...children, ...fresh])
+              }
+            }
             return (
               <div
                 key={childType}
@@ -739,22 +753,15 @@ function NodeInspector() {
                   <Checkbox
                     checked={on}
                     disabled={missing}
-                    onCheckedChange={() => {
-                      if (!selected) return
-                      if (child) {
-                        updateNodeChildren(selected.id, children.filter(c => c.type !== childType))
-                      } else if (catalog) {
-                        const fresh = defaultChildren(
-                          { ...sbEntry, children: [childType] },
-                          catalog,
-                          selected.id,
-                        )
-                        updateNodeChildren(selected.id, [...children, ...fresh])
-                      }
-                    }}
+                    onCheckedChange={toggleChild}
                     aria-label={label}
                   />
-                  <span className="text-sm font-bold text-foreground flex-1">{label}</span>
+                  <span
+                    className={`text-sm font-bold text-foreground flex-1 select-none ${missing ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                    onClick={missing ? undefined : toggleChild}
+                  >
+                    {label}
+                  </span>
                   <Badge variant="outline" className="text-[10px] shrink-0">
                     {missing ? 'indisponible' : on ? 'inclus' : 'exclu'}
                   </Badge>
@@ -766,9 +773,11 @@ function NodeInspector() {
                       className="size-7 shrink-0 text-muted-foreground hover:text-foreground"
                       onClick={(e) => {
                         e.stopPropagation()
-                        setExpandedChildren(prev => ({ ...prev, [childType]: !prev[childType] }))
+                        setExpandedChildren(prev => ({ ...prev, [childKey]: !prev[childKey] }))
                       }}
                       aria-label={`Paramètres de ${label}`}
+                      aria-expanded={isExpanded}
+                      aria-controls={`params-${childKey}`}
                       title={isExpanded ? 'Replier les paramètres' : 'Modifier les paramètres'}
                     >
                       {isExpanded ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
@@ -776,7 +785,10 @@ function NodeInspector() {
                   )}
                 </div>
                 {on && hasParams && isExpanded && child && childDef && (
-                  <div className="border-t border-border/60 bg-muted/20 px-3 py-3 flex flex-col gap-3">
+                  <div
+                    id={`params-${childKey}`}
+                    className="border-t border-border/60 bg-muted/20 px-3 py-3 flex flex-col gap-3"
+                  >
                     <BlockSegments
                       segs={childDef.segs}
                       fields={(child.params as Record<string, string>) ?? {}}

@@ -214,10 +214,16 @@ const useAppStore = create<AppState>((set, get) => ({
   // Undo/redo : snapshot de l'état AVANT chaque geste (commit explicite aux
   // points de capture). Pile max 50, évincement du plus ancien ; un nouveau
   // commit après undo tronque la pile de redo (comportement standard).
-  commitUndoPoint: () => set((s) => ({
-    undoStack: [...s.undoStack.slice(-49), { nodes: s.flowNodes, edges: s.flowEdges, name: s.projectName }],
-    redoStack: [],
-  })),
+  commitUndoPoint: () => set((s) => {
+    const last = s.undoStack[s.undoStack.length - 1]
+    if (last && last.nodes === s.flowNodes && last.edges === s.flowEdges && last.name === s.projectName) {
+      return s
+    }
+    return {
+      undoStack: [...s.undoStack.slice(-49), { nodes: s.flowNodes, edges: s.flowEdges, name: s.projectName }],
+      redoStack: [],
+    }
+  }),
   undo: () => {
     const s = get()
     if (!s.undoStack.length) return
