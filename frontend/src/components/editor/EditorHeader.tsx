@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useShallow } from 'zustand/react/shallow'
 import { analyzePipeline } from '../../api/client'
@@ -48,14 +48,15 @@ export default function EditorHeader() {
   const { flowNodes, flowEdges } = useAppStore(
     useShallow(s => ({ flowNodes: s.flowNodes, flowEdges: s.flowEdges }))
   )
+  const payloadKey = useMemo(() => JSON.stringify(toServerPayload({ flowNodes, flowEdges })), [flowNodes, flowEdges])
   const analysisQuery = useQuery({
-    queryKey: ['pipeline-analysis', flowNodes.length, flowEdges.length],
+    queryKey: ['pipeline-analysis', payloadKey],
     queryFn: () => {
       const { nodes, edges } = toServerPayload(useAppStore.getState())
       return analyzePipeline(nodes, edges)
     },
     enabled: flowNodes.length > 0,
-    staleTime: 1000,
+    staleTime: 500,
   })
   const redo = useAppStore(s => s.redo)
   const { importFile } = usePipelineImport()

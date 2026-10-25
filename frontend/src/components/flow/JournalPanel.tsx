@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import useAppStore from '../../store/useAppStore'
 import { useShallow } from 'zustand/react/shallow'
@@ -155,13 +155,15 @@ export default function JournalPanel() {
   const [filter, setFilter] = useState<Filter>('mixte')
   const activeJobId = selectedJobId ?? lastJobId
 
+  const payloadKey = useMemo(() => JSON.stringify(toServerPayload({ flowNodes, flowEdges })), [flowNodes, flowEdges])
   const analysisQuery = useQuery({
-    queryKey: ['pipeline-analysis', flowNodes.length, flowEdges.length],
+    queryKey: ['pipeline-analysis', payloadKey],
     queryFn: () => {
       const { nodes, edges } = toServerPayload(useAppStore.getState())
       return analyzePipeline(nodes, edges)
     },
     enabled: flowNodes.length > 0,
+    staleTime: 500,
   })
   const jobsQuery = useQuery({
     queryKey: ['pipeline-jobs', pipelineId],
