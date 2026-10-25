@@ -237,7 +237,7 @@ const BlockSegments = memo(function BlockSegments({
             key={o}
             type="button"
             onClick={() => set(k, o)}
-            className={`rounded-full px-2.5 py-1 text-[11px] font-bold border transition-colors cursor-pointer ${
+            className={`rounded-full px-3 py-1.5 min-h-[28px] text-xs font-bold border transition-colors cursor-pointer inline-flex items-center justify-center ${
               o === current
                 ? 'bg-primary text-primary-foreground border-primary'
                 : 'bg-muted/40 text-foreground border-border hover:bg-muted'
@@ -252,11 +252,14 @@ const BlockSegments = memo(function BlockSegments({
   const row = (s: Exclude<Segment, { t: 'text' }>, field: React.ReactNode) => {
     const value = fields?.[s.k] ?? s.def ?? ''
     const { description, hint, invalid } = describeParam(s, value)
+    const fieldId = blockId ? `${blockId}-${s.k}` : `field-${s.k}`
+    const errorId = `${fieldId}-error`
+    const hintId = `${fieldId}-hint`
     return (
       <div key={s.k} className="flex flex-col gap-2 rounded-xl border border-border/60 bg-muted/15 p-3.5">
         <div className="flex flex-col gap-1">
           <div className="flex items-baseline justify-between gap-2">
-            <span className={LABEL_CLS}>{humanKey(s.k)}</span>
+            <label htmlFor={fieldId} className={LABEL_CLS}>{humanKey(s.k)}</label>
             {s.t !== 'bool' && s.t !== 'file' && (
               <span className="text-[11px] font-bold text-muted-foreground/70">{s.t}</span>
             )}
@@ -265,8 +268,8 @@ const BlockSegments = memo(function BlockSegments({
         </div>
         {field}
         {invalid
-          ? <span className={ERR_CLS}>{invalid}</span>
-          : hint ? <span className={HINT_CLS}>{hint}</span> : null}
+          ? <span id={errorId} role="alert" className={ERR_CLS}>{invalid}</span>
+          : hint ? <span id={hintId} className={HINT_CLS}>{hint}</span> : null}
       </div>
     )
   }
@@ -276,6 +279,11 @@ const BlockSegments = memo(function BlockSegments({
       {paramSegs.map(s => {
         const value = fields?.[s.k] ?? s.def ?? ''
         const readOnly = !onUpdate || !blockId
+        const fieldId = blockId ? `${blockId}-${s.k}` : `field-${s.k}`
+        const errorId = `${fieldId}-error`
+        const hintId = `${fieldId}-hint`
+        const { invalid, hint } = describeParam(s, value)
+        const describedBy = invalid ? errorId : hint ? hintId : undefined
 
         if (s.t === 'sel') {
           return row(
@@ -284,7 +292,7 @@ const BlockSegments = memo(function BlockSegments({
               ? <Badge variant="outline" className="w-fit">{value || '—'}</Badge>
               : (
                 <Select value={value} onValueChange={(v) => set(s.k, v)}>
-                  <SelectTrigger size="sm" className="h-9 w-full text-sm">
+                  <SelectTrigger id={fieldId} size="sm" className="h-9 w-full text-sm" aria-invalid={Boolean(invalid)} aria-describedby={describedBy}>
                     <SelectValue placeholder="Choisir…" />
                   </SelectTrigger>
                   <SelectContent>
@@ -302,12 +310,15 @@ const BlockSegments = memo(function BlockSegments({
             s,
             <>
               <Input
+                id={fieldId}
                 type="text"
                 value={value}
                 onChange={e => set(s.k, e.target.value)}
                 placeholder="Valeur libre…"
                 className="h-9 text-sm"
                 disabled={readOnly}
+                aria-invalid={Boolean(invalid)}
+                aria-describedby={describedBy}
               />
               {suggestions(s.k, columnOptions?.[s.k] ?? s.opts ?? [], value)}
             </>,
@@ -317,11 +328,14 @@ const BlockSegments = memo(function BlockSegments({
         if (s.t === 'bool') {
           return row(
             s,
-            <label className="flex items-center gap-3 cursor-pointer">
+            <label htmlFor={fieldId} className="flex items-center gap-3 cursor-pointer">
               <Checkbox
+                id={fieldId}
                 checked={value === 'true'}
                 disabled={readOnly}
                 onCheckedChange={c => set(s.k, c ? 'true' : 'false')}
+                aria-invalid={Boolean(invalid)}
+                aria-describedby={describedBy}
               />
               <span className="text-sm text-foreground">{value === 'true' ? 'Activé' : 'Désactivé'}</span>
             </label>,
@@ -329,11 +343,11 @@ const BlockSegments = memo(function BlockSegments({
         }
 
         if (s.t === 'num') {
-          const { invalid } = describeParam(s, value)
           return row(
             s,
             <>
               <Input
+                id={fieldId}
                 type="number"
                 value={value}
                 onChange={e => set(s.k, e.target.value)}
@@ -342,6 +356,8 @@ const BlockSegments = memo(function BlockSegments({
                 step={s.step ?? undefined}
                 className={`h-9 text-sm ${invalid ? 'border-destructive' : ''}`}
                 disabled={readOnly}
+                aria-invalid={Boolean(invalid)}
+                aria-describedby={describedBy}
               />
               {suggestions(s.k, s.opts ?? [], value)}
             </>,
@@ -349,16 +365,18 @@ const BlockSegments = memo(function BlockSegments({
         }
 
         if (s.t === 'list') {
-          const { invalid } = describeParam(s, value)
           return row(
             s,
             <Input
+              id={fieldId}
               type="text"
               value={value}
               onChange={e => set(s.k, e.target.value)}
               placeholder="[1, 2, 3]"
               className={`h-9 font-mono text-sm ${invalid ? 'border-destructive' : ''}`}
               disabled={readOnly}
+              aria-invalid={Boolean(invalid)}
+              aria-describedby={describedBy}
             />,
           )
         }
