@@ -197,6 +197,20 @@ export async function validateGraph(nodes: PipelineNode[], edges: PipelineEdge[]
   return validationSchema.parse(data)
 }
 
+export type PipelineAnalysis = {
+  score: number
+  level: string
+  summary: string
+  strengths: string[]
+  improvements: string[]
+  tips: string[]
+}
+
+export async function analyzePipeline(nodes: PipelineNode[], edges: PipelineEdge[]): Promise<PipelineAnalysis> {
+  const { data } = await http.post<PipelineAnalysis>('/api/pipelines/analyze', { nodes, edges })
+  return data
+}
+
 export async function buildPipeline(id: string): Promise<BuildResponse> {
   const { data } = await http.post<unknown>(`/api/pipelines/${id}/build`)
   return parseOrThrow(buildResponseSchema, `POST /api/pipelines/${id}/build`, data)

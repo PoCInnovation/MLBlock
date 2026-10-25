@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import useAppStore from '../../store/useAppStore'
-import { listPipelineJobs, getJobOutputs, getPipeline } from '../../api/client'
+import { useShallow } from 'zustand/react/shallow'
+import { listPipelineJobs, getJobOutputs, getPipeline, analyzePipeline, type PipelineAnalysis } from '../../api/client'
+import { toServerPayload } from '../../store/pipelineDocument'
+import { Sparkles, CheckCircle2, AlertTriangle, Lightbulb } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -66,17 +69,100 @@ function OutputRenderer({ raw }: { raw: string }) {
   }
 }
 
-type Filter = 'logs' | 'outputs' | 'mixte'
+type Filter = 'logs' | 'outputs' | 'audit' | 'mixte'
+
+function PipelineAdvisorCard({ analysis }: { analysis: PipelineAnalysis | null | undefined }) {
+  if (!analysis) return null
+  const score = analysis.score
+  const colorCls =
+    score >= 80
+      ? 'text-success border-success/40 bg-success/10'
+      : score >= 60
+      ? 'text-primary border-primary/40 bg-primary/10'
+      : score >= 40
+      ? 'text-warning border-warning/40 bg-warning/10'
+      : 'text-destructive border-destructive/40 bg-destructive/10'
+
+  return (
+    <Card className="p-4 bg-surface2 border-border flex flex-col gap-3">
+      <div className="flex items-center justify-between gap-2 flex-wrap border-b border-border pb-3">
+        <div className="flex items-center gap-2">
+          <Sparkles className="size-4 text-primary" />
+          <span className="font-heading font-bold text-sm text-foreground">Score d&apos;Intelligence du Pipeline</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className={`font-mono font-extrabold text-sm px-2.5 py-0.5 rounded-full border ${colorCls}`}>
+            {score}/100 · {analysis.level}
+          </span>
+        </div>
+      </div>
+
+      <p className="text-xs text-muted-foreground leading-relaxed m-0">
+        {analysis.summary}
+      </p>
+
+      {analysis.strengths.length > 0 && (
+        <div className="flex flex-col gap-1 pt-1">
+          <span className="text-[11px] font-bold text-success uppercase tracking-wider flex items-center gap-1.5">
+            <CheckCircle2 className="size-3.5" /> Points forts
+          </span>
+          <ul className="m-0 pl-4 text-xs text-foreground/90 space-y-0.5">
+            {analysis.strengths.map((s, idx) => (
+              <li key={idx}>{s}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {analysis.improvements.length > 0 && (
+        <div className="flex flex-col gap-1 pt-1">
+          <span className="text-[11px] font-bold text-warning uppercase tracking-wider flex items-center gap-1.5">
+            <AlertTriangle className="size-3.5" /> Pistes d&apos;amélioration
+          </span>
+          <ul className="m-0 pl-4 text-xs text-foreground/90 space-y-0.5">
+            {analysis.improvements.map((imp, idx) => (
+              <li key={idx}>{imp}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {analysis.tips.length > 0 && (
+        <div className="flex flex-col gap-1 pt-1">
+          <span className="text-[11px] font-bold text-primary uppercase tracking-wider flex items-center gap-1.5">
+            <Lightbulb className="size-3.5" /> Conseils du Prof IA
+          </span>
+          <ul className="m-0 pl-4 text-xs text-muted-foreground space-y-0.5">
+            {analysis.tips.map((tip, idx) => (
+              <li key={idx}>{tip}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </Card>
+  )
+}
 
 export default function JournalPanel() {
   const pipelineId = useAppStore(s => s.pipelineId)
   const consoleLines = useAppStore(s => s.consoleLines)
   const lastJobId = useAppStore(s => s.lastJobId)
   const jobStatus = useAppStore(s => s.jobStatus)
+  const { flowNodes, flowEdges } = useAppStore(
+    useShallow(s => ({ flowNodes: s.flowNodes, flowEdges: s.flowEdges }))
+  )
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null)
   const [filter, setFilter] = useState<Filter>('mixte')
   const activeJobId = selectedJobId ?? lastJobId
 
+  const analysisQuery = useQuery({
+    queryKey: ['pipeline-analysis', flowNodes.length, flowEdges.length],
+    queryFn: () => {
+      const { nodes, edges } = toServerPayload(useAppStore.getState())
+      return analyzePipeline(nodes, edges)
+    },
+    enabled: flowNodes.length > 0,
+  })
   const jobsQuery = useQuery({
     queryKey: ['pipeline-jobs', pipelineId],
     queryFn: () => listPipelineJobs(pipelineId!),
@@ -197,8 +283,10 @@ export default function JournalPanel() {
                   Job <span className="font-mono text-accent-light">#{activeJobId.slice(0, 8)}</span>
                 </span>
                 <ToggleGroup type="single" value={filter} onValueChange={(v) => v && setFilter(v as Filter)} className="bg-surface2 border border-border rounded-lg p-0.5">
-                  <ToggleGroupItem value="logs" className="text-[11px] px-2.5 py-1 h-7">Logs</ToggleGroupItem>
+                  <ToggleGroupItem value="mixte" className="text-[11px] px-2.5 py-1 h-7">Tout</ToggleGroupItem>
+                  <ToggleGroupItem value="audit" className="text-[11px] px-2.5 py-1 h-7 font-bold">Score IA</ToggleGroupItem>
                   <ToggleGroupItem value="outputs" className="text-[11px] px-2.5 py-1 h-7">Sorties</ToggleGroupItem>
+                  <ToggleGroupItem value="logs" className="text-[11px] px-2.5 py-1 h-7">Logs</ToggleGroupItem>
                 </ToggleGroup>
               </div>
 
@@ -216,6 +304,14 @@ export default function JournalPanel() {
 
             {/* Content view */}
             <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
+              {(filter === 'mixte' || filter === 'audit') && (
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-[11px] font-semibold text-text-muted uppercase tracking-wider">
+                    Analyse & Recommandations IA
+                  </span>
+                  <PipelineAdvisorCard analysis={analysisQuery.data} />
+                </div>
+              )}
               {(filter === 'mixte' || filter === 'logs') && (
                 <div className="flex flex-col gap-1.5">
                   <span className="text-[11px] font-semibold text-text-muted uppercase tracking-wider">Console & Logs</span>
