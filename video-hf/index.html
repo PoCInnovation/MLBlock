@@ -1,0 +1,49 @@
+<!doctype html>
+<html
+  lang="fr"
+  data-composition-variables='[
+    {"id":"accuracy_rf","type":"string","label":"Accuracy Random Forest","default":"100,0"},
+    {"id":"accuracy_lr","type":"string","label":"Accuracy Régression logistique","default":"98,1"},
+    {"id":"n_wines","type":"string","label":"Nombre de vins","default":"178"}
+  ]'
+>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: #171311; }
+    </style>
+  </head>
+  <body>
+    <div data-hf-id="hf-vnw1" id="root" data-composition-id="main" data-start="0" data-duration="47.0" data-width="1920" data-height="1080">
+      <div id="avant" data-composition-id="avant" data-composition-src="compositions/avant.html" data-start="0" data-duration="5.0" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080" style="z-index:1"></div>
+      <div id="reveal" data-composition-id="reveal" data-composition-src="compositions/reveal.html" data-start="4.7" data-duration="3.4" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080" style="z-index:2"></div>
+      <div id="assemble" data-composition-id="assemble" data-composition-src="compositions/assemble.html" data-start="7.7" data-duration="9.2" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080" style="z-index:3"></div>
+      <div id="corrige" data-composition-id="corrige" data-composition-src="compositions/corrige.html" data-start="16.7" data-duration="6.2" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080" style="z-index:4"></div>
+      <div id="evalue" data-composition-id="evalue" data-composition-src="compositions/evalue.html" data-start="22.7" data-duration="6.2" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080" style="z-index:5"></div>
+      <div id="run" data-composition-id="run" data-composition-src="compositions/run.html" data-start="28.7" data-duration="9.5" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080" style="z-index:6"></div>
+      <div id="claim" data-composition-id="claim" data-composition-src="compositions/claim.html" data-start="38.0" data-duration="4.2" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080" style="z-index:7"></div>
+      <div id="fin" data-composition-id="fin" data-composition-src="compositions/fin.html" data-start="42.0" data-duration="5.0" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080" style="z-index:8"></div>
+      <audio id="sfx0-tick" class="clip" src="assets/sfx/tick.mp3" data-start="0.257" data-duration="0.432" data-track-index="10" data-volume="1.8"></audio>
+      <audio id="sfx1-tick" class="clip" src="assets/sfx/tick.mp3" data-start="0.557" data-duration="0.432" data-track-index="11" data-volume="1.8"></audio>
+      <audio id="sfx2-tick" class="clip" src="assets/sfx/tick.mp3" data-start="0.857" data-duration="0.432" data-track-index="12" data-volume="1.8"></audio>
+      <audio id="sfx3-whoosh" class="clip" src="assets/sfx/whoosh.mp3" data-start="4.671" data-duration="0.575" data-track-index="13" data-volume="1.0"></audio>
+      <audio id="sfx4-pop" class="clip" src="assets/sfx/pop.mp3" data-start="9.363" data-duration="0.72" data-track-index="14" data-volume="1.3"></audio>
+      <audio id="sfx5-pop" class="clip" src="assets/sfx/pop.mp3" data-start="12.313" data-duration="0.72" data-track-index="15" data-volume="1.3"></audio>
+      <audio id="sfx6-pop" class="clip" src="assets/sfx/pop.mp3" data-start="14.863" data-duration="0.72" data-track-index="16" data-volume="1.3"></audio>
+      <audio id="sfx7-error" class="clip" src="assets/sfx/error.mp3" data-start="18.488" data-duration="1.62" data-track-index="17" data-volume="1.2"></audio>
+      <audio id="sfx8-pop" class="clip" src="assets/sfx/pop.mp3" data-start="24.613" data-duration="0.72" data-track-index="18" data-volume="1.3"></audio>
+      <audio id="sfx9-pop" class="clip" src="assets/sfx/pop.mp3" data-start="31.613" data-duration="0.72" data-track-index="19" data-volume="1.3"></audio>
+      <audio id="sfx10-riser" class="clip" src="assets/sfx/riser.mp3" data-start="31.461" data-duration="10.032" data-track-index="20" data-volume="0.5"></audio>
+      <audio id="sfx11-click" class="clip" src="assets/sfx/click.mp3" data-start="42.760" data-duration="0.366" data-track-index="21" data-volume="1.4"></audio>
+    </div>
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>

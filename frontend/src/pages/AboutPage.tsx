@@ -13,14 +13,6 @@ type TeamMember = {
 
 const TEAM: TeamMember[] = [
     {
-        name: 'Ilan',
-        role: 'Dev',
-        tagline:
-            "J'aime autant construire que transmettre, MLBlock fait les deux à la fois.",
-        color: '#D97757',
-        linkedin: 'https://www.linkedin.com/in/ilan-lp/?skipRedirect=true',
-    },
-    {
         name: 'Chedli',
         role: 'Dev',
         tagline: 'Curieux par nature, je construit des outils qui apprennent.',
@@ -37,12 +29,10 @@ const TEAM: TeamMember[] = [
             'https://www.linkedin.com/in/ali-bassim-b3956734a/?skipRedirect=true',
     },
     {
-        name: 'Sacha',
-        role: 'Responsable',
+        name: 'Pierre',
+        role: 'Responsable projet',
         tagline: 'Coordonner l\'équipe pour livrer un projet qui a du sens.',
         color: theme.color.status,
-        linkedin:
-            'https://www.linkedin.com/in/sacha-henneveux-084052304/?skipRedirect=true',
     },
 ];
 
@@ -137,7 +127,7 @@ export default function AboutPage() {
                     <div className="flex flex-col gap-3">
                         <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-foreground">L'équipe</h2>
                         <p className="text-secondary text-base">Quatre étudiants Epitech derrière le projet.</p>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                             {TEAM.map((m) => (
                                 <TeamCard key={m.name} {...m} />
                             ))}

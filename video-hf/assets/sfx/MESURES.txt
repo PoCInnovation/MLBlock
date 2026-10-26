@@ -1,0 +1,6 @@
+click   dur 0.366 | onset 0.047 peak 0.073 | lufs -25.4 truePeak -4.7 clip 0
+whoosh  dur 0.575 | onset 0.123 peak 0.162 | lufs -15.2 truePeak -2 clip 0
+pop     dur 0.72 | onset 0.116 peak 0.12 | lufs -21.2 truePeak -3.2 clip 0
+riser   dur 10.032 | onset 2.088 peak 3.472 | lufs -6.6 truePeak 0.8 clip 521
+tick    dur 0.432 | onset 0.073 peak 0.076 | lufs -36.3 truePeak -5.6 clip 0
+error   dur 1.62 | onset 0.606 peak 0.745 | lufs -29.3 truePeak -21.2 clip 0

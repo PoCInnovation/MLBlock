@@ -1,0 +1,87 @@
+<template>
+  <style>
+    @font-face { font-family: "Geist Variable"; src: url("assets/fonts/geist-latin-wght-normal.woff2") format("woff2"); font-weight: 100 900; }
+    @font-face { font-family: "Fredoka"; src: url("assets/fonts/fredoka-latin-700-normal.woff2") format("woff2"); font-weight: 700; }
+    #root { position: absolute; inset: 0; background: #171311; overflow: hidden; }
+
+    /* Temps 1 (0–2,7 s) : le vrai Journal, texte à gauche / capture à droite (même règle que les autres scènes). */
+    #ru-win { position: absolute; left: 620px; top: 0; width: 1300px; height: 1080px; overflow: hidden; border-left: 2px solid #3A332E; }
+    #ru-cam { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; }
+    #ru-job { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+    #ru-jt { position: absolute; left: 70px; top: 360px; width: 520px; font: 700 104px/1.05 "Fredoka", sans-serif; color: #F0E9E3; opacity: 0; }
+    #ru-js { position: absolute; left: 70px; top: 640px; width: 520px; font: 600 38px/1.25 "Geist Variable", Inter, sans-serif; color: #F0E9E3; opacity: 0; }
+
+    /* Temps 2 (2,75 → 6,6 s) : deux grands chiffres. */
+    #ru-res { position: absolute; inset: 0; background: #171311; opacity: 0; }
+    #ru-head { position: absolute; left: 90px; top: 50px; font: 700 64px/1 "Fredoka", sans-serif; color: #F0E9E3; opacity: 0; }
+    .ru-big { position: absolute; top: 200px; width: 800px; height: 600px; background: #1F1916; border: 3px solid #3A332E; border-radius: 32px; text-align: center; opacity: 0; }
+    #ru-b1 { left: 90px; } #ru-b2 { left: 1030px; }
+    .ru-bl { font: 700 56px/1 "Fredoka", sans-serif; color: #818CF8; margin-top: 80px; }
+    .ru-bn { font: 700 210px/1 "Fredoka", sans-serif; color: #D97757; margin-top: 80px; white-space: nowrap; }
+
+    /* Temps 3 (6,6 → 9,2 s) : la matrice et le t-SNE s'ajoutent, les deux grands chiffres se réduisent en bandeau. */
+    .ru-card { position: absolute; background: #1F1916; border: 2px solid #3A332E; border-radius: 24px; opacity: 0; }
+    #ru-c3 { left: 90px; top: 490px; width: 880px; height: 440px; padding: 24px 36px; }
+    #ru-c4 { left: 1010px; top: 490px; width: 820px; height: 540px; padding: 16px 20px; }
+    .ru-lab { font: 700 34px/1 "Fredoka", sans-serif; color: #06B6D4; margin-bottom: 18px; }
+    #ru-c4 .ru-lab { margin: 6px 0 12px 12px; }
+    .ru-mat { font: 400 56px/1.4 "JetBrains Mono", monospace; color: #F0E9E3; white-space: pre; }
+    #ru-tsne { width: 590px; margin: 0 auto; border-radius: 12px; background: #fff; display: block; }
+    #ru-prov { position: absolute; left: 90px; top: 960px; font: 600 34px/1.2 "Geist Variable", Inter, sans-serif; color: #F0E9E3; opacity: 0; }
+  </style>
+
+  <div data-hf-id="hf-6p04" id="root" data-composition-id="run" data-width="1920" data-height="1080">
+    <div data-hf-id="hf-0qjr" id="ru-win"><div data-hf-id="hf-bpqh" id="ru-cam" data-layout-allow-overflow><img data-hf-id="hf-2gyi" id="ru-job" src="assets/shots/09-run-1-start.png" alt="" /></div></div>
+    <div data-hf-id="hf-9zvq" id="ru-jt">Lance.</div>
+    <div data-hf-id="hf-zijv" id="ru-js">Un job, neuf blocs exécutés.</div>
+
+    <div data-hf-id="hf-ivs7" id="ru-res">
+      <div data-hf-id="hf-d4uq" id="ru-head">Résultats</div>
+      <div data-hf-id="hf-fytb" class="ru-big" id="ru-b1"><div data-hf-id="hf-qxmm" class="ru-bl">Random Forest</div><div data-hf-id="hf-nex8" class="ru-bn" id="ru-n1">0,0 %</div></div>
+      <div data-hf-id="hf-53bo" class="ru-big" id="ru-b2"><div data-hf-id="hf-4u1b" class="ru-bl">Régression logistique</div><div data-hf-id="hf-wbb1" class="ru-bn" id="ru-n2">0,0 %</div></div>
+      <div data-hf-id="hf-gfnu" class="ru-card" id="ru-c3"><div data-hf-id="hf-8vnf" class="ru-lab">Matrice de confusion</div><div data-hf-id="hf-5gma" class="ru-mat">[[ 19   0   0]
+ [  0  21   0]
+ [  0   0  14]]</div></div>
+      <div data-hf-id="hf-xny5" class="ru-card" id="ru-c4"><div data-hf-id="hf-unjp" class="ru-lab">t-SNE · 3 classes de vins</div><img data-hf-id="hf-a9mu" id="ru-tsne" src="assets/shots/11-tsne.png" alt="" /></div>
+      <div data-hf-id="hf-8nr6" id="ru-prov">Exécution locale du code généré · jeu wine, 178 vins</div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      // Valeurs d'un vrai run local (video/data/local-run/outputs.json) : RF 1,0 ; LR 0,9814814814814815.
+      const RF = 100.0, LR = 98.14814814814815;
+      const tl = gsap.timeline({ paused: true });
+      const cam = (x, y, s) => ({ x: 650 - x * s, y: 540 - y * s, scale: s });
+      const fmt = (v) => v.toFixed(1).replace(".", ",") + " %";
+      const n1 = document.getElementById("ru-n1"), n2 = document.getElementById("ru-n2");
+      const st = { a: 0, b: 0 };
+      const rise = (id, t) => tl.fromTo(id, { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.4, ease: "expo.out" }, t);
+
+      // Temps 1 : le job créé (capture réelle du Journal).
+      tl.set("#ru-cam", cam(960, 540, 1), 0);
+      tl.to("#ru-cam", { ...cam(560, 700, 1.5), duration: 0.6, ease: "power2.inOut" }, 0.3);
+      tl.fromTo("#ru-jt", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.18, ease: "power4.out" }, 0.5);
+      tl.fromTo("#ru-js", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.18, ease: "power4.out" }, 0.9);
+      tl.to("#ru-jt, #ru-js", { opacity: 0, duration: 0.15, ease: "power3.in" }, 2.55);
+
+      // Temps 2 : coupe sèche sur les résultats ; Régression logistique d'abord (98,1), puis Random Forest = le payoff.
+      tl.set("#ru-res", { opacity: 1 }, 2.75);
+      tl.fromTo("#ru-head", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.18, ease: "power4.out" }, 2.7);
+      rise("#ru-b2", 2.9);
+      tl.to(st, { b: LR, duration: 0.9, ease: "power2.out", onUpdate: () => { n2.textContent = fmt(st.b); } }, 3.0);
+      rise("#ru-b1", 4.3);
+      // 4,4 + 1,8 = 6,2 s : le chiffre arrive pile à l'impact (38,2 s dans le film), en accélérant comme le riser.
+      tl.to(st, { a: RF, duration: 1.8, ease: "power2.in", onUpdate: () => { n1.textContent = fmt(st.a); } }, 4.4);
+      tl.set("#ru-b1", { borderColor: "#D97757" }, 6.2);
+
+      // Temps 3 : les deux grands chiffres passent en bandeau (échelle 0,5, haut), la matrice et le t-SNE arrivent dessous.
+      tl.to("#ru-b1", { y: -70, scale: 0.55, transformOrigin: "0 0", duration: 0.5, ease: "power2.inOut" }, 6.3);
+      tl.to("#ru-b2", { y: -70, scale: 0.55, transformOrigin: "100% 0", duration: 0.5, ease: "power2.inOut" }, 6.3);
+      rise("#ru-c3", 6.9);
+      rise("#ru-c4", 7.15);
+      tl.fromTo("#ru-prov", { opacity: 0 }, { opacity: 1, duration: 0.2, ease: "power4.out" }, 6.9);
+      window.__timelines["run"] = tl;
+    })();
+  </script>
+</template>

@@ -1,0 +1,44 @@
+<template>
+  <style>
+    @font-face { font-family: "Geist Variable"; src: url("assets/fonts/geist-latin-wght-normal.woff2") format("woff2"); font-weight: 100 900; }
+    @font-face { font-family: "Fredoka"; src: url("assets/fonts/fredoka-latin-700-normal.woff2") format("woff2"); font-weight: 700; }
+    #root { position: absolute; inset: 0; background: #171311; overflow: hidden; }
+    /* Marque réelle : EditorHeader.tsx — carré arrondi #D97757, petit carré blanc au centre, « MLBlock » en Fredoka. */
+    #fi-mark { position: absolute; left: 600px; top: 220px; width: 160px; height: 160px; border-radius: 36px; background: #D97757; opacity: 0; }
+    #fi-mark i { position: absolute; left: 52px; top: 52px; width: 56px; height: 56px; border-radius: 8px; background: #fff; }
+    #fi-word { position: absolute; left: 800px; top: 232px; font: 700 136px/1 "Fredoka", sans-serif; color: #F0E9E3; opacity: 0; }
+    #fi-lead { position: absolute; left: 0; right: 0; top: 470px; text-align: center; font: 700 96px/1 "Fredoka", sans-serif; color: #F0E9E3; opacity: 0; }
+    #fi-cta { position: absolute; left: 700px; top: 640px; width: 520px; height: 110px; border-radius: 24px; background: #D97757; color: #fff; font: 700 52px/110px "Fredoka", sans-serif; text-align: center; opacity: 0; }
+    #fi-poc { position: absolute; left: 1130px; top: 840px; width: 150px; height: 150px; display: flex; align-items: center; justify-content: center; background: #FAF7F5; border-radius: 24px; opacity: 0; }
+    #fi-poc img { width: 130px; height: 130px; display: block; }
+    #fi-pocl { position: absolute; left: 640px; top: 893px; font: 600 36px/1.2 "Geist Variable", Inter, sans-serif; color: #F0E9E3; opacity: 0; }
+    #fi-cur { position: absolute; left: 0; top: 0; width: 105px; height: 105px; opacity: 0; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)); }
+  </style>
+
+  <div data-hf-id="hf-wro4" id="root" data-composition-id="fin" data-width="1920" data-height="1080">
+    <div data-hf-id="hf-nslo" id="fi-mark"><i data-hf-id="hf-wt6k"></i></div>
+    <div data-hf-id="hf-9z9r" id="fi-word">MLBlock</div>
+    <div data-hf-id="hf-04ij" id="fi-lead">9 cours guidés</div>
+    <div data-hf-id="hf-0p17" id="fi-cta">Essaie-le</div>
+    <div data-hf-id="hf-ikzh" id="fi-pocl">Un projet PoC Innovation</div>
+    <div data-hf-id="hf-xglz" id="fi-poc"><img data-hf-id="hf-rw67" src="assets/shots/poc-logo.png" alt="PoC" /></div>
+    <svg data-hf-id="hf-y8ct" id="fi-cur" viewBox="0 0 24 24"><path data-hf-id="hf-0tzq" d="M3 2 L3 19 L8 14.5 L11.2 21.5 L14 20.3 L10.9 13.4 L17.5 13 Z" fill="#F0E9E3" stroke="#171311" stroke-width="1.4" stroke-linejoin="round"/></svg>
+  </div>
+
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      // Le curseur entre, « porte » le carré de marque jusqu'à sa place, et clique : le mot apparaît sur le clic.
+      tl.fromTo("#fi-cur", { opacity: 0, x: 1700, y: 900 }, { opacity: 1, x: 670, y: 300, duration: 0.6, ease: "power2.inOut" }, 0.1);
+      tl.fromTo("#fi-mark", { opacity: 0, scale: 0.4, x: 1100, y: 640 }, { opacity: 1, scale: 1, x: 0, y: 0, duration: 0.6, ease: "power3.out" }, 0.1);
+      // Clic à 0,8 s : le mot de marque s'écrit de gauche à droite (clip), 0,35 s.
+      tl.fromTo("#fi-word", { opacity: 0, clipPath: "inset(0 100% 0 0)" }, { opacity: 1, clipPath: "inset(0 0% 0 0)", duration: 0.35, ease: "power3.out" }, 0.8);
+      tl.to("#fi-cur", { opacity: 0, duration: 0.15, ease: "power3.in" }, 1.0);
+      tl.fromTo("#fi-lead", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "power4.out" }, 1.5);
+      tl.fromTo("#fi-cta", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "power4.out" }, 2.2);
+      tl.fromTo("#fi-poc, #fi-pocl", { opacity: 0 }, { opacity: 1, duration: 0.3, ease: "power2.out" }, 2.6);
+      // Tout reste immobile jusqu'à la fin (CTA tenu 2,5 s).
+      window.__timelines["fin"] = tl;
+    })();
+  </script>
+</template>

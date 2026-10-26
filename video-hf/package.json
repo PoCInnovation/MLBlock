@@ -1,0 +1,11 @@
+{
+  "name": "mlblock-demo-v2",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "npx --yes hyperframes@0.8.199 preview",
+    "check": "npx --yes hyperframes@0.8.199 check",
+    "render": "npx --yes hyperframes@0.8.199 render",
+    "publish": "npx --yes hyperframes@0.8.199 publish"
+  }
+}

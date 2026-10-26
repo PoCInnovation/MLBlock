@@ -1,0 +1,51 @@
+<template>
+  <style>
+    @font-face { font-family: "Geist Variable"; src: url("assets/fonts/geist-latin-wght-normal.woff2") format("woff2"); font-weight: 100 900; }
+    @font-face { font-family: "Fredoka"; src: url("assets/fonts/fredoka-latin-700-normal.woff2") format("woff2"); font-weight: 700; }
+    #root { position: absolute; inset: 0; background: #171311; overflow: hidden; }
+    #co-win { position: absolute; left: 620px; top: 0; width: 1300px; height: 1080px; overflow: hidden; border-left: 2px solid #3A332E; }
+    #co-cam { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; }
+    #co-shot { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+    /* Liseré sur le vrai toast (capture : x≈1538 y≈978 w≈352 h≈78) : il l'entoure sans rien cacher. */
+    #co-ring { position: absolute; left: 1532px; top: 972px; width: 364px; height: 90px; border: 4px solid #EF4444; border-radius: 14px; opacity: 0; }
+    #co-cur { position: absolute; left: 0; top: 0; width: 70px; height: 70px; opacity: 0; filter: drop-shadow(0 3px 4px rgba(0,0,0,0.5)); }
+    #co-title { position: absolute; left: 70px; top: 360px; width: 520px; font: 700 90px/1.05 "Fredoka"; white-space: nowrap, sans-serif; color: #F0E9E3; opacity: 0; }
+    #co-title b { color: #EF4444; font-weight: 700; }
+    #co-sub { position: absolute; left: 70px; top: 640px; width: 520px; font: 600 38px/1.25 "Geist Variable", Inter, sans-serif; color: #F0E9E3; opacity: 0; }
+  </style>
+
+  <div data-hf-id="hf-9hdk" id="root" data-composition-id="corrige" data-width="1920" data-height="1080">
+    <div data-hf-id="hf-4sme" id="co-win">
+      <div data-hf-id="hf-tq98" id="co-cam" data-layout-allow-overflow>
+        <img data-hf-id="hf-aa4a" id="co-shot" src="assets/shots/06-type-refuse.png" alt="" />
+        <div data-hf-id="hf-4qgy" id="co-ring"></div>
+        <svg data-hf-id="hf-o44o" id="co-cur" viewBox="0 0 24 24"><path data-hf-id="hf-0tzq" d="M3 2 L3 19 L8 14.5 L11.2 21.5 L14 20.3 L10.9 13.4 L17.5 13 Z" fill="#F0E9E3" stroke="#171311" stroke-width="1.4" stroke-linejoin="round"/></svg>
+      </div>
+    </div>
+    <div data-hf-id="hf-9eem" id="co-title">Il te <b data-hf-id="hf-61m0">corrige.</b></div>
+    <div data-hf-id="hf-1k7l" id="co-sub">Un port « Modèle » ne se branche pas sur un tableau de nombres.</div>
+  </div>
+
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      const cam = (x, y, s) => ({ x: 650 - x * s, y: 540 - y * s, scale: s });
+      tl.set("#co-cam", cam(1300, 520, 1.3), 0);
+      // Le curseur est dans le repère de la capture : il tire le lien de la Matrice de confusion (n8, sortie ndarray à 1601,530)
+      // vers l'entrée « model » de l'Évaluation (n6, 1370,405). Le lien est refusé : le curseur revient puis sort.
+      tl.fromTo("#co-cur", { opacity: 0, x: 1601, y: 530 }, { opacity: 1, x: 1601, y: 530, duration: 0.2, ease: "power2.out" }, 0.2);
+      tl.to("#co-cur", { x: 1370, y: 405, duration: 0.7, ease: "power2.inOut" }, 0.5);
+      tl.to("#co-cur", { x: 1601, y: 530, duration: 0.5, ease: "power2.inOut" }, 1.5);
+      tl.to("#co-cur", { opacity: 0, duration: 0.15, ease: "power3.in" }, 2.0);
+      // Le refus tombe : la caméra va au coin bas-droite où le vrai toast s'affiche (centre (1514,742), s=1,6 → x∈[1108,1920] y∈[405,1080]).
+      tl.to("#co-cam", { ...cam(1513, 738, 1.6), duration: 0.6, ease: "power2.inOut" }, 2.0);
+      tl.fromTo("#co-ring", { opacity: 0 }, { opacity: 1, duration: 0.18, ease: "power4.out" }, 2.5);
+      tl.fromTo("#co-title", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.18, ease: "power4.out" }, 2.4);
+      tl.fromTo("#co-sub", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.18, ease: "power4.out" }, 2.8);
+      // Fin : la caméra recule sur tout le graphe (mouvement réel, pas un trou de 3 s) avant la sortie.
+      tl.to("#co-cam", { ...cam(960, 540, 1), duration: 1.0, ease: "power2.inOut" }, 4.8);
+      tl.to("#co-title, #co-sub", { opacity: 0, filter: "blur(8px)", duration: 0.2, ease: "power3.in" }, 5.9);
+      window.__timelines["corrige"] = tl;
+    })();
+  </script>
+</template>

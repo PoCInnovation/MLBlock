@@ -1,0 +1,72 @@
+<template>
+  <style>
+    @font-face { font-family: "Geist Variable"; src: url("assets/fonts/geist-latin-wght-normal.woff2") format("woff2"); font-weight: 100 900; }
+    @font-face { font-family: "Fredoka"; src: url("assets/fonts/fredoka-latin-700-normal.woff2") format("woff2"); font-weight: 700; }
+    #root { position: absolute; inset: 0; background: #171311; overflow: hidden; }
+    /* Deux colonnes : texte à gauche (0–620), fenêtre de capture à droite (620–1920). Le texte ne recouvre jamais la capture. */
+    #as-win { position: absolute; left: 620px; top: 0; width: 1300px; height: 1080px; overflow: hidden; border-left: 2px solid #3A332E; }
+    #as-cam { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; }
+    #as-shot { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+    .as-frame { position: absolute; border: 4px solid; border-radius: 14px; opacity: 0; }
+    #as-f1 { left: 315px; top: 482px; width: 738px; height: 124px; border-color: #22C55E; }
+    #as-f2 { left: 1088px; top: 344px; width: 246px; height: 356px; border-color: #6366F1; }
+    #as-f3 { left: 1364px; top: 344px; width: 236px; height: 370px; border-color: #06B6D4; }
+    .as-tag { position: absolute; left: 70px; top: 400px; width: 540px; font: 700 80px/1.05 "Fredoka", sans-serif; white-space: nowrap; opacity: 0; }
+    #as-t0 { color: #F0E9E3; } #as-t1 { color: #22C55E; } #as-t2 { color: #818CF8; } #as-t3 { color: #06B6D4; }
+    .as-sub { position: absolute; left: 70px; top: 640px; width: 520px; font: 600 38px/1.25 "Geist Variable", Inter, sans-serif; color: #F0E9E3; opacity: 0; }
+    #as-cur { position: absolute; left: 0; top: 0; width: 105px; height: 105px; opacity: 0; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)); }
+  </style>
+
+  <div data-hf-id="hf-6esz" id="root" data-composition-id="assemble" data-width="1920" data-height="1080">
+    <div data-hf-id="hf-205g" id="as-win">
+      <div data-hf-id="hf-jzxe" id="as-cam" data-layout-allow-overflow>
+        <img data-hf-id="hf-aiss" id="as-shot" src="assets/shots/04-editeur-complet.png" alt="" />
+        <div data-hf-id="hf-wlfs" class="as-frame" id="as-f1"></div>
+        <div data-hf-id="hf-59bn" class="as-frame" id="as-f2"></div>
+        <div data-hf-id="hf-1b7m" class="as-frame" id="as-f3"></div>
+      </div>
+    </div>
+    <div data-hf-id="hf-pfpw" class="as-tag" id="as-t0">Assemble.</div>
+    <div data-hf-id="hf-qihb" class="as-tag" id="as-t1">1 · Données</div>
+    <div data-hf-id="hf-o8sq" class="as-tag" id="as-t2">2 · Modèle</div>
+    <div data-hf-id="hf-wxm6" class="as-tag" id="as-t3">3 · Résultats</div>
+    <div data-hf-id="hf-mc3i" class="as-sub" id="as-s1">Charge ton jeu de vins.</div>
+    <div data-hf-id="hf-85p3" class="as-sub" id="as-s2">Deux modèles en duel.</div>
+    <div data-hf-id="hf-p9oe" class="as-sub" id="as-s3">Évalue. Visualise.</div>
+    <svg data-hf-id="hf-6yxi" id="as-cur" viewBox="0 0 24 24"><path data-hf-id="hf-0tzq" d="M3 2 L3 19 L8 14.5 L11.2 21.5 L14 20.3 L10.9 13.4 L17.5 13 Z" fill="#F0E9E3" stroke="#171311" stroke-width="1.4" stroke-linejoin="round"/></svg>
+  </div>
+
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      // Fenêtre 1300×1080 : le point (x,y) de la capture se place au centre de la fenêtre (650,540) à l'échelle s.
+      const cam = (x, y, s) => ({ x: 650 - x * s, y: 540 - y * s, scale: s });
+      const IN = 0.2, OUT = 0.15;   // entrée / sortie d'un texte
+      // Un seul texte (titre + sous-texte) à l'écran à la fois : chaque plan = { t0, t1 } et le plan suivant ne commence
+      // qu'après t1 + OUT. Tous les temps sont dans CE tableau : impossible de désynchroniser un titre de son sous-texte.
+      const SHOTS = [
+        { t: "#as-t0", s: null,     f: null,     cam: null,                 t0: 0.30, t1: 1.40 },
+        { t: "#as-t1", s: "#as-s1", f: "#as-f1", cam: cam(684, 544, 1.55),  t0: 1.75, t1: 4.20 },
+        { t: "#as-t2", s: "#as-s2", f: "#as-f2", cam: cam(1211, 522, 2.0),  t0: 4.70, t1: 6.75 },
+        { t: "#as-t3", s: "#as-s3", f: "#as-f3", cam: cam(1380, 529, 2.0),  t0: 7.25, t1: 9.00 },
+      ];
+      tl.set("#as-cam", cam(960, 540, 1), 0);
+      SHOTS.forEach((sh) => {
+        // La caméra part 0,5 s avant l'entrée du texte (0,6 s de trajet) ; le texte entre quand elle arrive.
+        if (sh.cam) tl.to("#as-cam", { ...sh.cam, duration: 0.6, ease: "power2.inOut" }, sh.t0 - 0.5);
+        tl.fromTo(sh.t, { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: IN, ease: "power4.out", immediateRender: false }, sh.t0);
+        tl.to(sh.t, { opacity: 0, duration: OUT, ease: "power3.in" }, sh.t1);
+        if (sh.s) {
+          tl.fromTo(sh.s, { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: IN, ease: "power4.out", immediateRender: false }, sh.t0 + 0.3);
+          tl.to(sh.s, { opacity: 0, duration: OUT, ease: "power3.in" }, sh.t1);
+        }
+        if (sh.f) {
+          tl.fromTo(sh.f, { opacity: 0 }, { opacity: 1, duration: IN, ease: "power4.out", immediateRender: false }, sh.t0);
+          tl.to(sh.f, { opacity: 0, duration: OUT, ease: "power3.in" }, sh.t1);
+        }
+      });
+
+      window.__timelines["assemble"] = tl;
+    })();
+  </script>
+</template>

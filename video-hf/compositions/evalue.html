@@ -1,0 +1,45 @@
+<template>
+  <style>
+    @font-face { font-family: "Geist Variable"; src: url("assets/fonts/geist-latin-wght-normal.woff2") format("woff2"); font-weight: 100 900; }
+    @font-face { font-family: "Fredoka"; src: url("assets/fonts/fredoka-latin-700-normal.woff2") format("woff2"); font-weight: 700; }
+    #root { position: absolute; inset: 0; background: #171311; overflow: hidden; }
+    #ev-win { position: absolute; left: 620px; top: 0; width: 1300px; height: 1080px; overflow: hidden; border-left: 2px solid #3A332E; }
+    #ev-cam { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; }
+    .ev-shot { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+    #ev-pop { opacity: 0; }
+    #ev-title { position: absolute; left: 70px; top: 360px; width: 520px; font: 700 90px/1.05 "Fredoka"; white-space: nowrap, sans-serif; color: #F0E9E3; opacity: 0; }
+    #ev-title b { color: #22C55E; font-weight: 700; }
+    #ev-sub { position: absolute; left: 70px; top: 640px; width: 520px; font: 600 38px/1.25 "Geist Variable", Inter, sans-serif; color: #F0E9E3; opacity: 0; }
+  </style>
+
+  <div data-hf-id="hf-t4vn" id="root" data-composition-id="evalue" data-width="1920" data-height="1080">
+    <div data-hf-id="hf-4xcd" id="ev-win">
+      <div data-hf-id="hf-m9ur" id="ev-cam" data-layout-allow-overflow>
+        <img data-hf-id="hf-9hth" class="ev-shot" id="ev-badge" src="assets/shots/07-score-badge.png" alt="" />
+        <img data-hf-id="hf-co5k" class="ev-shot" id="ev-pop" src="assets/shots/08-score-popover.png" alt="" />
+      </div>
+    </div>
+    <div data-hf-id="hf-3868" id="ev-title">Il <b data-hf-id="hf-pxou">t'évalue.</b></div>
+    <div data-hf-id="hf-fsk7" id="ev-sub">85 / 100 · Expert, avec les points forts de ta pipeline.</div>
+  </div>
+
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      const cam = (x, y, s) => ({ x: 650 - x * s, y: 540 - y * s, scale: s });
+      // Vue d'ensemble → badge « 85 % Expert » (haut droit de la capture, ≈ (1510,46)) : centre (1270,330) s=1,7 → x∈[888,1652] y∈[12,648].
+      tl.set("#ev-cam", cam(960, 540, 1), 0);
+      tl.to("#ev-cam", { ...cam(1270, 330, 1.7), duration: 0.6, ease: "power2.inOut" }, 0.3);
+      tl.fromTo("#ev-title", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.18, ease: "power4.out" }, 0.9);
+      tl.fromTo("#ev-sub", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.18, ease: "power4.out" }, 1.3);
+      // Le popover (même vue, même capture) remplace le badge : blur swap sur place, le fond ne bouge pas.
+      tl.to("#ev-badge", { opacity: 0, filter: "blur(6px)", duration: 0.15, ease: "power2.in" }, 2.0);
+      tl.fromTo("#ev-pop", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.15, ease: "power2.out" }, 2.0);
+      // Le popover occupe le haut ; la caméra descend vers ses points forts, puis revient (mouvement continu, pas de trou).
+      tl.to("#ev-cam", { ...cam(1270, 290, 1.9), duration: 1.4, ease: "power2.inOut" }, 2.5);
+      tl.to("#ev-cam", { ...cam(960, 540, 1), duration: 1.0, ease: "power2.inOut" }, 4.8);
+      tl.to("#ev-title, #ev-sub", { opacity: 0, filter: "blur(8px)", duration: 0.2, ease: "power3.in" }, 5.9);
+      window.__timelines["evalue"] = tl;
+    })();
+  </script>
+</template>

@@ -40,11 +40,11 @@ If you're interested in how the project is organized at a higher level, please c
 ## Our PoC team 💜
 
 Developers
-| [<img src="https://github.com/Ilan-LP.png?size=85" width=85 style="border-radius: 50%"><br><sub>Ilan LEROUX PINCHINAT</sub>](https://github.com/Ilan-LP) | [<img src="https://github.com/aliisssss.png?size=85" width=85 style="border-radius: 50%"><br><sub>Ali BASSIM</sub>](https://github.com/aliisssss) | [<img src="https://github.com/Ouaziz-chedli.png?size=85" width=85 style="border-radius: 50%"><br><sub>Chedli OUAZIZ</sub>](https://github.com/Ouaziz-chedli)
-| :---: | :---: | :---: |
+| [<img src="https://github.com/aliisssss.png?size=85" width=85 style="border-radius: 50%"><br><sub>Ali BASSIM</sub>](https://github.com/aliisssss) | [<img src="https://github.com/Ouaziz-chedli.png?size=85" width=85 style="border-radius: 50%"><br><sub>Chedli OUAZIZ</sub>](https://github.com/Ouaziz-chedli)
+| :---: | :---: |
 
 Manager
-| [<img src="https://github.com/SachaHenneveux.png?size=85" width=85 style="border-radius: 50%"><br><sub>Sacha HENNEVEUX</sub>](https://github.com/SachaHenneveux)
+| <img src="frontend/public/assets/team/pierre.png" width=85 style="border-radius: 50%"><br><sub>Pierre BAUD</sub>
 | :---: |
 
 <h2 align=center>

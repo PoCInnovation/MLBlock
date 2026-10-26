@@ -1,0 +1,52 @@
+[
+ {
+  "block": "load_sklearn_dataset",
+  "output": "{\"type\": \"gzip\", \"data\": \"H4sIAAAAAAAC/42TW26DMBBFtzLiu3I9fpOtNBVCQBskgqNAlFRV917bMa9IjesP24Dn6F7P5Tsbv05NtoNsbG5j9hJX9wx+lF1lD7YDOJZdWxVl1db+7XAAIIQA2JoZ+mprjrKwH0XddpexqYtr2zcDwOlsO7cDGMvzZzPuexqggIIwDnEg0QjAiOCR+dfgJGf+PFWSRBDQfY8RwwmjK6bxTBRJpqCBKemayWYmqukoI1z5WekkE7UvRrPRyWfvXC86c+mZkqZ1ylBsNjrF4l0sOmXuZ5PSyUgeNGm+0TmXrIvv+zA/ZS5fp41bXY80jzo1TiclUcG7N/aU6ZoZzGmxeGeeKSJT0FVE7lkySaYMjdXygSmn+5x75LIassTUP5lmdZ+BqaYs6ccecZ1kqpBF8+hdxywhX3Qi9Uwt0syAkmrD3Pdv6P6as70OcHNoqGx3OfbDe/bzC/hhhzQlBAAA\"}",
+  "block_id": "n1"
+ },
+ {
+  "block": "standard_scaler",
+  "output": "{\"type\": \"gzip\", \"data\": \"H4sIAAAAAAAC/2WR7UrDMBSGbyX0t4bzmeR4K06kzKKDrh1bxYl476ZNug4MhfPmlOd8vPlppu9T1zy5ZuquU/NQY7675bT9fvwYe+eObX/Yv7b7w5tz3vv863Qe+8PQOTe15/du2g0wA+gVU0DO8hG8BiKFSqAHZAArlR3sBlyiJwlkUAgxk5leCPAWlIQ2ggqBFlK0ooGQGG892BQlbQSXqYKhau3BEhKuBHlm0SgbIXUq0whQNcVgUohcADime2LxYzl+k0VviVXlmDePPNdNMVDUOUveoqjw1oPQdN2cZkJmQiyPW3cSpDDbWb3K1ibje0LnNHNukQoRRfJ3IyiBlvYrEZY0GDH933wxJYileyJW0yGF+v6JMehtD83vEWAjdsMzxuTO49fFXR2K24/953G4vDS/f4u/9/yNAgAA\"}",
+  "block_id": "n2"
+ },
+ {
+  "block": "train_test_split",
+  "output": "{\"type\": \"gzip\", \"data\": \"H4sIAAAAAAAC/22Q206EMBCGX6Xh2m3m1JOvIsYQJLoJCxsW4xrjuzstCFw4N22n883/z3xX89e1qx5NNXf3uXpYT32bEk3fju9jb8yl6c/tS9OeX42x1urXdRr789AZMzfTWzfXA3I0BqwHcegzjBbJsQsLcQLrGCXg0tmQEiA57UEZ1lQuEaG0E8RR8rME1kOIpSpS5JQbndASROdXQuUBUky8E5ytgGU1hbhoeHIQ/UaIiuS+JaAeMp01QohQzGqJMDKvrtCKU1Oya5R9lLD7dbnvib+bnjoHlv2AR+fd4ioIhkibBgSd8aCB4HNVokBI/+4qOOHoDoQUjQCcYCUEoydZvZA2CIndYXIqVRzZJ7+60uVQ2jQiEDo+uqKSRg8cl11pSos2Imkzn3aiHp5QLUzj583cjXpsx/7jMtyeq59fl/YaBY0CAAA=\"}",
+  "block_id": "n3"
+ },
+ {
+  "block": "train_test_split",
+  "output": "{\"type\": \"gzip\", \"data\": \"H4sIAAAAAAAC/3VWW24jRwy8ysDficD3Y68SB4HhGIkBr7zwOsgGQe4edvdouq3V6kfSzLCLLBaL8+/d+z9fnu4+bXfvT9/e737av+v/1j8PL4+vf76+bNvnh5fnx98eHp9/37bT6VS3vry9vjyfn7bt/eHtj6f3+zNmXYWTRwbY1n9bqALtEXBiJCEYJ29wfxatbzxJcoJv/bdSMugegScwcLcZgQLbz3CCcGIaGEKKASOibom5B+4RdH9m6E8lQLan2iOu4JoHhiNrxsQwH0/1QlpEpSGWEQeGq3DoHoGVlfXcDRQ6dD3Czi54YFi6uS51FFl1LrEBxagjA53xwNAormjBcOnVJrPw4EqQDPJgt1WYPCtH6BiOVQmNrCJULhH1l5CBcMFoGReGcF7YJQA3OTAQVCgmBsnoM1pYDgxxkuAf9hwVPkQ0xQCL6mQ3jBgmRkuqnlJQSx2Vs6T7xMgip9Ez2Y1eXkiMy1fs4gmTQ9YO6sjEXVRu1FE0FiW41oHY25RsiQMDQsDiwKg+KdqCgdwup9WxOnQlTHnBqMOy7o1BGBGtbS1ZduqXmxKDIuWIqDskC0YOfsBQTb/veSOiFNQn9ahDPmJUhOQxte2WksiSFcZQnyXBriuzSv2CQad0FOdloqzzU3OGnZDegMpx1uGeYYsSDUYmFNzZbRElb5Ifa7fhr/NBJ6hC029z1ebD8VolIIE2ZzBKNKZLhPUZTCMfGHVoAC0YJXXAdQbRe3nohDu7pgSNhZ1dqsppYbfhXbsPYveVo/Lml0vPYbvuYIlYeXpiNTRpidChdsuidFeJihx1VHOxStfFdyl7z0nzwNDIw3dvzSDFxzoKj2s+eFZebhWwuo92laSF7zpGcIHpPmRiurDLwxm8Us0LBpSd86FEEQPGNavhBqT2g8qDymgWpxYaE1Wm5DuGAJjD5ApqwtbKNbrl18Wk77lqHaxlgMuOqtaNpyr1GNotUYbPCC+7sqXytq+uVIJcG0ZuY3SH6/NRDewqHt41mnzRLpRPrJszdldTB72xOUtXtdYOv2qVQ+95udjBVUmVVk8sKeLiu6E7o2Wd+5zXoHQ6L57YtLxE2MhKMIl2TySt/QG392DXFXeVmGLHKHZZDH3uwdZaWOZ8331TiXUoIfHc55yKEmvlcD2DtcNwcbhyAol1G9RyX52hSa92zOHtjQhrwlg6KL1rmOp6g90yo9bCpYOKQ7tU9Fzcpw7FqV0rZ4ClDh9ODWyU+45qY6o+t0GVtfZDx7uPgpHtPVev4uzoh2PZKi1eMjAkIC9TW+9N3dL2rIRqn/A6Ub2DtQxY9relMAWe7wzUtqLMyu/PvxRbb69/f92+bdWFx9eXvz6fv/5699//rrMXYvIKAAA=\"}",
+  "block_id": "n3"
+ },
+ {
+  "block": "tsne",
+  "output": "{\"type\": \"image\", \"mime\": \"image/png\", \"url\": \"\"}",
+  "block_id": "n9"
+ },
+ {
+  "block": "random_forest",
+  "output": "{\"type\": \"gzip\", \"data\": \"H4sIAAAAAAAC/6tWKqksSFWyUlAqSa0oUdKB0kB+UGJeSn6uW35RanGJc05icXFmWmZqkYamUi0A0yrZ/jQAAAA=\"}",
+  "block_id": "n4"
+ },
+ {
+  "block": "logistic_regression",
+  "output": "{\"type\": \"gzip\", \"data\": \"H4sIAAAAAAAC/6tWKqksSFWyUlAqSa0oUdKB0kC+T356ZnFJZnJQanpRanFxZn6eRm5iRXxmSWqRraGBgYGmUi0AsvsiaD0AAAA=\"}",
+  "block_id": "n5"
+ },
+ {
+  "block": "evaluate",
+  "output": "{\"type\": \"gzip\", \"data\": \"H4sIAAAAAAAC/6tWKqksSFWyUlDKTS0pykxW0lFQKkvMKQUJGeoZ1AIARtnpzSAAAAA=\"}",
+  "block_id": "n6"
+ },
+ {
+  "block": "confusion_matrix",
+  "output": "{\"type\": \"gzip\", \"data\": \"H4sIAAAAAAAC/6tWKqksSFWyUlAqSa0oUdKB0kB+dLShpYKCARDFxuQpRANZRoZIHCAyNImNVaoFAAdYm1dCAAAA\"}",
+  "block_id": "n8"
+ },
+ {
+  "block": "evaluate",
+  "output": "{\"type\": \"gzip\", \"data\": \"H4sIAAAAAAAC/6tWKqksSFWyUlDKTS0pykxW0lFQKkvMKQUJGehZWhiaICHTWgA/Q7piLwAAAA==\"}",
+  "block_id": "n7"
+ }
+]

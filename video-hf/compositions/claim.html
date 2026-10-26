@@ -1,0 +1,24 @@
+<template>
+  <style>
+    @font-face { font-family: "Fredoka"; src: url("assets/fonts/fredoka-latin-700-normal.woff2") format("woff2"); font-weight: 700; }
+    #root { position: absolute; inset: 0; background: #171311; overflow: hidden; }
+    #cl-l1, #cl-l2 { position: absolute; left: 0; right: 0; text-align: center; font: 700 130px/1 "Fredoka", sans-serif; color: #F0E9E3; opacity: 0; }
+    #cl-l1 { top: 340px; }
+    #cl-l2 { top: 500px; }
+    #cl-l2 b { color: #D97757; font-weight: 700; }
+  </style>
+  <div data-hf-id="hf-dc55" id="root" data-composition-id="claim" data-width="1920" data-height="1080">
+    <div data-hf-id="hf-a16w" id="cl-l1">Même jeu de vins.</div>
+    <div data-hf-id="hf-31wc" id="cl-l2"><b data-hf-id="hf-yp2n">Zéro</b> erreur.</div>
+  </div>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      // 0,3 s de silence visuel, puis deux lignes l'une après l'autre ; elles restent immobiles (maintien ≥ 2 s).
+      tl.fromTo("#cl-l1", { opacity: 0, filter: "blur(10px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "power4.out" }, 0.3);
+      tl.fromTo("#cl-l2", { opacity: 0, filter: "blur(10px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "power4.out" }, 1.0);
+      tl.to("#cl-l1, #cl-l2", { opacity: 0, filter: "blur(8px)", duration: 0.2, ease: "power3.in" }, 3.95);
+      window.__timelines["claim"] = tl;
+    })();
+  </script>
+</template>
