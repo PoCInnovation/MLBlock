@@ -43,9 +43,9 @@ Developers
 | [<img src="https://github.com/aliisssss.png?size=85" width=85 style="border-radius: 50%"><br><sub>Ali BASSIM</sub>](https://github.com/aliisssss) | [<img src="https://github.com/Ouaziz-chedli.png?size=85" width=85 style="border-radius: 50%"><br><sub>Chedli OUAZIZ</sub>](https://github.com/Ouaziz-chedli)
 | :---: | :---: |
 
-Manager
-| <img src="frontend/public/assets/team/pierre.png" width=85 style="border-radius: 50%"><br><sub>Pierre BAUD</sub>
-| :---: |
+Managers
+| [<img src="https://github.com/SachaHenneveux.png?size=85" width=85 style="border-radius: 50%"><br><sub>Sacha HENNEVEUX</sub>](https://github.com/SachaHenneveux) | <img src="frontend/public/assets/team/pierre.png" width=85 style="border-radius: 50%"><br><sub>Pierre BAUD</sub> |
+| :---: | :---: |
 
 <h2 align=center>
 Organization
